@@ -1,6 +1,6 @@
 # Kamaji - DRAFT
 
-> This project is still in prototyping stage! Please do not use it in production but help us to make it working.
+> This project is still in high development stage!
 
 **Kamaji** is a Kubernetes distribution aimed to build and operate a **Managed Kubernetes** service with a fraction of operational burden. With **Kamaji**, you can deploy and operate hundreds of Kubernetes clusters in the simplest and most automated way.
 
@@ -95,3 +95,7 @@ As we can deploy any Kubernetes cluster with an external `etcd` cluster, we want
 
 With this solution the resiliency is guaranteed by the usual `etcd` mechanisms, and the pod count remains under control, so it solves the main goal of resiliency and costs optimization. The trade-off here is that we need to operate an external `etcd` cluster, and manage the access control to be sure that every *tenant cluster* access only to its own data.
 
+Other points of attention for this solution are:
+
+- priority and fairness accessing the multitenant `etcd` database since multiple tenant control planes can compete each other for accessing the database.
+- limited storage size in `etcd`, defaulted to `2GB` and configurable with `--quota-backend-bytes` flag to `8GB` (etcd warns at startup if the configured value exceeds it). 
