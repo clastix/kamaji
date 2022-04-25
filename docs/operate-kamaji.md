@@ -1,0 +1,1 @@
+# Operate Kamaji setup

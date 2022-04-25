@@ -1,101 +1,116 @@
-# Kamaji - DRAFT
+# Kamaji
 
-> This project is still in high development stage!
-
-**Kamaji** is a Kubernetes distribution aimed to build and operate a **Managed Kubernetes** service with a fraction of operational burden. With **Kamaji**, you can deploy and operate hundreds of Kubernetes clusters in the simplest and most automated way.
-
-<p align="center" style="padding: 6px 6px">
-  <img src="image.png" />
+<p align="left">
+  <img src="https://img.shields.io/github/license/clastix/kamaji"/>
+  <img src="https://img.shields.io/github/go-mod/go-version/clastix/kamaji"/>
+  <a href="https://github.com/clastix/kamaji/releases">
+    <img src="https://img.shields.io/github/v/release/clastix/kamaji"/>
+  </a>
 </p>
 
+**Kamaji** is a tool aimed to build and operate a **Managed Kubernetes Service** with a fraction of operational burden. With **Kamaji**, you can deploy and operate hundreds of Kubernetes clusters as an hyper-scaler cloud provider.
+
+<p align="center" style="padding: 6px 6px">
+  <img src="assets/kamaji-logo.png" />
+</p>
+
+> This project is still in early development stage which means it's not ready for production as APIs, commands, flags, etc. are subject to change, but also that your feedbacks can still help to shape it. Please try it out and let us know what you like, dislike, what works, what doesn't, etc.
+
 ## Why we are building it?
-One of main driver for Kubernetes success and adoption everywhere, is that Kubernetes represents a standardized interface for deploying Cloud Native software applications. With Kubernetes, software applications can be deployed everywhere from Cloud infrastructures to data-centers and even to Edge and constrained locations.
+Global hyper-scalers are leading the Managed Kubernetes space, while regional cloud providers, as well as large corporations, are struggling to offer the same level of experience to their developers because of the lack of the right tools. Also Kubernetes solutions for the on-premises are designed with an enterprise first approach and they are too costly when deployed at scale. Project Kamaji aims to solve this pain by leveraging multi-tenancy and simplifying how to run Kubernetes clusters at scale with a fraction of the operational burden.
 
-Kubernetes eliminates de-facto any vendor lockin: once built, a cloud native application can be deployed and operated everywhere Kubernetes is running. This opens a huge opportunity for independent, national and regional providers, even large enterprises, to compete with Public Cloud providers. However, there are not so many tools to build a Managed Kubernetes service out there. Project Kamaji aims to fill this gap.
+## How it works
+Kamaji turns any CNCF conformant Kubernetes cluster into an _“admin cluster”_ to orchestrate other Kubernetes clusters we're calling _“tenant clusters”_. As with every Kubernetes cluster, a tenant cluster has a set of nodes and a control plane, composed of several components: `APIs server`, `scheduler`, `controller manager`. What Kamaji does is deploy those components as pods in the admin cluster.
 
-## Architecture of a Managed Kubernetes service
-One of the most structural choices while building a Managed Kubernetes service is how to deploy and operate hundreds of customers’ Kubernetes clusters. All these clusters must be:
+And what about the tenant worker nodes? They are just worker nodes: regular instances, e.g. virtual or bare metal, connecting to the APIs server of the tenant cluster. Kamaji's goal is to manage the lifecycle of hundreds of these clusters, not only one, so how can we add another tenant cluster? As you could expect, Kamaji just deploys a new tenant control plane as a new pod in the admin cluster, and then it joins the new tenant worker nodes.
 
-* Resilient
-* Isolated
-* Cost Optimized  
-
-Managing hundreds of Kubernetes cluster would be impossible without the right tools to orchestrate their lifecycle from provisioning to maintaining, upgrating, and finally deleting. So we went with the idea to use Kubernetes itself to orchestrate Kubernetes clusters. This not a really new idea, we just try to make it more efficient :) 
-
-Kamaji creates a Kubernetes cluster we are calling *admin cluster* to deploy other Kubernetes clusters we are calling *tenant clusters*.
-
-As every Kubernetes cluster, the *tenant clusters* have a set of nodes and a control plane, composed of several components: `APIs server`, `scheduler`, `controller manager`. What Kamaji does is to deploy those *tenant clusters* components as pods in the *admin cluster* nodes.
-
-So now we have the stateless components of the *tenant clusters* control plane running as pods in the *admin cluster* nodes. We haven’t mentioned `etcd`, the key-value datastore keeping the state of the cluster, as we will discuss about it later, for the moment let’s only say that it lives outside the *tenant cluster* pods.
-
-And what the customer cluster worker nodes? They are normal Kubernetes nodes: regular instances (virtual or bare metal) connecting to the `API server` of the *tenant cluster* running in one of the *admin cluster* pod.
-
-Our goal is to manage the lifecycle of hundreds of clusters, not only one, so how can we add another *tenant cluster*? As you could expect, Kamaji just deployes a new *tenant cluster* control plane as a new pod in the *admin cluster* and then it joins the *tenant cluster* worker nodes.
-
-```
-         ┌──────────────────────────────────────────────────────────┐
-         │                                                          │
-┌────────►                 multitenant etcd cluster                 ◄─────────┐
-│        │                                                          │         │
-│        └────────▲───────────────────▲───────────────────▲─────────┘         │
-│                 │                   │                   │                   │
-│                 │                   │                   │                   │
-│                 │                   │                   │                   │
-│        ┌────────▼───────────────────▼───────────────────▼─────────┐         │
-│        │                                                          │         │
-│        │                 admin cluster control plane              │         │
-│        │                                                          │         │
-│        └────────▲────────────────────▲───────────────────────▲────┘         │
-│                 │                    │                       │              │
-│                 │                    │                       │              │
-│  ┌──────────────▼────────────────────▼───────────────────────▼───────────┐  │
-│  │                  tenant control planes running in pods                │  │
-│  │ ┌──────────────┐ ┌──────────────┐   ┌──────────────┐ ┌──────────────┐ │  │
-│  │ │tenant00      │ │tenant01      │   │tenant02      │ │tenant03      │ │  │
-└──┼─►control plane │ │control plane │   │control plane │ │control plane ◄─┼──┘
-   │ └▲─────────────┘ └─▲────────────┘   └─▲────────────┘ └──▲───────────┘ │
-   └──│─────────────────│──────────────────│─────────────────│─────────────┘
-      │                 │                  │                 │
-      │  ┌─────────┐    │  ┌─────────┐     │  ┌─────────┐    │  ┌─────────┐
-      │  │         │    │  │         │     │  │         │    │  │         │
-      │  │ worker  │    │  │ worker  │     │  │ worker  │    │  │ worker  │
-      ├──┤         │    ├──┤         │     ├──┤         │    ├──┤         │
-      │  └─────────┘    │  └─────────┘     │  └─────────┘    │  └─────────┘
-      │                 │                  │                 │
-      │  ┌─────────┐    │  ┌─────────┐     │  ┌─────────┐    │  ┌─────────┐
-      │  │         │    │  │         │     │  │         │    │  │         │
-      ├──┤ worker  │    ├──┤ worker  │     ├──┤ worker  │    ├──┤ worker  │
-      │  │         │    │  │         │     │  │         │    │  │         │
-      │  └─────────┘    │  └─────────┘     │  └─────────┘    │  └─────────┘
-      │                 │                  │                 │
-      │  ┌─────────┐    │  ┌─────────┐     │  ┌─────────┐    │  ┌─────────┐
-      ├──┤         │    ├──┤         │     ├──┤         │    ├──┤         │
-      │  │ worker  │    │  │ worker  │     │  │ worker  │    │  │ worker  │
-         │         │       │         │        │         │       │         │
-         └─────────┘       └─────────┘        └─────────┘       └─────────┘
-```
+All the tenant clusters built with Kamaji are fully compliant CNCF Kubernetes clusters and are compatible with the standard Kubernetes toolchains everybody knows and loves.
 
 
-We have now an architecture that allows us to quickly deploy new *tenant clusters*, but if we go back to our goal, quickly deployment was only part of it, as we want the cluster to be resilient too.
+<p align="center">
+  <img src="assets/kamaji-light.png" />
+</p>
 
-The *admin cluster*, is already resilient, as it's a regular Kubernetes cluster installed with `kubeadm` by Kamaji, so let’s talk about the control plane of the *tenant clusters*, as it’s the specific part of Kamaji architecture.
-
-We are deploying the *tenant cluster* control plane as regular pods in our *admin cluster*. And that means they are as resilient as any other Kubernetes pod. If one of the *tenant cluster* goes down, the `controller manager` of the *admin cluster* will detect it and the pod will be rescheduled and redeployed, without any manual action on our side. To increase the resiliency of *tenant cluster* control plane we can also simply scale up the control plane pods as they are totally stateless. 
 
 ## Save the state
-Putting the *tenant cluster* control plane in a pod is the easiest part. Also we have to make sure each *tenant cluster* saves the state as to be able to store and retrieve data. All the question is about where and how to deploy `etcd` to make it available to each *tenant cluster*.
+Putting the tenant cluster control plane in a pod is the easiest part. Also, we have to make sure each tenant cluster saves the state to be able to store and retrieve data.
 
-Having each *tenant cluster* it own `etcd`, initially it seemed like a good idea. However, he have to take care of `etcd` resiliency and so deploy it with a quorum replicas, i.e three separated instances for each *tenant cluster* with each replicas having its own persistent volume. But managing data persistency in Kubernetes at scale can be cumbersome, leading to the rise of the operational costs in order to mitigate it.
+A dedicated `etcd` cluster for each tenant cluster doesn’t scale well for a managed service because `etcd` data persistence can be cumbersome at scale, rising the operational effort in order to mitigate it. So we have to find an alternative keeping in mind our goal for a resilient and cost-optimized solution at the same time. As we can deploy any Kubernetes cluster with an external `etcd` cluster, we explored this option for the tenant control planes. On the admin cluster, we deploy a multi-tenant `etcd` cluster storing the state of multiple tenant clusters.
 
-A dedicated `etcd` cluster for each *tenant cluster* doesn’t scale well for a managed service since customers are billed according to the resources of worker nodes they consume, i.e. the control plane is given for free or, at least, applying a small fee. It means that for the service to be competitive it’s important to keep under control the resources consumed by the control planes.
+With this solution, the resiliency is guaranteed by the usual `etcd` mechanism, and the pod count remains under control, so it solves the main goal of resiliency and costs optimization. The trade-off here is that we have to operate an external `etcd` cluster and manage the access to be sure that each tenant cluster uses only its data. Also, there are limits in size in `etcd`, defaulted to 2GB and configurable to a maximum of 8GB. We’re solving this issue by pooling multiple `etcd` and sharding the tenant control planes.
 
-So we have to find an alternative keeping in mind our goal for a resilient and cost optimized solution at same time.
+## Use cases
+Kamaji project has been initially started as a solution for actual and common problems such as minimize the Total Cost of Ownership - TCO, while running Kubernetes at scale. However, it can open a wider range of use cases. Here a few:
 
-As we can deploy any Kubernetes cluster with an external `etcd` cluster, we want to explore this option for the *tenant cluster* control plane. On the *admin cluster*, we can deploy a multi-tenant `etcd` cluster storing the state of each *tenant cluster*. All the *tenant cluster* control planes would use the same `etcd`, meaning every `APIs server` getting its own space in this multi-tenant `etcd` cluster.
+### Managed Kubernetes
+Enabling companies to provide Cloud Native Infrastructure with ease by introducing a strong separation of concerns between management and workloads. Centralize clusters management, monitoring, and observability by leaving developers to focus on the applications, increase productivity and reduce operational costs. 
 
-With this solution the resiliency is guaranteed by the usual `etcd` mechanisms, and the pod count remains under control, so it solves the main goal of resiliency and costs optimization. The trade-off here is that we need to operate an external `etcd` cluster, and manage the access control to be sure that every *tenant cluster* access only to its own data.
+### Control Plane as a Service
+Provide Kubernetes control plane in a self-service fashion by running management and workloads on different infrastructures or even different cost centers with the option of Bring Your Own Device - BYOD.
 
-Other points of attention for this solution are:
+### Edge Computing
+Distribute Kubernetes workloads on edge computing locations without having to manage multiple clusters across various cloud and infrastructure providers. With Kamaji, you can centralise management of hundreds control planes while leaving workloads to run on their own dedicated infrastructure.
 
-- priority and fairness accessing the multitenant `etcd` database since multiple tenant control planes can compete each other for accessing the database.
-- limited storage size in `etcd`, defaulted to `2GB` and configurable with `--quota-backend-bytes` flag to `8GB` (etcd warns at startup if the configured value exceeds it). 
+## Features
+
+### Self Service
+Leave users the freedom to self-provision their clusters according to the assigned boundaries.
+
+### Multi-cluster Management
+Centrally manage multiple tenant clusters from a single admin cluster. Happy SREs. 
+
+### Cheap Control Planes
+Multiple control planes on one node, instead of three nodes for a control plane.
+
+### Hard Multi-Tenancy
+Provide each tenant access to the control plane with admin permissions while keeping the tenant isolated each other.
+
+### Kubernetes Inception
+Use Kubernetes to manage Kubernetes by re-using all the Kubernetes goodies you already know and love.
+
+### Human error reduction
+Hyde the infrastructure and seal away critical system configurations, preventing users to shooting themself in the foots.
+
+## Roadmap
+
+- [ ] Benchmarking and stress-test
+- [ ] Support for dynamic address allocation on native Load Balancer
+- [x] Zero Downtime Tenant Control Plane upgrade
+- [ ] `konnectivity` integration
+- [ ] Provisioning of Tenant Control Plane through Cluster API
+- [ ] Prometheus metrics for monitoring and alerting
+- [ ] `kine` integration, i.e. use MySQL, SQLite, PostgreSQL as datastore
+- [ ] Deeper `kubeadm` configuration
+- [ ] `etcd` pooling
+- [ ] Tenant Control Planes sharding
+
+## Documentation
+Please, check the project's [documentation](./docs/) for getting started with Kamaji.
+
+## Contributions
+Kamaji is Open Source with Apache 2 license and any contribution is welcome.
+
+## FAQ
+Q. What Kamaji means?
+
+A. Kamaji is named as the character _Kamaji_ from the Japanes movie [_Spirited Away_](https://en.wikipedia.org/wiki/Spirited_Away).
+
+Q. Is Kamaji another Kubernetes distribution?
+
+A. No, Kamaji is a tool you can install on top of any CNCF conformant Kubernetes to provide hundreds of managed Tenant clusters as a service. We tested Kamaji on vanilla Kubernetes 1.23+, KinD, and MS Azure AKS. We expect it to work smoothly on other Kubernetes distributions. The tenant clusters made with Kamaji are conformant CNCF Kubernetes vanilla clusters built with `kubeadm`.
+
+Q. Is it safe to run Kubernetes control plane components in a pod?
+
+A. Yes, the tenant control plane components are packaged in the same way they are running in bare metal or virtual nodes. We leverage on the `kubeadm` code to setup the control plane components as they were running on a server. The same unchanged images of upstream `APIs server`, `scheduler`, `controller manager` are used.
+
+Q. And what about multi-tenant `etcd`? I never heard of it.
+
+A. Even if multi-tenant deployment for `etcd` is not a common practice, multi-tenancy, RBAC, and client authentication has been [supported](https://etcd.io/docs/v3.5/op-guide/authentication/) in `etcd` from long time. 
+
+Q. You already provide a Kubernetes multi-tenancy solution with [Capsule](capsule.clastix.io). Why Kamaji matters?
+
+A. Lighter Multi-Tenancy solutions, like Capsule shares the Kubernetes control plane among all tenants keeping tenant namespaces isolated by policies. While these solutions are the right choice by balancing between features and ease of usage, there are cases where a tenant user requires access to the control plane, for example, when a tenant requires to manage CRDs by his own. With Kamaji, you can provide admin permissions to the tenants.
+
+Q. So I need a costly cloud infrastructure to try Kamaji?
+
+A. No, it is possible to try Kamaji on your laptop with [KinD](./deploy/kind/README.md). We're porting it also on Canonical MicroK8s as an add-on, _tbd_.
