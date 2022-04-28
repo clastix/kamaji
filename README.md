@@ -8,7 +8,7 @@
   </a>
 </p>
 
-**Kamaji** is a tool aimed to build and operate a **Managed Kubernetes Service** with a fraction of the operational burden. With **Kamaji**, you can deploy and operate hundreds of Kubernetes clusters as a hyper-såcale cloud provider.
+**Kamaji** is a tool aimed to build and operate a **Managed Kubernetes Service** with a fraction of the operational burden. With **Kamaji**, you can deploy and operate hundreds of Kubernetes clusters as a hyper-scale cloud provider.
 
 <p align="center" style="padding: 6px 6px">
   <img src="assets/kamaji-logo.png" />
@@ -22,14 +22,18 @@ Global hyper-scalers are leading the Managed Kubernetes space, while regional cl
 ## How it works
 Kamaji turns any CNCF conformant Kubernetes cluster into an _“admin cluster”_ to orchestrate other Kubernetes clusters we're calling _“tenant clusters”_. As with every Kubernetes cluster, a tenant cluster has a set of nodes and a control plane, composed of several components: `APIs server`, `scheduler`, `controller manager`. What Kamaji does is deploy those components as a pod running in the admin cluster.
 
-And what about the tenant worker nodes? They are just worker nodes: regular instances, e.g. virtual or bare metal, connecting to the APIs server of the tenant cluster. Kamaji's goal is to manage the lifecycle of hundreds of these clusters, not only one, so how can we add another tenant cluster? As you could expect, Kamaji just deploys a new tenant control plane as a new pod in the admin cluster, and then it joins the new tenant worker nodes.
 
-All the tenant clusters built with Kamaji are fully compliant CNCF Kubernetes clusters and are compatible with the standard Kubernetes toolchains everybody knows and loves.
+And what about the tenant worker nodes? They are just worker nodes: regular instances, e.g. virtual or bare metal, connecting to the APIs server of the tenant cluster. Kamaji's goal is to manage the lifecycle of hundreds of these clusters, not only one, so how can we add another tenant cluster? As you could expect, Kamaji just deploys a new tenant control plane as a new pod in the admin cluster, and then it joins the new tenant worker nodes.
 
 <p align="center">
   <img src="assets/kamaji-light.png" />
 </p>
 
+All the tenant clusters built with Kamaji are fully compliant CNCF Kubernetes clusters and are compatible with the standard Kubernetes toolchains everybody knows and loves.
+
+<p align="center">
+  <img src="assets/screenshot.png" />
+</p>
 
 ## Save the state
 Putting the tenant cluster control plane in a pod is the easiest part. Also, we have to make sure each tenant cluster saves the state to be able to store and retrieve data.
