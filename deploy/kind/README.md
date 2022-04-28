@@ -1,0 +1,1 @@
+# Setup a minimal Kamaji for development
