@@ -43,7 +43,7 @@ A dedicated `etcd` cluster for each tenant cluster doesn’t scale well for a ma
 With this solution, the resiliency is guaranteed by the usual `etcd` mechanism, and the pods' count remains under control, so it solves the main goal of resiliency and costs optimization. The trade-off here is that we have to operate an external `etcd` cluster and manage the access to be sure that each tenant cluster uses only its data. Also, there are limits in size in `etcd`, defaulted to 2GB and configurable to a maximum of 8GB. We’re solving this issue by pooling multiple `etcd` and sharding the tenant control planes.
 
 ## Use cases
-Kamaji project has been initially started as a solution for actual and common problems such as minimizing the Total Cost of Ownership - TCO while running Kubernetes at scale. However, it can open a wider range of use cases. Here are a few:
+Kamaji project has been initially started as a solution for actual and common problems such as minimizing the Total Cost of Ownership while running Kubernetes at scale. However, it can open a wider range of use cases. Here are a few:
 
 ### Managed Kubernetes
 Enabling companies to provide Cloud Native Infrastructure with ease by introducing a strong separation of concerns between management and workloads. Centralize clusters management, monitoring, and observability by leaving developers to focus on the applications, increase productivity and reduce operational costs. 
@@ -80,7 +80,7 @@ Tenant clusters are fully CNCF compliant built with upstream Kubernetes binaries
 ## Roadmap
 
 - [ ] Benchmarking and stress-test
-- [ ] Support for dynamic address allocation on native Load Balancer
+- [x] Support for dynamic address allocation on native Load Balancer
 - [x] Zero Downtime Tenant Control Plane upgrade
 - [ ] `konnectivity` integration
 - [ ] Provisioning of Tenant Control Plane through Cluster APIs
@@ -119,4 +119,4 @@ A. Lighter Multi-Tenancy solutions, like Capsule shares the Kubernetes control p
 
 Q. So I need a costly cloud infrastructure to try Kamaji?
 
-A. No, it is possible to try Kamaji on your laptop with [KinD](./deploy/kind/README.md). We're porting it also on Canonical MicroK8s as an add-on, _tbd_.
+A. No, it is possible to try Kamaji on your laptop with [KinD](./deploy/kind/README.md).

@@ -1,0 +1,177 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: "2021-12-08T17:49:38Z"
+  name: etcd
+  namespace: kamaji-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: etcd-server
+  namespace: kamaji-system
+spec:
+  type: ClusterIP
+  ports:
+    - name: client
+      port: 2379
+      protocol: TCP
+      targetPort: 2379
+  selector:
+    app: etcd
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: etcd
+  namespace: kamaji-system
+spec:
+  clusterIP: None
+  ports:
+    - port: 2379
+      name: client
+    - port: 2380
+      name: peer
+  selector:
+    app: etcd
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: etcd
+  labels:
+    app: etcd
+  namespace: kamaji-system
+spec:
+  serviceName: etcd
+  selector:
+    matchLabels:
+      app: etcd
+  replicas: 3
+  template:
+    metadata:
+      name: etcd
+      labels:
+        app: etcd
+    spec:
+      serviceAccountName: etcd
+      volumes:
+      - name: certs
+        secret:
+          secretName: etcd-certs
+      containers:
+        - name: etcd
+          image: quay.io/coreos/etcd:v3.5.1
+          ports:
+            - containerPort: 2379
+              name: client
+            - containerPort: 2380
+              name: peer
+          volumeMounts:
+            - name: data
+              mountPath: /var/run/etcd
+            - name: certs
+              mountPath: /etc/etcd/pki
+          command:
+          - etcd 
+          - --data-dir=/var/run/etcd
+          - --name=$(POD_NAME)
+          - --initial-cluster-state=new
+          - --initial-cluster=etcd-0=https://etcd-0.etcd.$(POD_NAMESPACE).svc.cluster.local:2380,etcd-1=https://etcd-1.etcd.$(POD_NAMESPACE).svc.cluster.local:2380,etcd-2=https://etcd-2.etcd.$(POD_NAMESPACE).svc.cluster.local:2380
+          - --initial-advertise-peer-urls=https://$(POD_NAME).etcd.$(POD_NAMESPACE).svc.cluster.local:2380
+          - --initial-cluster-token=kamaji
+          - --listen-client-urls=https://0.0.0.0:2379
+          - --advertise-client-urls=https://etcd-0.etcd.$(POD_NAMESPACE).svc.cluster.local:2379,https://etcd-1.etcd.$(POD_NAMESPACE).svc.cluster.local:2379,https://etcd-2.etcd.$(POD_NAMESPACE).svc.cluster.local:2379,https://etcd-server.$(POD_NAMESPACE).svc.cluster.local:2379
+          - --client-cert-auth=true
+          - --trusted-ca-file=/etc/etcd/pki/ca.crt
+          - --cert-file=/etc/etcd/pki/server.pem
+          - --key-file=/etc/etcd/pki/server-key.pem
+          - --listen-peer-urls=https://0.0.0.0:2380
+          - --peer-client-cert-auth=true
+          - --peer-trusted-ca-file=/etc/etcd/pki/ca.crt
+          - --peer-cert-file=/etc/etcd/pki/peer.pem 
+          - --peer-key-file=/etc/etcd/pki/peer-key.pem
+          - --auto-compaction-mode=periodic
+          - --auto-compaction-retention=5m
+          - --v=8
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          livenessProbe:
+            failureThreshold: 8
+            httpGet:
+              host: 127.0.0.1
+              path: /health
+              port: 2381
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 15
+          startupProbe:
+            failureThreshold: 24
+            httpGet:
+              host: 127.0.0.1
+              path: /health
+              port: 2381
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 15
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 8Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: etcd
+  name: etcd-root-client
+  namespace: kamaji-system
+spec:
+  serviceAccountName: etcd
+  containers:
+  - command:
+    - sleep
+    - infinity
+    env:
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace    
+    - name: ETCDCTL_ENDPOINTS
+      value: https://etcd-server.$(POD_NAMESPACE).svc.cluster.local:2379
+    - name: ETCDCTL_CACERT
+      value: /opt/certs/ca/ca.crt
+    - name: ETCDCTL_CERT
+      value: /opt/certs/root-client-certs/tls.crt
+    - name: ETCDCTL_KEY
+      value: /opt/certs/root-client-certs/tls.key
+    image: quay.io/coreos/etcd:v3.5.1
+    imagePullPolicy: IfNotPresent
+    name: etcd-client
+    resources: {}
+    volumeMounts:
+    - name: root-client-certs
+      mountPath: /opt/certs/root-client-certs
+    - name: ca
+      mountPath: /opt/certs/ca     
+  volumes:
+  - name: root-client-certs
+    secret:
+      secretName: root-client-certs
+  - name: ca
+    secret:
+      secretName: etcd-certs     
+
