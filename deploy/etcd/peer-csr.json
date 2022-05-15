@@ -1,0 +1,22 @@
+{
+  "CN": "etcd",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "hosts": [
+    "127.0.0.1",
+    "etcd-0",
+    "etcd-0.etcd",
+    "etcd-0.etcd.kamaji-system.svc",
+    "etcd-0.etcd.kamaji-system.svc.cluster.local",
+    "etcd-1",
+    "etcd-1.etcd",
+    "etcd-1.etcd.kamaji-system.svc",
+    "etcd-1.etcd.kamaji-system.svc.cluster.local",
+    "etcd-2",
+    "etcd-2.etcd",
+    "etcd-2.etcd.kamaji-system.svc",
+    "etcd-2.etcd.kamaji-system.svc.cluster.local"
+  ]
+}
