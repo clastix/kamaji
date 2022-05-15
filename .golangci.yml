@@ -1,0 +1,35 @@
+linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/clastix/kamaji)
+
+linters:
+  disable:
+    - wrapcheck
+    - gomnd
+    - scopelint
+    - golint
+    - interfacer
+    - maligned
+    - varnamelen
+    - testpackage
+    - tagliatelle
+    - paralleltest
+    - ireturn
+    - goerr113
+    - gochecknoglobals
+    - exhaustivestruct
+    - wsl
+    - exhaustive
+    - lll
+    - gosec
+    - gomoddirectives
+    - godox
+    - gochecknoinits
+    - funlen
+    - dupl
+    - maintidx
+    - cyclop
+  enable-all: true

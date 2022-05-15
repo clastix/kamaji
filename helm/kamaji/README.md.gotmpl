@@ -1,0 +1,45 @@
+{{ template "chart.header" . }}
+{{ template "chart.deprecationWarning" . }}
+
+{{ template "chart.badgesSection" . }}
+
+{{ template "chart.description" . }}
+
+{{ template "chart.homepageLine" . }}
+
+## Installing the Chart
+
+To install the chart with the release name `kamaji`:
+
+### Pre-requisites
+
+1. Deploy a [multi-tenant Etcd cluster](https://github.com/clastix/kamaji-internal/blob/master/deploy/getting-started-with-kamaji.md#setup-internal-multi-tenant-etcd)
+2. Create the `Secret` containing the Etcd CA cert keypair:
+
+```
+kubectl -n kamaji-system create secret generic etcd-certs \
+  --from-file=/path/to/etcd/ca.crt \
+  --from-file=/path/to/etcd/ca.key
+```
+
+3. Create a `Secret` containing the Etcd root user client cert keypair:
+
+```
+kubectl -n kamaji-system create secret tls root-client-certs \
+  --cert=/path/to/etcd/root.pem \
+  --key=/path/to/etcd/root-key.pem
+```
+
+### Install Kamaji
+
+```console
+helm upgrade --install --namespace kamaji-system --create-namespace kamaji .
+```
+
+{{ template "chart.maintainersSection" . }}
+
+{{ template "chart.sourcesSection" . }}
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}

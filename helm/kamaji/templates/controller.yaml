@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kamaji.fullname" . }}
+  labels:
+    {{- include "kamaji.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "kamaji.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "kamaji.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ include "kamaji.serviceAccountName" . }}
+      containers:
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=10
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+      - args:
+        - --config-file={{ .Values.configPath }}
+        - --etcd-ca-secret-name={{ .Values.etcd.caSecret.name }}
+        - --etcd-ca-secret-namespace={{ .Values.etcd.caSecret.namespace }}
+        - --etcd-client-secret-name={{ .Values.etcd.clientSecret.name }}
+        - --etcd-client-secret-namespace={{ .Values.etcd.clientSecret.namespace }}
+        - --etcd-compaction-interval={{ .Values.etcd.compactionInterval }}
+        - --etcd-endpoints={{ .Values.etcd.endpoints }}
+        - --health-probe-bind-address={{ .Values.healthProbeBindAddress }}
+        - --leader-elect
+        - --metrics-bind-address={{ .Values.metricsBindAddress }}
+        - --tmp-directory={{ .Values.temporaryDirectoryPath }}
+        {{- if .Values.loggingDevel.enable }}
+        - --zap-devel
+        {{- end }}
+        {{- with .Values.extraArgs }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        command:
+        - /manager
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- with .Values.livenessProbe }}
+        livenessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        name: manager
+        ports:
+        - containerPort: 8081
+          name: healthcheck
+          protocol: TCP
+        {{- with .Values.readinessProbe }}
+        readinessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+      terminationGracePeriodSeconds: 10
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

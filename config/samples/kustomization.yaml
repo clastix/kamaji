@@ -1,0 +1,4 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- kamaji_v1alpha1_tenantcontrolplane.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples
