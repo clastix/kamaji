@@ -27,5 +27,6 @@ bin
 **/*.kubeconfig
 **/*.crt
 **/*.key
+**/*.pem
+**/*.csr
 .DS_Store
-

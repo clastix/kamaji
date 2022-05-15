@@ -1,0 +1,136 @@
+# Default values for kamaji.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- The number of the pod replicas for the Kamaji controller.
+replicaCount: 1
+
+image:
+  # -- The container image of the Kamaji controller.
+  repository: quay.io/clastix/kamaji
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: latest
+
+# -- A list of extra arguments to add to the kamaji controller default ones
+extraArgs: []
+
+# -- Configuration file path alternative. (default "./kamaji.yaml")
+configPath: "./kamaji.yaml"
+
+etcd:
+  caSecret:
+    # -- Name of the secret which contains CA's certificate and private key. (default: "etcd-certs")
+    name: etcd-certs
+    # -- Namespace of the secret which contains CA's certificate and private key. (default: "kamaji")
+    namespace: kamaji-system
+
+  clientSecret:
+    # -- Name of the secret which contains ETCD client certificates. (default: "root-client-certs")
+    name: root-client-certs
+    # -- Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji")
+    namespace: kamaji-system
+
+  # -- ETCD Compaction interval (e.g. "5m0s"). (default: "0" (disabled))
+  compactionInterval: 0
+
+  # -- (string) Comma-separated list of the endpoints of the etcd cluster's members.
+  endpoints: "etcd-0.etcd.kamaji-system.svc.cluster.local:2379,etcd-1.etcd.kamaji-system.svc.cluster.local:2379,etcd-2.etcd.kamaji-system.svc.cluster.local:2379"
+
+# -- The address the probe endpoint binds to. (default ":8081")
+healthProbeBindAddress: ":8081"
+
+# -- The livenessProbe for the controller container
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: healthcheck
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+# -- The readinessProbe for the controller container
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: healthcheck
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+# -- (string) The address the metric endpoint binds to. (default ":8080")
+metricsBindAddress: ":8080"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: kamaji-controller-manager
+
+# -- The annotations to apply to the Kamaji controller pods.
+podAnnotations: {}
+
+# -- The securityContext to apply to the Kamaji controller pods.
+podSecurityContext:
+  runAsNonRoot: true
+
+# -- The securityContext to apply to the Kamaji controller container only. It does not apply to the Kamaji RBAC proxy container.
+securityContext:
+  allowPrivilegeEscalation: false
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8443
+
+ingress:
+  # -- Whether to expose the Kamaji controller through an Ingress.
+  enabled: false
+  # -- Name of the ingress class to route through this controller.
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 100Mi
+  requests:
+    cpu: 100m
+    memory: 20Mi
+
+# -- Kubernetes node selector rules to schedule Kamaji controller
+nodeSelector: {}
+
+# -- Kubernetes node taints that the Kamaji controller pods would tolerate
+tolerations: []
+
+# -- Kubernetes affinity rules to apply to Kamaji controller pods
+affinity: {}
+
+# -- Directory which will be used to work with temporary files. (default "/tmp/kamaji")
+temporaryDirectoryPath: "/tmp/kamaji"
+
+loggingDevel:
+  # -- (string) Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false)
+  enable: false
