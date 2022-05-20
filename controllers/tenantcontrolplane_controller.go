@@ -114,6 +114,10 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	registeredResources := []resources.Resource{
+		&resources.KubernetesUpgrade{
+			Name:   "upgrade",
+			Client: r.Client,
+		},
 		&resources.KubernetesServiceResource{
 			Client: r.Client,
 		},
@@ -211,10 +215,6 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			ETCDClientCertsSecret: getNamespacedName(r.Config.ETCDClientSecretNamespace, r.Config.ETCDClientSecretName),
 			ETCDCACertsSecret:     getNamespacedName(r.Config.ETCDCASecretNamespace, r.Config.ETCDCASecretName),
 			Endpoints:             getArrayFromString(r.Config.ETCDEndpoints),
-		},
-		&resources.KubernetesUpgrade{
-			Name:   "upgrade",
-			Client: r.Client,
 		},
 		&resources.KubernetesDeploymentResource{
 			Client:                 r.Client,
