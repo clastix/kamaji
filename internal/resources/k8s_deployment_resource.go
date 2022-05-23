@@ -48,7 +48,7 @@ func (r *KubernetesDeploymentResource) ShouldCleanup(plane *kamajiv1alpha1.Tenan
 	return false
 }
 
-func (r *KubernetesDeploymentResource) CleanUp(ctx context.Context) (bool, error) {
+func (r *KubernetesDeploymentResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 

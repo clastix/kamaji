@@ -90,6 +90,20 @@ type ServiceSpec struct {
 	ServiceType ServiceType `json:"serviceType"`
 }
 
+// AddonSpec defines the spec for every addon.
+type AddonSpec struct {
+	// +kubebuilder:default=true
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// AddonsSpec defines the enabled addons and their features.
+type AddonsSpec struct {
+	// +kubebuilder:default={enabled: true}
+	CoreDNS AddonSpec `json:"coreDNS,omitempty"`
+	// +kubebuilder:default={enabled: true}
+	KubeProxy AddonSpec `json:"kubeProxy,omitempty"`
+}
+
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 type TenantControlPlaneSpec struct {
 	ControlPlane ControlPlane `json:"controlPlane"`
@@ -99,6 +113,10 @@ type TenantControlPlaneSpec struct {
 
 	// NetworkProfile specifies how the network is
 	NetworkProfile NetworkProfileSpec `json:"networkProfile,omitempty"`
+
+	// Addons contain which addons are enabled
+	// +kubebuilder:default={coreDNS: {enabled: true}, kubeProxy: {enabled: true}}
+	Addons AddonsSpec `json:"addons,omitempty"`
 }
 
 // ETCDAPIServerCertificate defines the observed state of ETCD Certificate for API server.
@@ -179,13 +197,40 @@ type KubeadmPhaseStatus struct {
 	LastUpdate                   metav1.Time `json:"lastUpdate,omitempty"`
 }
 
+func (d KubeadmPhaseStatus) GetKubeadmConfigResourceVersion() string {
+	return d.KubeadmConfigResourceVersion
+}
+
+func (d *KubeadmPhaseStatus) SetKubeadmConfigResourceVersion(rv string) {
+	d.KubeadmConfigResourceVersion = rv
+}
+
 // KubeadmPhasesStatus contains the status of the different kubeadm phases action.
 type KubeadmPhasesStatus struct {
 	UploadConfigKubeadm KubeadmPhaseStatus `json:"uploadConfigKubeadm"`
 	UploadConfigKubelet KubeadmPhaseStatus `json:"uploadConfigKubelet"`
-	AddonCoreDNS        KubeadmPhaseStatus `json:"addonCoreDNS"`
-	AddonKubeProxy      KubeadmPhaseStatus `json:"addonKubeProxy"`
 	BootstrapToken      KubeadmPhaseStatus `json:"bootstrapToken"`
+}
+
+// AddonStatus defines the observed state of an Addon.
+type AddonStatus struct {
+	Enabled                      bool        `json:"enabled"`
+	KubeadmConfigResourceVersion string      `json:"kubeadmConfigResourceVersion,omitempty"`
+	LastUpdate                   metav1.Time `json:"lastUpdate,omitempty"`
+}
+
+func (d AddonStatus) GetKubeadmConfigResourceVersion() string {
+	return d.KubeadmConfigResourceVersion
+}
+
+func (d *AddonStatus) SetKubeadmConfigResourceVersion(rv string) {
+	d.KubeadmConfigResourceVersion = rv
+}
+
+// AddonsStatus defines the observed state of the different Addons.
+type AddonsStatus struct {
+	CoreDNS   AddonStatus `json:"coreDNS,omitempty"`
+	KubeProxy AddonStatus `json:"kubeProxy,omitempty"`
 }
 
 // TenantControlPlaneStatus defines the observed state of TenantControlPlane.
@@ -205,6 +250,8 @@ type TenantControlPlaneStatus struct {
 	KubeadmPhase KubeadmPhasesStatus `json:"kubeadmPhase,omitempty"`
 	// ControlPlaneEndpoint contains the status of the kubernetes control plane
 	ControlPlaneEndpoint string `json:"controlPlaneEndpoint,omitempty"`
+	// Addons contains the status of the different Addons
+	Addons AddonsStatus `json:"addons,omitempty"`
 }
 
 // KubernetesStatus defines the status of the resources deployed in the management cluster,

@@ -51,7 +51,7 @@ func (r *KubeadmConfigResource) ShouldCleanup(plane *kamajiv1alpha1.TenantContro
 	return false
 }
 
-func (r *KubeadmConfigResource) CleanUp(ctx context.Context) (bool, error) {
+func (r *KubeadmConfigResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 

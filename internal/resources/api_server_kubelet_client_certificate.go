@@ -37,7 +37,7 @@ func (r *APIServerKubeletClientCertificate) ShouldCleanup(plane *kamajiv1alpha1.
 	return false
 }
 
-func (r *APIServerKubeletClientCertificate) CleanUp(ctx context.Context) (bool, error) {
+func (r *APIServerKubeletClientCertificate) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 

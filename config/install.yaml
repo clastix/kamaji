@@ -60,6 +60,33 @@ spec:
           spec:
             description: TenantControlPlaneSpec defines the desired state of TenantControlPlane.
             properties:
+              addons:
+                default:
+                  coreDNS:
+                    enabled: true
+                  kubeProxy:
+                    enabled: true
+                description: Addons contain which addons are enabled
+                properties:
+                  coreDNS:
+                    default:
+                      enabled: true
+                    description: AddonSpec defines the spec for every addon.
+                    properties:
+                      enabled:
+                        default: true
+                        type: boolean
+                    type: object
+                  kubeProxy:
+                    default:
+                      enabled: true
+                    description: AddonSpec defines the spec for every addon.
+                    properties:
+                      enabled:
+                        default: true
+                        type: boolean
+                    type: object
+                type: object
               controlPlane:
                 description: ControlPlane defines how the Tenant Control Plane Kubernetes resources must be created in the Admin Cluster, such as the number of Pod replicas, the Service resource, or the Ingress.
                 properties:
@@ -257,6 +284,36 @@ spec:
           status:
             description: TenantControlPlaneStatus defines the observed state of TenantControlPlane.
             properties:
+              addons:
+                description: Addons contains the status of the different Addons
+                properties:
+                  coreDNS:
+                    description: AddonStatus defines the observed state of an Addon.
+                    properties:
+                      enabled:
+                        type: boolean
+                      kubeadmConfigResourceVersion:
+                        type: string
+                      lastUpdate:
+                        format: date-time
+                        type: string
+                    required:
+                    - enabled
+                    type: object
+                  kubeProxy:
+                    description: AddonStatus defines the observed state of an Addon.
+                    properties:
+                      enabled:
+                        type: boolean
+                      kubeadmConfigResourceVersion:
+                        type: string
+                      lastUpdate:
+                        format: date-time
+                        type: string
+                    required:
+                    - enabled
+                    type: object
+                type: object
               certificates:
                 description: Certificates contains information about the different certificates that are necessary to run a kubernetes control plane
                 properties:
@@ -343,24 +400,6 @@ spec:
               kubeadmPhase:
                 description: KubeadmPhase contains the status of the kubeadm phases action
                 properties:
-                  addonCoreDNS:
-                    description: KubeadmPhasesStatus contains the status of of a kubeadm phase action.
-                    properties:
-                      kubeadmConfigResourceVersion:
-                        type: string
-                      lastUpdate:
-                        format: date-time
-                        type: string
-                    type: object
-                  addonKubeProxy:
-                    description: KubeadmPhasesStatus contains the status of of a kubeadm phase action.
-                    properties:
-                      kubeadmConfigResourceVersion:
-                        type: string
-                      lastUpdate:
-                        format: date-time
-                        type: string
-                    type: object
                   bootstrapToken:
                     description: KubeadmPhasesStatus contains the status of of a kubeadm phase action.
                     properties:
@@ -389,8 +428,6 @@ spec:
                         type: string
                     type: object
                 required:
-                - addonCoreDNS
-                - addonKubeProxy
                 - bootstrapToken
                 - uploadConfigKubeadm
                 - uploadConfigKubelet

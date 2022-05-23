@@ -33,7 +33,7 @@ func (r *KubernetesIngressResource) ShouldCleanup(tenantControlPlane *kamajiv1al
 	return !tenantControlPlane.Spec.ControlPlane.Ingress.Enabled
 }
 
-func (r *KubernetesIngressResource) CleanUp(ctx context.Context) (bool, error) {
+func (r *KubernetesIngressResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	if err := r.Client.Delete(ctx, r.resource); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return false, err

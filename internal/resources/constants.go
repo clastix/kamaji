@@ -4,5 +4,6 @@
 package resources
 
 const (
-	defaultIngressPort = 443
+	kubeconfigAdminKeyName = "admin.conf"
+	defaultIngressPort     = 443
 )

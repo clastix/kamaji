@@ -37,7 +37,7 @@ func (r *APIServerCertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControl
 	return false
 }
 
-func (r *APIServerCertificate) CleanUp(ctx context.Context) (bool, error) {
+func (r *APIServerCertificate) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
