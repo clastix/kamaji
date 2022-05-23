@@ -4,12 +4,14 @@
 package kubeadm
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api/v1"
@@ -22,11 +24,84 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func CoreDNSAddon(client kubernetes.Interface, config *Configuration) error {
+const (
+	kubeSystemNamespace = "kube-system"
+	kubeProxyName       = "kube-proxy"
+	coreDNSName         = "coredns"
+	kubeDNSName         = "kube-dns"
+)
+
+func AddCoreDNS(client kubernetes.Interface, config *Configuration) error {
 	return dns.EnsureDNSAddon(&config.InitConfiguration.ClusterConfiguration, client)
 }
 
-func KubeProxyAddon(client kubernetes.Interface, config *Configuration) error {
+func RemoveCoreDNSAddon(ctx context.Context, client kubernetes.Interface) error {
+	var result error
+
+	if err := removeCoreDNSService(ctx, client); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return err
+		}
+		result = err
+	}
+
+	if err := removeCoreDNSDeployment(ctx, client); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return err
+		}
+		result = err
+	}
+
+	if err := removeCoreDNSConfigMap(ctx, client); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return err
+		}
+		result = err
+	}
+
+	return result
+}
+
+func removeCoreDNSService(ctx context.Context, client kubernetes.Interface) error {
+	name, _ := getCoreDNSServiceName(ctx)
+	opts := metav1.DeleteOptions{}
+
+	return client.CoreV1().Services(kubeSystemNamespace).Delete(ctx, name, opts)
+}
+
+func removeCoreDNSDeployment(ctx context.Context, client kubernetes.Interface) error {
+	name, _ := getCoreDNSDeploymentName(ctx)
+	opts := metav1.DeleteOptions{}
+
+	return client.AppsV1().Deployments(kubeSystemNamespace).Delete(ctx, name, opts)
+}
+
+func removeCoreDNSConfigMap(ctx context.Context, client kubernetes.Interface) error {
+	name, _ := getCoreDNSConfigMapName(ctx)
+	opts := metav1.DeleteOptions{}
+
+	return client.CoreV1().ConfigMaps(kubeSystemNamespace).Delete(ctx, name, opts)
+}
+
+func getCoreDNSServiceName(ctx context.Context) (string, error) {
+	// TODO: Currently, DNS is installed using kubeadm phases, therefore we know the name.
+	// Implement a method for future approaches
+	return kubeDNSName, nil
+}
+
+func getCoreDNSDeploymentName(ctx context.Context) (string, error) {
+	// TODO: Currently, DNS is installed using kubeadm phases, therefore we know the name.
+	// Implement a method for future approaches
+	return coreDNSName, nil
+}
+
+func getCoreDNSConfigMapName(ctx context.Context) (string, error) {
+	// TODO: Currently, DNS is installed using kubeadm phases, therefore we know the name.
+	// Implement a method for future approaches
+	return coreDNSName, nil
+}
+
+func AddKubeProxy(client kubernetes.Interface, config *Configuration) error {
 	if err := proxy.CreateServiceAccount(client); err != nil {
 		return errors.Wrap(err, "error when creating kube-proxy service account")
 	}
@@ -44,6 +119,95 @@ func KubeProxyAddon(client kubernetes.Interface, config *Configuration) error {
 	}
 
 	return nil
+}
+
+func RemoveKubeProxy(ctx context.Context, client kubernetes.Interface) error {
+	var result error
+
+	if err := removeKubeProxyDaemonSet(ctx, client); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return err
+		}
+		result = err
+	}
+
+	if err := removeKubeProxyConfigMap(ctx, client); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return err
+		}
+		result = err
+	}
+
+	if err := removeKubeProxyRBAC(ctx, client); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return err
+		}
+		result = err
+	}
+
+	return result
+}
+
+func removeKubeProxyDaemonSet(ctx context.Context, client kubernetes.Interface) error {
+	name, _ := getKubeProxyDaemonSetName(ctx)
+	opts := metav1.DeleteOptions{}
+
+	return client.AppsV1().DaemonSets(kubeSystemNamespace).Delete(ctx, name, opts)
+}
+
+func removeKubeProxyConfigMap(ctx context.Context, client kubernetes.Interface) error {
+	name, _ := getKubeProxyConfigMapName(ctx)
+	opts := metav1.DeleteOptions{}
+
+	return client.CoreV1().ConfigMaps(kubeSystemNamespace).Delete(ctx, name, opts)
+}
+
+func removeKubeProxyRBAC(ctx context.Context, client kubernetes.Interface) error {
+	// TODO: Currently, kube-proxy is installed using kubeadm phases, therefore, name is the same.
+	name, _ := getKubeProxyRBACName(ctx)
+	opts := metav1.DeleteOptions{}
+	var result error
+
+	if err := client.RbacV1().RoleBindings(kubeSystemNamespace).Delete(ctx, name, opts); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return err
+		}
+		result = err
+	}
+
+	if err := client.RbacV1().Roles(kubeSystemNamespace).Delete(ctx, name, opts); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return err
+		}
+		result = err
+	}
+
+	if err := client.CoreV1().ServiceAccounts(kubeSystemNamespace).Delete(ctx, name, opts); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return err
+		}
+		result = err
+	}
+
+	return result
+}
+
+func getKubeProxyRBACName(ctx context.Context) (string, error) {
+	// TODO: Currently, kube-proxy is installed using kubeadm phases, therefore we know the name.
+	// Implement a method for future approaches
+	return kubeProxyName, nil
+}
+
+func getKubeProxyDaemonSetName(ctx context.Context) (string, error) {
+	// TODO: Currently, kube-proxy is installed using kubeadm phases, therefore we know the name.
+	// Implement a method for future approaches
+	return kubeProxyName, nil
+}
+
+func getKubeProxyConfigMapName(ctx context.Context) (string, error) {
+	// TODO: Currently, kube-proxy is installed using kubeadm phases, therefore we know the name.
+	// Implement a method for future approaches
+	return kubeProxyName, nil
 }
 
 func createKubeProxyConfigMap(client kubernetes.Interface, config *Configuration) error {

@@ -43,7 +43,7 @@ func (r *ETCDCACertificatesResource) ShouldCleanup(plane *kamajiv1alpha1.TenantC
 	return false
 }
 
-func (r *ETCDCACertificatesResource) CleanUp(ctx context.Context) (bool, error) {
+func (r *ETCDCACertificatesResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 

@@ -48,7 +48,7 @@ func (k *KubernetesUpgrade) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bo
 	return false
 }
 
-func (k *KubernetesUpgrade) CleanUp(context.Context) (bool, error) {
+func (k *KubernetesUpgrade) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 

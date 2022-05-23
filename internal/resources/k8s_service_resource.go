@@ -34,7 +34,7 @@ func (r *KubernetesServiceResource) ShouldCleanup(plane *kamajiv1alpha1.TenantCo
 	return false
 }
 
-func (r *KubernetesServiceResource) CleanUp(ctx context.Context) (bool, error) {
+func (r *KubernetesServiceResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 

@@ -224,35 +224,35 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		&resources.KubernetesIngressResource{
 			Client: r.Client,
 		},
-		&resources.KubeadmPhaseResource{
-			Name:         "upload-config-kubeadm",
-			Client:       r.Client,
-			Log:          log,
-			KubeadmPhase: resources.PhaseUploadConfigKubeadm,
+		&resources.KubeadmPhase{
+			Name:   "upload-config-kubeadm",
+			Client: r.Client,
+			Log:    log,
+			Phase:  resources.PhaseUploadConfigKubeadm,
 		},
-		&resources.KubeadmPhaseResource{
-			Name:         "upload-config-kubelet",
-			Client:       r.Client,
-			Log:          log,
-			KubeadmPhase: resources.PhaseUploadConfigKubelet,
+		&resources.KubeadmPhase{
+			Name:   "upload-config-kubelet",
+			Client: r.Client,
+			Log:    log,
+			Phase:  resources.PhaseUploadConfigKubelet,
 		},
-		&resources.KubeadmPhaseResource{
-			Name:         "addon-coredns",
-			Client:       r.Client,
-			Log:          log,
-			KubeadmPhase: resources.PhaseAddonCoreDNS,
+		&resources.KubeadmPhase{
+			Name:   "bootstrap-token",
+			Client: r.Client,
+			Log:    log,
+			Phase:  resources.PhaseBootstrapToken,
 		},
-		&resources.KubeadmPhaseResource{
-			Name:         "addon-kubeproxy",
+		&resources.KubeadmAddonResource{
+			Name:         "coredns",
 			Client:       r.Client,
 			Log:          log,
-			KubeadmPhase: resources.PhaseAddonKubeProxy,
+			KubeadmAddon: resources.AddonCoreDNS,
 		},
-		&resources.KubeadmPhaseResource{
-			Name:         "bootstrap-token",
+		&resources.KubeadmAddonResource{
+			Name:         "kubeproxy",
 			Client:       r.Client,
 			Log:          log,
-			KubeadmPhase: resources.PhaseBootstrapToken,
+			KubeadmAddon: resources.AddonKubeProxy,
 		},
 	}
 

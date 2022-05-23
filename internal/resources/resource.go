@@ -8,9 +8,11 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
+	clientset "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	kamajiapi "github.com/clastix/kamaji/api"
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
 )
@@ -18,7 +20,7 @@ import (
 type Resource interface {
 	Define(context.Context, *kamajiv1alpha1.TenantControlPlane) error
 	ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool
-	CleanUp(context.Context) (bool, error)
+	CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error)
 	CreateOrUpdate(context.Context, *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error)
 	GetName() string
 	ShouldStatusBeUpdated(context.Context, *kamajiv1alpha1.TenantControlPlane) bool
@@ -33,6 +35,14 @@ type KubeadmResource interface {
 	Resource
 	GetClient() client.Client
 	GetTmpDirectory() string
+}
+
+type KubeadmPhaseResource interface {
+	KubeadmResource
+	GetClient() client.Client
+	GetKubeadmFunction() (func(clientset.Interface, *kubeadm.Configuration) error, error)
+	GetStatus(*kamajiv1alpha1.TenantControlPlane) (kamajiapi.KubeadmConfigResourceVersionDependant, error)
+	SetKubeadmConfigResourceVersion(string)
 }
 
 type HandlerConfig struct {
@@ -50,7 +60,7 @@ func Handle(ctx context.Context, resource Resource, tenantControlPlane *kamajiv1
 		return createOrUpdate(ctx, resource, tenantControlPlane)
 	}
 
-	cleanUp, err := resource.CleanUp(ctx)
+	cleanUp, err := resource.CleanUp(ctx, tenantControlPlane)
 	if err != nil {
 		return controllerutil.OperationResultNone, err
 	}

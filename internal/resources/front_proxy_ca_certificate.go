@@ -36,7 +36,7 @@ func (r *FrontProxyCACertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantCont
 	return false
 }
 
-func (r *FrontProxyCACertificate) CleanUp(ctx context.Context) (bool, error) {
+func (r *FrontProxyCACertificate) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 

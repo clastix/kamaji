@@ -36,7 +36,7 @@ func (r *SACertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) 
 	return false
 }
 
-func (r *SACertificate) CleanUp(ctx context.Context) (bool, error) {
+func (r *SACertificate) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
