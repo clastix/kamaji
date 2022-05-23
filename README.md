@@ -96,6 +96,9 @@ Please, check the project's [documentation](./docs/) for getting started with Ka
 ## Contributions
 Kamaji is Open Source with Apache 2 license and any contribution is welcome.
 
+## Community
+Join the [Kubernetes Slack Workspace](https://slack.k8s.io/) and the [`#kamaji`](https://kubernetes.slack.com/archives/C03GLTTMWNN) channel to meet end-users and contributors.
+
 ## FAQ
 Q. What does Kamaji means?
 
