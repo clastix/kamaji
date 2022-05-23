@@ -7,7 +7,7 @@ replicaCount: 1
 
 image:
   # -- The container image of the Kamaji controller.
-  repository: quay.io/clastix/kamaji
+  repository: clastix/kamaji
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: latest

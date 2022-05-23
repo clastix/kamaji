@@ -3,7 +3,7 @@
 set -e
 
 # Constants
-export DOCKER_IMAGE_NAME="quay.io/clastix/kamaji-kind-worker"
+export DOCKER_IMAGE_NAME="clastix/kamaji-kind-worker"
 export DOCKER_NETWORK="kind"
 
 # Variables

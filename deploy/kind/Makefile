@@ -27,10 +27,10 @@ ingress-nginx-install:
 	kubectl apply -f $(kind_path)/nginx-deploy.yaml
 
 kamaji-kind-worker-build:
-	docker build -f $(kind_path)/kamaji-kind-worker.dockerfile -t quay.io/clastix/kamaji-kind-worker:$${WORKER_VERSION:-latest} .
+	docker build -f $(kind_path)/kamaji-kind-worker.dockerfile -t clastix/kamaji-kind-worker:$${WORKER_VERSION:-latest} .
 
 kamaji-kind-worker-push: kamaji-kind-worker-build
-	docker push quay.io/clastix/kamaji-kind-worker:$${WORKER_VERSION:-latest}
+	docker push clastix/kamaji-kind-worker:$${WORKER_VERSION:-latest}
 
 kamaji-kind-worker-join:
 	$(kind_path)/join-node.bash
