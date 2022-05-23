@@ -67,7 +67,7 @@ Kubernetes: `>=1.18`
 | fullnameOverride | string | `""` |  |
 | healthProbeBindAddress | string | `":8081"` | The address the probe endpoint binds to. (default ":8081") |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
-| image.repository | string | `"quay.io/clastix/kamaji"` | The container image of the Kamaji controller. |
+| image.repository | string | `"clastix/kamaji"` | The container image of the Kamaji controller. |
 | image.tag | string | `"latest"` |  |
 | imagePullSecrets | list | `[]` |  |
 | ingress.annotations | object | `{}` |  |

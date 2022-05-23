@@ -1021,7 +1021,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: quay.io/clastix/kamaji:latest
+        image: clastix/kamaji:latest
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
