@@ -134,3 +134,10 @@ temporaryDirectoryPath: "/tmp/kamaji"
 loggingDevel:
   # -- (string) Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false)
   enable: false
+
+# -- Kubernetes Addons 
+addons:
+  coreDNS:
+    enabled: true
+  kubeProxy:
+    enabled: true

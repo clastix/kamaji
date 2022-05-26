@@ -81,3 +81,28 @@ $ make yaml-installation-file
 ```
 
 It will generate a yaml installation file at `config/installation.yaml`. It should be customize accordingly.
+
+
+## Tenant Control Planes
+
+### Add-ons
+
+Kamaji provides optional installations into the deployed tenant control plane through add-ons. Is it possible to enable/disable them through the `tcp` definition.
+
+By default, add-ons are installed if nothing is specified in the `tcp` definition.
+
+### Core DNS
+
+```yaml
+addons:
+    coreDNS:
+        enabled: true
+```
+
+### Kube-Proxy
+
+```yaml
+addons:
+    kubeProxy:
+        enabled: true
+```
