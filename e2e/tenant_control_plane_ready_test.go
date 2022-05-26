@@ -50,6 +50,7 @@ var _ = Describe("Deploy a TenantControlPlane resource", func() {
 					"ResourceQuota",
 				},
 			},
+			Addons: kamajiv1alpha1.AddonsSpec{},
 		},
 	}
 

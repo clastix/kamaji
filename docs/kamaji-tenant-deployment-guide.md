@@ -68,10 +68,8 @@ spec:
     dnsServiceIPs:
     - ${TENANT_DNS_SERVICE}
   addons:
-    coreDNS:
-      enabled: true
-    kubeProxy:
-      enabled: true
+    coreDNS: {}
+    kubeProxy: {}
 EOF
 ```
 

@@ -18,6 +18,8 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 	"k8s.io/kubernetes/pkg/apis/rbac"
 	"k8s.io/utils/pointer"
+
+	"github.com/clastix/kamaji/internal/utilities"
 )
 
 func UploadKubeadmConfig(client kubernetes.Interface, config *Configuration) error {
@@ -115,7 +117,7 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration) ([]by
 		VolumeStatsAggPeriod:             zeroDuration,
 	}
 
-	return EncondeToYaml(&kc)
+	return utilities.EncondeToYaml(&kc)
 }
 
 func createConfigMapRBACRules(client kubernetes.Interface, kubernetesVersion string) error {

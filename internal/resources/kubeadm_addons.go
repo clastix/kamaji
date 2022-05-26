@@ -39,11 +39,6 @@ type KubeadmAddonResource struct {
 }
 
 func (r *KubeadmAddonResource) isStatusEqual(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	addonSpec, err := r.getSpec(tenantControlPlane)
-	if err != nil {
-		return false
-	}
-
 	i, err := r.GetStatus(tenantControlPlane)
 	if err != nil {
 		return false
@@ -54,7 +49,7 @@ func (r *KubeadmAddonResource) isStatusEqual(tenantControlPlane *kamajiv1alpha1.
 		return false
 	}
 
-	return *addonSpec.Enabled == addonStatus.Enabled
+	return addonStatus.KubeadmConfigResourceVersion == r.kubeadmConfigResourceVersion
 }
 
 func (r *KubeadmAddonResource) SetKubeadmConfigResourceVersion(rv string) {
@@ -71,7 +66,7 @@ func (r *KubeadmAddonResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.
 		return false
 	}
 
-	return !*spec.Enabled
+	return spec == nil
 }
 
 func (r *KubeadmAddonResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -141,17 +136,11 @@ func (r *KubeadmAddonResource) UpdateTenantControlPlaneStatus(ctx context.Contex
 		return err
 	}
 
-	addonSpec, err := r.getSpec(tenantControlPlane)
-	if err != nil {
-		return err
-	}
-
 	status, ok := i.(*kamajiv1alpha1.AddonStatus)
 	if !ok {
 		return fmt.Errorf("error addon status")
 	}
 
-	status.Enabled = *addonSpec.Enabled
 	status.LastUpdate = metav1.Now()
 	status.KubeadmConfigResourceVersion = r.kubeadmConfigResourceVersion
 
@@ -172,9 +161,9 @@ func (r *KubeadmAddonResource) GetStatus(tenantControlPlane *kamajiv1alpha1.Tena
 func (r *KubeadmAddonResource) getSpec(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*kamajiv1alpha1.AddonSpec, error) {
 	switch r.KubeadmAddon {
 	case AddonCoreDNS:
-		return &tenantControlPlane.Spec.Addons.CoreDNS, nil
+		return tenantControlPlane.Spec.Addons.CoreDNS, nil
 	case AddonKubeProxy:
-		return &tenantControlPlane.Spec.Addons.KubeProxy, nil
+		return tenantControlPlane.Spec.Addons.KubeProxy, nil
 	default:
 		return nil, fmt.Errorf("%s has no spec", r.KubeadmAddon)
 	}

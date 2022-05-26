@@ -97,10 +97,8 @@ spec:
     dnsServiceIPs: 
     - "10.96.0.10"
   addons:
-    coreDNS:
-      enabled: true
-    kubeProxy:
-      enabled: true
+    coreDNS: {}
+    kubeProxy: {}
 EOF
 ```
 

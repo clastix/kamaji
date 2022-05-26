@@ -17,17 +17,7 @@ import (
 func GetETCDCACertificateAndKeyPair(tenant string, caCert []byte, caPrivKey []byte) (*bytes.Buffer, *bytes.Buffer, error) {
 	template := getCertTemplate(tenant)
 
-	caCertBytes, err := crypto.GetCertificate(caCert)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	caPrivKeyBytes, err := crypto.GetPrivateKey(caPrivKey)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return crypto.GenerateCertificateKeyPairBytes(template, certBitSize, caCertBytes, caPrivKeyBytes)
+	return crypto.GetCertificateAndKeyPair(template, caCert, caPrivKey)
 }
 
 func IsETCDCertificateAndKeyPairValid(cert []byte, privKey []byte) (bool, error) {

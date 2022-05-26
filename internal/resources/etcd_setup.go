@@ -9,7 +9,6 @@ import (
 	"github.com/go-logr/logr"
 	etcdclient "go.etcd.io/etcd/client/v3"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,7 +30,6 @@ type resource struct {
 type ETCDSetupResource struct {
 	resource              *resource
 	Client                client.Client
-	Scheme                *runtime.Scheme
 	Log                   logr.Logger
 	Name                  string
 	Endpoints             []string

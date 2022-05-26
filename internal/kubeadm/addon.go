@@ -22,6 +22,8 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/proxy"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 	"k8s.io/utils/pointer"
+
+	"github.com/clastix/kamaji/internal/utilities"
 )
 
 const (
@@ -412,7 +414,7 @@ func getKubeproxyConfigmapContent(config *Configuration) ([]byte, error) {
 		},
 	}
 
-	return EncondeToYaml(&kubeProxyConfiguration)
+	return utilities.EncondeToYaml(&kubeProxyConfiguration)
 }
 
 func getKubeproxyKubeconfigContent(config *Configuration) ([]byte, error) {
@@ -447,5 +449,5 @@ func getKubeproxyKubeconfigContent(config *Configuration) ([]byte, error) {
 		},
 	}
 
-	return EncondeToYaml(&kubeconfig)
+	return utilities.EncondeToYaml(&kubeconfig)
 }

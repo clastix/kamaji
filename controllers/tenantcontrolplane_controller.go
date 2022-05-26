@@ -6,9 +6,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"github.com/google/uuid"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -26,7 +24,6 @@ import (
 )
 
 const (
-	separator = ","
 	finalizer = "finalizer.kamaji.clastix.io"
 )
 
@@ -77,17 +74,13 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	if markedToBeDeleted {
-		registeredDeleteableResources := []resources.DeleteableResource{
-			&resources.ETCDSetupResource{
-				Name:                  "etcd-setup",
-				Client:                r.Client,
-				Scheme:                r.Scheme,
-				Log:                   log,
-				ETCDClientCertsSecret: getNamespacedName(r.Config.ETCDClientSecretNamespace, r.Config.ETCDClientSecretName),
-				ETCDCACertsSecret:     getNamespacedName(r.Config.ETCDCASecretNamespace, r.Config.ETCDCASecretName),
-				Endpoints:             getArrayFromString(r.Config.ETCDEndpoints),
-			},
+		groupDeleteableResourceBuilderConfiguration := GroupDeleteableResourceBuilderConfiguration{
+			client:              r.Client,
+			log:                 log,
+			tcpReconcilerConfig: r.Config,
+			tenantControlPlane:  *tenantControlPlane,
 		}
+		registeredDeleteableResources := GetDeleteableResources(groupDeleteableResourceBuilderConfiguration)
 
 		for _, resource := range registeredDeleteableResources {
 			if err := resource.Delete(ctx, tenantControlPlane); err != nil {
@@ -114,148 +107,13 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
-	registeredResources := []resources.Resource{
-		&resources.KubernetesUpgrade{
-			Name:   "upgrade",
-			Client: r.Client,
-		},
-		&resources.KubernetesServiceResource{
-			Client: r.Client,
-		},
-		&resources.KubeadmConfigResource{
-			Name:                   "kubeadmconfig",
-			Port:                   tenantControlPlane.Spec.NetworkProfile.Port,
-			KubernetesVersion:      tenantControlPlane.Spec.Kubernetes.Version,
-			PodCIDR:                tenantControlPlane.Spec.NetworkProfile.PodCIDR,
-			ServiceCIDR:            tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
-			Domain:                 tenantControlPlane.Spec.NetworkProfile.Domain,
-			ETCDs:                  getArrayFromString(r.Config.ETCDEndpoints),
-			ETCDCompactionInterval: r.Config.ETCDCompactionInterval,
-			Client:                 r.Client,
-			Scheme:                 r.Scheme,
-			Log:                    log,
-			TmpDirectory:           getTmpDirectory(r.Config.TmpBaseDirectory, *tenantControlPlane),
-		},
-		&resources.CACertificate{
-			Name:         "ca",
-			Client:       r.Client,
-			Log:          log,
-			TmpDirectory: getTmpDirectory(r.Config.TmpBaseDirectory, *tenantControlPlane),
-		},
-		&resources.FrontProxyCACertificate{
-			Name:         "front-proxy-ca-certificate",
-			Client:       r.Client,
-			Log:          log,
-			TmpDirectory: getTmpDirectory(r.Config.TmpBaseDirectory, *tenantControlPlane),
-		},
-		&resources.SACertificate{
-			Name:         "sa-certificate",
-			Client:       r.Client,
-			Log:          log,
-			TmpDirectory: getTmpDirectory(r.Config.TmpBaseDirectory, *tenantControlPlane),
-		},
-		&resources.APIServerCertificate{
-			Name:         "api-server-certificate",
-			Client:       r.Client,
-			Log:          log,
-			TmpDirectory: getTmpDirectory(r.Config.TmpBaseDirectory, *tenantControlPlane),
-		},
-		&resources.APIServerKubeletClientCertificate{
-			Name:         "api-server-kubelet-client-certificate",
-			Client:       r.Client,
-			Log:          log,
-			TmpDirectory: getTmpDirectory(r.Config.TmpBaseDirectory, *tenantControlPlane),
-		},
-		&resources.FrontProxyClientCertificate{
-			Name:         "front-proxy-client-certificate",
-			Client:       r.Client,
-			Log:          log,
-			TmpDirectory: getTmpDirectory(r.Config.TmpBaseDirectory, *tenantControlPlane),
-		},
-		&resources.KubeconfigResource{
-			Name:               "admin-kubeconfig",
-			Client:             r.Client,
-			Scheme:             r.Scheme,
-			Log:                log,
-			KubeConfigFileName: resources.AdminKubeConfigFileName,
-			TmpDirectory:       getTmpDirectory(r.Config.TmpBaseDirectory, *tenantControlPlane),
-		},
-		&resources.KubeconfigResource{
-			Name:               "controller-manager-kubeconfig",
-			Client:             r.Client,
-			Scheme:             r.Scheme,
-			Log:                log,
-			KubeConfigFileName: resources.ControllerManagerKubeConfigFileName,
-			TmpDirectory:       getTmpDirectory(r.Config.TmpBaseDirectory, *tenantControlPlane),
-		},
-		&resources.KubeconfigResource{
-			Name:               "scheduler-kubeconfig",
-			Client:             r.Client,
-			Scheme:             r.Scheme,
-			Log:                log,
-			KubeConfigFileName: resources.SchedulerKubeConfigFileName,
-			TmpDirectory:       getTmpDirectory(r.Config.TmpBaseDirectory, *tenantControlPlane),
-		},
-		&resources.ETCDCACertificatesResource{
-			Name:                  "etcd-ca-certificates",
-			Client:                r.Client,
-			Log:                   log,
-			ETCDCASecretName:      r.Config.ETCDCASecretName,
-			ETCDCASecretNamespace: r.Config.ETCDCASecretNamespace,
-		},
-		&resources.ETCDCertificatesResource{
-			Name:   "etcd-certificates",
-			Client: r.Client,
-			Log:    log,
-		},
-		&resources.ETCDSetupResource{
-			Name:                  "etcd-setup",
-			Client:                r.Client,
-			Scheme:                r.Scheme,
-			Log:                   log,
-			ETCDClientCertsSecret: getNamespacedName(r.Config.ETCDClientSecretNamespace, r.Config.ETCDClientSecretName),
-			ETCDCACertsSecret:     getNamespacedName(r.Config.ETCDCASecretNamespace, r.Config.ETCDCASecretName),
-			Endpoints:             getArrayFromString(r.Config.ETCDEndpoints),
-		},
-		&resources.KubernetesDeploymentResource{
-			Client:                 r.Client,
-			ETCDEndpoints:          getArrayFromString(r.Config.ETCDEndpoints),
-			ETCDCompactionInterval: r.Config.ETCDCompactionInterval,
-		},
-		&resources.KubernetesIngressResource{
-			Client: r.Client,
-		},
-		&resources.KubeadmPhase{
-			Name:   "upload-config-kubeadm",
-			Client: r.Client,
-			Log:    log,
-			Phase:  resources.PhaseUploadConfigKubeadm,
-		},
-		&resources.KubeadmPhase{
-			Name:   "upload-config-kubelet",
-			Client: r.Client,
-			Log:    log,
-			Phase:  resources.PhaseUploadConfigKubelet,
-		},
-		&resources.KubeadmPhase{
-			Name:   "bootstrap-token",
-			Client: r.Client,
-			Log:    log,
-			Phase:  resources.PhaseBootstrapToken,
-		},
-		&resources.KubeadmAddonResource{
-			Name:         "coredns",
-			Client:       r.Client,
-			Log:          log,
-			KubeadmAddon: resources.AddonCoreDNS,
-		},
-		&resources.KubeadmAddonResource{
-			Name:         "kubeproxy",
-			Client:       r.Client,
-			Log:          log,
-			KubeadmAddon: resources.AddonKubeProxy,
-		},
+	groupResourceBuilderConfiguration := GroupResourceBuilderConfiguration{
+		client:              r.Client,
+		log:                 log,
+		tcpReconcilerConfig: r.Config,
+		tenantControlPlane:  *tenantControlPlane,
 	}
+	registeredResources := GetResources(groupResourceBuilderConfiguration)
 
 	for _, resource := range registeredResources {
 		result, err := resources.Handle(ctx, resource, tenantControlPlane)
@@ -281,6 +139,8 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 		return ctrl.Result{}, nil
 	}
+
+	log.Info(fmt.Sprintf("%s has been reconciled", tenantControlPlane.GetName()))
 
 	return ctrl.Result{}, nil
 }
@@ -329,21 +189,6 @@ func (r *TenantControlPlaneReconciler) updateStatus(ctx context.Context, namespa
 	}
 
 	return nil
-}
-
-func getArrayFromString(s string) []string {
-	var a []string
-	a = append(a, strings.Split(s, separator)...)
-
-	return a
-}
-
-func getNamespacedName(namespace string, name string) k8stypes.NamespacedName {
-	return k8stypes.NamespacedName{Namespace: namespace, Name: name}
-}
-
-func getTmpDirectory(base string, tenantControlPlane kamajiv1alpha1.TenantControlPlane) string {
-	return fmt.Sprintf("%s/%s/%s", base, tenantControlPlane.GetName(), uuid.New())
 }
 
 func hasFinalizer(tenantControlPlane kamajiv1alpha1.TenantControlPlane) bool {

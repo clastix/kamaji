@@ -7,10 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -23,8 +21,6 @@ import (
 type KubeadmConfigResource struct {
 	resource               *corev1.ConfigMap
 	Client                 client.Client
-	Scheme                 *runtime.Scheme
-	Log                    logr.Logger
 	Name                   string
 	Port                   int32
 	Domain                 string
@@ -37,7 +33,7 @@ type KubeadmConfigResource struct {
 }
 
 func (r *KubeadmConfigResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	address, err := tenantControlPlane.GetAddress(ctx, r.Client)
+	address, err := getAddress(ctx, r.Client, *tenantControlPlane)
 	if err != nil {
 		return true
 	}
@@ -71,7 +67,7 @@ func (r *KubeadmConfigResource) getPrefixedName(tenantControlPlane *kamajiv1alph
 }
 
 func (r *KubeadmConfigResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	address, err := tenantControlPlane.GetAddress(ctx, r.Client)
+	address, err := getAddress(ctx, r.Client, *tenantControlPlane)
 	if err != nil {
 		return controllerutil.OperationResultNone, err
 	}
@@ -84,7 +80,7 @@ func (r *KubeadmConfigResource) GetName() string {
 }
 
 func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	address, _ := tenantControlPlane.GetAddress(ctx, r.Client)
+	address, _ := getAddress(ctx, r.Client, *tenantControlPlane)
 
 	tenantControlPlane.Status.KubeadmConfig.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.KubeadmConfig.ResourceVersion = r.resource.ObjectMeta.ResourceVersion
@@ -139,4 +135,8 @@ func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.Tenant
 
 		return nil
 	}
+}
+
+func getAddress(ctx context.Context, client client.Client, tenantControlPlane kamajiv1alpha1.TenantControlPlane) (string, error) {
+	return tenantControlPlane.GetControlPlaneAddress(ctx, client)
 }

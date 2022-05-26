@@ -93,17 +93,32 @@ type ServiceSpec struct {
 }
 
 // AddonSpec defines the spec for every addon.
-type AddonSpec struct {
-	// +kubebuilder:default=true
-	Enabled *bool `json:"enabled,omitempty"`
+type AddonSpec struct{}
+
+// KonnectivitySpec defines the spec for Konnectivity.
+type KonnectivitySpec struct {
+	// Port of Konnectivity proxy server.
+	// +kubebuilder:default=8132
+	ProxyPort int32 `json:"proxyPort"`
+	// Host of Konnectivity proxy server.
+	ProxyHost                string `json:"proxyHost,omitempty"`
+	AllowAddressAsExternalIP bool   `json:"allowAddressAsExternalIP,omitempty"`
+	// Version for Konnectivity server and agent.
+	// +kubebuilder:default=v0.0.16
+	Version string `json:"version,omitempty"`
+	// ServerImage defines the container image for Konnectivity's server.
+	// +kubebuilder:default=us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-server
+	ServerImage string `json:"serverImage,omitempty"`
+	// AgentImage defines the container image for Konnectivity's agent.
+	// +kubebuilder:default=us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-agent
+	AgentImage string `json:"agentImage,omitempty"`
 }
 
 // AddonsSpec defines the enabled addons and their features.
 type AddonsSpec struct {
-	// +kubebuilder:default={enabled: true}
-	CoreDNS AddonSpec `json:"coreDNS,omitempty"`
-	// +kubebuilder:default={enabled: true}
-	KubeProxy AddonSpec `json:"kubeProxy,omitempty"`
+	CoreDNS      *AddonSpec        `json:"coreDNS,omitempty"`
+	Konnectivity *KonnectivitySpec `json:"konnectivity,omitempty"`
+	KubeProxy    *AddonSpec        `json:"kubeProxy,omitempty"`
 }
 
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
@@ -117,7 +132,6 @@ type TenantControlPlaneSpec struct {
 	NetworkProfile NetworkProfileSpec `json:"networkProfile,omitempty"`
 
 	// Addons contain which addons are enabled
-	// +kubebuilder:default={coreDNS: {enabled: true}, kubeProxy: {enabled: true}}
 	Addons AddonsSpec `json:"addons,omitempty"`
 }
 

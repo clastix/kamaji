@@ -4,7 +4,11 @@
 package utilities
 
 import (
+	"bytes"
 	"fmt"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/constants"
@@ -41,4 +45,14 @@ func MergeMaps(maps ...map[string]string) map[string]string {
 
 func AddTenantPrefix(name string, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
 	return fmt.Sprintf("%s%s%s", tenantControlPlane.GetName(), separator, name)
+}
+
+// EncondeToYaml returns the given object in yaml format and the error.
+func EncondeToYaml(o runtime.Object) ([]byte, error) {
+	scheme := runtime.NewScheme()
+	encoder := json.NewYAMLSerializer(json.SimpleMetaFactory{}, scheme, scheme)
+	buf := bytes.NewBuffer([]byte{})
+	err := encoder.Encode(o, buf)
+
+	return buf.Bytes(), err
 }

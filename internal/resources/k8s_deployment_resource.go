@@ -49,7 +49,7 @@ func (r *KubernetesDeploymentResource) ShouldCleanup(plane *kamajiv1alpha1.Tenan
 }
 
 func (r *KubernetesDeploymentResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
-	return false, nil
+	return tenantControlPlane.Spec.Addons.Konnectivity != nil, nil
 }
 
 func (r *KubernetesDeploymentResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
@@ -102,7 +102,7 @@ func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenan
 		etcdEndpoints[i] = fmt.Sprintf("https://%s", v)
 	}
 
-	address, err := tenantControlPlane.GetAddress(ctx, r.Client)
+	address, err := tenantControlPlane.GetControlPlaneAddress(ctx, r.Client)
 	if err != nil {
 		return controllerutil.OperationResultNone, errors.Wrap(err, "cannot create TenantControlPlane Deployment")
 	}
@@ -602,4 +602,164 @@ func (r *KubernetesDeploymentResource) isProvisioning(tenantControlPlane *kamaji
 
 func (r *KubernetesDeploymentResource) isNotReady() bool {
 	return r.resource.Status.ReadyReplicas == 0
+}
+
+func (r *KubernetesDeploymentResource) reconcileKonnectivity(podSpec *corev1.PodSpec, tenantControlPlane kamajiv1alpha1.TenantControlPlane) error {
+	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
+		return nil
+	}
+
+	return r.addKonnectivity(podSpec, tenantControlPlane)
+}
+
+func (r *KubernetesDeploymentResource) addKonnectivity(podSpec *corev1.PodSpec, tenantControlPlane kamajiv1alpha1.TenantControlPlane) error {
+	flags := r.buildKonnectivityFlags()
+	podSpec.Containers[0].Command = append(podSpec.Containers[0].Command, flags...)
+
+	volumes := r.buildKonnectivityVolumes(tenantControlPlane)
+	podSpec.Volumes = append(podSpec.Volumes, volumes...)
+
+	volumeMounts := r.buildKonnectivityVolumeMounts()
+	podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, volumeMounts...)
+
+	container := r.buildKonnectivityServerContainer(tenantControlPlane)
+	podSpec.Containers = append(podSpec.Containers, container)
+
+	return nil
+}
+
+func (r *KubernetesDeploymentResource) buildKonnectivityFlags() []string {
+	return []string{
+		fmt.Sprintf("--egress-selector-config-file=%s", konnectivityEgressSelectorConfigurationPath),
+	}
+}
+
+func (r *KubernetesDeploymentResource) buildKonnectivityVolumes(tenantControlPlane kamajiv1alpha1.TenantControlPlane) []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: konnectivityUDSName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					Medium: "Memory",
+				},
+			},
+		},
+		{
+			Name: "egress-selector-configuration",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: tenantControlPlane.Status.Addons.Konnectivity.EgressSelectorConfiguration,
+					},
+					DefaultMode: pointer.Int32Ptr(420),
+				},
+			},
+		},
+		{
+			Name: "konnectivity-server-kubeconfig",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.SecretName,
+					DefaultMode: pointer.Int32Ptr(420),
+				},
+			},
+		},
+	}
+}
+
+func (r *KubernetesDeploymentResource) buildKonnectivityVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      konnectivityUDSName,
+			ReadOnly:  false,
+			MountPath: konnectivityServerPath,
+		},
+		{
+			Name:      "egress-selector-configuration",
+			ReadOnly:  true,
+			MountPath: "/etc/kubernetes/konnectivity/configurations",
+		},
+	}
+}
+
+func (r *KubernetesDeploymentResource) buildKonnectivityServerContainer(tenantControlPlane kamajiv1alpha1.TenantControlPlane) corev1.Container {
+	return corev1.Container{
+		Name:    konnectivityServerName,
+		Image:   fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.ServerImage, tenantControlPlane.Spec.Addons.Konnectivity.Version),
+		Command: []string{"/proxy-server"},
+		Args: []string{
+			"-v=8",
+			"--logtostderr=true",
+			fmt.Sprintf("--uds-name=%s/konnectivity-server.socket", konnectivityServerPath),
+			"--cluster-cert=/etc/kubernetes/pki/apiserver.crt",
+			"--cluster-key=/etc/kubernetes/pki/apiserver.key",
+			"--mode=grpc",
+			"--server-port=0",
+			fmt.Sprintf("--agent-port=%d", tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort),
+			"--admin-port=8133",
+			"--health-port=8134",
+			"--agent-namespace=kube-system",
+			fmt.Sprintf("--agent-service-account=%s", konnectivity.AgentName),
+			"--kubeconfig=/etc/kubernetes/konnectivity-server.conf",
+			fmt.Sprintf("--authentication-audience=%s", konnectivity.CertCommonName),
+			fmt.Sprintf("--server-count=%d", tenantControlPlane.Spec.ControlPlane.Deployment.Replicas),
+		},
+		LivenessProbe: &corev1.Probe{
+			InitialDelaySeconds: 30,
+			TimeoutSeconds:      60,
+			PeriodSeconds:       10,
+			SuccessThreshold:    1,
+			FailureThreshold:    3,
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:   "/healthz",
+					Port:   intstr.FromInt(8134),
+					Scheme: corev1.URISchemeHTTP,
+				},
+			},
+		},
+		Resources: corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU: quantity.MustParse("100m"),
+			},
+		},
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "agentport",
+				ContainerPort: tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort,
+				Protocol:      corev1.ProtocolTCP,
+			},
+			{
+				Name:          "adminport",
+				ContainerPort: 8133,
+				Protocol:      corev1.ProtocolTCP,
+			},
+			{
+				Name:          "healthport",
+				ContainerPort: 8134,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      "etc-kubernetes-pki",
+				MountPath: "/etc/kubernetes/pki",
+				ReadOnly:  true,
+			},
+			{
+				Name:      "konnectivity-server-kubeconfig",
+				MountPath: "/etc/kubernetes/konnectivity-server.conf",
+				SubPath:   "konnectivity-server.conf",
+				ReadOnly:  true,
+			},
+			{
+				Name:      "konnectivity-uds",
+				MountPath: konnectivityServerPath,
+				ReadOnly:  false,
+			},
+		},
+		TerminationMessagePath:   "/dev/termination-log",
+		TerminationMessagePolicy: "File",
+		ImagePullPolicy:          corev1.PullIfNotPresent,
+	}
 }
