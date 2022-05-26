@@ -25,7 +25,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/resources/konnectivity"
 	"github.com/clastix/kamaji/internal/utilities"
+)
+
+const (
+	konnectivityEgressSelectorConfigurationPath = "/etc/kubernetes/konnectivity/configurations/egress-selector-configuration.yaml"
+	konnectivityServerName                      = "konnectivity-server"
+	konnectivityServerPath                      = "/run/konnectivity"
+	konnectivityUDSName                         = "konnectivity-uds"
 )
 
 type KubernetesDeploymentResource struct {
@@ -49,7 +57,7 @@ func (r *KubernetesDeploymentResource) ShouldCleanup(plane *kamajiv1alpha1.Tenan
 }
 
 func (r *KubernetesDeploymentResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
-	return tenantControlPlane.Spec.Addons.Konnectivity != nil, nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil, nil
 }
 
 func (r *KubernetesDeploymentResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
@@ -548,6 +556,10 @@ func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenan
 			},
 		}
 
+		if err := r.reconcileKonnectivity(&r.resource.Spec.Template.Spec, *tenantControlPlane); err != nil {
+			return err
+		}
+
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	})
 }
@@ -573,6 +585,7 @@ func (r *KubernetesDeploymentResource) UpdateTenantControlPlaneStatus(ctx contex
 		DeploymentStatus: r.resource.Status,
 		Name:             r.resource.GetName(),
 		Namespace:        r.resource.GetNamespace(),
+		LastUpdate:       metav1.Now(),
 	}
 
 	return nil
@@ -605,7 +618,7 @@ func (r *KubernetesDeploymentResource) isNotReady() bool {
 }
 
 func (r *KubernetesDeploymentResource) reconcileKonnectivity(podSpec *corev1.PodSpec, tenantControlPlane kamajiv1alpha1.TenantControlPlane) error {
-	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
+	if tenantControlPlane.Spec.Addons.Konnectivity == nil {
 		return nil
 	}
 

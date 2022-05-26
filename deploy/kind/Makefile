@@ -37,3 +37,6 @@ kamaji-kind-worker-push: kamaji-kind-worker-build
 
 kamaji-kind-worker-join:
 	$(kind_path)/join-node.bash
+
+kamaji-kind-worker-join-through-konnectivity:
+	$(kind_path)/join-node-konnectivity.bash

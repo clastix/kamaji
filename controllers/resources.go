@@ -1,3 +1,5 @@
+// Copyright 2022 Clastix Labs
+// SPDX-License-Identifier: Apache-2.0
 package controllers
 
 import (
@@ -41,7 +43,7 @@ func GetResources(config GroupResourceBuilderConfiguration) []resources.Resource
 
 // GetDeleteableResources returns a list of resources that have to be deleted when tenant control planes are deleted
 // Currently there is only a default approach
-// TODO: the idea of this function is to become a factory to return the group of deleteable resources according to the given configuration
+// TODO: the idea of this function is to become a factory to return the group of deleteable resources according to the given configuration.
 func GetDeleteableResources(config GroupDeleteableResourceBuilderConfiguration) []resources.DeleteableResource {
 	return getDefaultDeleteableResources(config)
 }
@@ -52,11 +54,12 @@ func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.R
 	resources = append(resources, getKubernetesCertificatesResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubeconfigResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubernetesStorageResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
-	resources = append(resources, getKonnectivityResources(config.client, config.tenantControlPlane)...)
+	resources = append(resources, getInternalKonnectivityResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubernetesIngressResources(config.client, config.tenantControlPlane)...)
 	resources = append(resources, getKubeadmPhaseResources(config.client, config.log, config.tenantControlPlane)...)
 	resources = append(resources, getKubeadmAddonResources(config.client, config.log, config.tenantControlPlane)...)
+	resources = append(resources, getExternalKonnectivityResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 
 	return resources
 }
@@ -258,11 +261,41 @@ func getKubeadmAddonResources(c client.Client, log logr.Logger, tenantControlPla
 	}
 }
 
-func getKonnectivityResources(c client.Client, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
+func getExternalKonnectivityResources(c client.Client, log logr.Logger, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
 	return []resources.Resource{
-		&konnectivity.EgressSelectorConfiguration{
+		&konnectivity.ServiceAccountResource{
+			Client: c,
+			Name:   "konnectivity-sa",
+		},
+		&konnectivity.ClusterRoleBindingResource{
+			Client: c,
+			Name:   "konnectivity-clusterrolebinding",
+		},
+		&konnectivity.ServiceResource{
+			Client: c,
+			Name:   "konnectivity-service",
+		},
+		&konnectivity.Agent{
+			Client: c,
+			Name:   "konnectivity-agent",
+		},
+	}
+}
+
+func getInternalKonnectivityResources(c client.Client, log logr.Logger, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
+	return []resources.Resource{
+		&konnectivity.EgressSelectorConfigurationResource{
 			Client: c,
 			Name:   "konnectivity-egress-selector-configuration",
+		},
+		&konnectivity.CertificateResource{
+			Client: c,
+			Log:    log,
+			Name:   "konnectivity-certificate",
+		},
+		&konnectivity.KubeconfigResource{
+			Client: c,
+			Name:   "konnectivity-kubeconfig",
 		},
 	}
 }

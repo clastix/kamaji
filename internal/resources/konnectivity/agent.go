@@ -34,7 +34,7 @@ func (r *Agent) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *k
 }
 
 func (r *Agent) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity != nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil
 }
 
 func (r *Agent) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {

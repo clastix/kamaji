@@ -10,7 +10,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -28,6 +27,18 @@ type ServiceResource struct {
 }
 
 func (r *ServiceResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+	if tenantControlPlane.Status.Addons.Konnectivity.Service.Name != r.resource.GetName() {
+		return true
+	}
+
+	if tenantControlPlane.Status.Addons.Konnectivity.Service.Namespace != r.resource.GetNamespace() {
+		return true
+	}
+
+	if tenantControlPlane.Status.Addons.Konnectivity.Service.Port != r.resource.Spec.Ports[0].Port {
+		return true
+	}
+
 	if len(r.resource.Status.Conditions) != len(tenantControlPlane.Status.Addons.Konnectivity.Service.Conditions) {
 		return true
 	}
@@ -60,7 +71,7 @@ func (r *ServiceResource) ShouldStatusBeUpdated(ctx context.Context, tenantContr
 }
 
 func (r *ServiceResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity != nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil
 }
 
 func (r *ServiceResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -86,7 +97,7 @@ func (r *ServiceResource) UpdateTenantControlPlaneStatus(ctx context.Context, te
 		return nil
 	}
 
-	tenantControlPlane.Status.Addons.Konnectivity.Service = corev1.ServiceStatus{}
+	tenantControlPlane.Status.Addons.Konnectivity.Service = kamajiv1alpha1.KubernetesServiceStatus{}
 	tenantControlPlane.Status.Addons.Konnectivity.Enabled = false
 
 	return nil
@@ -108,8 +119,7 @@ func (r *ServiceResource) CreateOrUpdate(ctx context.Context, tenantControlPlane
 }
 
 func (r *ServiceResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) func() error {
-	namespacedName := k8stypes.NamespacedName{Namespace: r.resource.GetNamespace(), Name: r.resource.GetName()}
-	address, _ := tenantControlPlane.GetAddress(ctx, r.Client, namespacedName, tenantControlPlane.Spec.Addons.Konnectivity.ProxyHost)
+	address, _ := tenantControlPlane.GetKonnectivityServerAddress(ctx, r.Client)
 	if address == "" {
 		address = tenantControlPlane.Spec.NetworkProfile.Address
 	}
@@ -140,10 +150,10 @@ func (r *ServiceResource) mutate(ctx context.Context, tenantControlPlane *kamaji
 		case utilities.IsValidIP(address):
 			isIP = true
 		case !utilities.IsValidHostname(address):
-			return fmt.Errorf("%s is not a valid address for Konnectivity proxy server.", address)
+			return fmt.Errorf("%s is not a valid address for konnectivity proxy server", address)
 		}
 
-		switch tenantControlPlane.Spec.ControlPlane.Service.ServiceType {
+		switch tenantControlPlane.Spec.Addons.Konnectivity.ServiceType {
 		case kamajiv1alpha1.ServiceTypeLoadBalancer:
 			r.resource.Spec.Type = corev1.ServiceTypeLoadBalancer
 

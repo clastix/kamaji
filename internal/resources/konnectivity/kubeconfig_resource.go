@@ -32,7 +32,7 @@ func (r *KubeconfigResource) ShouldStatusBeUpdated(ctx context.Context, tenantCo
 }
 
 func (r *KubeconfigResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity != nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil
 }
 
 func (r *KubeconfigResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {

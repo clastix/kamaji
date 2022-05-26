@@ -6,6 +6,8 @@ package utilities
 import (
 	"bytes"
 	"fmt"
+	"net"
+	"regexp"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -55,4 +57,25 @@ func EncondeToYaml(o runtime.Object) ([]byte, error) {
 	err := encoder.Encode(o, buf)
 
 	return buf.Bytes(), err
+}
+
+// IsValidIP checks if the given argument is an IP.
+func IsValidIP(ip string) bool {
+	return net.ParseIP(ip) != nil
+}
+
+// IsValidHostname checks if the given argument is a valid hostname.
+func IsValidHostname(hostname string) bool {
+	pattern := "^([a-z0-9]|[a-z0-9][a-z0-9-]{0,61}[a-z0-9])(\\.([a-z0-9]|[a-z0-9][a-z0-9-]{0,61}[a-z0-9]))*$"
+
+	return validateRegex(pattern, hostname)
+}
+
+func validateRegex(pattern string, value string) bool {
+	isFound, err := regexp.MatchString(pattern, value)
+	if err != nil {
+		return false
+	}
+
+	return isFound
 }

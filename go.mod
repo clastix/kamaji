@@ -16,6 +16,7 @@ require (
 	google.golang.org/grpc v1.43.0
 	k8s.io/api v0.23.5
 	k8s.io/apimachinery v0.23.5
+	k8s.io/apiserver v0.23.5
 	k8s.io/client-go v0.23.5
 	k8s.io/cluster-bootstrap v0.0.0
 	k8s.io/component-base v0.23.5
