@@ -72,6 +72,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 						"ResourceQuota",
 					},
 				},
+				Addons: kamajiv1alpha1.AddonsSpec{},
 			},
 		}
 		Expect(k8sClient.Create(ctx, &tcp)).NotTo(HaveOccurred())

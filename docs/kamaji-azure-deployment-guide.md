@@ -135,10 +135,8 @@ spec:
     dnsServiceIPs:
     - ${TENANT_DNS_SERVICE}
   addons:
-    coreDNS:
-      enabled: true
-    kubeProxy:
-      enabled: true
+    coreDNS: {}
+    kubeProxy: {}
 ---
 apiVersion: v1
 kind: Service

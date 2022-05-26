@@ -55,8 +55,8 @@ Kubernetes: `>=1.18`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| addons.coreDNS.enabled | boolean | `true` | Enabling CoreDNS installation. If the value is not specified, the installation is enabled |
-| addons.kubeProxy.enabled | boolean | `true` | Enabling KubeProxy installation. If the value is not specified, the installation is enabled |
+| addons.coreDNS | object |  | Enabling CoreDNS installation. |
+| addons.kubeProxy | object |  | Enabling KubeProxy installation |
 | affinity | object | `{}` | Kubernetes affinity rules to apply to Kamaji controller pods |
 | configPath | string | `"./kamaji.yaml"` | Configuration file path alternative. (default "./kamaji.yaml") |
 | etcd.caSecret.name | string | `"etcd-certs"` | Name of the secret which contains CA's certificate and private key. (default: "etcd-certs") |

@@ -1,0 +1,40 @@
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: tenant-00
+  namespace: tenants
+spec:
+  controlPlane:
+    deployment:
+      replicas: 2
+      additionalMetadata:
+        annotations:
+          environment.clastix.io: tenant-00
+        labels:
+          tenant.clastix.io: tenant-00
+          kind.clastix.io: deployment
+    service:
+      additionalMetadata:
+        annotations:
+          environment.clastix.io: tenant-00
+        labels:
+          tenant.clastix.io: tenant-00
+          kind.clastix.io: service
+      serviceType: LoadBalancer
+    ingress:
+      enabled: false
+  kubernetes:
+    version: v1.23.1
+    kubelet:
+      cgroupfs: systemd
+    admissionControllers:
+      - ResourceQuota
+      - LimitRanger
+  networkProfile:
+    address: 192.168.32.150
+    port: 6443
+    domain: clastix.labs
+    serviceCidr: 10.96.0.0/16
+    podCidr: 10.36.0.0/16
+    dnsServiceIPs:
+    - 10.96.0.10

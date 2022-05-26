@@ -14,7 +14,7 @@ import (
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
 )
 
-func (in *TenantControlPlane) GetAddress(ctx context.Context, client client.Client) (string, error) {
+func (in *TenantControlPlane) GetControlPlaneAddress(ctx context.Context, client client.Client) (string, error) {
 	var loadBalancerStatus corev1.LoadBalancerStatus
 
 	svc := &corev1.Service{}

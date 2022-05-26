@@ -77,6 +77,15 @@ spec:
                         default: true
                         type: boolean
                     type: object
+                  konnectivity:
+                    default:
+                      enabled: true
+                    description: AddonSpec defines the spec for every addon.
+                    properties:
+                      enabled:
+                        default: true
+                        type: boolean
+                    type: object
                   kubeProxy:
                     default:
                       enabled: true
@@ -299,6 +308,12 @@ spec:
                         type: string
                     required:
                     - enabled
+                    type: object
+                  konnectivity:
+                    description: KonnectivityStatus defines the status of Konnectivity as Addon
+                    properties:
+                      egressSelectorConfigurationStatus:
+                        type: boolean
                     type: object
                   kubeProxy:
                     description: AddonStatus defines the observed state of an Addon.

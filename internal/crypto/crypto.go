@@ -13,6 +13,24 @@ import (
 	"time"
 )
 
+const (
+	certBitSize = 2048
+)
+
+func GetCertificateAndKeyPair(template *x509.Certificate, caCert []byte, caPrivKey []byte) (*bytes.Buffer, *bytes.Buffer, error) {
+	caCertBytes, err := GetCertificate(caCert)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	caPrivKeyBytes, err := GetPrivateKey(caPrivKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return GenerateCertificateKeyPairBytes(template, certBitSize, caCertBytes, caPrivKeyBytes)
+}
+
 func GetCertificate(cert []byte) (*x509.Certificate, error) {
 	pemContent, _ := pem.Decode(cert)
 	if pemContent == nil {

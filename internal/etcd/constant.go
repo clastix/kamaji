@@ -6,5 +6,4 @@ package etcd
 const (
 	certExpirationDelayYears = 10
 	certOrganization         = "system:masters"
-	certBitSize              = 2048
 )

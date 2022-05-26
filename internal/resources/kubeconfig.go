@@ -10,7 +10,6 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -32,7 +31,6 @@ const (
 type KubeconfigResource struct {
 	resource           *corev1.Secret
 	Client             client.Client
-	Scheme             *runtime.Scheme
 	Log                logr.Logger
 	Name               string
 	KubeConfigFileName string
