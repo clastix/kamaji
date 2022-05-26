@@ -82,7 +82,7 @@ Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji
 
 - [Kubernetes installed with `kubeadm`](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/).
 - [Azure AKS managed service](./kamaji-on-azure.md).
-- [KinD for local development](./kind/README.md).
+- [KinD for local development](../deploy/kind/README.md ).
 
 The admin cluster should provide:
 
