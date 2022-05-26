@@ -72,6 +72,7 @@ help: ## Display this help.
 
 ##@ Binary
 
+.PHONY: helm
 HELM = $(shell pwd)/bin/helm
 helm: ## Download helm locally if necessary.
 	$(call go-install-tool,$(HELM),helm.sh/helm/v3/cmd/helm@v3.9.0)
@@ -111,7 +112,7 @@ build: generate fmt vet ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
-docker-build: test ## Build docker image with the manager.
+docker-build: ## Build docker image with the manager.
 	docker build -t ${IMG} .
 
 docker-push: ## Push docker image with the manager.
@@ -122,7 +123,7 @@ docker-push: ## Push docker image with the manager.
 dev: generate manifests uninstall install rbac ## Full installation for development purposes
 	go fmt ./...
 
-load: docker-build
+load: docker-build kind
 	$(KIND) load docker-image --name kamaji ${IMG}
 
 rbac: manifests kustomize ## Install RBAC into the K8s cluster specified in ~/.kube/config.
@@ -227,6 +228,6 @@ env:
 ##@ e2e
 
 .PHONY: e2e
-e2e: env load ## Create a KinD cluster, install Kamaji on it and run the test suite.
+e2e: env load helm ginkgo ## Create a KinD cluster, install Kamaji on it and run the test suite.
 	$(HELM) upgrade --debug --install kamaji ./helm/kamaji --create-namespace --namespace kamaji-system --set "image.pullPolicy=Never"
-	$(GINKGO) -v ./controllers
+	$(GINKGO) -v ./e2e
