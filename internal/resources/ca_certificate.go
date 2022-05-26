@@ -29,7 +29,8 @@ type CACertificate struct {
 }
 
 func (r *CACertificate) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Certificates.CA.SecretName != r.resource.GetName()
+	return tenantControlPlane.Status.Certificates.CA.SecretName != r.resource.GetName() ||
+		tenantControlPlane.Status.Certificates.CA.ResourceVersion != r.resource.ResourceVersion
 }
 
 func (r *CACertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -74,6 +75,7 @@ func (r *CACertificate) GetName() string {
 func (r *CACertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.CA.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.CA.SecretName = r.resource.GetName()
+	tenantControlPlane.Status.Certificates.CA.ResourceVersion = r.resource.ResourceVersion
 
 	return nil
 }

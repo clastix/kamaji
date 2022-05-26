@@ -98,13 +98,14 @@ type AddonSpec struct{}
 // KonnectivitySpec defines the spec for Konnectivity.
 type KonnectivitySpec struct {
 	// Port of Konnectivity proxy server.
-	// +kubebuilder:default=8132
 	ProxyPort int32 `json:"proxyPort"`
 	// Host of Konnectivity proxy server.
 	ProxyHost                string `json:"proxyHost,omitempty"`
 	AllowAddressAsExternalIP bool   `json:"allowAddressAsExternalIP,omitempty"`
+	// ServiceType allows specifying how to expose the Konnectivity Proxy Server.
+	ServiceType ServiceType `json:"serviceType"`
 	// Version for Konnectivity server and agent.
-	// +kubebuilder:default=v0.0.16
+	// +kubebuilder:default=v0.0.31
 	Version string `json:"version,omitempty"`
 	// ServerImage defines the container image for Konnectivity's server.
 	// +kubebuilder:default=us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-server
@@ -155,8 +156,9 @@ type ETCDCertificatesStatus struct {
 
 // CertificatePrivateKeyPair defines the status.
 type CertificatePrivateKeyPairStatus struct {
-	SecretName string      `json:"secretName,omitempty"`
-	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
+	SecretName      string      `json:"secretName,omitempty"`
+	LastUpdate      metav1.Time `json:"lastUpdate,omitempty"`
+	ResourceVersion string      `json:"resourceVersion,omitempty"`
 }
 
 // CertificatePrivateKeyPair defines the status.
@@ -228,6 +230,27 @@ type KubeadmPhasesStatus struct {
 	BootstrapToken      KubeadmPhaseStatus `json:"bootstrapToken"`
 }
 
+type ExternalKubernetesObjectStatus struct {
+	Name      string `json:"name,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
+	// Resource version of k8s object
+	RV string `json:"resourceVersion,omitempty"`
+	// Last time when k8s object was updated
+	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
+}
+
+// KonnectivityStatus defines the status of Konnectivity as Addon.
+type KonnectivityStatus struct {
+	Enabled                     bool                            `json:"enabled"`
+	EgressSelectorConfiguration string                          `json:"egressSelectorConfiguration,omitempty"`
+	Certificate                 CertificatePrivateKeyPairStatus `json:"certificate,omitempty"`
+	Kubeconfig                  KubeconfigStatus                `json:"kubeconfig,omitempty"`
+	ServiceAccount              ExternalKubernetesObjectStatus  `json:"sa,omitempty"`
+	ClusterRoleBinding          ExternalKubernetesObjectStatus  `json:"clusterrolebinding,omitempty"`
+	Agent                       ExternalKubernetesObjectStatus  `json:"agent,omitempty"`
+	Service                     KubernetesServiceStatus         `json:"service,omitempty"`
+}
+
 // AddonStatus defines the observed state of an Addon.
 type AddonStatus struct {
 	Enabled                      bool        `json:"enabled"`
@@ -247,6 +270,8 @@ func (d *AddonStatus) SetKubeadmConfigResourceVersion(rv string) {
 type AddonsStatus struct {
 	CoreDNS   AddonStatus `json:"coreDNS,omitempty"`
 	KubeProxy AddonStatus `json:"kubeProxy,omitempty"`
+
+	Konnectivity KonnectivityStatus `json:"konnectivity,omitempty"`
 }
 
 // TenantControlPlaneStatus defines the observed state of TenantControlPlane.
@@ -305,6 +330,8 @@ type KubernetesDeploymentStatus struct {
 	Name string `json:"name"`
 	// The namespace which the Deployment for the given cluster is deployed.
 	Namespace string `json:"namespace"`
+	// Last time when deployment was updated
+	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 }
 
 // KubernetesServiceStatus defines the status for the Tenant Control Plane Service in the management cluster.

@@ -102,3 +102,16 @@ addons:
 addons:
     kubeProxy: {}
 ```
+
+### Konnectivity
+
+```yaml
+addons:
+    konnectivity:
+        proxyPort: 31132 # mandatory
+        proxyHost: "172.18.0.2"  
+        allowAddressAsExternalIP: false
+        serviceType: NodePort # mandatory
+        version: v0.0.31
+        serverImage: us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-server
+        agentImage: us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-agent

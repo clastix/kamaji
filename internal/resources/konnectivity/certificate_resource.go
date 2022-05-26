@@ -42,7 +42,7 @@ func (r *CertificateResource) ShouldStatusBeUpdated(ctx context.Context, tenantC
 }
 
 func (r *CertificateResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity != nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil
 }
 
 func (r *CertificateResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
