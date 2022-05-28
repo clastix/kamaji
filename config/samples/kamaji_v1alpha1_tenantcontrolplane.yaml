@@ -21,7 +21,7 @@ spec:
         labels:
           tenant.clastix.io: test
           kind.clastix.io: service
-      serviceType: ClusterIP
+      serviceType: LoadBalancer
     ingress:
       enabled: true
       hostname: kamaji.local

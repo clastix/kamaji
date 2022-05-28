@@ -21,6 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	kamajierrors "github.com/clastix/kamaji/internal/errors"
 	"github.com/clastix/kamaji/internal/resources"
 )
 
@@ -259,6 +260,12 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	for _, resource := range registeredResources {
 		result, err := resources.Handle(ctx, resource, tenantControlPlane)
 		if err != nil {
+			if kamajierrors.ShouldReconcileErrorBeIgnored(err) {
+				log.V(1).Info("sentinel error, enqueuing back request", "error", err.Error())
+
+				return ctrl.Result{Requeue: true}, nil
+			}
+
 			return ctrl.Result{}, err
 		}
 
