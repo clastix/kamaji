@@ -10,6 +10,10 @@ nodes:
     nodeRegistration:
       kubeletExtraArgs:
         node-labels: "ingress-ready=true"
+  ## required for Cluster API local development
+  extraMounts:
+    - hostPath: /var/run/docker.sock
+      containerPath: /var/run/docker.sock
   extraPortMappings:
     ## expose port 80 of the node to port 80 on the host
   - containerPort: 80
@@ -27,4 +31,3 @@ nodes:
   - containerPort: 6443
     hostPort: 8443
     protocol: TCP
-

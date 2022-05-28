@@ -5,12 +5,13 @@ package v1alpha1
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	kamajierrors "github.com/clastix/kamaji/internal/errors"
 )
 
 func (in *TenantControlPlane) GetAddress(ctx context.Context, client client.Client) (string, error) {
@@ -29,7 +30,7 @@ func (in *TenantControlPlane) GetAddress(ctx context.Context, client client.Clie
 	case svc.Spec.Type == corev1.ServiceTypeLoadBalancer:
 		loadBalancerStatus = svc.Status.LoadBalancer
 		if len(loadBalancerStatus.Ingress) == 0 {
-			return "", fmt.Errorf("cannot retrieve the TenantControlPlane address, Service resource is not yet exposed as LoadBalancer")
+			return "", kamajierrors.NonExposedLoadBalancerError{}
 		}
 
 		for _, lb := range loadBalancerStatus.Ingress {
@@ -39,5 +40,5 @@ func (in *TenantControlPlane) GetAddress(ctx context.Context, client client.Clie
 		}
 	}
 
-	return "", fmt.Errorf("the actual resource doesn't have yet a valid IP address")
+	return "", kamajierrors.MissingValidIPError{}
 }
