@@ -82,21 +82,10 @@ source kamaji-tenant-azure.env
 ### On Kamaji side
 With Kamaji on AKS, the tenant control plane is accessible:
 
-- from tenant work nodes through an internal loadbalancer as `https://${TENANT_ADDR}:${TENANT_PORT}`
+- from tenant work nodes through an internal loadbalancer as `https://${TENANT_ADDR}:6443`
 - from tenant admin user through an external loadbalancer `https://${TENANT_NAME}.${KAMAJI_REGION}.cloudapp.azure.com:443`
 
-#### Allocate an internal IP address for the Tenant Control Plane
-Currently, Kamaji has a known limitation, meaning the address `${TENANT_ADDR}:${TENANT_PORT}` must be known in advance before to create the Tenant Control Plane. Given this limitation, let's to reserve an IP address and port in the same virtual subnet used by the Kamaji admin cluster:
-
-
-```bash
-export TENANT_ADDR=10.240.0.100
-export TENANT_PORT=6443
-export TENANT_DOMAIN=$KAMAJI_REGION.cloudapp.azure.com
-```
-
-> Make sure the `TENANT_ADDR` value does not overlap with already allocated IP addresses in the AKS virtual network. In the future, Kamaji will implement a dynamic IP allocation.
-
+Where `TENANT_ADDR` is the Azure internal IP address assigned to the LoadBalancer service created by Kamaji to expose the Tenant Control Plane endpoint.
 
 #### Create the Tenant Control Plane
 
@@ -139,13 +128,17 @@ spec:
       - ResourceQuota
       - LimitRanger
   networkProfile:
-    address: ${TENANT_ADDR}
-    port: ${TENANT_PORT}
-    domain: ${TENANT_DOMAIN}
+    port: 6443
+    domain: ${KAMAJI_REGION}.cloudapp.azure.com
     serviceCidr: ${TENANT_SVC_CIDR}
     podCidr: ${TENANT_POD_CIDR}
     dnsServiceIPs:
     - ${TENANT_DNS_SERVICE}
+  addons:
+    coreDNS:
+      enabled: true
+    kubeProxy:
+      enabled: true
 ---
 apiVersion: v1
 kind: Service
@@ -195,6 +188,11 @@ NAME        READY   UP-TO-DATE   AVAILABLE   AGE
 tenant-00   2/2     2            2           47m
 ```
 
+Collect the internal IP address of Azure loadbalancer where the Tenant control Plane is exposed:
+
+```bash
+TENANT_ADDR=$(kubectl -n ${TENANT_NAMESPACE} get svc ${TENANT_NAME} -o json | jq -r ."status.loadBalancer.ingress[].ip")
+```
 
 #### Working with Tenant Control Plane
 Check the access to the Tenant Control Plane:
@@ -225,7 +223,7 @@ NAMESPACE     NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)     AG
 default       kubernetes   ClusterIP   10.32.0.1    <none>        443/TCP     6m
 ```
 
-Check out how the Tenant Control Plane advertises itself to workloads:
+Check out how the Tenant Control Plane advertises itself:
 
 ```
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get ep
@@ -234,7 +232,7 @@ NAME         ENDPOINTS           AGE
 kubernetes   10.240.0.100:6443   57m
 ```
 
-Make sure it's `${TENANT_ADDR}:${TENANT_PORT}`.
+Make sure it's `${TENANT_ADDR}:6443`.
 
 ### Prepare the Infrastructure for the Tenant virtual machines
 Kamaji provides Control Plane as a Service, so the tenant user can join his own virtual machines as worker nodes. Each tenant can place his virtual machines in a dedicated Azure virtual network.
@@ -332,7 +330,7 @@ az vmss scale \
 The current approach for joining nodes is to use the `kubeadm` one therefore, we will create a bootstrap token to perform the action:
 
 ```bash
-JOIN_CMD=$(echo "sudo kubeadm join ${TENANT_ADDR}:${TENANT_PORT} ")$(kubeadm --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig token create --print-join-command |cut -d" " -f4-)
+JOIN_CMD=$(echo "sudo kubeadm join ${TENANT_ADDR}:6443 ")$(kubeadm --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig token create --print-join-command |cut -d" " -f4-)
 ```
 
 A bash loop will be used to join all the available nodes.
@@ -398,6 +396,16 @@ kamaji-tenant-worker-02   Ready       <none>   10m    v1.23.4
 
 
 ## Cleanup
-To get rid of the Tenant infrastructure, remove the RESOURCE_GROUP:  `az group delete --name $TENANT_RG --yes --no-wait`.
+To get rid of the Tenant infrastructure, remove the RESOURCE_GROUP:
 
-To get rid of the Kamaji infrastructure, remove the RESOURCE_GROUP:  `az group delete --name $KAMAJI_RG --yes --no-wait`.
+```
+az group delete --name $TENANT_RG --yes --no-wait
+```
+
+To get rid of the Kamaji infrastructure, remove the RESOURCE_GROUP:
+
+```
+az group delete --name $KAMAJI_RG --yes --no-wait
+```
+
+That's all folks!

@@ -87,6 +87,11 @@ spec:
     podCidr: "10.244.0.0/16"
     dnsServiceIPs: 
     - "10.96.0.10"
+  addons:
+    coreDNS:
+      enabled: true
+    kubeProxy:
+      enabled: true
 EOF
 ```
 

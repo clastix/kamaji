@@ -82,17 +82,16 @@ Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji
 
 - [Kubernetes installed with `kubeadm`](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/).
 - [Azure AKS managed service](./kamaji-on-azure.md).
-- [KinD for local development](../deploy/kind/README.md ).
+- [KinD for local development](./getting-started-with-kamaji.md ).
 
 The admin cluster should provide:
 
 - CNI module installed, eg. Calico
-- Support for LoadBalancer Service Type, eg. MetalLB
-- Ingress Controller
+- Support for LoadBalancer Service Type, eg. MetalLB or, alternatively, an Ingress Controller
 - CSI module installed with StorageClass for multi-tenant `etcd`
 - Monitoring Stack, eg. Prometheus and Grafana
 
-Make sure you have a `kubeconfig` file with admin permissions on the cluster you want to turn into a Kamaji Admin Cluster.
+Make sure you have a `kubeconfig` file with admin permissions on the cluster you want to turn into Kamaji Admin Cluster.
 
 ## Setup external multi-tenant etcd
 In this section, we're going to setup a multi-tenant `etcd` cluster on dedicated nodes. Alternatively, if you want to use an internal `etcd` cluster as Kubernetes StatefulSet, jump [here](#setup-internal-multi-tenant-etcd).
