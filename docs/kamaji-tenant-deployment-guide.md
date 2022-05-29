@@ -67,6 +67,11 @@ spec:
     podCidr: ${TENANT_POD_CIDR}
     dnsServiceIPs:
     - ${TENANT_DNS_SERVICE}
+  addons:
+    coreDNS:
+      enabled: true
+    kubeProxy:
+      enabled: true
 EOF
 ```
 
