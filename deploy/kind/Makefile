@@ -11,7 +11,10 @@ prometheus-stack:
 	helm repo update
 	helm install prometheus-stack --create-namespace -n monitoring prometheus-community/kube-prometheus-stack
 
-kamaji: kind ingress-nginx etcd-cluster
+reqs: kind ingress-nginx etcd-cluster
+
+kamaji: reqs
+	@kubectl apply -f $(kind_path)/../../config/install.yaml
 
 destroy: kind/destroy etcd-certificates/cleanup
 
