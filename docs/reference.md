@@ -80,7 +80,7 @@ $ make yaml-installation-file
 
 ```
 
-It will generate a yaml installation file at `config/installation.yaml`. It should be customize accordingly.
+It will generate a yaml installation file at `config/install.yaml`. It should be customize accordingly.
 
 
 ## Tenant Control Planes
