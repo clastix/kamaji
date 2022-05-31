@@ -44,7 +44,7 @@ With this solution, the resiliency is guaranteed by the usual `etcd` mechanism, 
 
 ## Getting started
 
-Please refer to the [getting started documentation](./docs/getting-started-with-kamaji.md) to deploy a minimal setup of Kamaji.
+Please refer to the [Getting Started guide](./docs/getting-started-with-kamaji.md) to deploy a minimal setup of Kamaji on KinD.
 
 ## Use cases
 Kamaji project has been initially started as a solution for actual and common problems such as minimizing the Total Cost of Ownership while running Kubernetes at large scale. However, it can open a wider range of use cases. Here are a few:
