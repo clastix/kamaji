@@ -2,7 +2,7 @@
 
 This document explains how to deploy a minimal Kamaji setup on [KinD](https://kind.sigs.k8s.io/) for development scopes. Please refer to the [Kamaji documentation](../README.md) for understanding all the terms used in this guide, as for example: `admin cluster` and `tenant control plane`.
 
-## Tools
+## Pre-requisites
 
 We assume you have installed on your workstation:
 
@@ -23,21 +23,30 @@ The instance of Kamaji is made of a single node hosting:
 - admin worker
 - multi-tenant etcd cluster
 
+### Requisites
+
 The multi-tenant etcd cluster is deployed as statefulset into the Kamaji node.
 
-Run `make kamaji` to setup Kamaji on KinD.
+Run `make reqs` to setup Kamaji's requisites on KinD:
 
 ```bash
-cd ./deploy/kind
-make kamaji
+$ cd ./deploy/kind
+$ make reqs
 ```
 
-At this moment you will have your KinD up and running and ETCD cluster in multitenant mode. 
+At this moment you will have your KinD up and running and ETCD cluster in multitenant mode.
+
+Now you're ready to install Kamaji operator.
 
 ### Install Kamaji
 
 ```bash
 $ kubectl apply -f ../../config/install.yaml
+```
+Otherwise you can install all requisites and Kamaji operator with one single command:
+
+```bash
+$ make kamaji
 ```
 
 ### Deploy Tenant Control Plane
@@ -141,3 +150,9 @@ d2d4b468c9de   Ready    <none>   44s   v1.23.4
 > For more complex scenarios (exposing port, different version and so on), run `join-node.bash`
 
 Tenant control plane provision has been finished in a minimal Kamaji setup based on KinD. Therefore, you could develop, test and make your own experiments with Kamaji.
+
+## Cleanup
+
+```bash
+$ make destroy
+```
