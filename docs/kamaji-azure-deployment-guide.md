@@ -67,10 +67,10 @@ kubectl cluster-info
 ```
 
 ## Setup internal multi-tenant etcd
-Follow the instructions [here](./getting-started-with-kamaji.md#setup-internal-multi-tenant-etcd).
+Follow the instructions [here](./kamaji-deployment-guide.md#setup-internal-multi-tenant-etcd).
 
 ## Install Kamaji controller
-Follow the instructions [here](./getting-started-with-kamaji.md#install-kamaji-controller).
+Follow the instructions [here](./kamaji-deployment-guide.md#install-kamaji-controller).
 
 ## Create Tenant Clusters
 To create a Tenant Cluster in Kamaji on AKS, we have to work on both the Kamaji and Azure infrastructure sides.
