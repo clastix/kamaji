@@ -496,7 +496,7 @@ kubectl -n ${ETCD_NAMESPACE} apply -f etcd/etcd-cluster.yaml
 Install an `etcd` client to interact with the `etcd` server
 
 ```bash
-kubectl -n ${ETCD_NAMESPACE} create secret tls root-certs \
+kubectl -n ${ETCD_NAMESPACE} create secret tls root-client-certs \
   --key=kamaji/etcd/root-key.pem \
   --cert=kamaji/etcd/root.pem
 
