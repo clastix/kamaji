@@ -59,11 +59,8 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 					},
 				},
 				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
-					Address:       ep.Subsets[0].Addresses[0].IP,
-					Port:          31443,
-					ServiceCIDR:   "10.96.0.0/16",
-					PodCIDR:       "10.244.0.0/16",
-					DNSServiceIPs: []string{"10.96.0.10"},
+					Address: ep.Subsets[0].Addresses[0].IP,
+					Port:    31443,
 				},
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
 					Version: "v1.23.6",
