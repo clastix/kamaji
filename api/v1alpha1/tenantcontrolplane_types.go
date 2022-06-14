@@ -22,15 +22,17 @@ type NetworkProfileSpec struct {
 	AllowAddressAsExternalIP bool `json:"allowAddressAsExternalIP,omitempty"`
 	// Port where API server of will be exposed
 	// +kubebuilder:default=6443
-	Port int32 `json:"port"`
-
+	Port int32 `json:"port,omitempty"`
 	// Domain of the tenant control plane
 	Domain string `json:"domain"`
 	// Kubernetes Service
-	ServiceCIDR string `json:"serviceCidr"`
+	// +kubebuilder:default="10.96.0.0/16"
+	ServiceCIDR string `json:"serviceCidr,omitempty"`
 	// CIDR for Kubernetes Pods
-	PodCIDR       string   `json:"podCidr"`
-	DNSServiceIPs []string `json:"dnsServiceIPs"`
+	// +kubebuilder:default="10.244.0.0/16"
+	PodCIDR string `json:"podCidr,omitempty"`
+	// +kubebuilder:default={"10.96.0.10"}
+	DNSServiceIPs []string `json:"dnsServiceIPs,omitempty"`
 }
 
 type KubeletSpec struct {
