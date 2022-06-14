@@ -253,6 +253,8 @@ spec:
                     description: AllowAddressAsExternalIP will include tenantControlPlane.Spec.NetworkProfile.Address in the section of ExternalIPs of the Kubernetes Service (only ClusterIP or NodePort)
                     type: boolean
                   dnsServiceIPs:
+                    default:
+                    - 10.96.0.10
                     items:
                       type: string
                     type: array
@@ -260,6 +262,7 @@ spec:
                     description: Domain of the tenant control plane
                     type: string
                   podCidr:
+                    default: 10.244.0.0/16
                     description: CIDR for Kubernetes Pods
                     type: string
                   port:
@@ -268,14 +271,11 @@ spec:
                     format: int32
                     type: integer
                   serviceCidr:
+                    default: 10.96.0.0/16
                     description: Kubernetes Service
                     type: string
                 required:
-                - dnsServiceIPs
                 - domain
-                - podCidr
-                - port
-                - serviceCidr
                 type: object
             required:
             - controlPlane
