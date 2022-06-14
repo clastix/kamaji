@@ -223,7 +223,7 @@ endef
 
 .PHONY: env
 env:
-	@make -C deploy/kind kamaji
+	@make -C deploy/kind reqs
 
 ##@ e2e
 
