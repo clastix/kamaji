@@ -12,7 +12,7 @@ import (
 
 func EncondeToYaml(o runtime.Object) ([]byte, error) {
 	scheme := runtime.NewScheme()
-	encoder := json.NewYAMLSerializer(json.SimpleMetaFactory{}, scheme, scheme)
+	encoder := json.NewSerializerWithOptions(json.SimpleMetaFactory{}, scheme, scheme, json.SerializerOptions{})
 	buf := bytes.NewBuffer([]byte{})
 	err := encoder.Encode(o, buf)
 
