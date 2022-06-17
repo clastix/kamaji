@@ -2,6 +2,12 @@
 FROM golang:1.18 as builder
 
 ARG TARGETARCH
+ARG GIT_HEAD_COMMIT
+ARG GIT_TAG_COMMIT
+ARG GIT_LAST_TAG
+ARG GIT_MODIFIED
+ARG GIT_REPO
+ARG BUILD_DATE
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -18,7 +24,9 @@ COPY controllers/ controllers/
 COPY internal/ internal/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build \
+    -ldflags "-X github.com/clastix/kamaji/internal.GitRepo=$GIT_REPO -X github.com/clastix/kamaji/internal.GitTag=$GIT_LAST_TAG -X github.com/clastix/kamaji/internal.GitCommit=$GIT_HEAD_COMMIT -X github.com/clastix/kamaji/internal.GitDirty=$GIT_MODIFIED -X github.com/clastix/kamaji/internal.BuildTime=$BUILD_DATE" \
+    -a -o manager main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
