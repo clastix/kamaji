@@ -17,8 +17,10 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	goRuntime "runtime"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -29,6 +31,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers"
+	"github.com/clastix/kamaji/internal"
 	"github.com/clastix/kamaji/internal/config"
 )
 
@@ -49,6 +52,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error reading configuration.")
 	}
+
+	setupLog.Info(fmt.Sprintf("Kamaji version %s %s%s", internal.GitTag, internal.GitCommit, internal.GitDirty))
+	setupLog.Info(fmt.Sprintf("Build from: %s", internal.GitRepo))
+	setupLog.Info(fmt.Sprintf("Build date: %s", internal.BuildTime))
+	setupLog.Info(fmt.Sprintf("Go Version: %s", goRuntime.Version()))
+	setupLog.Info(fmt.Sprintf("Go OS/Arch: %s/%s", goRuntime.GOOS, goRuntime.GOARCH))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
