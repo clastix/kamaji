@@ -33,6 +33,7 @@ import (
 	"github.com/clastix/kamaji/controllers"
 	"github.com/clastix/kamaji/internal"
 	"github.com/clastix/kamaji/internal/config"
+	"github.com/clastix/kamaji/internal/types"
 )
 
 var (
@@ -76,6 +77,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Config: controllers.TenantControlPlaneReconcilerConfig{
+			ETCDStorageType:           types.ParseETCDStorageType(conf.GetString("etcd-storage-type")),
 			ETCDCASecretName:          conf.GetString("etcd-ca-secret-name"),
 			ETCDCASecretNamespace:     conf.GetString("etcd-ca-secret-namespace"),
 			ETCDClientSecretName:      conf.GetString("etcd-client-secret-name"),

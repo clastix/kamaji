@@ -22,13 +22,13 @@ const (
 	caKeyName = kubeadmconstants.CACertName
 )
 
-type resource struct {
+type etcdSetupResource struct {
 	role etcd.Role
 	user etcd.User
 }
 
 type ETCDSetupResource struct {
-	resource              *resource
+	resource              *etcdSetupResource
 	Client                client.Client
 	Log                   logr.Logger
 	Name                  string
@@ -55,7 +55,7 @@ func (r *ETCDSetupResource) CleanUp(ctx context.Context, tenantControlPlane *kam
 }
 
 func (r *ETCDSetupResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	r.resource = &resource{
+	r.resource = &etcdSetupResource{
 		role: etcd.Role{Name: tenantControlPlane.Name, Exists: false},
 		user: etcd.User{Name: tenantControlPlane.Name, Exists: false},
 	}

@@ -1,6 +1,6 @@
 etcd-ca-secret-name: "etcd-certs"
 etcd-ca-secret-namespace: kamaji-system
-etcd-endpoints: etcd-0.etcd.kamaji-system.svc.cluster.local:2379,etcd-1.etcd.kamaji-system.svc.cluster.local:2379,etcd-2.etcd.kamaji-system.svc.cluster.local:2379
+etcd-endpoints: https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379
 etcd-client-secret-name: root-client-certs
 etcd-client-secret-namespaced: kamaji-system
 etcd-compaction: "0"

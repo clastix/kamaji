@@ -22,6 +22,7 @@ var (
 
 const (
 	envPrefix                        = "KAMAJI"
+	defaultETCDStorageType           = "etcd"
 	defaultETCDCASecretName          = "etcd-certs"
 	defaultETCDCASecretNamespace     = "kamaji-system"
 	defaultETCDEndpoints             = "etcd-server:2379"
@@ -40,11 +41,12 @@ func InitConfig() (*viper.Viper, error) {
 	flag.String("health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.Bool("leader-elect", false, "Enable leader election for controller manager. "+
 		"Enabling this will ensure there is only one active controller manager.")
+	flag.String("etcd-storage-type", defaultETCDStorageType, "Type of storage for ETCD (i.e etcd, kine-mysql, kine-postgres)")
 	flag.String("etcd-ca-secret-name", defaultETCDCASecretName, "Name of the secret which contains CA's certificate and private key.")
 	flag.String("etcd-ca-secret-namespace", defaultETCDCASecretNamespace, "Namespace of the secret which contains CA's certificate and private key.")
 	flag.String("etcd-client-secret-name", defaultETCDClientSecretName, "Name of the secret which contains ETCD client certificates")
 	flag.String("etcd-client-secret-namespace", defaultETCDClientSecretNamespace, "Name of the namespace where the secret which contains ETCD client certificates is")
-	flag.String("etcd-endpoints", defaultETCDEndpoints, "Comma-separated list with ETCD endpoints (i.e. etcd-0.etcd.kamaji-system.svc.cluster.local,etcd-1.etcd.kamaji-system.svc.cluster.local,etcd-2.etcd.kamaji-system.svc.cluster.local)")
+	flag.String("etcd-endpoints", defaultETCDEndpoints, "Comma-separated list with ETCD endpoints (i.e. https://etcd-0.etcd.kamaji-system.svc.cluster.local,https://etcd-1.etcd.kamaji-system.svc.cluster.local,https://etcd-2.etcd.kamaji-system.svc.cluster.local)")
 	flag.String("etcd-compaction-interval", defaultETCDCompactionInterval, "ETCD Compaction interval (i.e. \"5m0s\"). (default: \"0\" (disabled))")
 	flag.String("tmp-directory", defaultTmpDirectory, "Directory which will be used to work with temporary files.")
 
@@ -72,6 +74,9 @@ func InitConfig() (*viper.Viper, error) {
 		return nil, err
 	}
 	if err := config.BindEnv("leader-elect", fmt.Sprintf("%s_LEADER_ELECTION", envPrefix)); err != nil {
+		return nil, err
+	}
+	if err := config.BindEnv("etcd-storage-type", fmt.Sprintf("%s_ETCD_STORAGE_TYPE", envPrefix)); err != nil {
 		return nil, err
 	}
 	if err := config.BindEnv("etcd-ca-secret-name", fmt.Sprintf("%s_ETCD_CA_SECRET_NAME", envPrefix)); err != nil {
