@@ -21,6 +21,7 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
 	"github.com/clastix/kamaji/internal/resources"
+	"github.com/clastix/kamaji/internal/sql"
 	"github.com/clastix/kamaji/internal/types"
 )
 
@@ -45,6 +46,11 @@ type TenantControlPlaneReconcilerConfig struct {
 	ETCDEndpoints             string
 	ETCDCompactionInterval    string
 	TmpBaseDirectory          string
+	DBConnection              sql.DBConnection
+	KineMySQLSecretName       string
+	KineMySQLSecretNamespace  string
+	KineMySQLHost             string
+	KineMySQLPort             int
 }
 
 //+kubebuilder:rbac:groups=kamaji.clastix.io,resources=tenantcontrolplanes,verbs=get;list;watch;create;update;patch;delete
@@ -75,12 +81,25 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
+	dbConnection, err := r.getStorageConnection(ctx)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	defer func() {
+		// TODO: Currently, etcd is not accessed using this dbConnection. For that reason we need this check
+		// Check: https://github.com/clastix/kamaji/issues/67
+		if dbConnection != nil {
+			dbConnection.Close()
+		}
+	}()
+
 	if markedToBeDeleted {
 		groupDeleteableResourceBuilderConfiguration := GroupDeleteableResourceBuilderConfiguration{
 			client:              r.Client,
 			log:                 log,
 			tcpReconcilerConfig: r.Config,
 			tenantControlPlane:  *tenantControlPlane,
+			DBConnection:        dbConnection,
 		}
 		registeredDeleteableResources := GetDeleteableResources(groupDeleteableResourceBuilderConfiguration)
 
@@ -108,6 +127,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		log:                 log,
 		tcpReconcilerConfig: r.Config,
 		tenantControlPlane:  *tenantControlPlane,
+		DBConnection:        dbConnection,
 	}
 	registeredResources := GetResources(groupResourceBuilderConfiguration)
 

@@ -1,0 +1,18 @@
+{
+  "CN": "Clastix CA",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "IT",
+      "ST": "Italy",
+      "L": "Milan"
+    }
+  ],
+  "hosts": [
+    "127.0.0.1",
+    "localhost"
+  ]
+}

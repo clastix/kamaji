@@ -85,6 +85,10 @@ func main() {
 			ETCDEndpoints:             conf.GetString("etcd-endpoints"),
 			ETCDCompactionInterval:    conf.GetString("etcd-compaction-interval"),
 			TmpBaseDirectory:          conf.GetString("tmp-directory"),
+			KineMySQLSecretName:       conf.GetString("kine-mysql-secret-name"),
+			KineMySQLSecretNamespace:  conf.GetString("kine-mysql-secret-namespace"),
+			KineMySQLHost:             conf.GetString("kine-mysql-host"),
+			KineMySQLPort:             conf.GetInt("kine-mysql-port"),
 		},
 	}
 

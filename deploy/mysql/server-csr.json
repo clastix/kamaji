@@ -1,0 +1,19 @@
+{
+  "CN": "mariadb.kamaji-system.svc.cluster.local",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "hosts": [
+    "127.0.0.1",
+    "localhost",
+    "mariadb",
+    "mariadb.kamaji-system",
+    "mariadb.kamaji-system.svc",
+    "mariadb.kamaji-system.svc.cluster.local",
+    "mysql",
+    "mysql.kamaji-system",
+    "mysql.kamaji-system.svc",
+    "mysql.kamaji-system.svc.cluster.local"
+  ]
+}

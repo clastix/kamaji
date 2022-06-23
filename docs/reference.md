@@ -22,7 +22,12 @@ Available flags are the following:
 --etcd-client-secret-namespace       Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji")
 --etcd-compaction-interval           ETCD Compaction interval (i.e. "5m0s"). (default: "0" (disabled))
 --etcd-endpoints                     Comma-separated list with ETCD endpoints (i.e. https://etcd-0.etcd.kamaji.svc.cluster.local,https://etcd-1.etcd.kamaji.svc.cluster.local,https://etcd-2.etcd.kamaji.svc.cluster.local)
+--etcd-storage-type                  ETCD Storage type (i.e. "etcd", "kine-mysql"). (default: "etcd")
 --health-probe-bind-address string   The address the probe endpoint binds to. (default ":8081")
+--kine-mysql-host                    Host where MySQL is running (default: "localhost")
+--kine-mysql-port int                Port where MySQL is running (default: 3306)
+--kine-mysql-secret-name             Name of the secret where the necessary configuration and certificates are. (default: "mysql-config")
+--kine-mysql-secret-name             Name of the namespace of the secret where the necessary configuration and certificates are. (default: "kamaji-system")
 --kubeconfig string                  Paths to a kubeconfig. Only required if out-of-cluster.
 --leader-elect                       Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.
 --metrics-bind-address string        The address the metric endpoint binds to. (default ":8080")
@@ -43,9 +48,14 @@ Available environment variables are:
 | `KAMAJI_ETCD_CLIENT_SECRET_NAMESPACE`      | Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji")  |
 | `KAMAJI_ETCD_COMPACTION_INTERVAL`      | ETCD Compaction interval (i.e. "5m0s"). (default: "0" (disabled))  |
 | `KAMAJI_ETCD_ENDPOINTS`      | Comma-separated list with ETCD endpoints (i.e. etcd-server-1:2379,etcd-server-2:2379). (default: "etcd-server:2379")  |
+| `KAMAJI_ETCD_STORAGE_TYPE`      | ETCD Storage type (i.e. "etcd", "kine-mysql"). (default: "etcd")  |
 | `KAMAJI_ETCD_SERVERS`      | Comma-separated list with ETCD servers (i.e. etcd-0.etcd.kamaji.svc.cluster.local,etcd-1.etcd.kamaji.svc.cluster.local,etcd-2.etcd.kamaji.svc.cluster.local)  |
 | `KAMAJI_METRICS_BIND_ADDRESS`      | The address the metric endpoint binds to. (default ":8080")  |
 | `KAMAJI_HEALTH_PROBE_BIND_ADDRESS` | The address the probe endpoint binds to. (default ":8081")   |
+| `KAMAJI_KINE_MYSQL_HOST` | Host where MySQL is running(default "localhost")   |
+| `KAMAJI_KINE_MYSQL_PORT` | Port where MySQL is running (default: 3306)   |
+| `KAMAJI_KINE_MYSQL_SECRET_NAME` | Name of the secret where the necessary configuration and certificates are. (default: "mysql-config")   |
+| `KAMAJI_KINE_MYSQL_SECRET_NAMESPACE` | Name of the namespace of the secret where the necessary configuration and certificates are. (default: "kamaji-system")   |
 | `KAMAJI_LEADER_ELECTION`           | Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager. |
 | `KAMAJI_TMP_DIRECTORY`           | Directory which will be used to work with temporary files. (default "/tmp/kamaji") |
 
