@@ -14,6 +14,7 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/resources/konnectivity"
+	"github.com/clastix/kamaji/internal/sql"
 	"github.com/clastix/kamaji/internal/types"
 )
 
@@ -26,6 +27,7 @@ type GroupResourceBuilderConfiguration struct {
 	log                 logr.Logger
 	tcpReconcilerConfig TenantControlPlaneReconcilerConfig
 	tenantControlPlane  kamajiv1alpha1.TenantControlPlane
+	DBConnection        sql.DBConnection
 }
 
 type GroupDeleteableResourceBuilderConfiguration struct {
@@ -33,6 +35,7 @@ type GroupDeleteableResourceBuilderConfiguration struct {
 	log                 logr.Logger
 	tcpReconcilerConfig TenantControlPlaneReconcilerConfig
 	tenantControlPlane  kamajiv1alpha1.TenantControlPlane
+	DBConnection        sql.DBConnection
 }
 
 // GetResources returns a list of resources that will be used to provide tenant control planes
@@ -54,7 +57,7 @@ func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.R
 	resources = append(resources, getKubeadmConfigResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubernetesCertificatesResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubeconfigResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
-	resources = append(resources, getKubernetesStorageResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
+	resources = append(resources, getKubernetesStorageResources(config.client, config.log, config.tcpReconcilerConfig, config.DBConnection, config.tenantControlPlane)...)
 	resources = append(resources, getInternalKonnectivityResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubernetesIngressResources(config.client, config.tenantControlPlane)...)
@@ -66,15 +69,28 @@ func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.R
 }
 
 func getDefaultDeleteableResources(config GroupDeleteableResourceBuilderConfiguration) []resources.DeleteableResource {
-	return []resources.DeleteableResource{
-		&resources.ETCDSetupResource{
-			Name:                  "etcd-setup",
-			Client:                config.client,
-			Log:                   config.log,
-			ETCDClientCertsSecret: getNamespacedName(config.tcpReconcilerConfig.ETCDClientSecretNamespace, config.tcpReconcilerConfig.ETCDClientSecretName),
-			ETCDCACertsSecret:     getNamespacedName(config.tcpReconcilerConfig.ETCDCASecretNamespace, config.tcpReconcilerConfig.ETCDCASecretName),
-			Endpoints:             getArrayFromString(config.tcpReconcilerConfig.ETCDEndpoints),
-		},
+	switch config.tcpReconcilerConfig.ETCDStorageType {
+	case types.ETCD:
+		return []resources.DeleteableResource{
+			&resources.ETCDSetupResource{
+				Name:                  "etcd-setup",
+				Client:                config.client,
+				Log:                   config.log,
+				ETCDClientCertsSecret: getNamespacedName(config.tcpReconcilerConfig.ETCDClientSecretNamespace, config.tcpReconcilerConfig.ETCDClientSecretName),
+				ETCDCACertsSecret:     getNamespacedName(config.tcpReconcilerConfig.ETCDCASecretNamespace, config.tcpReconcilerConfig.ETCDCASecretName),
+				Endpoints:             getArrayFromString(config.tcpReconcilerConfig.ETCDEndpoints),
+			},
+		}
+	case types.KineMySQL:
+		return []resources.DeleteableResource{
+			&resources.SQLSetup{
+				Client:       config.client,
+				Name:         "sql-setup",
+				DBConnection: config.DBConnection,
+			},
+		}
+	default:
+		return []resources.DeleteableResource{}
 	}
 }
 
@@ -179,7 +195,7 @@ func getKubeconfigResources(c client.Client, log logr.Logger, tcpReconcilerConfi
 	}
 }
 
-func getKubernetesStorageResources(c client.Client, log logr.Logger, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
+func getKubernetesStorageResources(c client.Client, log logr.Logger, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, dbConnection sql.DBConnection, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
 	switch tcpReconcilerConfig.ETCDStorageType {
 	case types.ETCD:
 		return []resources.Resource{
@@ -204,6 +220,27 @@ func getKubernetesStorageResources(c client.Client, log logr.Logger, tcpReconcil
 				Endpoints:             getArrayFromString(tcpReconcilerConfig.ETCDEndpoints),
 			},
 		}
+	case types.KineMySQL:
+		return []resources.Resource{
+			&resources.SQLStorageConfig{
+				Client: c,
+				Name:   "sql-config",
+				Host:   dbConnection.GetHost(),
+				Port:   dbConnection.GetPort(),
+			},
+			&resources.SQLSetup{
+				Client:       c,
+				Name:         "sql-setup",
+				DBConnection: dbConnection,
+			},
+			&resources.SQLCertificate{
+				Client:                   c,
+				Name:                     "sql-certificate",
+				StorageType:              tcpReconcilerConfig.ETCDStorageType,
+				SQLConfigSecretName:      tcpReconcilerConfig.KineMySQLSecretName,
+				SQLConfigSecretNamespace: tcpReconcilerConfig.KineMySQLSecretNamespace,
+			},
+		}
 	default:
 		return []resources.Resource{}
 	}
@@ -215,6 +252,7 @@ func getKubernetesDeploymentResources(c client.Client, tcpReconcilerConfig Tenan
 			Client:                 c,
 			ETCDEndpoints:          getArrayFromString(tcpReconcilerConfig.ETCDEndpoints),
 			ETCDCompactionInterval: tcpReconcilerConfig.ETCDCompactionInterval,
+			ETCDStorageType:        tcpReconcilerConfig.ETCDStorageType,
 		},
 	}
 }

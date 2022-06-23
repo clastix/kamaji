@@ -184,9 +184,34 @@ type ETCDStatus struct {
 	User etcd.User `json:"user,omitempty"`
 }
 
+type SQLCertificateStatus struct {
+	SecretName      string      `json:"secretName,omitempty"`
+	ResourceVersion string      `json:"resourceVersion,omitempty"`
+	LastUpdate      metav1.Time `json:"lastUpdate,omitempty"`
+}
+
+type SQLConfigStatus struct {
+	SecretName      string `json:"secretName,omitempty"`
+	ResourceVersion string `json:"resourceVersion,omitempty"`
+}
+
+type SQLSetup struct {
+	Schema                   string      `json:"schema,omitempty"`
+	User                     string      `json:"user,omitempty"`
+	LastUpdate               metav1.Time `json:"lastUpdate,omitempty"`
+	SQLConfigResourceVersion string      `json:"sqlConfigResourceVersion,omitempty"`
+}
+
+type KineMySQLStatus struct {
+	Config      SQLConfigStatus      `json:"config,omitempty"`
+	Setup       SQLSetup             `json:"setup,omitempty"`
+	Certificate SQLCertificateStatus `json:"certificate,omitempty"`
+}
+
 // StorageStatus defines the observed state of StorageStatus.
 type StorageStatus struct {
-	ETCD *ETCDStatus `json:"etcd,omitempty"`
+	ETCD      *ETCDStatus      `json:"etcd,omitempty"`
+	KineMySQL *KineMySQLStatus `json:"kineMySQL,omitempty"`
 }
 
 // TenantControlPlaneKubeconfigsStatus contains information about a the generated kubeconfig.

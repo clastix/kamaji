@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mariadb
+  namespace:
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+  namespace:
+spec:
+  type: ClusterIP
+  ports:
+    - name: server
+      port: 3306
+      protocol: TCP
+      targetPort: 3306
+  selector:
+    app: mariadb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb
+  labels:
+    app: mariadb
+  namespace:
+spec:
+  selector:
+    matchLabels:
+      app: mariadb
+  replicas: 1
+  template:
+    metadata:
+      name: mariadb
+      labels:
+        app: mariadb
+    spec:
+      serviceAccountName: mariadb
+      volumes:
+      - name: certs
+        secret:
+          secretName: mysql-config
+      - name: data
+        persistentVolumeClaim:
+          claimName: pvc-mariadb
+      containers:
+        - name: mariadb
+          image: mariadb:10.7.4
+          ports:
+            - containerPort: 3306
+              name: server
+          volumeMounts:
+          - name: data
+            mountPath: /var/lib/mariadb
+          - name: certs
+            mountPath: /etc/mysql/conf.d/
+          env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-config
+                key: MYSQL_ROOT_PASSWORD                
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-mariadb
+  namespace:
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: standard

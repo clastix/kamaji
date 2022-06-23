@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kine-tenant
+  namespace:
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kine-tenant
+  namespace:
+spec:
+  type: ClusterIP
+  ports:
+    - name: server
+      port: 2379
+      protocol: TCP
+      targetPort: 2379
+  selector:
+    app: kine-tenant
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kine-tenant
+  labels:
+    app: kine-tenant
+  namespace:
+spec:
+  selector:
+    matchLabels:
+      app: kine-tenant
+  replicas: 1
+  template:
+    metadata:
+      name: kine-tenant
+      labels:
+        app: kine-tenant
+    spec:
+      serviceAccountName: kine-tenant
+      volumes:
+      - name: certs
+        secret:
+          secretName: mysql-certs
+      containers:
+        - name: kine-tenant
+          image: rancher/kine:v0.9.2-amd64
+          ports:
+            - containerPort: 2379
+              name: server
+          volumeMounts:
+          - name: certs
+            mountPath: /kine
+          env:    
+          - name: GODEBUG
+            value: "x509ignoreCN=0"
+          args:
+          - --endpoint=mysql://tenant1:tenant1@tcp(mysql:3306)/tenant1
+          - --ca-file=/kine/ca.crt
+          - --cert-file=/kine/server.crt
+          - --key-file=/kine/server.key

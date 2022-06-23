@@ -1186,6 +1186,38 @@ spec:
                         - name
                         type: object
                     type: object
+                  kineMySQL:
+                    properties:
+                      certificate:
+                        properties:
+                          lastUpdate:
+                            format: date-time
+                            type: string
+                          resourceVersion:
+                            type: string
+                          secretName:
+                            type: string
+                        type: object
+                      config:
+                        properties:
+                          resourceVersion:
+                            type: string
+                          secretName:
+                            type: string
+                        type: object
+                      setup:
+                        properties:
+                          lastUpdate:
+                            format: date-time
+                            type: string
+                          schema:
+                            type: string
+                          sqlConfigResourceVersion:
+                            type: string
+                          user:
+                            type: string
+                        type: object
+                    type: object
                 type: object
             type: object
         type: object

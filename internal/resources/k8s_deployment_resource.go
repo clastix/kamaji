@@ -5,10 +5,8 @@ package resources
 
 import (
 	"context"
-	"crypto/md5"
 	"fmt"
 	"path"
-	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -16,7 +14,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	quantity "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apimachinerytypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
@@ -76,32 +73,6 @@ func (r *KubernetesDeploymentResource) Define(ctx context.Context, tenantControl
 	return nil
 }
 
-// secretHashValue function returns the md5 value for the given secret:
-// this will trigger a new rollout in case of value change.
-func (r *KubernetesDeploymentResource) secretHashValue(ctx context.Context, namespace, name string) (string, error) {
-	secret := &corev1.Secret{}
-
-	if err := r.Client.Get(ctx, apimachinerytypes.NamespacedName{Namespace: namespace, Name: name}, secret); err != nil {
-		return "", errors.Wrap(err, "cannot retrieve *corev1.Secret for resource version retrieval")
-	}
-	// Go access map values in random way, it means we have to sort them
-	keys := make([]string, 0, len(secret.Data))
-
-	for k := range secret.Data {
-		keys = append(keys, k)
-	}
-
-	sort.Strings(keys)
-	// Generating MD5 of Secret values, sorted by key
-	h := md5.New()
-
-	for _, key := range keys {
-		h.Write(secret.Data[key])
-	}
-
-	return fmt.Sprintf("%x", h.Sum(nil)), nil
-}
-
 func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	maxSurge := intstr.FromString("100%")
 
@@ -129,42 +100,42 @@ func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenan
 			Labels: map[string]string{
 				"kamaji.clastix.io/soot": tenantControlPlane.GetName(),
 				"component.kamaji.clastix.io/api-server-certificate": func() (hash string) {
-					hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.APIServer.SecretName)
+					hash, _ = utilities.SecretHashValue(ctx, r.Client, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.APIServer.SecretName)
 
 					return
 				}(),
 				"component.kamaji.clastix.io/api-server-kubelet-client-certificate": func() (hash string) {
-					hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.APIServerKubeletClient.SecretName)
+					hash, _ = utilities.SecretHashValue(ctx, r.Client, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.APIServerKubeletClient.SecretName)
 
 					return
 				}(),
 				"component.kamaji.clastix.io/ca": func() (hash string) {
-					hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.CA.SecretName)
+					hash, _ = utilities.SecretHashValue(ctx, r.Client, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.CA.SecretName)
 
 					return
 				}(),
 				"component.kamaji.clastix.io/controller-manager-kubeconfig": func() (hash string) {
-					hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.KubeConfig.ControllerManager.SecretName)
+					hash, _ = utilities.SecretHashValue(ctx, r.Client, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.KubeConfig.ControllerManager.SecretName)
 
 					return
 				}(),
 				"component.kamaji.clastix.io/front-proxy-ca-certificate": func() (hash string) {
-					hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.FrontProxyCA.SecretName)
+					hash, _ = utilities.SecretHashValue(ctx, r.Client, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.FrontProxyCA.SecretName)
 
 					return
 				}(),
 				"component.kamaji.clastix.io/front-proxy-client-certificate": func() (hash string) {
-					hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.FrontProxyClient.SecretName)
+					hash, _ = utilities.SecretHashValue(ctx, r.Client, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.FrontProxyClient.SecretName)
 
 					return
 				}(),
 				"component.kamaji.clastix.io/service-account": func() (hash string) {
-					hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.SA.SecretName)
+					hash, _ = utilities.SecretHashValue(ctx, r.Client, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.SA.SecretName)
 
 					return
 				}(),
 				"component.kamaji.clastix.io/scheduler-kubeconfig": func() (hash string) {
-					hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.KubeConfig.Scheduler.SecretName)
+					hash, _ = utilities.SecretHashValue(ctx, r.Client, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.KubeConfig.Scheduler.SecretName)
 
 					return
 				}(),
@@ -267,6 +238,7 @@ func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenan
 					fmt.Sprintf("--client-ca-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)),
 					fmt.Sprintf("--enable-admission-plugins=%s", strings.Join(tenantControlPlane.Spec.Kubernetes.AdmissionControllers.ToSlice(), ",")),
 					"--enable-bootstrap-token-auth=true",
+					fmt.Sprintf("--etcd-servers=%s", strings.Join(r.ETCDEndpoints, ",")),
 					fmt.Sprintf("--service-cluster-ip-range=%s", tenantControlPlane.Spec.NetworkProfile.ServiceCIDR),
 					fmt.Sprintf("--kubelet-client-certificate=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientCertName)),
 					fmt.Sprintf("--kubelet-client-key=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientKeyName)),
@@ -748,6 +720,8 @@ func (r *KubernetesDeploymentResource) customizeStorage(ctx context.Context, pod
 	switch r.ETCDStorageType {
 	case types.ETCD:
 		r.customizeETCDStorage(ctx, podTemplate, tenantControlPlane)
+	case types.KineMySQL:
+		r.customizeKineMySQLStorage(ctx, podTemplate, tenantControlPlane)
 	default:
 		return
 	}
@@ -756,12 +730,12 @@ func (r *KubernetesDeploymentResource) customizeStorage(ctx context.Context, pod
 func (r *KubernetesDeploymentResource) customizeETCDStorage(ctx context.Context, podTemplate *corev1.PodTemplateSpec, tenantControlPlane kamajiv1alpha1.TenantControlPlane) {
 	labels := map[string]string{
 		"component.kamaji.clastix.io/etcd-ca-certificates": func() (hash string) {
-			hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.ETCD.CA.SecretName)
+			hash, _ = utilities.SecretHashValue(ctx, r.Client, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.ETCD.CA.SecretName)
 
 			return
 		}(),
 		"component.kamaji.clastix.io/etcd-certificates": func() (hash string) {
-			hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.ETCD.APIServer.SecretName)
+			hash, _ = utilities.SecretHashValue(ctx, r.Client, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.ETCD.APIServer.SecretName)
 
 			return
 		}(),
@@ -771,11 +745,11 @@ func (r *KubernetesDeploymentResource) customizeETCDStorage(ctx context.Context,
 		utilities.MergeMaps(labels, podTemplate.Labels),
 	)
 
-	commands := []string{fmt.Sprintf("--etcd-compaction-interval=%s", r.ETCDCompactionInterval),
+	commands := []string{
+		fmt.Sprintf("--etcd-compaction-interval=%s", r.ETCDCompactionInterval),
 		fmt.Sprintf("--etcd-cafile=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.EtcdCACertName)),
 		fmt.Sprintf("--etcd-certfile=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerEtcdClientCertName)),
 		fmt.Sprintf("--etcd-keyfile=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerEtcdClientKeyName)),
-		fmt.Sprintf("--etcd-servers=%s", strings.Join(r.ETCDEndpoints, ",")),
 		fmt.Sprintf("--etcd-prefix=/%s", tenantControlPlane.GetName()),
 	}
 
@@ -801,4 +775,61 @@ func (r *KubernetesDeploymentResource) customizeETCDStorage(ctx context.Context,
 	}
 
 	podTemplate.Spec.Volumes[0].VolumeSource.Projected.Sources = append(podTemplate.Spec.Volumes[0].VolumeSource.Projected.Sources, volumeProjections...)
+}
+
+func (r *KubernetesDeploymentResource) customizeKineMySQLStorage(ctx context.Context, podTemplate *corev1.PodTemplateSpec, tenantControlPlane kamajiv1alpha1.TenantControlPlane) {
+	volume := corev1.Volume{
+		Name: "mysql-config",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  tenantControlPlane.Status.Storage.KineMySQL.Certificate.SecretName,
+				DefaultMode: pointer.Int32Ptr(420),
+			},
+		},
+	}
+
+	podTemplate.Spec.Volumes = append(podTemplate.Spec.Volumes, volume)
+
+	container := corev1.Container{
+		Name: "kine",
+		// TODO: parameter.
+		Image: fmt.Sprintf("%s:%s", "rancher/kine", "v0.9.2-amd64"),
+		Args: []string{
+			"--endpoint=mysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@tcp($(MYSQL_HOST):$(MYSQL_PORT))/$(MYSQL_SCHEMA)",
+			"--ca-file=/kine/ca.crt",
+			"--cert-file=/kine/server.crt",
+			"--key-file=/kine/server.key",
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      volume.Name,
+				MountPath: "/kine",
+				ReadOnly:  true,
+			},
+		},
+		Env: []corev1.EnvVar{
+			{Name: "GODEBUG", Value: "x509ignoreCN=0"},
+		},
+		EnvFrom: []corev1.EnvFromSource{
+			{
+				SecretRef: &corev1.SecretEnvSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: tenantControlPlane.Status.Storage.KineMySQL.Config.SecretName,
+					},
+				},
+			},
+		},
+		Ports: []corev1.ContainerPort{
+			{
+				ContainerPort: 2379,
+				Name:          "server",
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
+		TerminationMessagePath:   "/dev/termination-log",
+		TerminationMessagePolicy: "File",
+		ImagePullPolicy:          corev1.PullIfNotPresent,
+	}
+
+	podTemplate.Spec.Containers = append(podTemplate.Spec.Containers, container)
 }

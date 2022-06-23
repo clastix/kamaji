@@ -30,6 +30,10 @@ const (
 	defaultETCDClientSecretName      = "root-client-certs"
 	defaultETCDClientSecretNamespace = "kamaji-system"
 	defaultTmpDirectory              = "/tmp/kamaji"
+	defaultKineMySQLSecretName       = "mysql-config"
+	defaultKineMySQLSecretNamespace  = "kamaji-system"
+	defaultKineMySQLHost             = "localhost"
+	defaultKineMySQLPort             = 3306
 )
 
 func InitConfig() (*viper.Viper, error) {
@@ -49,6 +53,10 @@ func InitConfig() (*viper.Viper, error) {
 	flag.String("etcd-endpoints", defaultETCDEndpoints, "Comma-separated list with ETCD endpoints (i.e. https://etcd-0.etcd.kamaji-system.svc.cluster.local,https://etcd-1.etcd.kamaji-system.svc.cluster.local,https://etcd-2.etcd.kamaji-system.svc.cluster.local)")
 	flag.String("etcd-compaction-interval", defaultETCDCompactionInterval, "ETCD Compaction interval (i.e. \"5m0s\"). (default: \"0\" (disabled))")
 	flag.String("tmp-directory", defaultTmpDirectory, "Directory which will be used to work with temporary files.")
+	flag.String("kine-mysql-secret-name", defaultKineMySQLSecretName, "Name of the secret which contains MySQL (Kine) configuration.")
+	flag.String("kine-mysql-secret-namespace", defaultKineMySQLSecretNamespace, "Name of the namespace where the secret which contains MySQL (Kine) configuration.")
+	flag.String("kine-mysql-host", defaultKineMySQLHost, "Host where MySQL (Kine) is working")
+	flag.Int("kine-mysql-port", defaultKineMySQLPort, "Port where MySQL (Kine) is working")
 
 	// Setup zap configuration
 	opts := zap.Options{
@@ -98,6 +106,18 @@ func InitConfig() (*viper.Viper, error) {
 		return nil, err
 	}
 	if err := config.BindEnv("tmp-directory", fmt.Sprintf("%s_TMP_DIRECTORY", envPrefix)); err != nil {
+		return nil, err
+	}
+	if err := config.BindEnv("kine-mysql-secret-name", fmt.Sprintf("%s_KINE_MYSQL_SECRET_NAME", envPrefix)); err != nil {
+		return nil, err
+	}
+	if err := config.BindEnv("kine-mysql-secret-namespace", fmt.Sprintf("%s_KINE_MYSQL_SECRET_NAMESPACE", envPrefix)); err != nil {
+		return nil, err
+	}
+	if err := config.BindEnv("kine-mysql-host", fmt.Sprintf("%s_KINE_MYSQL_HOST", envPrefix)); err != nil {
+		return nil, err
+	}
+	if err := config.BindEnv("kine-mysql-port", fmt.Sprintf("%s_KINE_MYSQL_PORT", envPrefix)); err != nil {
 		return nil, err
 	}
 

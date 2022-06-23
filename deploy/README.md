@@ -14,3 +14,8 @@ make -C kind
 make -C etcd
 ```
 
+## Multi-tenant MySQL-MariaDB cluster
+
+> This assumes you already have a running Kubernetes cluster and kubeconfig.
+
+Read [this](./mysql/README.md) in order to know more about.
