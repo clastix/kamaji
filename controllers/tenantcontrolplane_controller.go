@@ -21,6 +21,7 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
 	"github.com/clastix/kamaji/internal/resources"
+	"github.com/clastix/kamaji/internal/types"
 )
 
 const (
@@ -36,6 +37,7 @@ type TenantControlPlaneReconciler struct {
 
 // TenantControlPlaneReconcilerConfig gives the necessary configuration for TenantControlPlaneReconciler.
 type TenantControlPlaneReconcilerConfig struct {
+	ETCDStorageType           types.ETCDStorageType
 	ETCDCASecretName          string
 	ETCDCASecretNamespace     string
 	ETCDClientSecretName      string
@@ -83,14 +85,13 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		registeredDeleteableResources := GetDeleteableResources(groupDeleteableResourceBuilderConfiguration)
 
 		for _, resource := range registeredDeleteableResources {
-			if err := resource.Delete(ctx, tenantControlPlane); err != nil {
+			if err := resources.HandleDeletion(ctx, resource, tenantControlPlane); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
 
 		if hasFinalizer {
-			controllerutil.RemoveFinalizer(tenantControlPlane, finalizer)
-			if err := r.Update(ctx, tenantControlPlane); err != nil {
+			if err := r.RemoveFinalizer(ctx, tenantControlPlane); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
@@ -99,12 +100,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	if !hasFinalizer {
-		controllerutil.AddFinalizer(tenantControlPlane, finalizer)
-		if err := r.Update(ctx, tenantControlPlane); err != nil {
-			return ctrl.Result{}, err
-		}
-
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, r.AddFinalizer(ctx, tenantControlPlane)
 	}
 
 	groupResourceBuilderConfiguration := GroupResourceBuilderConfiguration{
@@ -199,4 +195,16 @@ func hasFinalizer(tenantControlPlane kamajiv1alpha1.TenantControlPlane) bool {
 	}
 
 	return false
+}
+
+func (r *TenantControlPlaneReconciler) AddFinalizer(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	controllerutil.AddFinalizer(tenantControlPlane, finalizer)
+
+	return r.Update(ctx, tenantControlPlane)
+}
+
+func (r *TenantControlPlaneReconciler) RemoveFinalizer(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	controllerutil.RemoveFinalizer(tenantControlPlane, finalizer)
+
+	return r.Update(ctx, tenantControlPlane)
 }

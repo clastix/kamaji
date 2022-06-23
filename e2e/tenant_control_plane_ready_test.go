@@ -76,7 +76,7 @@ var _ = Describe("Deploy a TenantControlPlane resource", func() {
 			}
 
 			// Check if Status field has been created on TenantControlPlane struct
-			if *&tcp.Status.Kubernetes.Version.Status == nil {
+			if tcp.Status.Kubernetes.Version.Status == nil {
 				return ""
 			}
 

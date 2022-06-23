@@ -109,6 +109,10 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 					return ""
 				}
 
+				if tcp.Status.Kubernetes.Version.Status == nil {
+					return ""
+				}
+
 				return *tcp.Status.Kubernetes.Version.Status
 			}, 5*time.Minute, time.Second).Should(Equal(kamajiv1alpha1.VersionReady))
 		})

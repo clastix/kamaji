@@ -16,7 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	quantity "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	apimachinerytypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
@@ -26,6 +26,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/resources/konnectivity"
+	"github.com/clastix/kamaji/internal/types"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -39,6 +40,7 @@ const (
 type KubernetesDeploymentResource struct {
 	resource               *appsv1.Deployment
 	Client                 client.Client
+	ETCDStorageType        types.ETCDStorageType
 	ETCDEndpoints          []string
 	ETCDCompactionInterval string
 	Name                   string
@@ -79,7 +81,7 @@ func (r *KubernetesDeploymentResource) Define(ctx context.Context, tenantControl
 func (r *KubernetesDeploymentResource) secretHashValue(ctx context.Context, namespace, name string) (string, error) {
 	secret := &corev1.Secret{}
 
-	if err := r.Client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, secret); err != nil {
+	if err := r.Client.Get(ctx, apimachinerytypes.NamespacedName{Namespace: namespace, Name: name}, secret); err != nil {
 		return "", errors.Wrap(err, "cannot retrieve *corev1.Secret for resource version retrieval")
 	}
 	// Go access map values in random way, it means we have to sort them
@@ -104,11 +106,6 @@ func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenan
 	maxSurge := intstr.FromString("100%")
 
 	maxUnavailable := intstr.FromInt(0)
-
-	etcdEndpoints := make([]string, len(r.ETCDEndpoints))
-	for i, v := range r.ETCDEndpoints {
-		etcdEndpoints[i] = fmt.Sprintf("https://%s", v)
-	}
 
 	address, err := tenantControlPlane.GetControlPlaneAddress(ctx, r.Client)
 	if err != nil {
@@ -148,16 +145,6 @@ func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenan
 				}(),
 				"component.kamaji.clastix.io/controller-manager-kubeconfig": func() (hash string) {
 					hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.KubeConfig.ControllerManager.SecretName)
-
-					return
-				}(),
-				"component.kamaji.clastix.io/etcd-ca-certificates": func() (hash string) {
-					hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.ETCD.CA.SecretName)
-
-					return
-				}(),
-				"component.kamaji.clastix.io/etcd-certificates": func() (hash string) {
-					hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.ETCD.APIServer.SecretName)
 
 					return
 				}(),
@@ -206,22 +193,6 @@ func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenan
 							},
 							{
 								Secret: secretProjection(tenantControlPlane.Status.Certificates.SA.SecretName, constants.ServiceAccountPublicKeyName, constants.ServiceAccountPrivateKeyName),
-							},
-							{
-								Secret: secretProjection(tenantControlPlane.Status.Certificates.ETCD.APIServer.SecretName, constants.APIServerEtcdClientCertName, constants.APIServerEtcdClientKeyName),
-							},
-							{
-								Secret: &corev1.SecretProjection{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: tenantControlPlane.Status.Certificates.ETCD.CA.SecretName,
-									},
-									Items: []corev1.KeyToPath{
-										{
-											Key:  constants.CACertName,
-											Path: constants.EtcdCACertName,
-										},
-									},
-								},
 							},
 						},
 						DefaultMode: pointer.Int32Ptr(420),
@@ -296,12 +267,6 @@ func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenan
 					fmt.Sprintf("--client-ca-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)),
 					fmt.Sprintf("--enable-admission-plugins=%s", strings.Join(tenantControlPlane.Spec.Kubernetes.AdmissionControllers.ToSlice(), ",")),
 					"--enable-bootstrap-token-auth=true",
-					fmt.Sprintf("--etcd-compaction-interval=%s", r.ETCDCompactionInterval),
-					fmt.Sprintf("--etcd-cafile=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.EtcdCACertName)),
-					fmt.Sprintf("--etcd-certfile=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerEtcdClientCertName)),
-					fmt.Sprintf("--etcd-keyfile=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerEtcdClientKeyName)),
-					fmt.Sprintf("--etcd-servers=%s", strings.Join(etcdEndpoints, ",")),
-					fmt.Sprintf("--etcd-prefix=/%s", tenantControlPlane.GetName()),
 					fmt.Sprintf("--service-cluster-ip-range=%s", tenantControlPlane.Spec.NetworkProfile.ServiceCIDR),
 					fmt.Sprintf("--kubelet-client-certificate=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientCertName)),
 					fmt.Sprintf("--kubelet-client-key=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientKeyName)),
@@ -556,6 +521,8 @@ func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenan
 			},
 		}
 
+		r.customizeStorage(ctx, &r.resource.Spec.Template, *tenantControlPlane)
+
 		if err := r.reconcileKonnectivity(&r.resource.Spec.Template.Spec, *tenantControlPlane); err != nil {
 			return err
 		}
@@ -775,4 +742,63 @@ func (r *KubernetesDeploymentResource) buildKonnectivityServerContainer(tenantCo
 		TerminationMessagePolicy: "File",
 		ImagePullPolicy:          corev1.PullIfNotPresent,
 	}
+}
+
+func (r *KubernetesDeploymentResource) customizeStorage(ctx context.Context, podTemplate *corev1.PodTemplateSpec, tenantControlPlane kamajiv1alpha1.TenantControlPlane) {
+	switch r.ETCDStorageType {
+	case types.ETCD:
+		r.customizeETCDStorage(ctx, podTemplate, tenantControlPlane)
+	default:
+		return
+	}
+}
+
+func (r *KubernetesDeploymentResource) customizeETCDStorage(ctx context.Context, podTemplate *corev1.PodTemplateSpec, tenantControlPlane kamajiv1alpha1.TenantControlPlane) {
+	labels := map[string]string{
+		"component.kamaji.clastix.io/etcd-ca-certificates": func() (hash string) {
+			hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.ETCD.CA.SecretName)
+
+			return
+		}(),
+		"component.kamaji.clastix.io/etcd-certificates": func() (hash string) {
+			hash, _ = r.secretHashValue(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.ETCD.APIServer.SecretName)
+
+			return
+		}(),
+	}
+
+	podTemplate.SetLabels(
+		utilities.MergeMaps(labels, podTemplate.Labels),
+	)
+
+	commands := []string{fmt.Sprintf("--etcd-compaction-interval=%s", r.ETCDCompactionInterval),
+		fmt.Sprintf("--etcd-cafile=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.EtcdCACertName)),
+		fmt.Sprintf("--etcd-certfile=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerEtcdClientCertName)),
+		fmt.Sprintf("--etcd-keyfile=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerEtcdClientKeyName)),
+		fmt.Sprintf("--etcd-servers=%s", strings.Join(r.ETCDEndpoints, ",")),
+		fmt.Sprintf("--etcd-prefix=/%s", tenantControlPlane.GetName()),
+	}
+
+	podTemplate.Spec.Containers[0].Command = append(podTemplate.Spec.Containers[0].Command, commands...)
+
+	volumeProjections := []corev1.VolumeProjection{
+		{
+			Secret: secretProjection(tenantControlPlane.Status.Certificates.ETCD.APIServer.SecretName, constants.APIServerEtcdClientCertName, constants.APIServerEtcdClientKeyName),
+		},
+		{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: tenantControlPlane.Status.Certificates.ETCD.CA.SecretName,
+				},
+				Items: []corev1.KeyToPath{
+					{
+						Key:  constants.CACertName,
+						Path: constants.EtcdCACertName,
+					},
+				},
+			},
+		},
+	}
+
+	podTemplate.Spec.Volumes[0].VolumeSource.Projected.Sources = append(podTemplate.Spec.Volumes[0].VolumeSource.Projected.Sources, volumeProjections...)
 }

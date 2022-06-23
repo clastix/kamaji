@@ -6,12 +6,19 @@ package kubeadm
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	bootstraptokenv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
+)
+
+const (
+	defaultCAFile   = "/etc/kubernetes/pki/etcd/ca.crt"
+	defaultCertFile = "/etc/kubernetes/pki/apiserver-etcd-client.crt"
+	defaultKeyFile  = "/etc/kubernetes/pki/apiserver-etcd-client.key"
 )
 
 func CreateKubeadmInitConfiguration(params Parameters) Configuration {
@@ -40,7 +47,16 @@ func CreateKubeadmInitConfiguration(params Parameters) Configuration {
 	return Configuration{InitConfiguration: config}
 }
 
+func isHTTPS(url string) bool {
+	return strings.HasPrefix(url, "https")
+}
+
 func getKubeadmClusterConfiguration(params Parameters) kubeadmapi.ClusterConfiguration {
+	caFile, certFile, keyFile := "", "", ""
+	if isHTTPS(params.ETCDs[0]) {
+		caFile, certFile, keyFile = defaultCAFile, defaultCertFile, defaultKeyFile
+	}
+
 	return kubeadmapi.ClusterConfiguration{
 		KubernetesVersion: params.TenantControlPlaneVersion,
 		ClusterName:       params.TenantControlPlaneName,
@@ -57,10 +73,10 @@ func getKubeadmClusterConfiguration(params Parameters) kubeadmapi.ClusterConfigu
 		ControlPlaneEndpoint: params.TenantControlPlaneEndpoint,
 		Etcd: kubeadmapi.Etcd{
 			External: &kubeadmapi.ExternalEtcd{
-				Endpoints: formatETCDEndpoints(params.ETCDs),
-				CAFile:    "/etc/kubernetes/pki/etcd/ca.crt",
-				CertFile:  "/etc/kubernetes/pki/apiserver-etcd-client.crt",
-				KeyFile:   "/etc/kubernetes/pki/apiserver-etcd-client.key",
+				Endpoints: params.ETCDs,
+				CAFile:    caFile,
+				CertFile:  certFile,
+				KeyFile:   keyFile,
 			},
 		},
 		APIServer: kubeadmapi.APIServer{
@@ -130,13 +146,4 @@ func getJSONStringFromStruct(i interface{}) (string, error) {
 	}
 
 	return string(b), nil
-}
-
-func formatETCDEndpoints(etcds []string) []string {
-	formatedETCDs := make([]string, 0, len(etcds))
-	for _, etcd := range etcds {
-		formatedETCDs = append(formatedETCDs, fmt.Sprintf("https://%s/", etcd))
-	}
-
-	return formatedETCDs
 }

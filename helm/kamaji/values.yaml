@@ -35,7 +35,7 @@ etcd:
   compactionInterval: 0
 
   # -- (string) Comma-separated list of the endpoints of the etcd cluster's members.
-  endpoints: "etcd-0.etcd.kamaji-system.svc.cluster.local:2379,etcd-1.etcd.kamaji-system.svc.cluster.local:2379,etcd-2.etcd.kamaji-system.svc.cluster.local:2379"
+  endpoints: "https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379"
 
 # -- The address the probe endpoint binds to. (default ":8081")
 healthProbeBindAddress: ":8081"

@@ -21,7 +21,7 @@ Available flags are the following:
 --etcd-client-secret-name            Name of the secret which contains ETCD client certificates. (default: "root-client-certs")
 --etcd-client-secret-namespace       Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji")
 --etcd-compaction-interval           ETCD Compaction interval (i.e. "5m0s"). (default: "0" (disabled))
---etcd-endpoints                     Comma-separated list with ETCD endpoints (i.e. etcd-0.etcd.kamaji.svc.cluster.local,etcd-1.etcd.kamaji.svc.cluster.local,etcd-2.etcd.kamaji.svc.cluster.local)
+--etcd-endpoints                     Comma-separated list with ETCD endpoints (i.e. https://etcd-0.etcd.kamaji.svc.cluster.local,https://etcd-1.etcd.kamaji.svc.cluster.local,https://etcd-2.etcd.kamaji.svc.cluster.local)
 --health-probe-bind-address string   The address the probe endpoint binds to. (default ":8081")
 --kubeconfig string                  Paths to a kubeconfig. Only required if out-of-cluster.
 --leader-elect                       Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.

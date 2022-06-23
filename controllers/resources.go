@@ -14,6 +14,7 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/resources/konnectivity"
+	"github.com/clastix/kamaji/internal/types"
 )
 
 const (
@@ -179,27 +180,32 @@ func getKubeconfigResources(c client.Client, log logr.Logger, tcpReconcilerConfi
 }
 
 func getKubernetesStorageResources(c client.Client, log logr.Logger, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
-	return []resources.Resource{
-		&resources.ETCDCACertificatesResource{
-			Name:                  "etcd-ca-certificates",
-			Client:                c,
-			Log:                   log,
-			ETCDCASecretName:      tcpReconcilerConfig.ETCDCASecretName,
-			ETCDCASecretNamespace: tcpReconcilerConfig.ETCDCASecretNamespace,
-		},
-		&resources.ETCDCertificatesResource{
-			Name:   "etcd-certificates",
-			Client: c,
-			Log:    log,
-		},
-		&resources.ETCDSetupResource{
-			Name:                  "etcd-setup",
-			Client:                c,
-			Log:                   log,
-			ETCDClientCertsSecret: getNamespacedName(tcpReconcilerConfig.ETCDClientSecretNamespace, tcpReconcilerConfig.ETCDClientSecretName),
-			ETCDCACertsSecret:     getNamespacedName(tcpReconcilerConfig.ETCDCASecretNamespace, tcpReconcilerConfig.ETCDCASecretName),
-			Endpoints:             getArrayFromString(tcpReconcilerConfig.ETCDEndpoints),
-		},
+	switch tcpReconcilerConfig.ETCDStorageType {
+	case types.ETCD:
+		return []resources.Resource{
+			&resources.ETCDCACertificatesResource{
+				Name:                  "etcd-ca-certificates",
+				Client:                c,
+				Log:                   log,
+				ETCDCASecretName:      tcpReconcilerConfig.ETCDCASecretName,
+				ETCDCASecretNamespace: tcpReconcilerConfig.ETCDCASecretNamespace,
+			},
+			&resources.ETCDCertificatesResource{
+				Name:   "etcd-certificates",
+				Client: c,
+				Log:    log,
+			},
+			&resources.ETCDSetupResource{
+				Name:                  "etcd-setup",
+				Client:                c,
+				Log:                   log,
+				ETCDClientCertsSecret: getNamespacedName(tcpReconcilerConfig.ETCDClientSecretNamespace, tcpReconcilerConfig.ETCDClientSecretName),
+				ETCDCACertsSecret:     getNamespacedName(tcpReconcilerConfig.ETCDCASecretNamespace, tcpReconcilerConfig.ETCDCASecretName),
+				Endpoints:             getArrayFromString(tcpReconcilerConfig.ETCDEndpoints),
+			},
+		}
+	default:
+		return []resources.Resource{}
 	}
 }
 
