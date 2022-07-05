@@ -1,14 +1,16 @@
 package types
 
+import (
+	"fmt"
+
+	"github.com/spf13/viper"
+)
+
 type ETCDStorageType int
 
 const (
 	ETCD ETCDStorageType = iota
 	KineMySQL
-)
-
-const (
-	defaultETCDStorageType = ETCD
 )
 
 var etcdStorageTypeString = map[string]ETCDStorageType{"etcd": ETCD, "kine-mysql": KineMySQL}
@@ -23,6 +25,17 @@ func ParseETCDStorageType(s string) ETCDStorageType {
 		return storageType
 	}
 
-	// TODO: we have to decide what to do in this situation
-	return defaultETCDStorageType
+	panic(fmt.Errorf("unsupported storage type %s", s))
+}
+
+// ParseETCDEndpoint returns the default ETCD endpoints used to interact with the Tenant Control Plane backing storage.
+func ParseETCDEndpoint(conf *viper.Viper) string {
+	switch ParseETCDStorageType(conf.GetString("etcd-storage-type")) {
+	case ETCD:
+		return conf.GetString("etcd-endpoints")
+	case KineMySQL:
+		return "127.0.0.1:2379"
+	default:
+		panic("unsupported storage type")
+	}
 }
