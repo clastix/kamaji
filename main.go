@@ -82,7 +82,7 @@ func main() {
 			ETCDCASecretNamespace:     conf.GetString("etcd-ca-secret-namespace"),
 			ETCDClientSecretName:      conf.GetString("etcd-client-secret-name"),
 			ETCDClientSecretNamespace: conf.GetString("etcd-client-secret-namespace"),
-			ETCDEndpoints:             conf.GetString("etcd-endpoints"),
+			ETCDEndpoints:             types.ParseETCDEndpoint(conf),
 			ETCDCompactionInterval:    conf.GetString("etcd-compaction-interval"),
 			TmpBaseDirectory:          conf.GetString("tmp-directory"),
 			KineMySQLSecretName:       conf.GetString("kine-mysql-secret-name"),
