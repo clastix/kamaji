@@ -49,7 +49,7 @@ Once a compatible-mysql database is running, we need to provide information abou
 --kine-mysql-host=<database host>
 --kine-mysql-port=<database port>
 --kine-mysql-secret-name=<secret name>
---kine-mysql-secret-name=<secret namespace>
+--kine-mysql-secret-namespace=<secret namespace>
 ```
 
 The secret with the configuration and certificates for mysql should look like:
