@@ -68,10 +68,6 @@ func getTenantControllerExternalFQDN(tenantControlPlane kamajiv1alpha1.TenantCon
 	return fmt.Sprintf("%s.%s.%s", tenantControlPlane.GetName(), tenantControlPlane.GetNamespace(), tenantControlPlane.Spec.NetworkProfile.Domain)
 }
 
-func getTenantControllerInternalFQDN(tenantControlPlane kamajiv1alpha1.TenantControlPlane) string {
-	return fmt.Sprintf("%s.%s.svc.cluster.local", tenantControlPlane.GetName(), tenantControlPlane.GetNamespace())
-}
-
 func getLatestConfigRV(tenantControlPlane kamajiv1alpha1.TenantControlPlane) string {
 	return tenantControlPlane.Status.KubeadmConfig.ResourceVersion
 }

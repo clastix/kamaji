@@ -17,6 +17,7 @@ import (
 	kamajiapi "github.com/clastix/kamaji/api"
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
+	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type KubeadmAddon int
@@ -70,7 +71,7 @@ func (r *KubeadmAddonResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.
 }
 
 func (r *KubeadmAddonResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
-	client, err := GetRESTClient(ctx, r, tenantControlPlane)
+	client, err := utilities.GetTenantRESTClient(ctx, r.Client, tenantControlPlane)
 	if err != nil {
 		return false, err
 	}

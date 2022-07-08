@@ -6,21 +6,16 @@ package resources
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/version"
-	clientset "k8s.io/client-go/kubernetes"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/upgrade"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	kubeconfigutil "github.com/clastix/kamaji/internal/kubeconfig"
 	kamajiupgrade "github.com/clastix/kamaji/internal/upgrade"
+	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type KubernetesUpgrade struct {
@@ -70,7 +65,7 @@ func (k *KubernetesUpgrade) CreateOrUpdate(ctx context.Context, plane *kamajiv1a
 		return controllerutil.OperationResultNone, nil
 	}
 	// Checking if the upgrade is allowed, or not
-	restClient, err := k.getRESTClient(ctx, plane)
+	restClient, err := utilities.GetTenantRESTClient(ctx, k.Client, plane)
 	if err != nil {
 		return controllerutil.OperationResultNone, errors.Wrap(err, "cannot create REST client required for Kubernetes upgrade plan")
 	}
@@ -108,59 +103,6 @@ func (k *KubernetesUpgrade) UpdateTenantControlPlaneStatus(ctx context.Context, 
 	}
 
 	return nil
-}
-
-func (k *KubernetesUpgrade) getKubeconfigSecret(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*corev1.Secret, error) {
-	kubeconfigSecretName := tenantControlPlane.Status.KubeConfig.Admin.SecretName
-	namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: kubeconfigSecretName}
-	secret := &corev1.Secret{}
-	if err := k.Client.Get(ctx, namespacedName, secret); err != nil {
-		return nil, err
-	}
-
-	return secret, nil
-}
-
-func (k *KubernetesUpgrade) getKubeconfig(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*kubeconfigutil.Kubeconfig, error) {
-	secretKubeconfig, err := k.getKubeconfigSecret(ctx, tenantControlPlane)
-	if err != nil {
-		return nil, err
-	}
-
-	bytes, ok := secretKubeconfig.Data[kubeconfigAdminKeyName]
-	if !ok {
-		return nil, fmt.Errorf("%s is not into kubeconfig secret", kubeconfigAdminKeyName)
-	}
-
-	return kubeconfigutil.GetKubeconfigFromBytes(bytes)
-}
-
-func (k *KubernetesUpgrade) getRESTClient(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*clientset.Clientset, error) {
-	config, err := k.getRESTClientConfig(ctx, tenantControlPlane)
-	if err != nil {
-		return nil, err
-	}
-
-	return clientset.NewForConfig(config)
-}
-
-func (k *KubernetesUpgrade) getRESTClientConfig(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*restclient.Config, error) {
-	kubeconfig, err := k.getKubeconfig(ctx, tenantControlPlane)
-	if err != nil {
-		return nil, err
-	}
-
-	config := &restclient.Config{
-		Host: fmt.Sprintf("https://%s:%d", getTenantControllerInternalFQDN(*tenantControlPlane), tenantControlPlane.Spec.NetworkProfile.Port),
-		TLSClientConfig: restclient.TLSClientConfig{
-			CAData:   kubeconfig.Clusters[0].Cluster.CertificateAuthorityData,
-			CertData: kubeconfig.AuthInfos[0].AuthInfo.ClientCertificateData,
-			KeyData:  kubeconfig.AuthInfos[0].AuthInfo.ClientKeyData,
-		},
-		Timeout: time.Second * kubeadmPhaseTimeout,
-	}
-
-	return config, nil
 }
 
 func (k *KubernetesUpgrade) isUpgradable() error {

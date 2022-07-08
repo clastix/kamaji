@@ -20,6 +20,10 @@ import (
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
+const (
+	agentNamespace = "kube-system"
+)
+
 type Agent struct {
 	resource     *appsv1.DaemonSet
 	Client       client.Client
@@ -53,11 +57,11 @@ func (r *Agent) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 	r.resource = &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      AgentName,
-			Namespace: kubeSystemNamespace,
+			Namespace: agentNamespace,
 		},
 	}
 
-	client, err := NewClient(ctx, r, tenantControlPlane)
+	client, err := utilities.GetTenantClient(ctx, r.Client, tenantControlPlane)
 	if err != nil {
 		return err
 	}
@@ -65,10 +69,6 @@ func (r *Agent) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 	r.tenantClient = client
 
 	return nil
-}
-
-func (r *Agent) GetClient() client.Client {
-	return r.Client
 }
 
 func (r *Agent) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {

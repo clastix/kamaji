@@ -21,8 +21,6 @@ import (
 
 type kubeadmPhase int
 
-const kubeadmPhaseTimeout = 10 // seconds
-
 const (
 	PhaseUploadConfigKubeadm kubeadmPhase = iota
 	PhaseUploadConfigKubelet
