@@ -113,10 +113,11 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			},
 		))
 
-		r.resource.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				"k8s-app": AgentName,
-			},
+		if r.resource.Spec.Selector == nil {
+			r.resource.Spec.Selector = &metav1.LabelSelector{}
+		}
+		r.resource.Spec.Selector.MatchLabels = map[string]string{
+			"k8s-app": AgentName,
 		}
 
 		r.resource.Spec.Template.SetLabels(utilities.MergeMaps(
@@ -126,82 +127,73 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			},
 		))
 
-		r.resource.Spec.Template.Spec = corev1.PodSpec{
-			PriorityClassName: "system-cluster-critical",
-			Tolerations: []corev1.Toleration{
-				{
-					Key:      "CriticalAddonsOnly",
-					Operator: "Exists",
-				},
+		r.resource.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
+		r.resource.Spec.Template.Spec.Tolerations = []corev1.Toleration{
+			{
+				Key:      "CriticalAddonsOnly",
+				Operator: "Exists",
 			},
-			NodeSelector: map[string]string{
-				"kubernetes.io/os": "linux",
-			},
-			Containers: []corev1.Container{
-				{
-					Image:   fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.AgentImage, tenantControlPlane.Spec.Addons.Konnectivity.Version),
-					Name:    AgentName,
-					Command: []string{"/proxy-agent"},
-					Args: []string{
-						"-v=8",
-						"--logtostderr=true",
-						"--ca-cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
-						fmt.Sprintf("--proxy-server-host=%s", address),
-						fmt.Sprintf("--proxy-server-port=%d", tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort),
-						"--admin-server-port=8133",
-						"--health-server-port=8134",
-						"--service-account-token-path=/var/run/secrets/tokens/konnectivity-agent-token",
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							MountPath: "/var/run/secrets/tokens",
-							Name:      agentTokenName,
-						},
-					},
-					LivenessProbe: &corev1.Probe{
-						ProbeHandler: corev1.ProbeHandler{
-							HTTPGet: &corev1.HTTPGetAction{
-								Path: "/healthz",
-								Port: intstr.FromInt(8134),
-							},
-						},
-						InitialDelaySeconds: 15,
-						TimeoutSeconds:      15,
-						PeriodSeconds:       10,
-						SuccessThreshold:    1,
-						FailureThreshold:    3,
-					},
-					TerminationMessagePath:   "/dev/termination-log",
-					TerminationMessagePolicy: "File",
-					ImagePullPolicy:          corev1.PullIfNotPresent,
-				},
-			},
-			ServiceAccountName:            AgentName,
-			DeprecatedServiceAccount:      AgentName,
-			RestartPolicy:                 "Always",
-			DNSPolicy:                     "ClusterFirst",
-			TerminationGracePeriodSeconds: pointer.Int64(30),
-			SchedulerName:                 "default-scheduler",
-			SecurityContext:               &corev1.PodSecurityContext{},
-			Volumes: []corev1.Volume{
-				{
-					Name: agentTokenName,
-					VolumeSource: corev1.VolumeSource{
-						Projected: &corev1.ProjectedVolumeSource{
-							Sources: []corev1.VolumeProjection{
-								{
-									ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
-										Path:              agentTokenName,
-										Audience:          tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Name,
-										ExpirationSeconds: pointer.Int64(3600),
-									},
+		}
+		r.resource.Spec.Template.Spec.NodeSelector = map[string]string{
+			"kubernetes.io/os": "linux",
+		}
+		r.resource.Spec.Template.Spec.ServiceAccountName = AgentName
+		r.resource.Spec.Template.Spec.Volumes = []corev1.Volume{
+			{
+				Name: agentTokenName,
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: []corev1.VolumeProjection{
+							{
+								ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+									Path:              agentTokenName,
+									Audience:          tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Name,
+									ExpirationSeconds: pointer.Int64(3600),
 								},
 							},
-							DefaultMode: pointer.Int32Ptr(420),
 						},
+						DefaultMode: pointer.Int32Ptr(420),
 					},
 				},
 			},
+		}
+
+		if len(r.resource.Spec.Template.Spec.Containers) != 1 {
+			r.resource.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
+		}
+
+		r.resource.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.AgentImage, tenantControlPlane.Spec.Addons.Konnectivity.Version)
+		r.resource.Spec.Template.Spec.Containers[0].Name = AgentName
+		r.resource.Spec.Template.Spec.Containers[0].Command = []string{"/proxy-agent"}
+		r.resource.Spec.Template.Spec.Containers[0].Args = []string{
+			"-v=8",
+			"--logtostderr=true",
+			"--ca-cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+			fmt.Sprintf("--proxy-server-host=%s", address),
+			fmt.Sprintf("--proxy-server-port=%d", tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort),
+			"--admin-server-port=8133",
+			"--health-server-port=8134",
+			"--service-account-token-path=/var/run/secrets/tokens/konnectivity-agent-token",
+		}
+		r.resource.Spec.Template.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
+			{
+				MountPath: "/var/run/secrets/tokens",
+				Name:      agentTokenName,
+			},
+		}
+		r.resource.Spec.Template.Spec.Containers[0].LivenessProbe = &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:   "/healthz",
+					Port:   intstr.FromInt(8134),
+					Scheme: corev1.URISchemeHTTP,
+				},
+			},
+			InitialDelaySeconds: 15,
+			TimeoutSeconds:      15,
+			PeriodSeconds:       10,
+			SuccessThreshold:    1,
+			FailureThreshold:    3,
 		}
 
 		return nil
