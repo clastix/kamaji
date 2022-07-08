@@ -72,10 +72,6 @@ func (r *CertificateResource) getPrefixedName(tenantControlPlane *kamajiv1alpha1
 	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
 }
 
-func (r *CertificateResource) GetClient() client.Client {
-	return r.Client
-}
-
 func (r *CertificateResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	return controllerutil.CreateOrUpdate(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }

@@ -49,11 +49,11 @@ func (r *ServiceAccountResource) Define(ctx context.Context, tenantControlPlane 
 	r.resource = &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "konnectivity-agent",
-			Namespace: kubeSystemNamespace,
+			Namespace: agentNamespace,
 		},
 	}
 
-	client, err := NewClient(ctx, r, tenantControlPlane)
+	client, err := utilities.GetTenantClient(ctx, r.Client, tenantControlPlane)
 	if err != nil {
 		return err
 	}
@@ -61,10 +61,6 @@ func (r *ServiceAccountResource) Define(ctx context.Context, tenantControlPlane 
 	r.tenantClient = client
 
 	return nil
-}
-
-func (r *ServiceAccountResource) GetClient() client.Client {
-	return r.Client
 }
 
 func (r *ServiceAccountResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {

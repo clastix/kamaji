@@ -62,10 +62,6 @@ func (r *KubeconfigResource) getPrefixedName(tenantControlPlane *kamajiv1alpha1.
 	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
 }
 
-func (r *KubeconfigResource) GetClient() client.Client {
-	return r.Client
-}
-
 func (r *KubeconfigResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	return controllerutil.CreateOrUpdate(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }

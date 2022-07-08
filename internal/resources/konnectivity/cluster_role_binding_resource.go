@@ -51,7 +51,7 @@ func (r *ClusterRoleBindingResource) Define(ctx context.Context, tenantControlPl
 		},
 	}
 
-	client, err := NewClient(ctx, r, tenantControlPlane)
+	client, err := utilities.GetTenantClient(ctx, r.Client, tenantControlPlane)
 	if err != nil {
 		return err
 	}
@@ -59,10 +59,6 @@ func (r *ClusterRoleBindingResource) Define(ctx context.Context, tenantControlPl
 	r.tenantClient = client
 
 	return nil
-}
-
-func (r *ClusterRoleBindingResource) GetClient() client.Client {
-	return r.Client
 }
 
 func (r *ClusterRoleBindingResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
