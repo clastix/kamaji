@@ -80,15 +80,14 @@ func getKubeadmClusterConfiguration(params Parameters) kubeadmapi.ClusterConfigu
 			},
 		},
 		APIServer: kubeadmapi.APIServer{
-			CertSANs: []string{
+			CertSANs: append([]string{
 				"127.0.0.1",
 				"localhost",
-				fmt.Sprintf("%s.%s", params.TenantControlPlaneName, params.TenantControlPlaneDomain),
 				params.TenantControlPlaneName,
 				fmt.Sprintf("%s.%s.svc", params.TenantControlPlaneName, params.TenantControlPlaneNamespace),
 				fmt.Sprintf("%s.%s.svc.cluster.local", params.TenantControlPlaneName, params.TenantControlPlaneNamespace),
 				params.TenantControlPlaneAddress,
-			},
+			}, params.TenantControlPlaneCertSANs...),
 			ControlPlaneComponent: kubeadmapi.ControlPlaneComponent{
 				ExtraArgs: map[string]string{
 					"etcd-compaction-interval": params.ETCDCompactionInterval,

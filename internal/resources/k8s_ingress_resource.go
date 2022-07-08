@@ -119,10 +119,12 @@ func (r *KubernetesIngressResource) CreateOrUpdate(ctx context.Context, tenantCo
 		}
 
 		rule.HTTP.Paths[0] = path
-		rule.Host = tenantControlPlane.Spec.ControlPlane.Ingress.Hostname
-		if rule.Host == "" {
-			rule.Host = fmt.Sprintf("%s.%s.%s", tenantControlPlane.GetName(), tenantControlPlane.GetNamespace(), tenantControlPlane.Spec.NetworkProfile.Domain)
+
+		if len(tenantControlPlane.Spec.ControlPlane.Ingress.Hostname) == 0 {
+			return fmt.Errorf("missing hostname to expose the Tenant Control Plane using an Ingress resource")
 		}
+
+		rule.Host = tenantControlPlane.Spec.ControlPlane.Ingress.Hostname
 
 		r.resource.Spec.Rules = []networkingv1.IngressRule{
 			rule,

@@ -294,15 +294,20 @@ spec:
                       in the section of ExternalIPs of the Kubernetes Service (only
                       ClusterIP or NodePort)
                     type: boolean
+                  certSANs:
+                    description: CertSANs sets extra Subject Alternative Names (SANs)
+                      for the API Server signing certificate. Use this field to add
+                      additional hostnames when exposing the Tenant Control Plane
+                      with third solutions.
+                    items:
+                      type: string
+                    type: array
                   dnsServiceIPs:
                     default:
                     - 10.96.0.10
                     items:
                       type: string
                     type: array
-                  domain:
-                    description: Domain of the tenant control plane
-                    type: string
                   podCidr:
                     default: 10.244.0.0/16
                     description: CIDR for Kubernetes Pods
@@ -316,8 +321,6 @@ spec:
                     default: 10.96.0.0/16
                     description: Kubernetes Service
                     type: string
-                required:
-                - domain
                 type: object
             required:
             - controlPlane

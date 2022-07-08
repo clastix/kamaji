@@ -20,8 +20,8 @@ type Parameters struct {
 	TenantControlPlaneNamespace    string
 	TenantControlPlaneEndpoint     string
 	TenantControlPlaneAddress      string
+	TenantControlPlaneCertSANs     []string
 	TenantControlPlanePort         int32
-	TenantControlPlaneDomain       string
 	TenantControlPlanePodCIDR      string
 	TenantControlPlaneServiceCIDR  string
 	TenantDNSServiceIPs            []string

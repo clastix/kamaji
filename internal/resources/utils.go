@@ -4,7 +4,6 @@
 package resources
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -62,10 +61,6 @@ func randomString(n int) string {
 	}
 
 	return string(b)
-}
-
-func getTenantControllerExternalFQDN(tenantControlPlane kamajiv1alpha1.TenantControlPlane) string {
-	return fmt.Sprintf("%s.%s.%s", tenantControlPlane.GetName(), tenantControlPlane.GetNamespace(), tenantControlPlane.Spec.NetworkProfile.Domain)
 }
 
 func getLatestConfigRV(tenantControlPlane kamajiv1alpha1.TenantControlPlane) string {
