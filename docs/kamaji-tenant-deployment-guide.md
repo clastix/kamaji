@@ -62,7 +62,8 @@ spec:
   networkProfile:
     address: ${TENANT_ADDR}
     port: ${TENANT_PORT}
-    domain: ${TENANT_DOMAIN}
+    certSANs:
+    - ${TENANT_NAME}.${TENANT_DOMAIN}
     serviceCidr: ${TENANT_SVC_CIDR}
     podCidr: ${TENANT_POD_CIDR}
     dnsServiceIPs:
