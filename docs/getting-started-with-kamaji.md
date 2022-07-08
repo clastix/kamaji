@@ -136,7 +136,8 @@ spec:
   networkProfile:
     address: "172.18.0.2"
     port: 31443
-    domain: "clastix.labs"
+    certSANs:
+    - "test.clastixlabs.io"
     serviceCidr: "10.96.0.0/16"
     podCidr: "10.244.0.0/16"
     dnsServiceIPs: 

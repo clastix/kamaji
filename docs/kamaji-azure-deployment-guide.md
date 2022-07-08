@@ -129,7 +129,8 @@ spec:
       - LimitRanger
   networkProfile:
     port: 6443
-    domain: ${KAMAJI_REGION}.cloudapp.azure.com
+    certSANs:
+    - ${TENANT_NAME}.${KAMAJI_REGION}.cloudapp.azure.com
     serviceCidr: ${TENANT_SVC_CIDR}
     podCidr: ${TENANT_POD_CIDR}
     dnsServiceIPs:
