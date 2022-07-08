@@ -31,6 +31,7 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, tenantContr
 		TenantControlPlaneVersion:      tenantControlPlane.Spec.Kubernetes.Version,
 		TenantControlPlanePodCIDR:      tenantControlPlane.Spec.NetworkProfile.PodCIDR,
 		TenantControlPlaneAddress:      tenantControlPlane.Spec.NetworkProfile.Address,
+		TenantControlPlaneCertSANs:     tenantControlPlane.Spec.NetworkProfile.CertSANs,
 		TenantControlPlanePort:         tenantControlPlane.Spec.NetworkProfile.Port,
 		TenantControlPlaneCGroupDriver: tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(),
 	}

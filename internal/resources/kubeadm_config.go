@@ -23,7 +23,6 @@ type KubeadmConfigResource struct {
 	Client                 client.Client
 	Name                   string
 	Port                   int32
-	Domain                 string
 	PodCIDR                string
 	ServiceCIDR            string
 	KubernetesVersion      string
@@ -91,15 +90,11 @@ func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(ctx context.Conte
 }
 
 func (r *KubeadmConfigResource) getControlPlaneEndpoint(tenantControlPlane *kamajiv1alpha1.TenantControlPlane, address string) string {
-	if !tenantControlPlane.Spec.ControlPlane.Ingress.Enabled {
-		return fmt.Sprintf("%s:%d", address, tenantControlPlane.Spec.NetworkProfile.Port)
-	}
-
 	if tenantControlPlane.Spec.ControlPlane.Ingress.Hostname != "" {
 		return tenantControlPlane.Spec.ControlPlane.Ingress.Hostname
 	}
 
-	return getTenantControllerExternalFQDN(*tenantControlPlane)
+	return fmt.Sprintf("%s:%d", address, tenantControlPlane.Spec.NetworkProfile.Port)
 }
 
 func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlPlane, address string) controllerutil.MutateFn {
@@ -111,8 +106,8 @@ func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.Tenant
 			TenantControlPlaneNamespace:   tenantControlPlane.GetNamespace(),
 			TenantControlPlaneEndpoint:    r.getControlPlaneEndpoint(tenantControlPlane, address),
 			TenantControlPlaneAddress:     address,
+			TenantControlPlaneCertSANs:    tenantControlPlane.Spec.NetworkProfile.CertSANs,
 			TenantControlPlanePort:        r.Port,
-			TenantControlPlaneDomain:      r.Domain,
 			TenantControlPlanePodCIDR:     r.PodCIDR,
 			TenantControlPlaneServiceCIDR: r.ServiceCIDR,
 			TenantControlPlaneVersion:     r.KubernetesVersion,

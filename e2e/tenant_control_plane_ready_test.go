@@ -36,12 +36,7 @@ var _ = Describe("Deploy a TenantControlPlane resource", func() {
 				},
 			},
 			NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
-				Address:       "172.18.0.2",
-				DNSServiceIPs: []string{"10.96.0.10"},
-				Domain:        "clastix.labs",
-				PodCIDR:       "10.244.0.0/16",
-				Port:          31443,
-				ServiceCIDR:   "10.96.0.0/16",
+				Address: "172.18.0.2",
 			},
 			Kubernetes: kamajiv1alpha1.KubernetesSpec{
 				Version: "v1.23.6",

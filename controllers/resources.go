@@ -119,7 +119,6 @@ func getKubeadmConfigResources(c client.Client, tcpReconcilerConfig TenantContro
 			KubernetesVersion:      tenantControlPlane.Spec.Kubernetes.Version,
 			PodCIDR:                tenantControlPlane.Spec.NetworkProfile.PodCIDR,
 			ServiceCIDR:            tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
-			Domain:                 tenantControlPlane.Spec.NetworkProfile.Domain,
 			ETCDs:                  getArrayFromString(tcpReconcilerConfig.ETCDEndpoints),
 			ETCDCompactionInterval: tcpReconcilerConfig.ETCDCompactionInterval,
 			Client:                 c,

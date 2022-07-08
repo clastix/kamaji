@@ -23,8 +23,9 @@ type NetworkProfileSpec struct {
 	// Port where API server of will be exposed
 	// +kubebuilder:default=6443
 	Port int32 `json:"port,omitempty"`
-	// Domain of the tenant control plane
-	Domain string `json:"domain"`
+	// CertSANs sets extra Subject Alternative Names (SANs) for the API Server signing certificate.
+	// Use this field to add additional hostnames when exposing the Tenant Control Plane with third solutions.
+	CertSANs []string `json:"certSANs,omitempty"`
 	// Kubernetes Service
 	// +kubebuilder:default="10.96.0.0/16"
 	ServiceCIDR string `json:"serviceCidr,omitempty"`
