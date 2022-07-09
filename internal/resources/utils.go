@@ -64,5 +64,5 @@ func randomString(n int) string {
 }
 
 func getLatestConfigRV(tenantControlPlane kamajiv1alpha1.TenantControlPlane) string {
-	return tenantControlPlane.Status.KubeadmConfig.ResourceVersion
+	return tenantControlPlane.Status.KubeadmConfig.Checksum
 }

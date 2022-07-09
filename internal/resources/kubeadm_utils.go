@@ -14,7 +14,7 @@ import (
 )
 
 func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	config, resourceVersion, err := getKubeadmConfiguration(ctx, r, tenantControlPlane)
+	config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
 	if err != nil {
 		return controllerutil.OperationResultNone, err
 	}
@@ -36,14 +36,15 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, tenantContr
 		TenantControlPlaneCGroupDriver: tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(),
 	}
 
+	checksum := config.Checksum()
+
 	status, err := r.GetStatus(tenantControlPlane)
 	if err != nil {
 		return controllerutil.OperationResultNone, err
 	}
 
-	storedResourceVersion := status.GetKubeadmConfigResourceVersion()
-	if resourceVersion == storedResourceVersion {
-		r.SetKubeadmConfigResourceVersion(resourceVersion)
+	if checksum == status.GetChecksum() {
+		r.SetKubeadmConfigChecksum(checksum)
 
 		return controllerutil.OperationResultNone, nil
 	}
@@ -61,9 +62,9 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, tenantContr
 		return controllerutil.OperationResultNone, err
 	}
 
-	r.SetKubeadmConfigResourceVersion(resourceVersion)
+	r.SetKubeadmConfigChecksum(checksum)
 
-	if storedResourceVersion == "" {
+	if checksum == "" {
 		return controllerutil.OperationResultCreated, nil
 	}
 

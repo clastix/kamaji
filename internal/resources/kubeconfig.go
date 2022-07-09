@@ -5,6 +5,8 @@ package resources
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -84,6 +86,7 @@ func (r *KubeconfigResource) UpdateTenantControlPlaneStatus(ctx context.Context,
 
 	status.LastUpdate = metav1.Now()
 	status.SecretName = r.resource.GetName()
+	status.Checksum = r.resource.Annotations["checksum"]
 
 	return nil
 }
@@ -107,20 +110,23 @@ func (r *KubeconfigResource) CreateOrUpdate(ctx context.Context, tenantControlPl
 
 func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		latestConfigRV := getLatestConfigRV(*tenantControlPlane)
-		actualConfigRV := r.resource.GetLabels()["latest-config-rv"]
-		if latestConfigRV == actualConfigRV {
+		status, err := r.getKubeconfigStatus(tenantControlPlane)
+		if err != nil {
+			return err
+		}
+
+		if status.Checksum == r.resource.GetAnnotations()["checksum"] {
 			if kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName]) {
 				return nil
 			}
 		}
 
-		config, _, err := getKubeadmConfiguration(ctx, r, tenantControlPlane)
+		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
 		if err != nil {
 			return err
 		}
 
-		if err := r.customizeConfig(config); err != nil {
+		if err = r.customizeConfig(config); err != nil {
 			return err
 		}
 
@@ -148,11 +154,16 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),
 			map[string]string{
-				"latest-config-rv":            latestConfigRV,
 				"kamaji.clastix.io/name":      tenantControlPlane.GetName(),
 				"kamaji.clastix.io/component": r.GetName(),
 			},
 		))
+
+		hash := md5.Sum(kubeconfig)
+
+		r.resource.SetAnnotations(map[string]string{
+			"checksum": hex.EncodeToString(hash[:]),
+		})
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

@@ -95,7 +95,7 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			}
 		}
 
-		config, _, err := getKubeadmConfiguration(ctx, r, tenantControlPlane)
+		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
 		if err != nil {
 			return err
 		}
