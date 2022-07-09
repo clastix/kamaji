@@ -27,6 +27,8 @@ func (in *TenantControlPlane) GetControlPlaneAddress(ctx context.Context, client
 	case len(in.Spec.NetworkProfile.Address) > 0:
 		// Returning the hard-coded value in the specification in case of non LoadBalanced resources
 		return in.Spec.NetworkProfile.Address, nil
+	case svc.Spec.Type == corev1.ServiceTypeClusterIP:
+		return svc.Spec.ClusterIP, nil
 	case svc.Spec.Type == corev1.ServiceTypeLoadBalancer:
 		loadBalancerStatus = svc.Status.LoadBalancer
 		if len(loadBalancerStatus.Ingress) == 0 {
