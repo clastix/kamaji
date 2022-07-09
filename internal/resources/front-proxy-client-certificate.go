@@ -96,7 +96,7 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 			}
 		}
 
-		config, _, err := getKubeadmConfiguration(ctx, r, tenantControlPlane)
+		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
 		if err != nil {
 			return err
 		}

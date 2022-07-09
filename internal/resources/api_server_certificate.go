@@ -96,7 +96,7 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 			}
 		}
 
-		config, _, err := getKubeadmConfiguration(ctx, r, tenantControlPlane)
+		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
 		if err != nil {
 			return err
 		}

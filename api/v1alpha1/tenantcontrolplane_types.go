@@ -215,38 +215,40 @@ type StorageStatus struct {
 	KineMySQL *KineMySQLStatus `json:"kineMySQL,omitempty"`
 }
 
-// TenantControlPlaneKubeconfigsStatus contains information about a the generated kubeconfig.
+// KubeconfigStatus contains information about the generated kubeconfig.
 type KubeconfigStatus struct {
 	SecretName string      `json:"secretName,omitempty"`
 	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
+	Checksum   string      `json:"checksum,omitempty"`
 }
 
-// TenantControlPlaneKubeconfigsStatus stores information about all the generated kubeconfigs.
+// KubeconfigsStatus stores information about all the generated kubeconfigs.
 type KubeconfigsStatus struct {
 	Admin             KubeconfigStatus `json:"admin,omitempty"`
-	ControllerManager KubeconfigStatus `json:"controlerManager,omitempty"`
+	ControllerManager KubeconfigStatus `json:"controllerManager,omitempty"`
 	Scheduler         KubeconfigStatus `json:"scheduler,omitempty"`
 }
 
 // KubeadmConfigStatus contains the status of the configuration required by kubeadm.
 type KubeadmConfigStatus struct {
-	ConfigmapName   string      `json:"configmapName,omitempty"`
-	LastUpdate      metav1.Time `json:"lastUpdate,omitempty"`
-	ResourceVersion string      `json:"resourceVersion"`
+	ConfigmapName string      `json:"configmapName,omitempty"`
+	LastUpdate    metav1.Time `json:"lastUpdate,omitempty"`
+	// Checksum of the kubeadm configuration to detect changes
+	Checksum string `json:"checksum,omitempty"`
 }
 
 // KubeadmPhasesStatus contains the status of of a kubeadm phase action.
 type KubeadmPhaseStatus struct {
-	KubeadmConfigResourceVersion string      `json:"kubeadmConfigResourceVersion,omitempty"`
-	LastUpdate                   metav1.Time `json:"lastUpdate,omitempty"`
+	Checksum   string      `json:"checksum,omitempty"`
+	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 }
 
-func (d KubeadmPhaseStatus) GetKubeadmConfigResourceVersion() string {
-	return d.KubeadmConfigResourceVersion
+func (in KubeadmPhaseStatus) GetChecksum() string {
+	return in.Checksum
 }
 
-func (d *KubeadmPhaseStatus) SetKubeadmConfigResourceVersion(rv string) {
-	d.KubeadmConfigResourceVersion = rv
+func (in *KubeadmPhaseStatus) SetChecksum(rv string) {
+	in.Checksum = rv
 }
 
 // KubeadmPhasesStatus contains the status of the different kubeadm phases action.
@@ -279,17 +281,17 @@ type KonnectivityStatus struct {
 
 // AddonStatus defines the observed state of an Addon.
 type AddonStatus struct {
-	Enabled                      bool        `json:"enabled"`
-	KubeadmConfigResourceVersion string      `json:"kubeadmConfigResourceVersion,omitempty"`
-	LastUpdate                   metav1.Time `json:"lastUpdate,omitempty"`
+	Enabled    bool        `json:"enabled"`
+	Checksum   string      `json:"checksum,omitempty"`
+	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 }
 
-func (d AddonStatus) GetKubeadmConfigResourceVersion() string {
-	return d.KubeadmConfigResourceVersion
+func (in AddonStatus) GetChecksum() string {
+	return in.Checksum
 }
 
-func (d *AddonStatus) SetKubeadmConfigResourceVersion(rv string) {
-	d.KubeadmConfigResourceVersion = rv
+func (in *AddonStatus) SetChecksum(rv string) {
+	in.Checksum = rv
 }
 
 // AddonsStatus defines the observed state of the different Addons.

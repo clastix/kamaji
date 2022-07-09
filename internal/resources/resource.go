@@ -43,7 +43,7 @@ type KubeadmPhaseResource interface {
 	GetClient() client.Client
 	GetKubeadmFunction() (func(clientset.Interface, *kubeadm.Configuration) error, error)
 	GetStatus(*kamajiv1alpha1.TenantControlPlane) (kamajiapi.KubeadmConfigResourceVersionDependant, error)
-	SetKubeadmConfigResourceVersion(string)
+	SetKubeadmConfigChecksum(string)
 }
 
 type HandlerConfig struct {
@@ -95,16 +95,16 @@ func createOrUpdate(ctx context.Context, resource Resource, tenantControlPlane *
 	return result, nil
 }
 
-func getKubeadmConfiguration(ctx context.Context, r KubeadmResource, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*kubeadm.Configuration, string, error) {
+func getStoredKubeadmConfiguration(ctx context.Context, r KubeadmResource, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*kubeadm.Configuration, error) {
 	var configmap corev1.ConfigMap
 	namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.KubeadmConfig.ConfigmapName}
 	if err := r.GetClient().Get(ctx, namespacedName, &configmap); err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	config, err := kubeadm.GetKubeadmInitConfigurationFromMap(configmap.Data)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	tmpDirectory := r.GetTmpDirectory()
@@ -112,5 +112,5 @@ func getKubeadmConfiguration(ctx context.Context, r KubeadmResource, tenantContr
 		config.InitConfiguration.ClusterConfiguration.CertificatesDir = tmpDirectory
 	}
 
-	return config, configmap.ObjectMeta.ResourceVersion, nil
+	return config, nil
 }

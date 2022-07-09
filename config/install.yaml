@@ -308,10 +308,10 @@ spec:
                   coreDNS:
                     description: AddonStatus defines the observed state of an Addon.
                     properties:
+                      checksum:
+                        type: string
                       enabled:
                         type: boolean
-                      kubeadmConfigResourceVersion:
-                        type: string
                       lastUpdate:
                         format: date-time
                         type: string
@@ -365,8 +365,10 @@ spec:
                       enabled:
                         type: boolean
                       kubeconfig:
-                        description: TenantControlPlaneKubeconfigsStatus contains information about a the generated kubeconfig.
+                        description: KubeconfigStatus contains information about the generated kubeconfig.
                         properties:
+                          checksum:
+                            type: string
                           lastUpdate:
                             format: date-time
                             type: string
@@ -498,10 +500,10 @@ spec:
                   kubeProxy:
                     description: AddonStatus defines the observed state of an Addon.
                     properties:
+                      checksum:
+                        type: string
                       enabled:
                         type: boolean
-                      kubeadmConfigResourceVersion:
-                        type: string
                       lastUpdate:
                         format: date-time
                         type: string
@@ -608,7 +610,7 @@ spec:
                   bootstrapToken:
                     description: KubeadmPhasesStatus contains the status of of a kubeadm phase action.
                     properties:
-                      kubeadmConfigResourceVersion:
+                      checksum:
                         type: string
                       lastUpdate:
                         format: date-time
@@ -617,7 +619,7 @@ spec:
                   uploadConfigKubeadm:
                     description: KubeadmPhasesStatus contains the status of of a kubeadm phase action.
                     properties:
-                      kubeadmConfigResourceVersion:
+                      checksum:
                         type: string
                       lastUpdate:
                         format: date-time
@@ -626,7 +628,7 @@ spec:
                   uploadConfigKubelet:
                     description: KubeadmPhasesStatus contains the status of of a kubeadm phase action.
                     properties:
-                      kubeadmConfigResourceVersion:
+                      checksum:
                         type: string
                       lastUpdate:
                         format: date-time
@@ -640,31 +642,34 @@ spec:
               kubeadmconfig:
                 description: KubeadmConfig contains the status of the configuration required by kubeadm
                 properties:
+                  checksum:
+                    description: Checksum of the kubeadm configuration to detect changes
+                    type: string
                   configmapName:
                     type: string
                   lastUpdate:
                     format: date-time
                     type: string
-                  resourceVersion:
-                    type: string
-                required:
-                - resourceVersion
                 type: object
               kubeconfig:
                 description: KubeConfig contains information about the kubenconfigs that control plane pieces need
                 properties:
                   admin:
-                    description: TenantControlPlaneKubeconfigsStatus contains information about a the generated kubeconfig.
+                    description: KubeconfigStatus contains information about the generated kubeconfig.
                     properties:
+                      checksum:
+                        type: string
                       lastUpdate:
                         format: date-time
                         type: string
                       secretName:
                         type: string
                     type: object
-                  controlerManager:
-                    description: TenantControlPlaneKubeconfigsStatus contains information about a the generated kubeconfig.
+                  controllerManager:
+                    description: KubeconfigStatus contains information about the generated kubeconfig.
                     properties:
+                      checksum:
+                        type: string
                       lastUpdate:
                         format: date-time
                         type: string
@@ -672,8 +677,10 @@ spec:
                         type: string
                     type: object
                   scheduler:
-                    description: TenantControlPlaneKubeconfigsStatus contains information about a the generated kubeconfig.
+                    description: KubeconfigStatus contains information about the generated kubeconfig.
                     properties:
+                      checksum:
+                        type: string
                       lastUpdate:
                         format: date-time
                         type: string

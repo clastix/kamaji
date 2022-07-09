@@ -32,11 +32,11 @@ func (d KubeadmAddon) String() string {
 }
 
 type KubeadmAddonResource struct {
-	Client                       client.Client
-	Log                          logr.Logger
-	Name                         string
-	KubeadmAddon                 KubeadmAddon
-	kubeadmConfigResourceVersion string
+	Client                client.Client
+	Log                   logr.Logger
+	Name                  string
+	KubeadmAddon          KubeadmAddon
+	kubeadmConfigChecksum string
 }
 
 func (r *KubeadmAddonResource) isStatusEqual(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -50,11 +50,11 @@ func (r *KubeadmAddonResource) isStatusEqual(tenantControlPlane *kamajiv1alpha1.
 		return false
 	}
 
-	return addonStatus.KubeadmConfigResourceVersion == r.kubeadmConfigResourceVersion
+	return addonStatus.Checksum == r.kubeadmConfigChecksum
 }
 
-func (r *KubeadmAddonResource) SetKubeadmConfigResourceVersion(rv string) {
-	r.kubeadmConfigResourceVersion = rv
+func (r *KubeadmAddonResource) SetKubeadmConfigChecksum(checksum string) {
+	r.kubeadmConfigChecksum = checksum
 }
 
 func (r *KubeadmAddonResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -143,7 +143,7 @@ func (r *KubeadmAddonResource) UpdateTenantControlPlaneStatus(ctx context.Contex
 	}
 
 	status.LastUpdate = metav1.Now()
-	status.KubeadmConfigResourceVersion = r.kubeadmConfigResourceVersion
+	status.Checksum = r.kubeadmConfigChecksum
 
 	return nil
 }

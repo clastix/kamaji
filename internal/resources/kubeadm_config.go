@@ -37,7 +37,7 @@ func (r *KubeadmConfigResource) ShouldStatusBeUpdated(ctx context.Context, tenan
 		return true
 	}
 
-	return !(tenantControlPlane.Status.KubeadmConfig.ResourceVersion == r.resource.ObjectMeta.ResourceVersion &&
+	return !(tenantControlPlane.Status.KubeadmConfig.Checksum == r.resource.GetAnnotations()["checksum"] &&
 		tenantControlPlane.Status.KubeadmConfig.ConfigmapName == r.resource.GetName() &&
 		tenantControlPlane.Status.ControlPlaneEndpoint == r.getControlPlaneEndpoint(tenantControlPlane, address))
 }
@@ -82,7 +82,7 @@ func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(ctx context.Conte
 	address, _ := getAddress(ctx, r.Client, *tenantControlPlane)
 
 	tenantControlPlane.Status.KubeadmConfig.LastUpdate = metav1.Now()
-	tenantControlPlane.Status.KubeadmConfig.ResourceVersion = r.resource.ObjectMeta.ResourceVersion
+	tenantControlPlane.Status.KubeadmConfig.Checksum = r.resource.GetAnnotations()["checksum"]
 	tenantControlPlane.Status.KubeadmConfig.ConfigmapName = r.resource.GetName()
 	tenantControlPlane.Status.ControlPlaneEndpoint = r.getControlPlaneEndpoint(tenantControlPlane, address)
 
@@ -123,6 +123,9 @@ func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.Tenant
 		}
 
 		r.resource.Data = data
+		r.resource.SetAnnotations(map[string]string{
+			"checksum": utilities.CalculateConfigMapChecksum(data),
+		})
 
 		if err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
 			return err
