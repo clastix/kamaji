@@ -336,7 +336,7 @@ spec:
                             type: string
                         type: object
                       certificate:
-                        description: CertificatePrivateKeyPair defines the status.
+                        description: CertificatePrivateKeyPairStatus defines the status.
                         properties:
                           lastUpdate:
                             format: date-time
@@ -515,7 +515,7 @@ spec:
                 description: Certificates contains information about the different certificates that are necessary to run a kubernetes control plane
                 properties:
                   apiServer:
-                    description: CertificatePrivateKeyPair defines the status.
+                    description: CertificatePrivateKeyPairStatus defines the status.
                     properties:
                       lastUpdate:
                         format: date-time
@@ -526,7 +526,7 @@ spec:
                         type: string
                     type: object
                   apiServerKubeletClient:
-                    description: CertificatePrivateKeyPair defines the status.
+                    description: CertificatePrivateKeyPairStatus defines the status.
                     properties:
                       lastUpdate:
                         format: date-time
@@ -537,7 +537,7 @@ spec:
                         type: string
                     type: object
                   ca:
-                    description: CertificatePrivateKeyPair defines the status.
+                    description: CertificatePrivateKeyPairStatus defines the status.
                     properties:
                       lastUpdate:
                         format: date-time
@@ -548,10 +548,10 @@ spec:
                         type: string
                     type: object
                   etcd:
-                    description: ETCDAPIServerCertificate defines the observed state of ETCD Certificate for API server.
+                    description: ETCDCertificatesStatus defines the observed state of ETCD Certificate for API server.
                     properties:
                       apiServer:
-                        description: ETCDAPIServerCertificate defines the observed state of ETCD Certificate for API server.
+                        description: ETCDCertificateStatus defines the observed state of ETCD Certificate for API server.
                         properties:
                           lastUpdate:
                             format: date-time
@@ -560,7 +560,7 @@ spec:
                             type: string
                         type: object
                       ca:
-                        description: ETCDAPIServerCertificate defines the observed state of ETCD Certificate for API server.
+                        description: ETCDCertificateStatus defines the observed state of ETCD Certificate for API server.
                         properties:
                           lastUpdate:
                             format: date-time
@@ -570,7 +570,7 @@ spec:
                         type: object
                     type: object
                   frontProxyCA:
-                    description: CertificatePrivateKeyPair defines the status.
+                    description: CertificatePrivateKeyPairStatus defines the status.
                     properties:
                       lastUpdate:
                         format: date-time
@@ -581,7 +581,7 @@ spec:
                         type: string
                     type: object
                   frontProxyClient:
-                    description: CertificatePrivateKeyPair defines the status.
+                    description: CertificatePrivateKeyPairStatus defines the status.
                     properties:
                       lastUpdate:
                         format: date-time
@@ -592,7 +592,7 @@ spec:
                         type: string
                     type: object
                   sa:
-                    description: CertificatePrivateKeyPair defines the status.
+                    description: PublicKeyPrivateKeyPairStatus defines the status.
                     properties:
                       lastUpdate:
                         format: date-time
@@ -608,7 +608,7 @@ spec:
                 description: KubeadmPhase contains the status of the kubeadm phases action
                 properties:
                   bootstrapToken:
-                    description: KubeadmPhasesStatus contains the status of of a kubeadm phase action.
+                    description: KubeadmPhaseStatus contains the status of a kubeadm phase action.
                     properties:
                       checksum:
                         type: string
@@ -617,7 +617,7 @@ spec:
                         type: string
                     type: object
                   uploadConfigKubeadm:
-                    description: KubeadmPhasesStatus contains the status of of a kubeadm phase action.
+                    description: KubeadmPhaseStatus contains the status of a kubeadm phase action.
                     properties:
                       checksum:
                         type: string
@@ -626,7 +626,7 @@ spec:
                         type: string
                     type: object
                   uploadConfigKubelet:
-                    description: KubeadmPhasesStatus contains the status of of a kubeadm phase action.
+                    description: KubeadmPhaseStatus contains the status of a kubeadm phase action.
                     properties:
                       checksum:
                         type: string

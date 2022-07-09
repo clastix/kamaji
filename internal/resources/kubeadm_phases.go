@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	bootstraptokenv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -122,18 +121,12 @@ func (r *KubeadmPhase) GetName() string {
 }
 
 func (r *KubeadmPhase) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	i, err := r.GetStatus(tenantControlPlane)
+	status, err := r.GetStatus(tenantControlPlane)
 	if err != nil {
 		return err
 	}
 
-	kubeadmStatus, ok := i.(*kamajiv1alpha1.KubeadmPhaseStatus)
-	if !ok {
-		return fmt.Errorf("error status kubeadm phase")
-	}
-
-	kubeadmStatus.LastUpdate = metav1.Now()
-	kubeadmStatus.Checksum = r.checksum
+	status.SetChecksum(r.checksum)
 
 	return nil
 }
