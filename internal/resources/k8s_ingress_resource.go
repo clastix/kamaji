@@ -73,8 +73,8 @@ func (r *KubernetesIngressResource) Define(ctx context.Context, tenantControlPla
 	return nil
 }
 
-func (r *KubernetesIngressResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	return controllerutil.CreateOrUpdate(ctx, r.Client, r.resource, func() error {
+func (r *KubernetesIngressResource) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
+	return func() error {
 		labels := utilities.MergeMaps(r.resource.GetLabels(), tenantControlPlane.Spec.ControlPlane.Ingress.AdditionalMetadata.Labels)
 		r.resource.SetLabels(labels)
 
@@ -131,7 +131,11 @@ func (r *KubernetesIngressResource) CreateOrUpdate(ctx context.Context, tenantCo
 		}
 
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
-	})
+	}
+}
+
+func (r *KubernetesIngressResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(tenantControlPlane))
 }
 
 func (r *KubernetesIngressResource) GetName() string {

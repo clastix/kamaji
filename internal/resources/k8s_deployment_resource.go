@@ -73,17 +73,19 @@ func (r *KubernetesDeploymentResource) Define(ctx context.Context, tenantControl
 	return nil
 }
 
-func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	maxSurge := intstr.FromString("100%")
 
 	maxUnavailable := intstr.FromInt(0)
 
 	address, err := tenantControlPlane.GetControlPlaneAddress(ctx, r.Client)
 	if err != nil {
-		return controllerutil.OperationResultNone, errors.Wrap(err, "cannot create TenantControlPlane Deployment")
+		return func() error {
+			return errors.Wrap(err, "cannot create TenantControlPlane Deployment")
+		}
 	}
 
-	return controllerutil.CreateOrUpdate(ctx, r.Client, r.resource, func() error {
+	return func() error {
 		labels := utilities.MergeMaps(r.resource.GetLabels(), tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Labels)
 		r.resource.SetLabels(labels)
 
@@ -500,7 +502,11 @@ func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenan
 		}
 
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
-	})
+	}
+}
+
+func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
 func (r *KubernetesDeploymentResource) GetName() string {
