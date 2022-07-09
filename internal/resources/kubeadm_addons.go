@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	kamajiapi "github.com/clastix/kamaji/api"
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -148,7 +147,7 @@ func (r *KubeadmAddonResource) UpdateTenantControlPlaneStatus(ctx context.Contex
 	return nil
 }
 
-func (r *KubeadmAddonResource) GetStatus(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (kamajiapi.KubeadmConfigResourceVersionDependant, error) {
+func (r *KubeadmAddonResource) GetStatus(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (kamajiv1alpha1.KubeadmConfigChecksumDependant, error) {
 	switch r.KubeadmAddon {
 	case AddonCoreDNS:
 		return &tenantControlPlane.Status.Addons.CoreDNS, nil

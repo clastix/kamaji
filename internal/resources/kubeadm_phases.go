@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	kamajiapi "github.com/clastix/kamaji/api"
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
 )
@@ -139,7 +138,7 @@ func (r *KubeadmPhase) UpdateTenantControlPlaneStatus(ctx context.Context, tenan
 	return nil
 }
 
-func (r *KubeadmPhase) GetStatus(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (kamajiapi.KubeadmConfigResourceVersionDependant, error) {
+func (r *KubeadmPhase) GetStatus(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (kamajiv1alpha1.KubeadmConfigChecksumDependant, error) {
 	switch r.Phase {
 	case PhaseUploadConfigKubeadm:
 		return &tenantControlPlane.Status.KubeadmPhase.UploadConfigKubeadm, nil
