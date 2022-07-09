@@ -1300,7 +1300,7 @@ spec:
         command:
         - /manager
         image: clastix/kamaji:latest
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /healthz
