@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-logr/logr"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -131,18 +130,12 @@ func (r *KubeadmAddonResource) GetName() string {
 }
 
 func (r *KubeadmAddonResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	i, err := r.GetStatus(tenantControlPlane)
+	status, err := r.GetStatus(tenantControlPlane)
 	if err != nil {
 		return err
 	}
 
-	status, ok := i.(*kamajiv1alpha1.AddonStatus)
-	if !ok {
-		return fmt.Errorf("error addon status")
-	}
-
-	status.LastUpdate = metav1.Now()
-	status.Checksum = r.kubeadmConfigChecksum
+	status.SetChecksum(r.kubeadmConfigChecksum)
 
 	return nil
 }
