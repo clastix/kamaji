@@ -20,8 +20,8 @@ var _ = Describe("Deploy a TenantControlPlane resource", func() {
 	tcp := kamajiv1alpha1.TenantControlPlane{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "tenant-test",
-			Namespace: "kamaji-system",
+			Name:      "tcp-clusterip",
+			Namespace: "default",
 		},
 		Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 			ControlPlane: kamajiv1alpha1.ControlPlane{
@@ -29,10 +29,10 @@ var _ = Describe("Deploy a TenantControlPlane resource", func() {
 					Replicas: 1,
 				},
 				Ingress: kamajiv1alpha1.IngressSpec{
-					Enabled: true,
+					Enabled: false,
 				},
 				Service: kamajiv1alpha1.ServiceSpec{
-					ServiceType: "NodePort",
+					ServiceType: "ClusterIP",
 				},
 			},
 			NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
