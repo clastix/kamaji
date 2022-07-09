@@ -71,7 +71,7 @@ func (r *KubeadmConfigResource) CreateOrUpdate(ctx context.Context, tenantContro
 		return controllerutil.OperationResultNone, err
 	}
 
-	return controllerutil.CreateOrUpdate(ctx, r.Client, r.resource, r.mutate(tenantControlPlane, address))
+	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(tenantControlPlane, address))
 }
 
 func (r *KubeadmConfigResource) GetName() string {

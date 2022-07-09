@@ -62,7 +62,7 @@ func (r *SQLCertificate) GetClient() client.Client {
 }
 
 func (r *SQLCertificate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	return controllerutil.CreateOrUpdate(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
+	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
 func (r *SQLCertificate) GetName() string {
