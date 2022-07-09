@@ -12,7 +12,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	kamajiapi "github.com/clastix/kamaji/api"
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
 )
@@ -42,7 +41,7 @@ type KubeadmPhaseResource interface {
 	KubeadmResource
 	GetClient() client.Client
 	GetKubeadmFunction() (func(clientset.Interface, *kubeadm.Configuration) error, error)
-	GetStatus(*kamajiv1alpha1.TenantControlPlane) (kamajiapi.KubeadmConfigResourceVersionDependant, error)
+	GetStatus(*kamajiv1alpha1.TenantControlPlane) (kamajiv1alpha1.KubeadmConfigChecksumDependant, error)
 	SetKubeadmConfigChecksum(string)
 }
 
