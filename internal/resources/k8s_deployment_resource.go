@@ -391,7 +391,7 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 				},
 				TerminationMessagePath:   "/dev/termination-log",
 				TerminationMessagePolicy: "File",
-				ImagePullPolicy:          corev1.PullIfNotPresent,
+				ImagePullPolicy:          corev1.PullAlways,
 			},
 			{
 				Name:  "kube-controller-manager",
@@ -484,7 +484,7 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 				},
 				TerminationMessagePath:   "/dev/termination-log",
 				TerminationMessagePolicy: "File",
-				ImagePullPolicy:          corev1.PullIfNotPresent,
+				ImagePullPolicy:          corev1.PullAlways,
 			},
 		}
 		r.resource.Spec.Strategy = appsv1.DeploymentStrategy{
@@ -718,7 +718,7 @@ func (r *KubernetesDeploymentResource) buildKonnectivityServerContainer(tenantCo
 		},
 		TerminationMessagePath:   "/dev/termination-log",
 		TerminationMessagePolicy: "File",
-		ImagePullPolicy:          corev1.PullIfNotPresent,
+		ImagePullPolicy:          corev1.PullAlways,
 	}
 }
 
@@ -834,7 +834,7 @@ func (r *KubernetesDeploymentResource) customizeKineMySQLStorage(ctx context.Con
 		},
 		TerminationMessagePath:   "/dev/termination-log",
 		TerminationMessagePolicy: "File",
-		ImagePullPolicy:          corev1.PullIfNotPresent,
+		ImagePullPolicy:          corev1.PullAlways,
 	}
 
 	podTemplate.Spec.Containers = append(podTemplate.Spec.Containers, container)
