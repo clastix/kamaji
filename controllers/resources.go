@@ -45,10 +45,10 @@ func GetResources(config GroupResourceBuilderConfiguration) []resources.Resource
 	return getDefaultResources(config)
 }
 
-// GetDeleteableResources returns a list of resources that have to be deleted when tenant control planes are deleted
+// GetDeletableResources returns a list of resources that have to be deleted when tenant control planes are deleted
 // Currently there is only a default approach
 // TODO: the idea of this function is to become a factory to return the group of deleteable resources according to the given configuration.
-func GetDeleteableResources(config GroupDeleteableResourceBuilderConfiguration) []resources.DeleteableResource {
+func GetDeletableResources(config GroupDeleteableResourceBuilderConfiguration) []resources.DeleteableResource {
 	return getDefaultDeleteableResources(config)
 }
 
