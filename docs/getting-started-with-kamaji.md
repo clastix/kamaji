@@ -23,22 +23,35 @@ The instance of Kamaji is made of a single node hosting:
 - admin worker
 - multi-tenant etcd cluster
 
-### Requisites
+### Standard
+
+You can install your KinD cluster, ETCD multi-tenant cluster and Kamaji operator with a **single command**:
+
+```bash
+$ make -C deploy/kind
+```
+
+Now you can [create your first `TenantControlPlane`](#deploy-tenant-control-plane).
+
+### Data store-specific
+
+#### ETCD
 
 The multi-tenant etcd cluster is deployed as statefulset into the Kamaji node.
 
 Run `make reqs` to setup Kamaji's requisites on KinD:
 
 ```bash
-$ cd ./deploy/kind
-$ make reqs
+$ make -C deploy/kind reqs
 ```
 
 At this moment you will have your KinD up and running and ETCD cluster in multitenant mode.
 
-Now you're ready to install Kamaji operator.
+Now you're ready to [install Kamaji operator](#install-kamaji).
 
 #### Kine MySQL
+
+> The MySQL-compatible cluster provisioning is omitted here.
 
 Kamaji offers the possibility of using a different storage system than `ETCD` for the tenants, like MySQL compatible databases.
 
@@ -81,17 +94,14 @@ ssl-key=/etc/mysql/conf.d/server.key
 require_secure_transport=ON
 ```
 
-You can read more about it [here](../deploy/mysql/README.md)
+You can read more about it [here](../deploy/mysql/README.md).
+
+Assuming you adjusted the [Kamaji manifest](./config/install.yaml) to connect to the MySQL-compatible database, you can now install it.
 
 ### Install Kamaji
 
 ```bash
-$ kubectl apply -f ../../config/install.yaml
-```
-Otherwise you can install all requisites and Kamaji operator with one single command:
-
-```bash
-$ make kamaji
+$ kubectl apply -f config/install.yaml
 ```
 
 ### Deploy Tenant Control Plane
