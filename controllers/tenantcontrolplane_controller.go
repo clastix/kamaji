@@ -94,6 +94,8 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}()
 
 	if markedToBeDeleted {
+		log.Info("marked for deletion, performing clean-up")
+
 		groupDeleteableResourceBuilderConfiguration := GroupDeleteableResourceBuilderConfiguration{
 			client:              r.Client,
 			log:                 log,
@@ -101,19 +103,23 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			tenantControlPlane:  *tenantControlPlane,
 			DBConnection:        dbConnection,
 		}
-		registeredDeleteableResources := GetDeleteableResources(groupDeleteableResourceBuilderConfiguration)
+		registeredDeletableResources := GetDeletableResources(groupDeleteableResourceBuilderConfiguration)
 
-		for _, resource := range registeredDeleteableResources {
+		for _, resource := range registeredDeletableResources {
 			if err := resources.HandleDeletion(ctx, resource, tenantControlPlane); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
 
 		if hasFinalizer {
+			log.Info("removing finalizer")
+
 			if err := r.RemoveFinalizer(ctx, tenantControlPlane); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
+
+		log.Info("resource deletion has been completed")
 
 		return ctrl.Result{}, nil
 	}
