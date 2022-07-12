@@ -40,12 +40,12 @@ spec:
           protocol: TCP
       - args:
         - --config-file={{ .Values.configPath }}
-        - --etcd-ca-secret-name={{ .Values.etcd.caSecret.name }}
-        - --etcd-ca-secret-namespace={{ .Values.etcd.caSecret.namespace }}
-        - --etcd-client-secret-name={{ .Values.etcd.clientSecret.name }}
-        - --etcd-client-secret-namespace={{ .Values.etcd.clientSecret.namespace }}
+        - --etcd-ca-secret-name={{ include "etcd.caSecretName" . }}
+        - --etcd-ca-secret-namespace={{ include "etcd.caSecretNamespace" . }}
+        - --etcd-client-secret-name={{ include "etcd.clientSecretName" . }}
+        - --etcd-client-secret-namespace={{ include "etcd.clientSecretNamespace" . }}
         - --etcd-compaction-interval={{ .Values.etcd.compactionInterval }}
-        - --etcd-endpoints={{ .Values.etcd.endpoints }}
+        - --etcd-endpoints={{ include "etcd.endpoints" . }}
         - --health-probe-bind-address={{ .Values.healthProbeBindAddress }}
         - --leader-elect
         - --metrics-bind-address={{ .Values.metricsBindAddress }}

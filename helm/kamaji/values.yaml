@@ -19,23 +19,28 @@ extraArgs: []
 configPath: "./kamaji.yaml"
 
 etcd:
-  caSecret:
-    # -- Name of the secret which contains CA's certificate and private key. (default: "etcd-certs")
-    name: etcd-certs
-    # -- Namespace of the secret which contains CA's certificate and private key. (default: "kamaji")
-    namespace: kamaji-system
-
-  clientSecret:
-    # -- Name of the secret which contains ETCD client certificates. (default: "root-client-certs")
-    name: root-client-certs
-    # -- Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji")
-    namespace: kamaji-system
-
+  # -- Install an etcd 3.5 with enabled multi-tenancy along with Kamaji
+  deploy: true
+  serviceAccount:
+    # -- Create a ServiceAccount, required to install and provision the etcd backing storage (default: true)
+    create: true
+    # -- Define the ServiceAccount name to use during the setup and provision of the etcd backing storage (default: "")
+    name: ""
+  overrides:
+    caSecret:
+      # -- Name of the secret which contains CA's certificate and private key. (default: "etcd-certs")
+      name: etcd-certs
+      # -- Namespace of the secret which contains CA's certificate and private key. (default: "kamaji-system")
+      namespace: kamaji-system
+    clientSecret:
+      # -- Name of the secret which contains ETCD client certificates. (default: "root-client-certs")
+      name: root-client-certs
+      # -- Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji-system")
+      namespace: kamaji-system
+    # -- (string) Comma-separated list of the endpoints of the etcd cluster's members.
+    endpoints: "https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379"
   # -- ETCD Compaction interval (e.g. "5m0s"). (default: "0" (disabled))
   compactionInterval: 0
-
-  # -- (string) Comma-separated list of the endpoints of the etcd cluster's members.
-  endpoints: "https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379"
 
 # -- The address the probe endpoint binds to. (default ":8081")
 healthProbeBindAddress: ":8081"

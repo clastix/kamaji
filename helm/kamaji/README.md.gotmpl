@@ -7,30 +7,18 @@
 
 {{ template "chart.homepageLine" . }}
 
-## Installing the Chart
-
-To install the chart with the release name `kamaji`:
-
 ### Pre-requisites
 
-1. Deploy a [multi-tenant Etcd cluster](https://github.com/clastix/kamaji-internal/blob/master/deploy/getting-started-with-kamaji.md#setup-internal-multi-tenant-etcd)
-2. Create the `Secret` containing the Etcd CA cert keypair:
+Kamaji requires a [multi-tenant etcd cluster](https://github.com/clastix/kamaji-internal/blob/master/deploy/getting-started-with-kamaji.md#setup-internal-multi-tenant-etcd) cluster.
+The installation and provisioning processes are already put in place by the Helm Chart starting from v0.1.1 in order to streamline the local test.
 
-```
-kubectl -n kamaji-system create secret generic etcd-certs \
-  --from-file=/path/to/etcd/ca.crt \
-  --from-file=/path/to/etcd/ca.key
-```
+> For production use an externally managed etcd is highly recommended, the etcd addon offered by this chart is not considered production-grade.
 
-3. Create a `Secret` containing the Etcd root user client cert keypair:
-
-```
-kubectl -n kamaji-system create secret tls root-client-certs \
-  --cert=/path/to/etcd/root.pem \
-  --key=/path/to/etcd/root-key.pem
-```
+If you'd like to use an externally managed etcd instance, you can specify the overrides and by setting the value `etcd.deploy=false`.
 
 ### Install Kamaji
+
+To install the chart with the release name `kamaji`:
 
 ```console
 helm upgrade --install --namespace kamaji-system --create-namespace kamaji .
