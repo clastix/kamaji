@@ -55,8 +55,6 @@ Kubernetes: `>=1.18`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| addons.coreDNS | object |  | Enabling CoreDNS installation. |
-| addons.kubeProxy | object |  | Enabling KubeProxy installation |
 | affinity | object | `{}` | Kubernetes affinity rules to apply to Kamaji controller pods |
 | configPath | string | `"./kamaji.yaml"` | Configuration file path alternative. (default "./kamaji.yaml") |
 | etcd.caSecret.name | string | `"etcd-certs"` | Name of the secret which contains CA's certificate and private key. (default: "etcd-certs") |
@@ -68,17 +66,10 @@ Kubernetes: `>=1.18`
 | extraArgs | list | `[]` | A list of extra arguments to add to the kamaji controller default ones |
 | fullnameOverride | string | `""` |  |
 | healthProbeBindAddress | string | `":8081"` | The address the probe endpoint binds to. (default ":8081") |
-| image.pullPolicy | string | `"IfNotPresent"` |  |
+| image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"clastix/kamaji"` | The container image of the Kamaji controller. |
 | image.tag | string | `"latest"` |  |
 | imagePullSecrets | list | `[]` |  |
-| ingress.annotations | object | `{}` |  |
-| ingress.className | string | `""` | Name of the ingress class to route through this controller. |
-| ingress.enabled | bool | `false` | Whether to expose the Kamaji controller through an Ingress. |
-| ingress.hosts[0].host | string | `"chart-example.local"` |  |
-| ingress.hosts[0].paths[0].path | string | `"/"` |  |
-| ingress.hosts[0].paths[0].pathType | string | `"ImplementationSpecific"` |  |
-| ingress.tls | list | `[]` |  |
 | livenessProbe | object | `{"httpGet":{"path":"/healthz","port":"healthcheck"},"initialDelaySeconds":15,"periodSeconds":20}` | The livenessProbe for the controller container |
 | loggingDevel.enable | bool | `false` | (string) Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false) |
 | metricsBindAddress | string | `":8080"` | (string) The address the metric endpoint binds to. (default ":8080") |
