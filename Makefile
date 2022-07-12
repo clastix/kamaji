@@ -238,7 +238,7 @@ endef
 
 .PHONY: env
 env:
-	@make -C deploy/kind reqs
+	@make -C deploy/kind kind ingress-nginx
 
 ##@ e2e
 
