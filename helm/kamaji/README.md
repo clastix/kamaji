@@ -1,35 +1,23 @@
 # kamaji
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Kubernetes distribution aimed to build and operate a Managed Kubernetes service with a fraction of operational burde.
 
 **Homepage:** <https://github.com/clastix/kamaji-internal/tree/master/helm/kamaji>
 
-## Installing the Chart
-
-To install the chart with the release name `kamaji`:
-
 ### Pre-requisites
 
-1. Deploy a [multi-tenant Etcd cluster](https://github.com/clastix/kamaji-internal/blob/master/deploy/getting-started-with-kamaji.md#setup-internal-multi-tenant-etcd)
-2. Create the `Secret` containing the Etcd CA cert keypair:
+Kamaji requires a [multi-tenant etcd cluster](https://github.com/clastix/kamaji-internal/blob/master/deploy/getting-started-with-kamaji.md#setup-internal-multi-tenant-etcd) cluster.
+The installation and provisioning processes are already put in place by the Helm Chart starting from v0.1.1 in order to streamline the local test.
 
-```
-kubectl -n kamaji-system create secret generic etcd-certs \
-  --from-file=/path/to/etcd/ca.crt \
-  --from-file=/path/to/etcd/ca.key
-```
+> For production use an externally managed etcd is highly recommended, the etcd addon offered by this chart is not considered production-grade.
 
-3. Create a `Secret` containing the Etcd root user client cert keypair:
-
-```
-kubectl -n kamaji-system create secret tls root-client-certs \
-  --cert=/path/to/etcd/root.pem \
-  --key=/path/to/etcd/root-key.pem
-```
+If you'd like to use an externally managed etcd instance, you can specify the overrides and by setting the value `etcd.deploy=false`.
 
 ### Install Kamaji
+
+To install the chart with the release name `kamaji`:
 
 ```console
 helm upgrade --install --namespace kamaji-system --create-namespace kamaji .
@@ -57,12 +45,15 @@ Kubernetes: `>=1.18`
 |-----|------|---------|-------------|
 | affinity | object | `{}` | Kubernetes affinity rules to apply to Kamaji controller pods |
 | configPath | string | `"./kamaji.yaml"` | Configuration file path alternative. (default "./kamaji.yaml") |
-| etcd.caSecret.name | string | `"etcd-certs"` | Name of the secret which contains CA's certificate and private key. (default: "etcd-certs") |
-| etcd.caSecret.namespace | string | `"kamaji-system"` | Namespace of the secret which contains CA's certificate and private key. (default: "kamaji") |
-| etcd.clientSecret.name | string | `"root-client-certs"` | Name of the secret which contains ETCD client certificates. (default: "root-client-certs") |
-| etcd.clientSecret.namespace | string | `"kamaji-system"` | Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji") |
 | etcd.compactionInterval | int | `0` | ETCD Compaction interval (e.g. "5m0s"). (default: "0" (disabled)) |
-| etcd.endpoints | string | `"https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379"` | (string) Comma-separated list of the endpoints of the etcd cluster's members. |
+| etcd.deploy | bool | `true` | Install an etcd 3.5 with enabled multi-tenancy along with Kamaji |
+| etcd.overrides.caSecret.name | string | `"etcd-certs"` | Name of the secret which contains CA's certificate and private key. (default: "etcd-certs") |
+| etcd.overrides.caSecret.namespace | string | `"kamaji-system"` | Namespace of the secret which contains CA's certificate and private key. (default: "kamaji-system") |
+| etcd.overrides.clientSecret.name | string | `"root-client-certs"` | Name of the secret which contains ETCD client certificates. (default: "root-client-certs") |
+| etcd.overrides.clientSecret.namespace | string | `"kamaji-system"` | Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji-system") |
+| etcd.overrides.endpoints | string | `"https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379"` | (string) Comma-separated list of the endpoints of the etcd cluster's members. |
+| etcd.serviceAccount.create | bool | `true` | Create a ServiceAccount, required to install and provision the etcd backing storage (default: true) |
+| etcd.serviceAccount.name | string | `""` | Define the ServiceAccount name to use during the setup and provision of the etcd backing storage (default: "") |
 | extraArgs | list | `[]` | A list of extra arguments to add to the kamaji controller default ones |
 | fullnameOverride | string | `""` |  |
 | healthProbeBindAddress | string | `":8081"` | The address the probe endpoint binds to. (default ":8081") |

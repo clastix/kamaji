@@ -1,0 +1,97 @@
+{{- if .Values.etcd.deploy }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    {{- include "etcd.labels" . | nindent 4 }}
+  name: {{ include "etcd.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  serviceName: {{ include "etcd.serviceName" . }}
+  selector:
+    matchLabels:
+      {{- include "etcd.selectorLabels" . | nindent 6 }}
+  replicas: 3
+  template:
+    metadata:
+      name: etcd
+      labels:
+        {{- include "etcd.selectorLabels" . | nindent 8 }}
+    spec:
+      volumes:
+        - name: certs
+          secret:
+            secretName: {{ include "etcd.caSecretName" . }}
+      containers:
+        - name: etcd
+          image: quay.io/coreos/etcd:v3.5.1
+          ports:
+            - containerPort: 2379
+              name: client
+            - containerPort: 2380
+              name: peer
+          volumeMounts:
+            - name: data
+              mountPath: /var/run/etcd
+            - name: certs
+              mountPath: /etc/etcd/pki
+          command:
+            - etcd
+            - --data-dir=/var/run/etcd
+            - --name=$(POD_NAME)
+            - --initial-cluster-state=new
+            - --initial-cluster=etcd-0=https://etcd-0.etcd.$(POD_NAMESPACE).svc.cluster.local:2380,etcd-1=https://etcd-1.etcd.$(POD_NAMESPACE).svc.cluster.local:2380,etcd-2=https://etcd-2.etcd.$(POD_NAMESPACE).svc.cluster.local:2380
+            - --initial-advertise-peer-urls=https://$(POD_NAME).etcd.$(POD_NAMESPACE).svc.cluster.local:2380
+            - --initial-cluster-token=kamaji
+            - --listen-client-urls=https://0.0.0.0:2379
+            - --advertise-client-urls={{ include "etcd.endpoints" . }}
+            - --client-cert-auth=true
+            - --trusted-ca-file=/etc/etcd/pki/ca.crt
+            - --cert-file=/etc/etcd/pki/server.pem
+            - --key-file=/etc/etcd/pki/server-key.pem
+            - --listen-peer-urls=https://0.0.0.0:2380
+            - --peer-client-cert-auth=true
+            - --peer-trusted-ca-file=/etc/etcd/pki/ca.crt
+            - --peer-cert-file=/etc/etcd/pki/peer.pem
+            - --peer-key-file=/etc/etcd/pki/peer-key.pem
+            - --auto-compaction-mode=periodic
+            - --auto-compaction-retention=5m
+            - --v=8
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          livenessProbe:
+            failureThreshold: 8
+            httpGet:
+              host: 127.0.0.1
+              path: /health
+              port: 2381
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 15
+          startupProbe:
+            failureThreshold: 24
+            httpGet:
+              host: 127.0.0.1
+              path: /health
+              port: 2381
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 15
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 8Gi
+{{- end }}

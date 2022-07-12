@@ -1,0 +1,9 @@
+{{- if .Values.etcd.deploy }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    {{- include "etcd.labels" . | nindent 4 }}
+  name: {{ include "etcd.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
