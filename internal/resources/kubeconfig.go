@@ -171,8 +171,6 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 func (r *KubeconfigResource) customizeConfig(config *kubeadm.Configuration) error {
 	switch r.KubeConfigFileName {
-	case kubeadmconstants.AdminKubeConfigFileName:
-		return r.ingressAsAdvertiseAddress(config)
 	case kubeadmconstants.ControllerManagerKubeConfigFileName:
 		return r.localhostAsAdvertiseAddress(config)
 	case kubeadmconstants.SchedulerKubeConfigFileName:
@@ -180,12 +178,6 @@ func (r *KubeconfigResource) customizeConfig(config *kubeadm.Configuration) erro
 	default:
 		return nil
 	}
-}
-
-func (r *KubeconfigResource) ingressAsAdvertiseAddress(config *kubeadm.Configuration) error {
-	config.InitConfiguration.LocalAPIEndpoint.BindPort = defaultIngressPort
-
-	return nil
 }
 
 func (r *KubeconfigResource) localhostAsAdvertiseAddress(config *kubeadm.Configuration) error {
