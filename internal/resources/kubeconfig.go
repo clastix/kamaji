@@ -5,8 +5,6 @@ package resources
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -108,19 +106,16 @@ func (r *KubeconfigResource) CreateOrUpdate(ctx context.Context, tenantControlPl
 	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
+func (r *KubeconfigResource) checksum(apiServerCertificatesSecret *corev1.Secret, kubeadmChecksum string) string {
+	return utilities.CalculateConfigMapChecksum(map[string]string{
+		"ca-cert-checksum": string(apiServerCertificatesSecret.Data[kubeadmconstants.CACertName]),
+		"ca-key-checksum":  string(apiServerCertificatesSecret.Data[kubeadmconstants.CAKeyName]),
+		"kubeadmconfig":    kubeadmChecksum,
+	})
+}
+
 func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		status, err := r.getKubeconfigStatus(tenantControlPlane)
-		if err != nil {
-			return err
-		}
-
-		if status.Checksum == r.resource.GetAnnotations()["checksum"] {
-			if kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName]) {
-				return nil
-			}
-		}
-
 		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
 		if err != nil {
 			return err
@@ -134,6 +129,19 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		apiServerCertificatesSecret := &corev1.Secret{}
 		if err := r.Client.Get(ctx, apiServerCertificatesSecretNamespacedName, apiServerCertificatesSecret); err != nil {
 			return err
+		}
+
+		checksum := r.checksum(apiServerCertificatesSecret, config.Checksum())
+
+		status, err := r.getKubeconfigStatus(tenantControlPlane)
+		if err != nil {
+			return err
+		}
+
+		if status.Checksum == checksum {
+			if kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName]) {
+				return nil
+			}
 		}
 
 		kubeconfig, err := kubeadm.CreateKubeconfig(
@@ -159,10 +167,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			},
 		))
 
-		hash := md5.Sum(kubeconfig)
-
 		r.resource.SetAnnotations(map[string]string{
-			"checksum": hex.EncodeToString(hash[:]),
+			"checksum": checksum,
 		})
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
