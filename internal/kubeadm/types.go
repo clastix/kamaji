@@ -18,7 +18,7 @@ type Configuration struct {
 }
 
 func (c *Configuration) Checksum() string {
-	initConfiguration, _ := json.Marshal(c.InitConfiguration)
+	initConfiguration, _ := utilities.EncondeToYaml(&c.InitConfiguration)
 	kubeconfig, _ := json.Marshal(c.Kubeconfig)
 	parameters, _ := json.Marshal(c.Parameters)
 
