@@ -36,10 +36,6 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 	var kubeconfigFile *os.File
 
 	JustBeforeEach(func() {
-		// Retrieving the kind instance IP from the `kubernetes` service in the `default` namespace
-		ep := &corev1.Endpoints{}
-		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "kubernetes", Namespace: "default"}, ep)).ToNot(HaveOccurred())
-
 		tcp = kamajiv1alpha1.TenantControlPlane{
 			TypeMeta: metav1.TypeMeta{},
 			ObjectMeta: metav1.ObjectMeta{
@@ -59,7 +55,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 					},
 				},
 				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
-					Address: ep.Subsets[0].Addresses[0].IP,
+					Address: GetKindIPAddress(),
 					Port:    31443,
 				},
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
