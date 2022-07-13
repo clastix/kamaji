@@ -114,6 +114,7 @@ func (r *ETCDSetupResource) reconcile(ctx context.Context) (controllerutil.Opera
 	if err != nil {
 		return reconcilationResult, err
 	}
+	defer client.Close()
 
 	operationResult, err = r.reconcileUser(ctx, client)
 	if err != nil {
