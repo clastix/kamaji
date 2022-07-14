@@ -6,6 +6,7 @@ package konnectivity
 import (
 	"context"
 	"fmt"
+	"net"
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -119,12 +120,16 @@ func (r *ServiceResource) CreateOrUpdate(ctx context.Context, tenantControlPlane
 }
 
 func (r *ServiceResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) func() error {
-	address, _ := tenantControlPlane.GetKonnectivityServerAddress(ctx, r.Client)
-	if address == "" {
-		address = tenantControlPlane.Spec.NetworkProfile.Address
-	}
+	return func() (err error) {
+		address, _ := tenantControlPlane.GetKonnectivityServerAddress(ctx, r.Client)
+		if address == "" {
+			// The TenantControlPlane is getting a dynamic IP address: retrieving from the status
+			address, _, err = net.SplitHostPort(tenantControlPlane.Status.ControlPlaneEndpoint)
+			if err != nil {
+				return err
+			}
+		}
 
-	return func() error {
 		var servicePort corev1.ServicePort
 		if len(r.resource.Spec.Ports) > 0 {
 			servicePort = r.resource.Spec.Ports[0]
