@@ -28,14 +28,14 @@ type KubeadmConfigResource struct {
 }
 
 func (r *KubeadmConfigResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
+	address, port, err := tenantControlPlane.AssignedControlPlaneAddress()
 	if err != nil {
 		return true
 	}
 
 	return !(tenantControlPlane.Status.KubeadmConfig.Checksum == r.resource.GetAnnotations()["checksum"] &&
 		tenantControlPlane.Status.KubeadmConfig.ConfigmapName == r.resource.GetName() &&
-		tenantControlPlane.Status.ControlPlaneEndpoint == r.getControlPlaneEndpoint(tenantControlPlane, address))
+		tenantControlPlane.Status.ControlPlaneEndpoint == r.getControlPlaneEndpoint(tenantControlPlane.Spec.ControlPlane.Ingress, address, port))
 }
 
 func (r *KubeadmConfigResource) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -78,17 +78,17 @@ func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(ctx context.Conte
 	tenantControlPlane.Status.KubeadmConfig.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.KubeadmConfig.Checksum = r.resource.GetAnnotations()["checksum"]
 	tenantControlPlane.Status.KubeadmConfig.ConfigmapName = r.resource.GetName()
-	tenantControlPlane.Status.ControlPlaneEndpoint = r.getControlPlaneEndpoint(tenantControlPlane, address)
+	tenantControlPlane.Status.ControlPlaneEndpoint = r.getControlPlaneEndpoint(tenantControlPlane.Spec.ControlPlane.Ingress, address, 0)
 
 	return nil
 }
 
-func (r *KubeadmConfigResource) getControlPlaneEndpoint(tenantControlPlane *kamajiv1alpha1.TenantControlPlane, address string) string {
-	if tenantControlPlane.Spec.ControlPlane.Ingress.Hostname != "" {
-		return tenantControlPlane.Spec.ControlPlane.Ingress.Hostname
+func (r *KubeadmConfigResource) getControlPlaneEndpoint(ingress kamajiv1alpha1.IngressSpec, address string, port int32) string {
+	if hostname := ingress.Hostname; len(hostname) > 0 {
+		return hostname
 	}
 
-	return fmt.Sprintf("%s:%d", address, tenantControlPlane.Spec.NetworkProfile.Port)
+	return fmt.Sprintf("%s:%d", address, port)
 }
 
 func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
@@ -132,8 +132,4 @@ func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.Tenant
 
 		return nil
 	}
-}
-
-func getAddress(ctx context.Context, client client.Client, tenantControlPlane kamajiv1alpha1.TenantControlPlane) (string, error) {
-	return tenantControlPlane.GetControlPlaneAddress(ctx, client)
 }
