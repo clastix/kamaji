@@ -32,7 +32,7 @@ type KubeadmConfigResource struct {
 }
 
 func (r *KubeadmConfigResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	address, err := getAddress(ctx, r.Client, *tenantControlPlane)
+	address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
 	if err != nil {
 		return true
 	}
@@ -66,12 +66,7 @@ func (r *KubeadmConfigResource) getPrefixedName(tenantControlPlane *kamajiv1alph
 }
 
 func (r *KubeadmConfigResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	address, err := getAddress(ctx, r.Client, *tenantControlPlane)
-	if err != nil {
-		return controllerutil.OperationResultNone, err
-	}
-
-	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(tenantControlPlane, address))
+	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(tenantControlPlane))
 }
 
 func (r *KubeadmConfigResource) GetName() string {
@@ -79,7 +74,10 @@ func (r *KubeadmConfigResource) GetName() string {
 }
 
 func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	address, _ := getAddress(ctx, r.Client, *tenantControlPlane)
+	address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
+	if err != nil {
+		return err
+	}
 
 	tenantControlPlane.Status.KubeadmConfig.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.KubeadmConfig.Checksum = r.resource.GetAnnotations()["checksum"]
@@ -97,11 +95,17 @@ func (r *KubeadmConfigResource) getControlPlaneEndpoint(tenantControlPlane *kama
 	return fmt.Sprintf("%s:%d", address, tenantControlPlane.Spec.NetworkProfile.Port)
 }
 
-func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlPlane, address string) controllerutil.MutateFn {
+func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
+		address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
+		if err != nil {
+			return err
+		}
+
 		r.resource.SetLabels(utilities.KamajiLabels())
 
 		params := kubeadm.Parameters{
+			TenantControlPlaneAddress:     address,
 			TenantControlPlaneName:        tenantControlPlane.GetName(),
 			TenantControlPlaneNamespace:   tenantControlPlane.GetNamespace(),
 			TenantControlPlaneEndpoint:    r.getControlPlaneEndpoint(tenantControlPlane, address),
