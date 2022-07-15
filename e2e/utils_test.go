@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os/exec"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
