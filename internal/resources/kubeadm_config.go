@@ -70,15 +70,9 @@ func (r *KubeadmConfigResource) GetName() string {
 }
 
 func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
-	if err != nil {
-		return err
-	}
-
 	tenantControlPlane.Status.KubeadmConfig.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.KubeadmConfig.Checksum = r.resource.GetAnnotations()["checksum"]
 	tenantControlPlane.Status.KubeadmConfig.ConfigmapName = r.resource.GetName()
-	tenantControlPlane.Status.ControlPlaneEndpoint = r.getControlPlaneEndpoint(tenantControlPlane.Spec.ControlPlane.Ingress, address, 0)
 
 	return nil
 }
