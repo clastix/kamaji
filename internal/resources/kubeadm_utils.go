@@ -24,13 +24,18 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, tenantContr
 		return controllerutil.OperationResultNone, err
 	}
 
+	address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
+	if err != nil {
+		return controllerutil.OperationResultNone, err
+	}
+
 	config.Kubeconfig = *kubeconfig
 	config.Parameters = kubeadm.Parameters{
 		TenantControlPlaneName:         tenantControlPlane.GetName(),
 		TenantDNSServiceIPs:            tenantControlPlane.Spec.NetworkProfile.DNSServiceIPs,
 		TenantControlPlaneVersion:      tenantControlPlane.Spec.Kubernetes.Version,
 		TenantControlPlanePodCIDR:      tenantControlPlane.Spec.NetworkProfile.PodCIDR,
-		TenantControlPlaneAddress:      tenantControlPlane.Spec.NetworkProfile.Address,
+		TenantControlPlaneAddress:      address,
 		TenantControlPlaneCertSANs:     tenantControlPlane.Spec.NetworkProfile.CertSANs,
 		TenantControlPlanePort:         tenantControlPlane.Spec.NetworkProfile.Port,
 		TenantControlPlaneCGroupDriver: tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(),

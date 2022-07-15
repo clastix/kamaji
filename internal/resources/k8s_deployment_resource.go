@@ -58,7 +58,7 @@ func (r *KubernetesDeploymentResource) Define(_ context.Context, tenantControlPl
 
 func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		address, err := tenantControlPlane.GetControlPlaneAddress(ctx, r.Client)
+		address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
 		if err != nil {
 			return errors.Wrap(err, "cannot create TenantControlPlane Deployment")
 		}

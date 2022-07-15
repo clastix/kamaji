@@ -115,7 +115,6 @@ func getKubeadmConfigResources(c client.Client, tcpReconcilerConfig TenantContro
 	return []resources.Resource{
 		&resources.KubeadmConfigResource{
 			Name:                   "kubeadmconfig",
-			Port:                   tenantControlPlane.Spec.NetworkProfile.Port,
 			KubernetesVersion:      tenantControlPlane.Spec.Kubernetes.Version,
 			PodCIDR:                tenantControlPlane.Spec.NetworkProfile.PodCIDR,
 			ServiceCIDR:            tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,

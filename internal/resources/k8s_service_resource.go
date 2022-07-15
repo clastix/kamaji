@@ -68,7 +68,7 @@ func (r *KubernetesServiceResource) CreateOrUpdate(ctx context.Context, tenantCo
 func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	// We don't need to check error here: in case of dynamic external IP, the Service must be created in advance.
 	// After that, the specific cloud controller-manager will provide an IP that will be then used.
-	address, _ := tenantControlPlane.GetControlPlaneAddress(ctx, r.Client)
+	address, _ := tenantControlPlane.DeclaredControlPlaneAddress(ctx, r.Client)
 
 	return func() error {
 		var servicePort corev1.ServicePort
