@@ -22,10 +22,6 @@ type KubeadmConfigResource struct {
 	resource               *corev1.ConfigMap
 	Client                 client.Client
 	Name                   string
-	Port                   int32
-	PodCIDR                string
-	ServiceCIDR            string
-	KubernetesVersion      string
 	ETCDs                  []string
 	ETCDCompactionInterval string
 	TmpDirectory           string
@@ -97,7 +93,7 @@ func (r *KubeadmConfigResource) getControlPlaneEndpoint(tenantControlPlane *kama
 
 func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
+		address, port, err := tenantControlPlane.AssignedControlPlaneAddress()
 		if err != nil {
 			return err
 		}
@@ -106,15 +102,14 @@ func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.Tenant
 
 		params := kubeadm.Parameters{
 			TenantControlPlaneAddress:     address,
+			TenantControlPlanePort:        port,
 			TenantControlPlaneName:        tenantControlPlane.GetName(),
 			TenantControlPlaneNamespace:   tenantControlPlane.GetNamespace(),
-			TenantControlPlaneEndpoint:    r.getControlPlaneEndpoint(tenantControlPlane, address),
-			TenantControlPlaneAddress:     address,
+			TenantControlPlaneEndpoint:    r.getControlPlaneEndpoint(tenantControlPlane.Spec.ControlPlane.Ingress, address, port),
 			TenantControlPlaneCertSANs:    tenantControlPlane.Spec.NetworkProfile.CertSANs,
-			TenantControlPlanePort:        r.Port,
-			TenantControlPlanePodCIDR:     r.PodCIDR,
-			TenantControlPlaneServiceCIDR: r.ServiceCIDR,
-			TenantControlPlaneVersion:     r.KubernetesVersion,
+			TenantControlPlanePodCIDR:     tenantControlPlane.Spec.NetworkProfile.PodCIDR,
+			TenantControlPlaneServiceCIDR: tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
+			TenantControlPlaneVersion:     tenantControlPlane.Spec.Kubernetes.Version,
 			ETCDs:                         r.ETCDs,
 			ETCDCompactionInterval:        r.ETCDCompactionInterval,
 			CertificatesDir:               r.TmpDirectory,
