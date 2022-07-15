@@ -5,6 +5,7 @@ package resources
 
 import (
 	"context"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,6 +44,13 @@ func (r *KubernetesServiceResource) UpdateTenantControlPlaneStatus(ctx context.C
 	tenantControlPlane.Status.Kubernetes.Service.Name = r.resource.GetName()
 	tenantControlPlane.Status.Kubernetes.Service.Namespace = r.resource.GetNamespace()
 	tenantControlPlane.Status.Kubernetes.Service.Port = r.resource.Spec.Ports[0].Port
+
+	address, err := tenantControlPlane.DeclaredControlPlaneAddress(ctx, r.Client)
+	if err != nil {
+		return err
+	}
+
+	tenantControlPlane.Status.ControlPlaneEndpoint = fmt.Sprintf("%s:%d", address, tenantControlPlane.Spec.NetworkProfile.Port)
 
 	return nil
 }
