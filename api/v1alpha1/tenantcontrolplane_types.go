@@ -105,11 +105,6 @@ type AddonSpec struct{}
 type KonnectivitySpec struct {
 	// Port of Konnectivity proxy server.
 	ProxyPort int32 `json:"proxyPort"`
-	// Host of Konnectivity proxy server.
-	ProxyHost                string `json:"proxyHost,omitempty"`
-	AllowAddressAsExternalIP bool   `json:"allowAddressAsExternalIP,omitempty"`
-	// ServiceType allows specifying how to expose the Konnectivity Proxy Server.
-	ServiceType ServiceType `json:"serviceType"`
 	// Version for Konnectivity server and agent.
 	// +kubebuilder:default=v0.0.31
 	Version string `json:"version,omitempty"`
