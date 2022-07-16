@@ -60,7 +60,6 @@ func (r *KubernetesServiceResource) Define(ctx context.Context, tenantControlPla
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      tenantControlPlane.GetName(),
 			Namespace: tenantControlPlane.GetNamespace(),
-			Labels:    utilities.CommonLabels(tenantControlPlane.GetName()),
 		},
 	}
 
@@ -79,24 +78,24 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 	address, _ := tenantControlPlane.DeclaredControlPlaneAddress(ctx, r.Client)
 
 	return func() error {
-		var servicePort corev1.ServicePort
-		if len(r.resource.Spec.Ports) > 0 {
-			servicePort = r.resource.Spec.Ports[0]
-		}
-		servicePort.Protocol = corev1.ProtocolTCP
-		servicePort.Port = tenantControlPlane.Spec.NetworkProfile.Port
-		servicePort.TargetPort = intstr.FromInt(int(tenantControlPlane.Spec.NetworkProfile.Port))
-
-		r.resource.Spec.Ports = []corev1.ServicePort{servicePort}
-		r.resource.Spec.Selector = map[string]string{
-			"kamaji.clastix.io/soot": tenantControlPlane.GetName(),
-		}
-
-		labels := utilities.MergeMaps(r.resource.GetLabels(), tenantControlPlane.Spec.ControlPlane.Service.AdditionalMetadata.Labels)
+		labels := utilities.MergeMaps(utilities.CommonLabels(tenantControlPlane.GetName()), tenantControlPlane.Spec.ControlPlane.Service.AdditionalMetadata.Labels)
 		r.resource.SetLabels(labels)
 
 		annotations := utilities.MergeMaps(r.resource.GetAnnotations(), tenantControlPlane.Spec.ControlPlane.Service.AdditionalMetadata.Annotations)
 		r.resource.SetAnnotations(annotations)
+
+		r.resource.Spec.Selector = map[string]string{
+			"kamaji.clastix.io/soot": tenantControlPlane.GetName(),
+		}
+
+		if len(r.resource.Spec.Ports) == 0 {
+			r.resource.Spec.Ports = make([]corev1.ServicePort, 1)
+		}
+
+		r.resource.Spec.Ports[0].Name = "kube-apiserver"
+		r.resource.Spec.Ports[0].Protocol = corev1.ProtocolTCP
+		r.resource.Spec.Ports[0].Port = tenantControlPlane.Spec.NetworkProfile.Port
+		r.resource.Spec.Ports[0].TargetPort = intstr.FromInt(int(tenantControlPlane.Spec.NetworkProfile.Port))
 
 		switch tenantControlPlane.Spec.ControlPlane.Service.ServiceType {
 		case kamajiv1alpha1.ServiceTypeLoadBalancer:

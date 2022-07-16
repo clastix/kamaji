@@ -70,32 +70,3 @@ func (in *TenantControlPlane) DeclaredControlPlaneAddress(ctx context.Context, c
 
 	return "", kamajierrors.MissingValidIPError{}
 }
-
-func (in *TenantControlPlane) GetKonnectivityServerAddress(ctx context.Context, client client.Client) (string, error) {
-	var loadBalancerStatus corev1.LoadBalancerStatus
-
-	svc := &corev1.Service{}
-	err := client.Get(ctx, types.NamespacedName{Namespace: in.GetNamespace(), Name: in.Status.Addons.Konnectivity.Service.Name}, svc)
-	if err != nil {
-		return "", errors.Wrap(err, "cannot retrieve Service for Konnectivity")
-	}
-
-	switch {
-	case len(in.Spec.Addons.Konnectivity.ProxyHost) > 0:
-		// Returning the hard-coded value in the specification in case of non LoadBalanced resources
-		return in.Spec.Addons.Konnectivity.ProxyHost, nil
-	case svc.Spec.Type == corev1.ServiceTypeLoadBalancer:
-		loadBalancerStatus = svc.Status.LoadBalancer
-		if len(loadBalancerStatus.Ingress) == 0 {
-			return "", kamajierrors.NonExposedLoadBalancerError{}
-		}
-
-		for _, lb := range loadBalancerStatus.Ingress {
-			if ip := lb.IP; len(ip) > 0 {
-				return ip, nil
-			}
-		}
-	}
-
-	return "", kamajierrors.MissingValidIPError{}
-}
