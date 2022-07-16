@@ -228,265 +228,14 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 			},
 		}
 
-		r.resource.Spec.Template.Spec.Containers = []corev1.Container{
-			{
-				Name:  "kube-apiserver",
-				Image: fmt.Sprintf("k8s.gcr.io/kube-apiserver:%s", tenantControlPlane.Spec.Kubernetes.Version),
-				Command: []string{
-					"kube-apiserver",
-					"--allow-privileged=true",
-					"--authorization-mode=Node,RBAC",
-					fmt.Sprintf("--advertise-address=%s", address),
-					fmt.Sprintf("--client-ca-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)),
-					fmt.Sprintf("--enable-admission-plugins=%s", strings.Join(tenantControlPlane.Spec.Kubernetes.AdmissionControllers.ToSlice(), ",")),
-					"--enable-bootstrap-token-auth=true",
-					fmt.Sprintf("--etcd-servers=%s", strings.Join(r.ETCDEndpoints, ",")),
-					fmt.Sprintf("--service-cluster-ip-range=%s", tenantControlPlane.Spec.NetworkProfile.ServiceCIDR),
-					fmt.Sprintf("--kubelet-client-certificate=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientCertName)),
-					fmt.Sprintf("--kubelet-client-key=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientKeyName)),
-					"--kubelet-preferred-address-types=Hostname,InternalIP,ExternalIP",
-					fmt.Sprintf("--proxy-client-cert-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientCertName)),
-					fmt.Sprintf("--proxy-client-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientKeyName)),
-					"--requestheader-allowed-names=front-proxy-client",
-					"--requestheader-extra-headers-prefix=X-Remote-Extra-",
-					"--requestheader-group-headers=X-Remote-Group",
-					"--requestheader-username-headers=X-Remote-User",
-					fmt.Sprintf("--secure-port=%d", tenantControlPlane.Spec.NetworkProfile.Port),
-					fmt.Sprintf("--service-account-issuer=https://localhost:%d", tenantControlPlane.Spec.NetworkProfile.Port),
-					fmt.Sprintf("--service-account-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPublicKeyName)),
-					fmt.Sprintf("--service-account-signing-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName)),
-					fmt.Sprintf("--tls-cert-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerCertName)),
-					fmt.Sprintf("--tls-private-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKeyName)),
-				},
-				Resources: corev1.ResourceRequirements{
-					Limits: nil,
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU: quantity.MustParse("250m"),
-					},
-				},
-				LivenessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/livez",
-							Port:   intstr.FromInt(int(tenantControlPlane.Spec.NetworkProfile.Port)),
-							Scheme: corev1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      1,
-					PeriodSeconds:       10,
-					SuccessThreshold:    1,
-					FailureThreshold:    3,
-				},
-				ReadinessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/readyz",
-							Port:   intstr.FromInt(int(tenantControlPlane.Spec.NetworkProfile.Port)),
-							Scheme: corev1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      1,
-					PeriodSeconds:       10,
-					SuccessThreshold:    1,
-					FailureThreshold:    3,
-				},
-				StartupProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/livez",
-							Port:   intstr.FromInt(int(tenantControlPlane.Spec.NetworkProfile.Port)),
-							Scheme: corev1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      1,
-					PeriodSeconds:       10,
-					SuccessThreshold:    1,
-					FailureThreshold:    3,
-				},
-				TerminationMessagePath:   "/dev/termination-log",
-				TerminationMessagePolicy: "File",
-				ImagePullPolicy:          corev1.PullAlways,
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      "etc-kubernetes-pki",
-						ReadOnly:  true,
-						MountPath: v1beta3.DefaultCertificatesDir,
-					},
-					{
-						Name:      "etc-ca-certificates",
-						ReadOnly:  true,
-						MountPath: "/etc/ca-certificates",
-					},
-					{
-						Name:      "etc-ssl-certs",
-						ReadOnly:  true,
-						MountPath: "/etc/ssl/certs",
-					},
-					{
-						Name:      "usr-share-ca-certificates",
-						ReadOnly:  true,
-						MountPath: "/usr/share/ca-certificates",
-					},
-					{
-						Name:      "usr-local-share-ca-certificates",
-						ReadOnly:  true,
-						MountPath: "/usr/local/share/ca-certificates",
-					},
-				},
-			},
-			{
-				Name:  "kube-scheduler",
-				Image: fmt.Sprintf("k8s.gcr.io/kube-scheduler:%s", tenantControlPlane.Spec.Kubernetes.Version),
-				Command: []string{
-					"kube-scheduler",
-					"--authentication-kubeconfig=/etc/kubernetes/scheduler.conf",
-					"--authorization-kubeconfig=/etc/kubernetes/scheduler.conf",
-					"--bind-address=0.0.0.0",
-					"--kubeconfig=/etc/kubernetes/scheduler.conf",
-					"--leader-elect=true",
-				},
-				Resources: corev1.ResourceRequirements{
-					Limits: nil,
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU: quantity.MustParse("100m"),
-					},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      "scheduler-kubeconfig",
-						ReadOnly:  true,
-						MountPath: "/etc/kubernetes",
-					},
-				},
-				LivenessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/healthz",
-							Port:   intstr.FromInt(10259),
-							Scheme: corev1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      1,
-					PeriodSeconds:       10,
-					SuccessThreshold:    1,
-					FailureThreshold:    3,
-				},
-				StartupProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/healthz",
-							Port:   intstr.FromInt(10259),
-							Scheme: corev1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      1,
-					PeriodSeconds:       10,
-					SuccessThreshold:    1,
-					FailureThreshold:    3,
-				},
-				TerminationMessagePath:   "/dev/termination-log",
-				TerminationMessagePolicy: "File",
-				ImagePullPolicy:          corev1.PullAlways,
-			},
-			{
-				Name:  "kube-controller-manager",
-				Image: fmt.Sprintf("k8s.gcr.io/kube-controller-manager:%s", tenantControlPlane.Spec.Kubernetes.Version),
-				Command: []string{
-					"kube-controller-manager",
-					"--allocate-node-cidrs=true",
-					"--authentication-kubeconfig=/etc/kubernetes/controller-manager.conf",
-					"--authorization-kubeconfig=/etc/kubernetes/controller-manager.conf",
-					"--bind-address=0.0.0.0",
-					fmt.Sprintf("--client-ca-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)),
-					fmt.Sprintf("--cluster-name=%s", tenantControlPlane.GetName()),
-					fmt.Sprintf("--cluster-signing-cert-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)),
-					fmt.Sprintf("--cluster-signing-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CAKeyName)),
-					"--controllers=*,bootstrapsigner,tokencleaner",
-					"--kubeconfig=/etc/kubernetes/controller-manager.conf",
-					"--leader-elect=true",
-					fmt.Sprintf("--service-cluster-ip-range=%s", tenantControlPlane.Spec.NetworkProfile.ServiceCIDR),
-					fmt.Sprintf("--cluster-cidr=%s", tenantControlPlane.Spec.NetworkProfile.PodCIDR),
-					fmt.Sprintf("--requestheader-client-ca-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyCACertName)),
-					fmt.Sprintf("--root-ca-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)),
-					fmt.Sprintf("--service-account-private-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName)),
-					"--use-service-account-credentials=true",
-				},
-				Resources: corev1.ResourceRequirements{
-					Limits: nil,
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU: quantity.MustParse("200m"),
-					},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      "controller-manager-kubeconfig",
-						ReadOnly:  true,
-						MountPath: "/etc/kubernetes",
-					},
-					{
-						Name:      "etc-kubernetes-pki",
-						ReadOnly:  true,
-						MountPath: v1beta3.DefaultCertificatesDir,
-					},
-					{
-						Name:      "etc-ca-certificates",
-						ReadOnly:  true,
-						MountPath: "/etc/ca-certificates",
-					},
-					{
-						Name:      "etc-ssl-certs",
-						ReadOnly:  true,
-						MountPath: "/etc/ssl/certs",
-					},
-					{
-						Name:      "usr-share-ca-certificates",
-						ReadOnly:  true,
-						MountPath: "/usr/share/ca-certificates",
-					},
-					{
-						Name:      "usr-local-share-ca-certificates",
-						ReadOnly:  true,
-						MountPath: "/usr/local/share/ca-certificates",
-					},
-				},
-				LivenessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/healthz",
-							Port:   intstr.FromInt(10257),
-							Scheme: corev1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      1,
-					PeriodSeconds:       10,
-					SuccessThreshold:    1,
-					FailureThreshold:    3,
-				},
-				StartupProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/healthz",
-							Port:   intstr.FromInt(10257),
-							Scheme: corev1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      1,
-					PeriodSeconds:       10,
-					SuccessThreshold:    1,
-					FailureThreshold:    3,
-				},
-				TerminationMessagePath:   "/dev/termination-log",
-				TerminationMessagePolicy: "File",
-				ImagePullPolicy:          corev1.PullAlways,
-			},
+		if len(r.resource.Spec.Template.Spec.Containers) < 3 {
+			r.resource.Spec.Template.Spec.Containers = make([]corev1.Container, 3)
 		}
+
+		r.syncKubeApiServer(tenantControlPlane, address)
+		r.syncScheduler(tenantControlPlane)
+		r.syncControllerManager(tenantControlPlane)
+
 		r.resource.Spec.Strategy = appsv1.DeploymentStrategy{
 			Type: appsv1.RollingUpdateDeploymentStrategyType,
 			RollingUpdate: &appsv1.RollingUpdateDeployment{
@@ -838,4 +587,240 @@ func (r *KubernetesDeploymentResource) customizeKineMySQLStorage(ctx context.Con
 	}
 
 	podTemplate.Spec.Containers = append(podTemplate.Spec.Containers, container)
+}
+
+func (r *KubernetesDeploymentResource) syncKubeApiServer(tenantControlPlane *kamajiv1alpha1.TenantControlPlane, address string) {
+	r.resource.Spec.Template.Spec.Containers[0].Name = "kube-apiserver"
+	r.resource.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("k8s.gcr.io/kube-apiserver:%s", tenantControlPlane.Spec.Kubernetes.Version)
+	r.resource.Spec.Template.Spec.Containers[0].Command = []string{
+		"kube-apiserver",
+		"--allow-privileged=true",
+		"--authorization-mode=Node,RBAC",
+		fmt.Sprintf("--advertise-address=%s", address),
+		fmt.Sprintf("--client-ca-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)),
+		fmt.Sprintf("--enable-admission-plugins=%s", strings.Join(tenantControlPlane.Spec.Kubernetes.AdmissionControllers.ToSlice(), ",")),
+		"--enable-bootstrap-token-auth=true",
+		fmt.Sprintf("--etcd-servers=%s", strings.Join(r.ETCDEndpoints, ",")),
+		fmt.Sprintf("--service-cluster-ip-range=%s", tenantControlPlane.Spec.NetworkProfile.ServiceCIDR),
+		fmt.Sprintf("--kubelet-client-certificate=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientCertName)),
+		fmt.Sprintf("--kubelet-client-key=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientKeyName)),
+		"--kubelet-preferred-address-types=Hostname,InternalIP,ExternalIP",
+		fmt.Sprintf("--proxy-client-cert-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientCertName)),
+		fmt.Sprintf("--proxy-client-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientKeyName)),
+		"--requestheader-allowed-names=front-proxy-client",
+		"--requestheader-extra-headers-prefix=X-Remote-Extra-",
+		"--requestheader-group-headers=X-Remote-Group",
+		"--requestheader-username-headers=X-Remote-User",
+		fmt.Sprintf("--secure-port=%d", tenantControlPlane.Spec.NetworkProfile.Port),
+		fmt.Sprintf("--service-account-issuer=https://localhost:%d", tenantControlPlane.Spec.NetworkProfile.Port),
+		fmt.Sprintf("--service-account-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPublicKeyName)),
+		fmt.Sprintf("--service-account-signing-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName)),
+		fmt.Sprintf("--tls-cert-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerCertName)),
+		fmt.Sprintf("--tls-private-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKeyName)),
+	}
+	r.resource.Spec.Template.Spec.Containers[0].LivenessProbe = &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/livez",
+				Port:   intstr.FromInt(int(tenantControlPlane.Spec.NetworkProfile.Port)),
+				Scheme: corev1.URISchemeHTTPS,
+			},
+		},
+		InitialDelaySeconds: 0,
+		TimeoutSeconds:      1,
+		PeriodSeconds:       10,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	}
+	r.resource.Spec.Template.Spec.Containers[0].ReadinessProbe = &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/readyz",
+				Port:   intstr.FromInt(int(tenantControlPlane.Spec.NetworkProfile.Port)),
+				Scheme: corev1.URISchemeHTTPS,
+			},
+		},
+		InitialDelaySeconds: 0,
+		TimeoutSeconds:      1,
+		PeriodSeconds:       10,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	}
+	r.resource.Spec.Template.Spec.Containers[0].StartupProbe = &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/livez",
+				Port:   intstr.FromInt(int(tenantControlPlane.Spec.NetworkProfile.Port)),
+				Scheme: corev1.URISchemeHTTPS,
+			},
+		},
+		InitialDelaySeconds: 0,
+		TimeoutSeconds:      1,
+		PeriodSeconds:       10,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	}
+	r.resource.Spec.Template.Spec.Containers[0].ImagePullPolicy = corev1.PullAlways
+	r.resource.Spec.Template.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
+		{
+			Name:      "etc-kubernetes-pki",
+			ReadOnly:  true,
+			MountPath: v1beta3.DefaultCertificatesDir,
+		},
+		{
+			Name:      "etc-ca-certificates",
+			ReadOnly:  true,
+			MountPath: "/etc/ca-certificates",
+		},
+		{
+			Name:      "etc-ssl-certs",
+			ReadOnly:  true,
+			MountPath: "/etc/ssl/certs",
+		},
+		{
+			Name:      "usr-share-ca-certificates",
+			ReadOnly:  true,
+			MountPath: "/usr/share/ca-certificates",
+		},
+		{
+			Name:      "usr-local-share-ca-certificates",
+			ReadOnly:  true,
+			MountPath: "/usr/local/share/ca-certificates",
+		},
+	}
+}
+
+func (r *KubernetesDeploymentResource) syncScheduler(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) {
+	r.resource.Spec.Template.Spec.Containers[1].Name = "kube-scheduler"
+	r.resource.Spec.Template.Spec.Containers[1].Image = fmt.Sprintf("k8s.gcr.io/kube-scheduler:%s", tenantControlPlane.Spec.Kubernetes.Version)
+	r.resource.Spec.Template.Spec.Containers[1].Command = []string{
+		"kube-scheduler",
+		"--authentication-kubeconfig=/etc/kubernetes/scheduler.conf",
+		"--authorization-kubeconfig=/etc/kubernetes/scheduler.conf",
+		"--bind-address=0.0.0.0",
+		"--kubeconfig=/etc/kubernetes/scheduler.conf",
+		"--leader-elect=true",
+	}
+	r.resource.Spec.Template.Spec.Containers[1].VolumeMounts = []corev1.VolumeMount{
+		{
+			Name:      "scheduler-kubeconfig",
+			ReadOnly:  true,
+			MountPath: "/etc/kubernetes",
+		},
+	}
+	r.resource.Spec.Template.Spec.Containers[1].LivenessProbe = &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/healthz",
+				Port:   intstr.FromInt(10259),
+				Scheme: corev1.URISchemeHTTPS,
+			},
+		},
+		InitialDelaySeconds: 0,
+		TimeoutSeconds:      1,
+		PeriodSeconds:       10,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	}
+	r.resource.Spec.Template.Spec.Containers[1].StartupProbe = &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/healthz",
+				Port:   intstr.FromInt(10259),
+				Scheme: corev1.URISchemeHTTPS,
+			},
+		},
+		InitialDelaySeconds: 0,
+		TimeoutSeconds:      1,
+		PeriodSeconds:       10,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	}
+	r.resource.Spec.Template.Spec.Containers[1].ImagePullPolicy = corev1.PullAlways
+}
+
+func (r *KubernetesDeploymentResource) syncControllerManager(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) {
+	r.resource.Spec.Template.Spec.Containers[2].Name = "kube-controller-manager"
+	r.resource.Spec.Template.Spec.Containers[2].Image = fmt.Sprintf("k8s.gcr.io/kube-controller-manager:%s", tenantControlPlane.Spec.Kubernetes.Version)
+	r.resource.Spec.Template.Spec.Containers[2].Command = []string{
+		"kube-controller-manager",
+		"--allocate-node-cidrs=true",
+		"--authentication-kubeconfig=/etc/kubernetes/controller-manager.conf",
+		"--authorization-kubeconfig=/etc/kubernetes/controller-manager.conf",
+		"--bind-address=0.0.0.0",
+		fmt.Sprintf("--client-ca-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)),
+		fmt.Sprintf("--cluster-name=%s", tenantControlPlane.GetName()),
+		fmt.Sprintf("--cluster-signing-cert-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)),
+		fmt.Sprintf("--cluster-signing-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CAKeyName)),
+		"--controllers=*,bootstrapsigner,tokencleaner",
+		"--kubeconfig=/etc/kubernetes/controller-manager.conf",
+		"--leader-elect=true",
+		fmt.Sprintf("--service-cluster-ip-range=%s", tenantControlPlane.Spec.NetworkProfile.ServiceCIDR),
+		fmt.Sprintf("--cluster-cidr=%s", tenantControlPlane.Spec.NetworkProfile.PodCIDR),
+		fmt.Sprintf("--requestheader-client-ca-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyCACertName)),
+		fmt.Sprintf("--root-ca-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)),
+		fmt.Sprintf("--service-account-private-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName)),
+		"--use-service-account-credentials=true",
+	}
+	r.resource.Spec.Template.Spec.Containers[2].VolumeMounts = []corev1.VolumeMount{
+		{
+			Name:      "controller-manager-kubeconfig",
+			ReadOnly:  true,
+			MountPath: "/etc/kubernetes",
+		},
+		{
+			Name:      "etc-kubernetes-pki",
+			ReadOnly:  true,
+			MountPath: v1beta3.DefaultCertificatesDir,
+		},
+		{
+			Name:      "etc-ca-certificates",
+			ReadOnly:  true,
+			MountPath: "/etc/ca-certificates",
+		},
+		{
+			Name:      "etc-ssl-certs",
+			ReadOnly:  true,
+			MountPath: "/etc/ssl/certs",
+		},
+		{
+			Name:      "usr-share-ca-certificates",
+			ReadOnly:  true,
+			MountPath: "/usr/share/ca-certificates",
+		},
+		{
+			Name:      "usr-local-share-ca-certificates",
+			ReadOnly:  true,
+			MountPath: "/usr/local/share/ca-certificates",
+		},
+	}
+	r.resource.Spec.Template.Spec.Containers[2].LivenessProbe = &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/healthz",
+				Port:   intstr.FromInt(10257),
+				Scheme: corev1.URISchemeHTTPS,
+			},
+		},
+		InitialDelaySeconds: 0,
+		TimeoutSeconds:      1,
+		PeriodSeconds:       10,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	}
+	r.resource.Spec.Template.Spec.Containers[2].StartupProbe = &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/healthz",
+				Port:   intstr.FromInt(10257),
+				Scheme: corev1.URISchemeHTTPS,
+			},
+		},
+		InitialDelaySeconds: 0,
+		TimeoutSeconds:      1,
+		PeriodSeconds:       10,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	}
+	r.resource.Spec.Template.Spec.Containers[2].ImagePullPolicy = corev1.PullAlways
 }
