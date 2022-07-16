@@ -688,6 +688,12 @@ func (r *KubernetesDeploymentResource) syncKubeApiServer(tenantControlPlane *kam
 			MountPath: "/usr/local/share/ca-certificates",
 		},
 	}
+
+	if componentsResources := tenantControlPlane.Spec.ControlPlane.Deployment.Resources; componentsResources != nil {
+		if resource := componentsResources.APIServer; resource != nil {
+			r.resource.Spec.Template.Spec.Containers[0].Resources = *resource
+		}
+	}
 }
 
 func (r *KubernetesDeploymentResource) syncScheduler(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) {
@@ -737,6 +743,12 @@ func (r *KubernetesDeploymentResource) syncScheduler(tenantControlPlane *kamajiv
 		FailureThreshold:    3,
 	}
 	r.resource.Spec.Template.Spec.Containers[1].ImagePullPolicy = corev1.PullAlways
+
+	if componentsResources := tenantControlPlane.Spec.ControlPlane.Deployment.Resources; componentsResources != nil {
+		if resource := componentsResources.Scheduler; resource != nil {
+			r.resource.Spec.Template.Spec.Containers[1].Resources = *resource
+		}
+	}
 }
 
 func (r *KubernetesDeploymentResource) syncControllerManager(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) {
@@ -823,4 +835,10 @@ func (r *KubernetesDeploymentResource) syncControllerManager(tenantControlPlane 
 		FailureThreshold:    3,
 	}
 	r.resource.Spec.Template.Spec.Containers[2].ImagePullPolicy = corev1.PullAlways
+
+	if componentsResources := tenantControlPlane.Spec.ControlPlane.Deployment.Resources; componentsResources != nil {
+		if resource := componentsResources.ControllerManager; resource != nil {
+			r.resource.Spec.Template.Spec.Containers[1].Resources = *resource
+		}
+	}
 }
