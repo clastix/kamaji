@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os/exec"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,6 +16,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+
+	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
 func GetKindIPAddress() string {
@@ -22,6 +25,49 @@ func GetKindIPAddress() string {
 	Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: "kubernetes", Namespace: "default"}, ep)).ToNot(HaveOccurred())
 
 	return ep.Subsets[0].Addresses[0].IP
+}
+
+func PrintTenantControlPlaneInfo(tcp *kamajiv1alpha1.TenantControlPlane) {
+	kubectlExec := func(args ...string) {
+		cmd := exec.Command("kubectl")
+
+		var out bytes.Buffer
+		cmd.Stdout = &out
+		cmd.Args = args
+
+		Expect(cmd.Run()).ToNot(HaveOccurred())
+
+		for {
+			line, err := out.ReadString('\n')
+			if err != nil {
+				return
+			}
+
+			_, _ = fmt.Fprint(GinkgoWriter, ">>> ", line)
+		}
+	}
+
+	if CurrentGinkgoTestDescription().Failed {
+		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: Tenant Control Plane definition")
+		kubectlExec(
+			fmt.Sprintf("--namespace=%s", tcp.GetNamespace()),
+			"get",
+			"tcp",
+			tcp.GetName(),
+		)
+		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: Tenant Control Plane resources")
+		kubectlExec(
+			fmt.Sprintf("--namespace=%s", tcp.GetNamespace()),
+			"get",
+			"svc,deployment,pods,ep,configmap,secrets",
+		)
+		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: Tenant Control Plane pods")
+		kubectlExec(
+			fmt.Sprintf("--namespace=%s", tcp.GetNamespace()),
+			"describe",
+			"pods",
+		)
+	}
 }
 
 func PrintKamajiLogs() {

@@ -59,6 +59,7 @@ var _ = Describe("Deploy a TenantControlPlane resource", func() {
 
 	// Delete the TenantControlPlane resource after test is finished
 	JustAfterEach(func() {
+		PrintTenantControlPlaneInfo(&tcp)
 		PrintKamajiLogs()
 		Expect(k8sClient.Delete(context.Background(), &tcp)).Should(Succeed())
 	})
