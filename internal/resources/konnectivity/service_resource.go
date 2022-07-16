@@ -6,10 +6,8 @@ package konnectivity
 import (
 	"context"
 	"fmt"
-	"net"
 
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,15 +17,13 @@ import (
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
-// ServiceResource must be the first Resource processed by the TenantControlPlane:
-// when a TenantControlPlan is expecting a dynamic IP address, the Service will get it from the controller-manager.
 type ServiceResource struct {
 	resource *corev1.Service
 	Client   client.Client
 	Name     string
 }
 
-func (r *ServiceResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *ServiceResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	if tenantControlPlane.Status.Addons.Konnectivity.Service.Name != r.resource.GetName() {
 		return true
 	}
@@ -36,7 +32,7 @@ func (r *ServiceResource) ShouldStatusBeUpdated(ctx context.Context, tenantContr
 		return true
 	}
 
-	if tenantControlPlane.Status.Addons.Konnectivity.Service.Port != r.resource.Spec.Ports[0].Port {
+	if tenantControlPlane.Status.Addons.Konnectivity.Service.Port != r.resource.Spec.Ports[1].Port {
 		return true
 	}
 
@@ -76,22 +72,31 @@ func (r *ServiceResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.Tenan
 }
 
 func (r *ServiceResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
-	if err := r.Client.Delete(ctx, r.resource); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return false, err
+	res, err := utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, func() error {
+		for index, port := range r.resource.Spec.Ports {
+			if port.Port == tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort {
+				ports := make([]corev1.ServicePort, 0, len(r.resource.Spec.Ports)-1)
+
+				ports = append(ports, r.resource.Spec.Ports[:index]...)
+				ports = append(ports, r.resource.Spec.Ports[index+1:]...)
+
+				r.resource.Spec.Ports = ports
+
+				return nil
+			}
 		}
 
-		return false, nil
-	}
+		return nil
+	})
 
-	return true, nil
+	return res == controllerutil.OperationResultUpdated, err
 }
 
-func (r *ServiceResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *ServiceResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Service.Name = r.resource.GetName()
 		tenantControlPlane.Status.Addons.Konnectivity.Service.Namespace = r.resource.GetNamespace()
-		tenantControlPlane.Status.Addons.Konnectivity.Service.Port = r.resource.Spec.Ports[0].Port
+		tenantControlPlane.Status.Addons.Konnectivity.Service.Port = r.resource.Spec.Ports[1].Port
 		tenantControlPlane.Status.Addons.Konnectivity.Service.ServiceStatus = r.resource.Status
 		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 
@@ -104,10 +109,10 @@ func (r *ServiceResource) UpdateTenantControlPlaneStatus(ctx context.Context, te
 	return nil
 }
 
-func (r *ServiceResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *ServiceResource) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.getPrefixedName(tenantControlPlane),
+			Name:      tenantControlPlane.GetName(),
 			Namespace: tenantControlPlane.GetNamespace(),
 		},
 	}
@@ -119,66 +124,19 @@ func (r *ServiceResource) CreateOrUpdate(ctx context.Context, tenantControlPlane
 	return controllerutil.CreateOrUpdate(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
-func (r *ServiceResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) func() error {
+func (r *ServiceResource) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) func() error {
 	return func() (err error) {
-		address, _ := tenantControlPlane.GetKonnectivityServerAddress(ctx, r.Client)
-		if address == "" {
-			// The TenantControlPlane is getting a dynamic IP address: retrieving from the status
-			address, _, err = net.SplitHostPort(tenantControlPlane.Status.ControlPlaneEndpoint)
-			if err != nil {
-				return err
-			}
+		switch len(r.resource.Spec.Ports) {
+		case 0:
+			return fmt.Errorf("current state of the Service is not ready to be mangled for Konnectivity")
+		case 1:
+			r.resource.Spec.Ports = append(r.resource.Spec.Ports, corev1.ServicePort{})
 		}
 
-		var servicePort corev1.ServicePort
-		if len(r.resource.Spec.Ports) > 0 {
-			servicePort = r.resource.Spec.Ports[0]
-		}
-		servicePort.Protocol = corev1.ProtocolTCP
-		servicePort.Port = tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort
-		servicePort.TargetPort = intstr.FromInt(int(tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort))
-
-		r.resource.Spec.Ports = []corev1.ServicePort{servicePort}
-		r.resource.Spec.Selector = map[string]string{
-			"kamaji.clastix.io/soot": tenantControlPlane.GetName(),
-		}
-
-		labels := utilities.MergeMaps(r.resource.GetLabels(), tenantControlPlane.Spec.ControlPlane.Service.AdditionalMetadata.Labels)
-		r.resource.SetLabels(labels)
-
-		annotations := utilities.MergeMaps(r.resource.GetAnnotations(), tenantControlPlane.Spec.ControlPlane.Service.AdditionalMetadata.Annotations)
-		r.resource.SetAnnotations(annotations)
-
-		isIP := false
-
-		switch {
-		case utilities.IsValidIP(address):
-			isIP = true
-		case !utilities.IsValidHostname(address):
-			return fmt.Errorf("%s is not a valid address for konnectivity proxy server", address)
-		}
-
-		switch tenantControlPlane.Spec.Addons.Konnectivity.ServiceType {
-		case kamajiv1alpha1.ServiceTypeLoadBalancer:
-			r.resource.Spec.Type = corev1.ServiceTypeLoadBalancer
-
-			if isIP {
-				r.resource.Spec.LoadBalancerIP = address
-			}
-		case kamajiv1alpha1.ServiceTypeNodePort:
-			r.resource.Spec.Type = corev1.ServiceTypeNodePort
-			r.resource.Spec.Ports[0].NodePort = tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort
-
-			if isIP && tenantControlPlane.Spec.Addons.Konnectivity.AllowAddressAsExternalIP {
-				r.resource.Spec.ExternalIPs = []string{address}
-			}
-		default:
-			r.resource.Spec.Type = corev1.ServiceTypeClusterIP
-
-			if isIP && tenantControlPlane.Spec.Addons.Konnectivity.AllowAddressAsExternalIP {
-				r.resource.Spec.ExternalIPs = []string{address}
-			}
-		}
+		r.resource.Spec.Ports[1].Name = "konnectivity-server"
+		r.resource.Spec.Ports[1].Protocol = corev1.ProtocolTCP
+		r.resource.Spec.Ports[1].Port = tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort
+		r.resource.Spec.Ports[1].TargetPort = intstr.FromInt(int(tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort))
 
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
@@ -186,8 +144,4 @@ func (r *ServiceResource) mutate(ctx context.Context, tenantControlPlane *kamaji
 
 func (r *ServiceResource) GetName() string {
 	return r.Name
-}
-
-func (r *ServiceResource) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
 }

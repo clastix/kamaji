@@ -100,13 +100,9 @@ func (r *Agent) UpdateTenantControlPlaneStatus(ctx context.Context, tenantContro
 
 func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() (err error) {
-		address := tenantControlPlane.Spec.Addons.Konnectivity.ProxyHost
-		if len(address) == 0 {
-			// In case of no explicit konnectivity proxy host, using the Tenant Control Plane one
-			address, _, err = tenantControlPlane.AssignedControlPlaneAddress()
-			if err != nil {
-				return err
-			}
+		address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
+		if err != nil {
+			return err
 		}
 
 		r.resource.SetLabels(utilities.MergeMaps(
