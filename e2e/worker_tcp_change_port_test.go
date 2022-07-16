@@ -50,7 +50,7 @@ var _ = Describe("validating kubeconfig", func() {
 				},
 				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
 					Address: GetKindIPAddress(),
-					Port:    31443,
+					Port:    30001,
 				},
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
 					Version: "v1.23.6",
@@ -75,12 +75,13 @@ var _ = Describe("validating kubeconfig", func() {
 
 	JustAfterEach(func() {
 		PrintKamajiLogs()
+		PrintTenantControlPlaneInfo(tcp)
 		Expect(k8sClient.Delete(ctx, tcp)).Should(Succeed())
 		Expect(os.Remove(kubeconfigFile.Name())).ToNot(HaveOccurred())
 	})
 
 	It("return kubernetes version", func() {
-		for _, port := range []int32{31444, 31445, 31446} {
+		for _, port := range []int32{30002, 30003, 30004} {
 			Eventually(func() string {
 				By(fmt.Sprintf("ensuring TCP port is set to %d", port), func() {
 					Eventually(func() (err error) {
@@ -158,7 +159,7 @@ var _ = Describe("validating kubeconfig", func() {
 				})
 
 				return version.GitVersion
-			}, 5*time.Minute, 5*time.Second).Should(Equal(tcp.Spec.Kubernetes.Version))
+			}, 3*time.Minute, 5*time.Second).Should(Equal(tcp.Spec.Kubernetes.Version))
 		}
 	})
 })
