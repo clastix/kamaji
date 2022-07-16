@@ -5,48 +5,23 @@ metadata:
 spec:
   controlPlane:
     deployment:
-      replicas: 2
-      additionalMetadata:
-        annotations:
-          environment.clastix.io: test
-          tier.clastix.io: "0"
-        labels:
-          tenant.clastix.io: test
-          kind.clastix.io: deployment
+      replicas: 1
     service:
-      additionalMetadata:
-        annotations:
-          environment.clastix.io: test
-          tier.clastix.io: "0"
-        labels:
-          tenant.clastix.io: test
-          kind.clastix.io: service
       serviceType: LoadBalancer
     ingress:
-      enabled: true
-      hostname: kamaji.local
-      ingressClassName: nginx
-      additionalMetadata:
-        annotations:
-          kubernetes.io/ingress.allow-http: "false"
-          nginx.ingress.kubernetes.io/secure-backends: "true"
-          nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+      enabled: false
   kubernetes:
     version: "v1.23.1"
     kubelet:
-      cgroupfs: systemd
+      cgroupfs: cgroupfs
     admissionControllers:
       - ResourceQuota
       - LimitRanger
   networkProfile:
-    address: "127.0.0.1"
     port: 6443
-    certSANs:
-      - "test.clastix.labs"
-    serviceCidr: "10.96.0.0/16"
-    podCidr: "10.244.0.0/16"
-    dnsServiceIPs:
-      - "10.96.0.10"
   addons:
     coreDNS: {}
     kubeProxy: {}
+    konnectivity:
+      proxyPort: 8134
+      serviceType: LoadBalancer

@@ -92,8 +92,9 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 	})
 
 	JustAfterEach(func() {
-		Expect(k8sClient.Delete(ctx, &tcp)).Should(Succeed())
+		PrintKamajiLogs()
 		Expect(workerContainer.Terminate(ctx)).ToNot(HaveOccurred())
+		Expect(k8sClient.Delete(ctx, &tcp)).Should(Succeed())
 		Expect(os.Remove(kubeconfigFile.Name())).ToNot(HaveOccurred())
 	})
 

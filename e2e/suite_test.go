@@ -24,7 +24,7 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg       *rest.Config // nolint
+	cfg       *rest.Config
 	k8sClient client.Client
 	testEnv   *envtest.Environment
 )
@@ -45,7 +45,9 @@ var _ = BeforeSuite(func() {
 		UseExistingCluster: pointer.Bool(true),
 	}
 
-	cfg, err := testEnv.Start()
+	var err error
+
+	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
