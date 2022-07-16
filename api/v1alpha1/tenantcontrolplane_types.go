@@ -4,6 +4,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -76,10 +77,19 @@ type IngressSpec struct {
 	Hostname string `json:"hostname,omitempty"`
 }
 
+type ControlPlaneComponentsResources struct {
+	APIServer         *corev1.ResourceRequirements `json:"apiServer,omitempty"`
+	ControllerManager *corev1.ResourceRequirements `json:"controllerManager,omitempty"`
+	Scheduler         *corev1.ResourceRequirements `json:"scheduler,omitempty"`
+}
+
 type DeploymentSpec struct {
 	// +kubebuilder:default=2
-	Replicas           int32              `json:"replicas,omitempty"`
-	AdditionalMetadata AdditionalMetadata `json:"additionalMetadata,omitempty"`
+	Replicas int32 `json:"replicas,omitempty"`
+	// Resources defines the amount of memory and CPU to allocate to each component of the Control Plane
+	// (kube-apiserver, controller-manager, and scheduler).
+	Resources          *ControlPlaneComponentsResources `json:"resources,omitempty"`
+	AdditionalMetadata AdditionalMetadata               `json:"additionalMetadata,omitempty"`
 }
 
 type ServiceSpec struct {
@@ -109,6 +119,8 @@ type KonnectivitySpec struct {
 	// AgentImage defines the container image for Konnectivity's agent.
 	// +kubebuilder:default=us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-agent
 	AgentImage string `json:"agentImage,omitempty"`
+	// Resources define the amount of CPU and memory to allocate to the Konnectivity server.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // AddonsSpec defines the enabled addons and their features.
