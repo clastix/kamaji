@@ -74,11 +74,6 @@ spec:
                         description: AgentImage defines the container image for Konnectivity's
                           agent.
                         type: string
-                      allowAddressAsExternalIP:
-                        type: boolean
-                      proxyHost:
-                        description: Host of Konnectivity proxy server.
-                        type: string
                       proxyPort:
                         description: Port of Konnectivity proxy server.
                         format: int32
@@ -116,21 +111,12 @@ spec:
                         description: ServerImage defines the container image for Konnectivity's
                           server.
                         type: string
-                      serviceType:
-                        description: ServiceType allows specifying how to expose the
-                          Konnectivity Proxy Server.
-                        enum:
-                        - ClusterIP
-                        - NodePort
-                        - LoadBalancer
-                        type: string
                       version:
                         default: v0.0.31
                         description: Version for Konnectivity server and agent.
                         type: string
                     required:
                     - proxyPort
-                    - serviceType
                     type: object
                   kubeProxy:
                     description: AddonSpec defines the spec for every addon.
