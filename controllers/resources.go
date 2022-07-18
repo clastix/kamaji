@@ -314,6 +314,10 @@ func getExternalKonnectivityResources(c client.Client, log logr.Logger, tcpRecon
 			Client: c,
 			Name:   "konnectivity-clusterrolebinding",
 		},
+		&konnectivity.KubernetesDeploymentResource{
+			Client: c,
+			Name:   "konnectivity-deployment",
+		},
 		&konnectivity.ServiceResource{
 			Client: c,
 			Name:   "konnectivity-service",

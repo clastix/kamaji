@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -33,24 +32,6 @@ func updateOperationResult(current controllerutil.OperationResult, op controller
 	}
 
 	return controllerutil.OperationResultNone
-}
-
-func secretProjection(secretName, certKeyName, keyName string) *v1.SecretProjection {
-	return &v1.SecretProjection{
-		LocalObjectReference: v1.LocalObjectReference{
-			Name: secretName,
-		},
-		Items: []v1.KeyToPath{
-			{
-				Key:  certKeyName,
-				Path: certKeyName,
-			},
-			{
-				Key:  keyName,
-				Path: keyName,
-			},
-		},
-	}
 }
 
 func randomString(n int) string {
