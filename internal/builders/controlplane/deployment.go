@@ -6,6 +6,7 @@ package controlplane
 import (
 	"fmt"
 	"path"
+	"strconv"
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -39,8 +40,11 @@ const (
 	schedulerKubeconfig
 	controllerManagerKubeconfig
 	kineConfig
+)
 
-	kineVolumeName = "kine-config"
+const (
+	apiServerFlagsAnnotation = "kube-apiserver.kamaji.clastix.io/args"
+	kineVolumeName           = "kine-config"
 )
 
 type Deployment struct {
@@ -243,16 +247,24 @@ func (d *Deployment) BuildScheduler(podSpec *corev1.PodSpec, tenantControlPlane 
 		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
 	}
 
+	args := map[string]string{}
+
+	if tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs != nil {
+		args = utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs.Scheduler)
+	}
+
+	kubeconfig := "/etc/kubernetes/scheduler.conf"
+
+	args["--authentication-kubeconfig"] = kubeconfig
+	args["--authorization-kubeconfig"] = kubeconfig
+	args["--bind-address"] = "0.0.0.0"
+	args["--kubeconfig"] = kubeconfig
+	args["--leader-elect"] = "true" // nolint:goconst
+
 	podSpec.Containers[schedulerIndex].Name = "kube-scheduler"
 	podSpec.Containers[schedulerIndex].Image = fmt.Sprintf("k8s.gcr.io/kube-scheduler:%s", tenantControlPlane.Spec.Kubernetes.Version)
-	podSpec.Containers[schedulerIndex].Command = []string{
-		"kube-scheduler",
-		"--authentication-kubeconfig=/etc/kubernetes/scheduler.conf",
-		"--authorization-kubeconfig=/etc/kubernetes/scheduler.conf",
-		"--bind-address=0.0.0.0",
-		"--kubeconfig=/etc/kubernetes/scheduler.conf",
-		"--leader-elect=true",
-	}
+	podSpec.Containers[schedulerIndex].Command = []string{"kube-scheduler"}
+	podSpec.Containers[schedulerIndex].Args = utilities.ArgsFromMapToSlice(args)
 	podSpec.Containers[schedulerIndex].VolumeMounts = []corev1.VolumeMount{
 		{
 			Name:      "scheduler-kubeconfig",
@@ -306,28 +318,36 @@ func (d *Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContr
 		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
 	}
 
+	args := map[string]string{}
+
+	if tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs != nil {
+		args = utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs.ControllerManager)
+	}
+
+	kubeconfig := "/etc/kubernetes/controller-manager.conf"
+
+	args["--allocate-node-cidrs"] = "true"
+	args["--authentication-kubeconfig"] = kubeconfig
+	args["--authorization-kubeconfig"] = kubeconfig
+	args["--bind-address"] = "0.0.0.0"
+	args["--client-ca-file"] = path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)
+	args["--cluster-name"] = tenantControlPlane.GetName()
+	args["--cluster-signing-cert-file"] = path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)
+	args["--cluster-signing-key-file"] = path.Join(v1beta3.DefaultCertificatesDir, constants.CAKeyName)
+	args["--controllers"] = "*,bootstrapsigner,tokencleaner"
+	args["--kubeconfig"] = kubeconfig
+	args["--leader-elect"] = "true"
+	args["--service-cluster-ip-range"] = tenantControlPlane.Spec.NetworkProfile.ServiceCIDR
+	args["--cluster-cidr"] = tenantControlPlane.Spec.NetworkProfile.PodCIDR
+	args["--requestheader-client-ca-file"] = path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyCACertName)
+	args["--root-ca-file"] = path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)
+	args["--service-account-private-key-file"] = path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName)
+	args["--use-service-account-credentials"] = "true"
+
 	podSpec.Containers[controllerManagerIndex].Name = "kube-controller-manager"
 	podSpec.Containers[controllerManagerIndex].Image = fmt.Sprintf("k8s.gcr.io/kube-controller-manager:%s", tenantControlPlane.Spec.Kubernetes.Version)
-	podSpec.Containers[controllerManagerIndex].Command = []string{
-		"kube-controller-manager",
-		"--allocate-node-cidrs=true",
-		"--authentication-kubeconfig=/etc/kubernetes/controller-manager.conf",
-		"--authorization-kubeconfig=/etc/kubernetes/controller-manager.conf",
-		"--bind-address=0.0.0.0",
-		fmt.Sprintf("--client-ca-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)),
-		fmt.Sprintf("--cluster-name=%s", tenantControlPlane.GetName()),
-		fmt.Sprintf("--cluster-signing-cert-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)),
-		fmt.Sprintf("--cluster-signing-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CAKeyName)),
-		"--controllers=*,bootstrapsigner,tokencleaner",
-		"--kubeconfig=/etc/kubernetes/controller-manager.conf",
-		"--leader-elect=true",
-		fmt.Sprintf("--service-cluster-ip-range=%s", tenantControlPlane.Spec.NetworkProfile.ServiceCIDR),
-		fmt.Sprintf("--cluster-cidr=%s", tenantControlPlane.Spec.NetworkProfile.PodCIDR),
-		fmt.Sprintf("--requestheader-client-ca-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyCACertName)),
-		fmt.Sprintf("--root-ca-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)),
-		fmt.Sprintf("--service-account-private-key-file=%s", path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName)),
-		"--use-service-account-credentials=true",
-	}
+	podSpec.Containers[controllerManagerIndex].Command = []string{"kube-controller-manager"}
+	podSpec.Containers[controllerManagerIndex].Args = utilities.ArgsFromMapToSlice(args)
 	podSpec.Containers[controllerManagerIndex].VolumeMounts = []corev1.VolumeMount{
 		{
 			Name:      "controller-manager-kubeconfig",
@@ -497,6 +517,12 @@ func (d *Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPl
 }
 
 func (d *Deployment) buildKubeAPIServerCommand(tenantControlPlane *kamajiv1alpha1.TenantControlPlane, address string, current map[string]string) map[string]string {
+	var extraArgs map[string]string
+
+	if tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs != nil {
+		extraArgs = utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs.APIServer)
+	}
+
 	desiredArgs := map[string]string{
 		"--allow-privileged":                   "true",
 		"--authorization-mode":                 "Node,RBAC",
@@ -530,8 +556,9 @@ func (d *Deployment) buildKubeAPIServerCommand(tenantControlPlane *kamajiv1alpha
 		desiredArgs["--etcd-keyfile"] = path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerEtcdClientKeyName)
 		desiredArgs["--etcd-prefix"] = fmt.Sprintf("/%s", tenantControlPlane.GetName())
 	}
-
-	return utilities.MergeMaps(current, desiredArgs)
+	// Order matters, here: extraArgs could try to overwrite some arguments managed by Kamaji and that would be crucial.
+	// Adding as first element of the array of maps, we're sure that these overrides will be sanitized by our configuration.
+	return utilities.MergeMaps(extraArgs, current, desiredArgs)
 }
 
 func (d *Deployment) secretProjection(secretName, certKeyName, keyName string) *corev1.SecretProjection {
@@ -597,14 +624,21 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 			podSpec.Containers = append(podSpec.Containers, corev1.Container{})
 		}
 
+		args := map[string]string{}
+
+		if tcp.Spec.ControlPlane.Deployment.ExtraArgs != nil {
+			args = utilities.ArgsFromSliceToMap(tcp.Spec.ControlPlane.Deployment.ExtraArgs.Kine)
+		}
+
+		args["--endpoint"] = "mysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@tcp($(MYSQL_HOST):$(MYSQL_PORT))/$(MYSQL_SCHEMA)"
+		args["--ca-file"] = "/kine/ca.crt"
+		args["--cert-file"] = "/kine/server.crt"
+		args["--key-file"] = "/kine/server.key"
+
 		podSpec.Containers[kineIndex].Name = kineContainerName
 		podSpec.Containers[kineIndex].Image = fmt.Sprintf("%s:%s", "rancher/kine", "v0.9.2-amd64") // TODO: parameter.
-		podSpec.Containers[kineIndex].Args = []string{
-			"--endpoint=mysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@tcp($(MYSQL_HOST):$(MYSQL_PORT))/$(MYSQL_SCHEMA)",
-			"--ca-file=/kine/ca.crt",
-			"--cert-file=/kine/server.crt",
-			"--key-file=/kine/server.key",
-		}
+		podSpec.Containers[kineIndex].Command = []string{"/bin/kine"}
+		podSpec.Containers[kineIndex].Args = utilities.ArgsFromMapToSlice(args)
 		podSpec.Containers[kineIndex].VolumeMounts = []corev1.VolumeMount{
 			{
 				Name:      kineVolumeName,
@@ -660,4 +694,37 @@ func (d *Deployment) SetLabels(resource *appsv1.Deployment, labels map[string]st
 
 func (d *Deployment) SetAnnotations(resource *appsv1.Deployment, annotations map[string]string) {
 	resource.SetAnnotations(annotations)
+}
+
+// ResetKubeAPIServerFlags ensures that upon a change of the kube-apiserver extra flags the desired ones are properly
+// applied, also considering that the container could be lately patched by the konnectivity addon resources.
+func (d *Deployment) ResetKubeAPIServerFlags(resource *appsv1.Deployment, tcp *kamajiv1alpha1.TenantControlPlane) {
+	if tcp.Spec.ControlPlane.Deployment.ExtraArgs == nil {
+		return
+	}
+	// kube-apiserver container is not still there, we can skip the hashing
+	if found, _ := utilities.HasNamedContainer(resource.Spec.Template.Spec.Containers, "kube-apiserver"); !found {
+		return
+	}
+	// setting up annotation to avoid assignment to a nil one
+	if resource.GetAnnotations() == nil {
+		resource.SetAnnotations(map[string]string{})
+	}
+	// retrieving the current amount of extra flags, used as a sort of hash:
+	// in case of non-matching values, removing all the args in order to perform a full reconciliation from a clean start.
+	var count int
+
+	if v, ok := resource.GetAnnotations()[apiServerFlagsAnnotation]; ok {
+		var err error
+
+		if count, err = strconv.Atoi(v); err != nil {
+			return
+		}
+	}
+	// there's a mismatch in the count from the previous hash: let's reset and store the desired extra args count.
+	if count != len(tcp.Spec.ControlPlane.Deployment.ExtraArgs.APIServer) {
+		resource.Spec.Template.Spec.Containers[apiServerIndex].Args = []string{}
+	}
+
+	resource.GetAnnotations()[apiServerFlagsAnnotation] = fmt.Sprintf("%d", len(tcp.Spec.ControlPlane.Deployment.ExtraArgs.APIServer))
 }
