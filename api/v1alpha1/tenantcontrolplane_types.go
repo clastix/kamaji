@@ -88,8 +88,20 @@ type DeploymentSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 	// Resources defines the amount of memory and CPU to allocate to each component of the Control Plane
 	// (kube-apiserver, controller-manager, and scheduler).
-	Resources          *ControlPlaneComponentsResources `json:"resources,omitempty"`
-	AdditionalMetadata AdditionalMetadata               `json:"additionalMetadata,omitempty"`
+	Resources *ControlPlaneComponentsResources `json:"resources,omitempty"`
+	// ExtraArgs allows adding additional arguments to the Control Plane components,
+	// such as kube-apiserver, controller-manager, and scheduler.
+	ExtraArgs          *ControlPlaneExtraArgs `json:"extraArgs,omitempty"`
+	AdditionalMetadata AdditionalMetadata     `json:"additionalMetadata,omitempty"`
+}
+
+// ControlPlaneExtraArgs allows specifying additional arguments to the Control Plane components.
+type ControlPlaneExtraArgs struct {
+	APIServer         []string `json:"apiServer,omitempty"`
+	ControllerManager []string `json:"controllerManager,omitempty"`
+	Scheduler         []string `json:"scheduler,omitempty"`
+	// Available only if Kamaji is running using Kine as backing storage.
+	Kine []string `json:"kine,omitempty"`
 }
 
 type ServiceSpec struct {
