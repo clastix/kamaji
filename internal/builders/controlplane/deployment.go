@@ -52,6 +52,7 @@ type Deployment struct {
 	ETCDEndpoints          []string
 	ETCDCompactionInterval string
 	ETCDStorageType        types.ETCDStorageType
+	KineContainerImage     string
 }
 
 func (d *Deployment) SetContainers(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane, address string) {
@@ -636,7 +637,7 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 		args["--key-file"] = "/kine/server.key"
 
 		podSpec.Containers[kineIndex].Name = kineContainerName
-		podSpec.Containers[kineIndex].Image = fmt.Sprintf("%s:%s", "rancher/kine", "v0.9.2-amd64") // TODO: parameter.
+		podSpec.Containers[kineIndex].Image = d.KineContainerImage
 		podSpec.Containers[kineIndex].Command = []string{"/bin/kine"}
 		podSpec.Containers[kineIndex].Args = utilities.ArgsFromMapToSlice(args)
 		podSpec.Containers[kineIndex].VolumeMounts = []corev1.VolumeMount{

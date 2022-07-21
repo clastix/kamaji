@@ -25,6 +25,7 @@ type KubernetesDeploymentResource struct {
 	ETCDEndpoints          []string
 	ETCDCompactionInterval string
 	Name                   string
+	KineContainerImage     string
 }
 
 func (r *KubernetesDeploymentResource) isStatusEqual(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -68,6 +69,7 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 			ETCDEndpoints:          r.ETCDEndpoints,
 			ETCDCompactionInterval: r.ETCDCompactionInterval,
 			ETCDStorageType:        r.ETCDStorageType,
+			KineContainerImage:     r.KineContainerImage,
 		}
 		d.SetLabels(r.resource, utilities.MergeMaps(utilities.CommonLabels(tenantControlPlane.GetName()), tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Labels))
 		d.SetAnnotations(r.resource, utilities.MergeMaps(r.resource.Annotations, tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Annotations))

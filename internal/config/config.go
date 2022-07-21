@@ -34,6 +34,7 @@ const (
 	defaultKineMySQLSecretNamespace  = "kamaji-system"
 	defaultKineMySQLHost             = "localhost"
 	defaultKineMySQLPort             = 3306
+	defaultKineImage                 = "rancher/kine:v0.9.2-amd64"
 )
 
 func InitConfig() (*viper.Viper, error) {
@@ -57,6 +58,7 @@ func InitConfig() (*viper.Viper, error) {
 	flag.String("kine-mysql-secret-namespace", defaultKineMySQLSecretNamespace, "Name of the namespace where the secret which contains MySQL (Kine) configuration.")
 	flag.String("kine-mysql-host", defaultKineMySQLHost, "Host where MySQL (Kine) is working")
 	flag.Int("kine-mysql-port", defaultKineMySQLPort, "Port where MySQL (Kine) is working")
+	flag.String("kine-image", defaultKineImage, "Container image along with tag to use for the Kine sidecar container (used only if etcd-storage-type is set to one of kine strategies)")
 
 	// Setup zap configuration
 	opts := zap.Options{
@@ -118,6 +120,9 @@ func InitConfig() (*viper.Viper, error) {
 		return nil, err
 	}
 	if err := config.BindEnv("kine-mysql-port", fmt.Sprintf("%s_KINE_MYSQL_PORT", envPrefix)); err != nil {
+		return nil, err
+	}
+	if err := config.BindEnv("kine-image", fmt.Sprintf("%s_KINE_IMAGE", envPrefix)); err != nil {
 		return nil, err
 	}
 

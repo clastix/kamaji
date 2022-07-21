@@ -13,3 +13,4 @@ kine-mysql-secret-name: "mysql-config"
 kine-mysql-secret-namespace: kamaji-system
 kine-mysql-host: localhost
 kine-mysql-port: 3306
+kine-image: rancher/kine:v0.9.2-amd64

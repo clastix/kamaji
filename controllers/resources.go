@@ -248,6 +248,7 @@ func getKubernetesDeploymentResources(c client.Client, tcpReconcilerConfig Tenan
 			ETCDEndpoints:          getArrayFromString(tcpReconcilerConfig.ETCDEndpoints),
 			ETCDCompactionInterval: tcpReconcilerConfig.ETCDCompactionInterval,
 			ETCDStorageType:        tcpReconcilerConfig.ETCDStorageType,
+			KineContainerImage:     tcpReconcilerConfig.KineContainerImage,
 		},
 	}
 }
