@@ -51,6 +51,7 @@ type TenantControlPlaneReconcilerConfig struct {
 	KineMySQLSecretNamespace  string
 	KineMySQLHost             string
 	KineMySQLPort             int
+	KineContainerImage        string
 }
 
 //+kubebuilder:rbac:groups=kamaji.clastix.io,resources=tenantcontrolplanes,verbs=get;list;watch;create;update;patch;delete

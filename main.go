@@ -76,6 +76,7 @@ func main() {
 			KineMySQLSecretNamespace:  conf.GetString("kine-mysql-secret-namespace"),
 			KineMySQLHost:             conf.GetString("kine-mysql-host"),
 			KineMySQLPort:             conf.GetInt("kine-mysql-port"),
+			KineContainerImage:        conf.GetString("kine-image"),
 		},
 	}
 
