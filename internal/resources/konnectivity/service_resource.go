@@ -74,7 +74,7 @@ func (r *ServiceResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.Tenan
 func (r *ServiceResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	res, err := utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, func() error {
 		for index, port := range r.resource.Spec.Ports {
-			if port.Port == tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort {
+			if port.Name == "konnectivity-server" {
 				ports := make([]corev1.ServicePort, 0, len(r.resource.Spec.Ports)-1)
 
 				ports = append(ports, r.resource.Spec.Ports[:index]...)
@@ -82,7 +82,7 @@ func (r *ServiceResource) CleanUp(ctx context.Context, tenantControlPlane *kamaj
 
 				r.resource.Spec.Ports = ports
 
-				return nil
+				break
 			}
 		}
 
