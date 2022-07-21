@@ -132,6 +132,27 @@ spec:
                               type: string
                             type: object
                         type: object
+                      extraArgs:
+                        description: ExtraArgs allows adding additional arguments to the Control Plane components, such as kube-apiserver, controller-manager, and scheduler.
+                        properties:
+                          apiServer:
+                            items:
+                              type: string
+                            type: array
+                          controllerManager:
+                            items:
+                              type: string
+                            type: array
+                          kine:
+                            description: Available only if Kamaji is running using Kine as backing storage.
+                            items:
+                              type: string
+                            type: array
+                          scheduler:
+                            items:
+                              type: string
+                            type: array
+                        type: object
                       replicas:
                         default: 2
                         format: int32
