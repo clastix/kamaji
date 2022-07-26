@@ -92,7 +92,7 @@ Tenant clusters are fully CNCF compliant built with upstream Kubernetes binaries
 - [ ] Benchmarking and stress-test
 - [x] Support for dynamic address allocation on native Load Balancer
 - [x] Zero Downtime Tenant Control Plane upgrade
-- [ ] `konnectivity` integration
+- [x] `konnectivity` integration
 - [ ] Provisioning of Tenant Control Plane through Cluster APIs
 - [ ] Prometheus metrics for monitoring and alerting
 - [ ] `kine` integration, i.e. use MySQL, SQLite, PostgreSQL as datastore
