@@ -311,6 +311,9 @@ func createKubeProxyAddon(client kubernetes.Interface) error {
 					NodeSelector: map[string]string{
 						"kubernetes.io/os": "linux",
 					},
+					Tolerations: []corev1.Toleration{
+						{Operator: corev1.TolerationOpExists},
+					},
 					PriorityClassName:             "system-node-critical",
 					RestartPolicy:                 corev1.RestartPolicyAlways,
 					SchedulerName:                 "default-scheduler",
