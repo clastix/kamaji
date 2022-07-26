@@ -3,11 +3,11 @@
 set -e
 
 # Constants
-export DOCKER_IMAGE_NAME="clastix/kamaji-kind-worker"
+export DOCKER_IMAGE_NAME="kindest/node"
 export DOCKER_NETWORK="kind"
 
 # Variables
-export KUBERNETES_VERSION=${1:-latest}
+export KUBERNETES_VERSION=${1:-v1.23.5}
 export KUBECONFIG="${KUBECONFIG:-/tmp/kubeconfig}"
 
 if [ -z $2 ]
@@ -31,3 +31,6 @@ NODE=$(docker run -d --privileged -v /lib/modules:/lib/modules:ro -v /var --net 
 sleep 10
 echo "Joining new node..."
 docker exec -e JOIN_CMD="$JOIN_CMD" $NODE /bin/bash -c "$JOIN_CMD"
+
+echo "Node has joined! Remember to install the kind-net CNI by issuing the following command:"
+echo "  $: kubectl apply -f https://raw.githubusercontent.com/aojea/kindnet/master/install-kindnet.yaml"
