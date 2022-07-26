@@ -80,15 +80,13 @@ If workers are not reachable from tenant control plane, konnectivity can be enab
 ...
   addons:
     konnectivity:
-      enabled: true
-      proxyHost: "172.18.0.2"
       proxyPort: 31132
 ...   
 ```
 
-`proxyHost` is the address where konnectivity proxy server will be running. Konnectivity works as sidecar container into the tenant control plane pod. If no value is specified, it will take tenant IP.
+Konnectivity works as sidecar container into the tenant control plane pod and it's exposed using the same Tenant Control Plane service.
 
-`proxyPort` is the port where konnectivity proxy server will be running. (default `8132`)
+`proxyPort` is the port where konnectivity proxy server will be running.
 
 
 ```bash
