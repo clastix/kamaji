@@ -3,12 +3,19 @@
 In this section, we're going to setup Kamaji on MS Azure:
 
 - one bootstrap local workstation
-- a regular AKS cluster as Kamaji Admin Cluster
-- a multi-tenant etcd internal cluster running on AKS
-- an arbitrary number of Azure virtual machines hosting `Tenant`s' workloads
+- a regular AKS cluster to run the Admin and Tenant Control Planes
+- an additional `etcd` cluster made of 3 replicas to host the datastore for the Tenants' clusters
+- an arbitrary number of Azure virtual machines to host `Tenant`s' workloads
 
-## Bootstrap machine
-This getting started guide is supposed to be run from a remote or local bootstrap machine.
+  * [Prepare the bootstrap workspace](#prepare-the-bootstrap-workspace)
+  * [Access Admin cluster](#access-admin-cluster)
+  * [Setup multi-tenant etcd](#setup-multi-tenant-etcd)
+  * [Install Kamaji controller](#install-kamaji-controller)
+  * [Create Tenant Cluster](#create-tenant-clusters)
+  * [Cleanup](#cleanup)
+
+## Prepare the bootstrap workspace
+This guide is supposed to be run from a remote or local bootstrap machine.
 First, prepare the workspace directory:
 
 ```
@@ -16,7 +23,7 @@ git clone https://github.com/clastix/kamaji
 cd kamaji/deploy
 ```
 
-1. Follow the instructions in [Prepare the bootstrap workspace](./getting-started-with-kamaji.md#prepare-the-bootstrap-workspace).
+1. Follow the instructions in [Prepare the bootstrap workspace](./kamaji-setup-guide.md#prepare-the-bootstrap-workspace).
 2. Install the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
 3. Make sure you have a valid Azure subscription
 4. Login to Azure:
@@ -25,9 +32,9 @@ cd kamaji/deploy
 az account set --subscription "MySubscription"
 az login
 ```
-> Currently, the Kamaji setup, including Admin and Tenant clusters need to be deployed within the same Azure region. Cross-regions deployments are not (yet) validated.
+> Currently, the Kamaji setup, including Admin and Tenant clusters need to be deployed within the same Azure region. Cross-regions deployments are not supported.
 
-## Setup Admin cluster on AKS
+## Access Admin cluster
 Throughout the instructions, shell variables are used to indicate values that you should adjust to your own Azure environment:
 
 ```bash
@@ -66,14 +73,14 @@ And check you can access:
 kubectl cluster-info
 ```
 
-## Setup internal multi-tenant etcd
-Follow the instructions [here](./kamaji-deployment-guide.md#setup-internal-multi-tenant-etcd).
+## Setup multi-tenant etcd
+Follow the instructions [here](./kamaji-setup-guide.md#setup-multi-tenant-etcd).
 
 ## Install Kamaji controller
-Follow the instructions [here](./kamaji-deployment-guide.md#install-kamaji-controller).
+Follow the instructions [here](./kamaji-setup-guide.md#install-kamaji-controller).
 
-## Create Tenant Clusters
-To create a Tenant Cluster in Kamaji on AKS, we have to work on both the Kamaji and Azure infrastructure sides.
+## Create Tenant Cluster
+To create a Tenant Cluster in Kamaji on AKS, you have to work on both the Kamaji and Azure infrastructure sides. Throughout the instructions, shell variables are used to indicate values that you should adjust to your Azure environment:
 
 ```
 source kamaji-tenant-azure.env
@@ -82,18 +89,16 @@ source kamaji-tenant-azure.env
 ### On Kamaji side
 With Kamaji on AKS, the tenant control plane is accessible:
 
-- from tenant work nodes through an internal loadbalancer as `https://${TENANT_ADDR}:6443`
-- from tenant admin user through an external loadbalancer `https://${TENANT_NAME}.${KAMAJI_REGION}.cloudapp.azure.com:443`
+- from tenant work nodes through an internal loadbalancer
+- from tenant admin user through an external loadbalancer responding to `https://${TENANT_NAME}.${TENANT_NAME}.${TENANT_DOMAIN}:443`
 
-Where `TENANT_ADDR` is the Azure internal IP address assigned to the LoadBalancer service created by Kamaji to expose the Tenant Control Plane endpoint.
 
 #### Create the Tenant Control Plane
 
-Create the manifest for Tenant Control Plane:
+Create a tenant control plane of example
 
 ```yaml
 cat > ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml <<EOF
----
 apiVersion: kamaji.clastix.io/v1alpha1
 kind: TenantControlPlane
 metadata:
@@ -102,24 +107,36 @@ metadata:
 spec:
   controlPlane:
     deployment:
-      replicas: 2
+      replicas: 3
       additionalMetadata:
-        annotations:
-          environment.clastix.io: ${TENANT_NAME}
         labels:
           tenant.clastix.io: ${TENANT_NAME}
-          kind.clastix.io: deployment
+      extraArgs:
+        apiServer: []
+        controllerManager: []
+        scheduler: []
+      resources:
+        apiServer:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+        controllerManager:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        scheduler:
+          requests:
+            cpu: 250m
+            memory: 256Mi
     service:
       additionalMetadata:
-        annotations:
-          environment.clastix.io: ${TENANT_NAME}
-          service.beta.kubernetes.io/azure-load-balancer-internal: "true"
         labels:
           tenant.clastix.io: ${TENANT_NAME}
-          kind.clastix.io: service
+        annotations:
+          service.beta.kubernetes.io/azure-load-balancer-internal: "true"
       serviceType: LoadBalancer
     ingress:
-      enabled: false    
+      enabled: false
   kubernetes:
     version: ${TENANT_VERSION}
     kubelet:
@@ -128,9 +145,9 @@ spec:
       - ResourceQuota
       - LimitRanger
   networkProfile:
-    port: 6443
+    port: ${TENANT_PORT}
     certSANs:
-    - ${TENANT_NAME}.${KAMAJI_REGION}.cloudapp.azure.com
+    - ${TENANT_NAME}.${TENANT_DOMAIN}
     serviceCidr: ${TENANT_SVC_CIDR}
     podCidr: ${TENANT_POD_CIDR}
     dnsServiceIPs:
@@ -138,6 +155,12 @@ spec:
   addons:
     coreDNS: {}
     kubeProxy: {}
+    konnectivity:
+      proxyPort: ${TENANT_PROXY_PORT}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
 ---
 apiVersion: v1
 kind: Service
@@ -161,7 +184,7 @@ Make sure:
 
 - the `tcp.spec.controlPlane.service.serviceType=LoadBalancer` and the following annotation: `service.beta.kubernetes.io/azure-load-balancer-internal=true` is set. This tells AKS to expose the service within an Azure internal loadbalancer.
 
-- the public loadbalancer service has the following annotation: `service.beta.kubernetes.io/azure-dns-label-name=${TENANT_NAME}` to expose the Tenant Control Plane with domain name: `${TENANT_NAME}.${KAMAJI_REGION}.cloudapp.azure.com`.
+- the public loadbalancer service has the following annotation: `service.beta.kubernetes.io/azure-dns-label-name=${TENANT_NAME}` to expose the Tenant Control Plane with domain name: `${TENANT_NAME}.${TENANT_DOMAIN}`.
 
 Create the Tenant Control Plane
 
@@ -170,34 +193,13 @@ kubectl create namespace ${TENANT_NAMESPACE}
 kubectl apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
 ```
 
-And check it out:
-
-```
-$ kubectl get tcp
-NAME        VERSION   CONTROL-PLANE-ENDPOINT   KUBECONFIG                   PRIVATE   AGE
-tenant-00   v1.23.4   10.240.0.100:6443        tenant-00-admin-kubeconfig   true      46m
-
-$ kubectl get svc
-NAME               TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)          AGE
-tenant-00          LoadBalancer   10.0.223.161   10.240.0.100     6443:31902/TCP   46m
-tenant-00-public   LoadBalancer   10.0.205.97    20.101.215.149   443:30697/TCP    19h
-
-$ kubectl get deploy
-NAME        READY   UP-TO-DATE   AVAILABLE   AGE
-tenant-00   2/2     2            2           47m
-```
-
-Collect the internal IP address of Azure loadbalancer where the Tenant control Plane is exposed:
-
-```bash
-TENANT_ADDR=$(kubectl -n ${TENANT_NAMESPACE} get svc ${TENANT_NAME} -o json | jq -r ."status.loadBalancer.ingress[].ip")
-```
-
 #### Working with Tenant Control Plane
-Check the access to the Tenant Control Plane:
+
+and check the access to the Tenant Control Plane:
 
 ```
 curl -k https://${TENANT_NAME}.${KAMAJI_REGION}.cloudapp.azure.com/healthz
+curl -k https://${TENANT_NAME}.${KAMAJI_REGION}.cloudapp.azure.com/version
 ```
 
 Let's retrieve the `kubeconfig` in order to work with it:
@@ -231,7 +233,7 @@ NAME         ENDPOINTS           AGE
 kubernetes   10.240.0.100:6443   57m
 ```
 
-Make sure it's `${TENANT_ADDR}:6443`.
+Make sure it's `${TENANT_ADDR}:${TENANT_PORT}`.
 
 ### Prepare the Infrastructure for the Tenant virtual machines
 Kamaji provides Control Plane as a Service, so the tenant user can join his own virtual machines as worker nodes. Each tenant can place his virtual machines in a dedicated Azure virtual network.
@@ -334,7 +336,6 @@ JOIN_CMD=$(echo "sudo kubeadm join ${TENANT_ADDR}:6443 ")$(kubeadm --kubeconfig=
 
 A bash loop will be used to join all the available nodes.
 
-
 ```bash
 HOSTS=($(az vmss list-instance-public-ips \
     --resource-group $TENANT_RG \
@@ -352,13 +353,12 @@ done
 Checking the nodes:
 
 ```bash
-kubectl get nodes --kubeconfig=${CLUSTER_NAMESPACE}-${CLUSTER_NAME}.kubeconfig
+kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get nodes
 
-NAME                      STATUS      ROLES    AGE    VERSION
-kamaji-tenant-worker-00   NotReady    <none>   1m     v1.23.4
-kamaji-tenant-worker-01   NotReady    <none>   1m     v1.23.4
-kamaji-tenant-worker-02   NotReady    <none>   1m     v1.23.4
-kamaji-tenant-worker-03   NotReady    <none>   1m     v1.23.4
+NAME               STATUS     ROLES    AGE    VERSION
+tenant-00-000000   NotReady   <none>   112s   v1.23.5
+tenant-00-000002   NotReady   <none>   92s    v1.23.5
+tenant-00-000003   NotReady   <none>   71s    v1.23.5
 ```
 
 The cluster needs a [CNI](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/) plugin to get the nodes ready. In our case, we are going to install [calico](https://projectcalico.docs.tigera.io/about/about-calico).
@@ -371,7 +371,7 @@ kubectl apply -f calico-cni/calico-azure.yaml --kubeconfig=${TENANT_NAMESPACE}-$
 And after a while, `kube-system` pods will be running.
 
 ```bash
-kubectl get po -n kube-system --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig
+kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get po -n kube-system 
 
 NAME                                       READY   STATUS    RESTARTS   AGE
 calico-kube-controllers-8594699699-dlhbj   1/1     Running   0          3m
@@ -386,13 +386,13 @@ kube-proxy-m48v4                           1/1     Running   0          3m
 And the nodes will be ready
 
 ```bash
-kubectl get nodes --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig
+kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get nodes 
 
-NAME                      STATUS      ROLES    AGE    VERSION
-kamaji-tenant-worker-01   Ready       <none>   10m    v1.23.4
-kamaji-tenant-worker-02   Ready       <none>   10m    v1.23.4
+NAME               STATUS   ROLES    AGE     VERSION
+tenant-00-000000   Ready    <none>   3m38s   v1.23.5
+tenant-00-000002   Ready    <none>   3m18s   v1.23.5
+tenant-00-000003   Ready    <none>   2m57s   v1.23.5
 ```
-
 
 ## Cleanup
 To get rid of the Tenant infrastructure, remove the RESOURCE_GROUP:

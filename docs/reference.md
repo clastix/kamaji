@@ -117,15 +117,15 @@ addons:
 
 ```yaml
 addons:
-    konnectivity:
-        proxyPort: 31132 # mandatory
-        version: v0.0.31
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 100m
-            memory: 128Mi
-        serverImage: us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-server
-        agentImage: us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-agent
+  konnectivity:
+    proxyPort: 31132 # mandatory
+    version: v0.0.31
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    serverImage: us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-server
+    agentImage: us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-agent
