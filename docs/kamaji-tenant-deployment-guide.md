@@ -1,6 +1,6 @@
 # Kamaji Tenant Deployment Guide
 
-This guide defines the necessary actions to generate a kubernetes tenant cluster, which can be considered made of a virtual kubernetes control plane, deployed by Kamaji, and joining worker nodes pool to start workloads.
+This guide defines the necessary actions to generate a Kubernetes tenant cluster, which can be considered made of a virtual Kubernetes control plane (deployed by Kamaji) and a set of joining worker nodes to run the tenants' applications.
 
 ## Requirements
 
@@ -15,7 +15,7 @@ Kamaji offers a [CRD](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-
 Use the command `kubectl explain tcp.spec` to understand the fields and their usage.
 
 ### Variable Definitions
-Throughout the instructions, shell variables are used to indicate values that you should adjust to your own environment:
+Throughout these instructions, shell variables are used to indicate values that you should adjust to your environment:
 
 ```bash
 source kamaji-tenant.env
@@ -35,20 +35,31 @@ metadata:
 spec:
   controlPlane:
     deployment:
-      replicas: 2
+      replicas: 3
       additionalMetadata:
-        annotations:
-          environment.clastix.io: ${TENANT_NAME}
         labels:
           tenant.clastix.io: ${TENANT_NAME}
-          kind.clastix.io: deployment
+      extraArgs:
+        apiServer: []
+        controllerManager: []
+        scheduler: []
+      resources:
+        apiServer:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+        controllerManager:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        scheduler:
+          requests:
+            cpu: 250m
+            memory: 256Mi
     service:
       additionalMetadata:
-        annotations:
-          environment.clastix.io: ${TENANT_NAME}
         labels:
           tenant.clastix.io: ${TENANT_NAME}
-          kind.clastix.io: service
       serviceType: LoadBalancer
     ingress:
       enabled: false
@@ -60,7 +71,6 @@ spec:
       - ResourceQuota
       - LimitRanger
   networkProfile:
-    address: ${TENANT_ADDR}
     port: ${TENANT_PORT}
     certSANs:
     - ${TENANT_NAME}.${TENANT_DOMAIN}
@@ -71,61 +81,68 @@ spec:
   addons:
     coreDNS: {}
     kubeProxy: {}
+    konnectivity:
+      proxyPort: ${TENANT_PROXY_PORT}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
 EOF
 ```
 
-If workers are not reachable from tenant control plane, konnectivity can be enabled (it is by default):
-
-```yaml
-...
-  addons:
-    konnectivity:
-      proxyPort: 31132
-...   
-```
-
-Konnectivity works as sidecar container into the tenant control plane pod and it's exposed using the same Tenant Control Plane service.
-
-`proxyPort` is the port where konnectivity proxy server will be running.
-
+Kamaji implements [konnectivity](https://kubernetes.io/docs/concepts/architecture/control-plane-node-communication/) as sidecar container into the tenant control plane pod and it's exposed using the same Tenant Control Plane service of the `kube-apiserver`. It's required when workers are directly not reachable from the tenant control plane, and it's enabled by default.
 
 ```bash
 kubectl create namespace ${TENANT_NAMESPACE}
 kubectl apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
 ```
 
-A tenant control plane control plane is now running as deployment and it is exposed through a service.
+A tenant control plane control plane is now running as deployment and it is exposed through a service like this:
 
-Check if control plane of the tenant is reachable and in healty state
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tenant-00
+spec:
+  clusterIP: 10.32.233.177
+  loadBalancerIP: 192.168.32.240
+  ports:
+  - name: kube-apiserver
+    nodePort: 31073
+    port: 6443
+    protocol: TCP
+    targetPort: 6443
+  - name: konnectivity-server
+    nodePort: 32125
+    port: 8132
+    protocol: TCP
+    targetPort: 8132
+  selector:
+    kamaji.clastix.io/soot: tenant-00
+  type: LoadBalancer
+```
+
+Collect the IP address of the loadbalancer service where the Tenant control Plane is exposed:
+
+```bash
+TENANT_ADDR=$(kubectl -n ${TENANT_NAMESPACE} get svc ${TENANT_NAME} -o json | jq -r ."status.loadBalancer.ingress[].ip")
+```
+
+and check it out:
 
 ```bash
 curl -k https://${TENANT_ADDR}:${TENANT_PORT}/healthz
 curl -k https://${TENANT_ADDR}:${TENANT_PORT}/version
 ```
 
-The tenant control plane components, i.e. `kube-apiserver`, `kube-scheduler`, and `kube-controller-manager` are running as containers in the same pods. The `kube-scheduler`, and `kube-controller-manager` connect the `kube-apiserver` throught localhost: `https://127.0.0.1.${TENANT_PORT}`
-
-Let's retrieve the `kubeconfig` files in order to check:
-
-```bash
-kubectl get secrets -n ${TENANT_NAMESPACE} ${TENANT_NAME}-scheduler-kubeconfig -o json \
-  | jq -r '.data["scheduler.conf"]' \
-  | base64 -d \
-  > ${TENANT_NAMESPACE}-${TENANT_NAME}-scheduler.kubeconfig
-```
-
-```bash
-kubectl get secrets -n ${TENANT_NAMESPACE} ${TENANT_NAME}-controller-manager-kubeconfig -o json \
-  | jq -r '.data["controller-manager.conf"]' \
-  | base64 -d \
-  > ${TENANT_NAMESPACE}-${TENANT_NAME}-controller-manager.kubeconfig
-```
+> The tenant control plane components, i.e. `kube-apiserver`, `kube-scheduler`, `kube-controller-manager`, and `konnectivity-server` are running as containers in the `tcp` pod and communicate via localhost.
 
 ## Working with Tenant Control Plane
 
-A new Tenant cluster will be available at this moment but, it will not be useful without having worker nodes joined to it.
+A new Tenant cluster is available but, it will not be useful without having worker nodes joined to it.
 
-### Getting Tenant Control Plane Kubeconfig
+### Getting Tenant Control Plane kubeconfig
 
 Let's retrieve the `kubeconfig` in order to work with the tenant control plane.
 
@@ -151,10 +168,8 @@ Check out how the Tenant control Plane advertises itself to workloads:
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get ep
 
 NAME         ENDPOINTS             AGE
-kubernetes   192.168.32.150:6443   18m
+kubernetes   192.168.32.240:6443   18m
 ```
-
-Make sure it's `${TENANT_ADDR}:${TENANT_PORT}`.
 
 ### Preparing Worker Nodes to join
 
@@ -171,7 +186,7 @@ Use bash script `nodes-prerequisites.sh` to install the dependencies on all the 
 Run the installation script:
 
 ```bash
-HOSTS=(${WORKER0} ${WORKER1} ${WORKER2} ${WORKER3})
+HOSTS=(${WORKER0} ${WORKER1} ${WORKER2})
 ./nodes-prerequisites.sh ${TENANT_VERSION:1} ${HOSTS[@]}
 ```
 
@@ -188,7 +203,6 @@ JOIN_CMD=$(echo "sudo ")$(kubeadm --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME
 A bash loop will be used to join all the available nodes.
 
 ```bash
-HOSTS=(${WORKER0} ${WORKER1} ${WORKER2} ${WORKER3})
 for i in "${!HOSTS[@]}"; do
   HOST=${HOSTS[$i]}
   ssh ${USER}@${HOST} -t ${JOIN_CMD};
@@ -200,11 +214,10 @@ Checking the nodes:
 ```bash
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get nodes 
 
-NAME                      STATUS      ROLES    AGE    VERSION
-kamaji-tenant-worker-00   NotReady    <none>   1m     v1.23.4
-kamaji-tenant-worker-01   NotReady    <none>   1m     v1.23.4
-kamaji-tenant-worker-02   NotReady    <none>   1m     v1.23.4
-kamaji-tenant-worker-03   NotReady    <none>   1m     v1.23.4
+NAME                  STATUS     ROLES    AGE   VERSION
+tenant-00-worker-00   NotReady   <none>   25s   v1.23.5
+tenant-00-worker-01   NotReady   <none>   17s   v1.23.5
+tenant-00-worker-02   NotReady   <none>   9s    v1.23.5
 ```
 
 The cluster needs a [CNI](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/) plugin to get the nodes ready. In our case, we are going to install [calico](https://projectcalico.docs.tigera.io/about/about-calico).
@@ -233,10 +246,10 @@ And the nodes will be ready
 
 ```bash
 kubectl get nodes --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig
-
-NAME                      STATUS      ROLES    AGE    VERSION
-kamaji-tenant-worker-01   Ready       <none>   10m    v1.23.4
-kamaji-tenant-worker-02   Ready       <none>   10m    v1.23.4
+NAME                  STATUS   ROLES    AGE     VERSION
+tenant-00-worker-00   Ready    <none>   2m48s   v1.23.5
+tenant-00-worker-01   Ready    <none>   2m40s   v1.23.5
+tenant-00-worker-02   Ready    <none>   2m32s   v1.23.5
 ```
 
 ## Smoke test
@@ -364,7 +377,7 @@ kubectl delete nodes --all --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubec
 For each worker node, login and clean it
 
 ```bash
-HOSTS=(${WORKER0} ${WORKER1} ${WORKER2} ${WORKER3})
+HOSTS=(${WORKER0} ${WORKER1} ${WORKER2})
 for i in "${!HOSTS[@]}"; do
   HOST=${HOSTS[$i]}
   ssh ${USER}@${HOST} -t 'sudo kubeadm reset -f';
