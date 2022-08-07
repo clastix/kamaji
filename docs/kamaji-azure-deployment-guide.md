@@ -1,9 +1,8 @@
 # Setup Kamaji on Azure
-
-In this section, we're going to setup Kamaji on MS Azure:
+This guide will lead you through the process of creating a working Kamaji setup on on MS Azure. It requires:
 
 - one bootstrap local workstation
-- a regular AKS cluster to run the Admin and Tenant Control Planes
+- an AKS Kubernetes cluster to run the Admin and Tenant Control Planes
 - an additional `etcd` cluster made of 3 replicas to host the datastore for the Tenants' clusters
 - an arbitrary number of Azure virtual machines to host `Tenant`s' workloads
 
@@ -11,11 +10,10 @@ In this section, we're going to setup Kamaji on MS Azure:
   * [Access Admin cluster](#access-admin-cluster)
   * [Setup multi-tenant etcd](#setup-multi-tenant-etcd)
   * [Install Kamaji controller](#install-kamaji-controller)
-  * [Create Tenant Cluster](#create-tenant-clusters)
+  * [Create Tenant Cluster](#create-tenant-cluster)
   * [Cleanup](#cleanup)
 
 ## Prepare the bootstrap workspace
-This guide is supposed to be run from a remote or local bootstrap machine.
 First, prepare the workspace directory:
 
 ```
@@ -23,7 +21,7 @@ git clone https://github.com/clastix/kamaji
 cd kamaji/deploy
 ```
 
-1. Follow the instructions in [Prepare the bootstrap workspace](./kamaji-setup-guide.md#prepare-the-bootstrap-workspace).
+1. Follow the instructions in [Prepare the bootstrap workspace](./kamaji-deployment-guide.md#prepare-the-bootstrap-workspace).
 2. Install the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
 3. Make sure you have a valid Azure subscription
 4. Login to Azure:
@@ -35,7 +33,9 @@ az login
 > Currently, the Kamaji setup, including Admin and Tenant clusters need to be deployed within the same Azure region. Cross-regions deployments are not supported.
 
 ## Access Admin cluster
-Throughout the instructions, shell variables are used to indicate values that you should adjust to your own Azure environment:
+In Kamaji, an Admin Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The admin cluster acts as management cluster for all the Tenant clusters and implements Monitoring, Logging, and Governance of all the Kamaji setup, including all Tenant clusters. For this guide, we're going to use an instance of Azure Kubernetes Service - AKS as the Admin Cluster.
+
+Throughout the following instructions, shell variables are used to indicate values that you should adjust to your own Azure environment:
 
 ```bash
 source kamaji-azure.env
@@ -74,28 +74,20 @@ kubectl cluster-info
 ```
 
 ## Setup multi-tenant etcd
-Follow the instructions [here](./kamaji-setup-guide.md#setup-multi-tenant-etcd).
+Follow the instructions [here](./kamaji-deployment-guide.md#setup-multi-tenant-etcd).
 
 ## Install Kamaji controller
-Follow the instructions [here](./kamaji-setup-guide.md#install-kamaji-controller).
+Follow the instructions [here](./kamaji-deployment-guide.md#install-kamaji-controller).
 
 ## Create Tenant Cluster
-To create a Tenant Cluster in Kamaji on AKS, you have to work on both the Kamaji and Azure infrastructure sides. Throughout the instructions, shell variables are used to indicate values that you should adjust to your Azure environment:
 
-```
-source kamaji-tenant-azure.env
-```
-
-### On Kamaji side
+### Create a tenant control plane
 With Kamaji on AKS, the tenant control plane is accessible:
 
 - from tenant work nodes through an internal loadbalancer
 - from tenant admin user through an external loadbalancer responding to `https://${TENANT_NAME}.${TENANT_NAME}.${TENANT_DOMAIN}:443`
 
-
-#### Create the Tenant Control Plane
-
-Create a tenant control plane of example
+Create a tenant control plane of example:
 
 ```yaml
 cat > ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml <<EOF
@@ -193,9 +185,9 @@ kubectl create namespace ${TENANT_NAMESPACE}
 kubectl apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
 ```
 
-#### Working with Tenant Control Plane
+### Working with Tenant Control Plane
 
-and check the access to the Tenant Control Plane:
+Check the access to the Tenant Control Plane:
 
 ```
 curl -k https://${TENANT_NAME}.${KAMAJI_REGION}.cloudapp.azure.com/healthz
@@ -232,8 +224,6 @@ kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get ep
 NAME         ENDPOINTS           AGE
 kubernetes   10.240.0.100:6443   57m
 ```
-
-Make sure it's `${TENANT_ADDR}:${TENANT_PORT}`.
 
 ### Prepare the Infrastructure for the Tenant virtual machines
 Kamaji provides Control Plane as a Service, so the tenant user can join his own virtual machines as worker nodes. Each tenant can place his virtual machines in a dedicated Azure virtual network.
