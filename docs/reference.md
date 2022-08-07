@@ -1,12 +1,12 @@
 ## Configuration
 
-Currently **kamaji** supports (in this order):
+Currently **Kamaji** supports (in this order):
 
 * CLI flags
 * Environment variables
 * Configuration files
 
-By default **kamaji** search for the configuration file (`kamaji.yaml`) and uses parameters found inside of it. In case some environment variable are passed, this will override configuration file parameters. In the end, if also a CLI flag is passed, this will override both env vars and config file as well.
+By default **Kamaji** search for the configuration file (`kamaji.yaml`) and uses parameters found inside of it. In case some environment variable are passed, this will override configuration file parameters. In the end, if also a CLI flag is passed, this will override both env vars and config file as well.
 
 This is easily explained in this way:
 
@@ -92,12 +92,13 @@ $ make yaml-installation-file
 
 It will generate a yaml installation file at `config/install.yaml`. It should be customize accordingly.
 
-
 ## Tenant Control Planes
+
+**Kamaji** offers a [CRD](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/) to provide a declarative approach of managing tenant control planes. This *CRD* is called `TenantControlPlane`, or `tcp` in short. Use the command `kubectl explain tcp.spec` to understand the fields and their usage.
 
 ### Add-ons
 
-Kamaji provides optional installations into the deployed tenant control plane through add-ons. Is it possible to enable/disable them through the `tcp` definition.
+**Kamaji** provides optional installations into the deployed tenant control plane through add-ons. Is it possible to enable/disable them through the `tcp` definition.
 
 ### Core DNS
 
