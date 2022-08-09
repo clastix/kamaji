@@ -8,23 +8,27 @@ This guide will lead you through the process of creating a working Kamaji setup 
 
   * [Prepare the bootstrap workspace](#prepare-the-bootstrap-workspace)
   * [Access Admin cluster](#access-admin-cluster)
-  * [Setup multi-tenant etcd](#setup-multi-tenant-etcd)
   * [Install Kamaji controller](#install-kamaji-controller)
   * [Create Tenant Cluster](#create-tenant-cluster)
   * [Cleanup](#cleanup)
 
 ## Prepare the bootstrap workspace
-First, prepare the workspace directory:
+This guide is supposed to be run from a remote or local bootstrap machine. First, clone the repo and prepare the workspace directory:
 
-```
+```bash
 git clone https://github.com/clastix/kamaji
 cd kamaji/deploy
 ```
 
-1. Follow the instructions in [Prepare the bootstrap workspace](./kamaji-deployment-guide.md#prepare-the-bootstrap-workspace).
-2. Install the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
-3. Make sure you have a valid Azure subscription
-4. Login to Azure:
+We assume you have installed on your workstation:
+
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [helm](https://helm.sh/docs/intro/install/)
+- [jq](https://stedolan.github.io/jq/)
+- [openssl](https://www.openssl.org/)
+- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+
+Make sure you have a valid Azure subscription, and login to Azure:
 
 ```bash
 az account set --subscription "MySubscription"
@@ -39,11 +43,7 @@ Throughout the following instructions, shell variables are used to indicate valu
 
 ```bash
 source kamaji-azure.env
-```
 
-> we use the Azure CLI to setup the Kamaji Admin cluster on AKS.
-
-```
 az group create \
   --name $KAMAJI_RG \
   --location $KAMAJI_REGION
@@ -73,15 +73,38 @@ And check you can access:
 kubectl cluster-info
 ```
 
-## Setup multi-tenant etcd
-Follow the instructions [here](./kamaji-deployment-guide.md#setup-multi-tenant-etcd).
-
 ## Install Kamaji controller
-Follow the instructions [here](./kamaji-deployment-guide.md#install-kamaji-controller).
+There are multiple ways to deploy the Kamaji controller:
+
+- Use the single YAML file installer
+- Use Kustomize with Makefile
+- Use the Kamaji Helm Chart
+
+The Kamaji controller needs to access a multi-tenant `etcd` in order to provision the access for tenant `kube-apiserver`. The multi-tenant `etcd` cluster will be deployed as three replicas StatefulSet into the admin cluster. Data persistence for multi-tenant `etcd` cluster is required. the Helm [Chart](../helm/kamaji/) provides the installation of an internal `etcd`. However, an externally managed `etcd` is highly recommended. If you'd like to use an externally one, you can specify the overrides and by setting the value `etcd.deploy=false`.
+
+### Install with Helm Chart
+Install with the `helm` in a dedicated namespace of the Admin cluster:
+
+```bash
+helm install --create-namespace --namespace kamaji-system kamaji ../helm/kamaji
+```
+
+The Kamaji controller and the multi-tenant `etcd` are now running:
+
+```bash
+kubectl -n kamaji-system get pods
+NAME                      READY   STATUS    RESTARTS       AGE
+etcd-0                    1/1     Running   0              120m
+etcd-1                    1/1     Running   0              120m
+etcd-2                    1/1     Running   0              119m
+kamaji-857fcdf599-4fb2p   2/2     Running   0              120m
+```
+
+You just turned your AKS cluster into a Kamaji cluster to run multiple Tenant Control Planes.
 
 ## Create Tenant Cluster
 
-### Create a tenant control plane
+### Tenant Control Plane
 With Kamaji on AKS, the tenant control plane is accessible:
 
 - from tenant work nodes through an internal loadbalancer
@@ -170,20 +193,16 @@ spec:
     kamaji.clastix.io/soot: ${TENANT_NAME}
   type: LoadBalancer
 EOF
+
+kubectl create namespace ${TENANT_NAMESPACE}
+kubectl apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
 ```
 
 Make sure:
 
-- the `tcp.spec.controlPlane.service.serviceType=LoadBalancer` and the following annotation: `service.beta.kubernetes.io/azure-load-balancer-internal=true` is set. This tells AKS to expose the service within an Azure internal loadbalancer.
+- the following annotation: `service.beta.kubernetes.io/azure-load-balancer-internal=true` is set on the `tcp` service. It tells Azure to expose the service within an internal loadbalancer.
 
-- the public loadbalancer service has the following annotation: `service.beta.kubernetes.io/azure-dns-label-name=${TENANT_NAME}` to expose the Tenant Control Plane with domain name: `${TENANT_NAME}.${TENANT_DOMAIN}`.
-
-Create the Tenant Control Plane
-
-```
-kubectl create namespace ${TENANT_NAMESPACE}
-kubectl apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
-```
+- the following annotation: `service.beta.kubernetes.io/azure-dns-label-name=${TENANT_NAME}` is set the public loadbalancer service. It tells Azure to expose the Tenant Control Plane with domain name: `${TENANT_NAME}.${TENANT_DOMAIN}`.
 
 ### Working with Tenant Control Plane
 
