@@ -1,6 +1,6 @@
 apiVersion: v2
 name: kamaji
-description: A Kubernetes distribution aimed to build and operate a Managed Kubernetes service with a fraction of operational burde.
+description: Kamaji is a tool aimed to build and operate a Managed Kubernetes Service with a fraction of the operational burden. With Kamaji, you can deploy and operate hundreds of Kubernetes clusters as a hyper-scaler.
 
 # A chart can be either an 'application' or a 'library' chart.
 #
@@ -23,8 +23,8 @@ version: 0.1.1
 # It is recommended to use it with quotes.
 appVersion: 0.1.0
 
-home: https://github.com/clastix/kamaji-internal/tree/master/helm/kamaji
-sources: ["https://github.com/clastix/kamaji-internal"]
+home: https://github.com/clastix/kamaji
+sources: ["https://github.com/clastix/kamaji"]
 kubeVersion: ">=1.18"
 maintainers:
 - email: iam@mendrugory.com
@@ -33,3 +33,5 @@ maintainers:
   name: Dario Tranchitella
 - email: me@maxgio.it
   name: Massimiliano Giovagnoli
+- email: me@bsctl.io
+  name: Adriano Pezzuto
