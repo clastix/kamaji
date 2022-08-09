@@ -7,7 +7,7 @@ metadata:
   annotations:
     "helm.sh/hook": post-install
     "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-delete-policy": "hook-succeeded,hook-failed"
   name: "{{ .Release.Name }}-etcd-setup"
   namespace: {{ .Release.Namespace }}
 spec:
@@ -43,7 +43,7 @@ spec:
               kubectl --namespace={{ .Release.Namespace }} delete secret --ignore-not-found=true {{ include "etcd.caSecretName" . }} {{ include "etcd.clientSecretName" . }} &&
               kubectl --namespace={{ .Release.Namespace }} create secret generic {{ include "etcd.caSecretName" . }} --from-file=/certs/ca.crt --from-file=/certs/ca.key --from-file=/certs/peer-key.pem --from-file=/certs/peer.pem --from-file=/certs/server-key.pem --from-file=/certs/server.pem &&
               kubectl --namespace={{ .Release.Namespace }} create secret tls {{ include "etcd.clientSecretName" . }} --key=/certs/root-client-key.pem --cert=/certs/root-client.pem &&
-              kubectl --namespace={{ .Release.Namespace }} rollout status sts/etcd --timeout=120s
+              kubectl --namespace={{ .Release.Namespace }} rollout status sts/etcd --timeout=300s
           volumeMounts:
             - mountPath: /certs
               name: certs

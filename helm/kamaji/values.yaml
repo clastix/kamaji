@@ -19,8 +19,26 @@ extraArgs: []
 configPath: "./kamaji.yaml"
 
 etcd:
-  # -- Install an etcd 3.5 with enabled multi-tenancy along with Kamaji
+  # -- Install an etcd with enabled multi-tenancy along with Kamaji
   deploy: true
+
+  # -- Install specific etcd image
+  image:
+    repository: quay.io/coreos/etcd
+    tag: "v3.5.4"
+    pullPolicy: IfNotPresent
+
+  # -- The livenessProbe for the etcd container
+  livenessProbe:
+    failureThreshold: 8
+    httpGet:
+      path: /health?serializable=true
+      port: 2381
+      scheme: HTTP
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 15
+
   serviceAccount:
     # -- Create a ServiceAccount, required to install and provision the etcd backing storage (default: true)
     create: true
@@ -38,9 +56,10 @@ etcd:
       # -- Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji-system")
       namespace: kamaji-system
     # -- (string) Comma-separated list of the endpoints of the etcd cluster's members.
-    endpoints: "https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379"
+    # endpoints: "https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379"
   # -- ETCD Compaction interval (e.g. "5m0s"). (default: "0" (disabled))
   compactionInterval: 0
+  # -- Number of committed transactions to trigger a snapshot to disk.
 
 # -- The address the probe endpoint binds to. (default ":8081")
 healthProbeBindAddress: ":8081"

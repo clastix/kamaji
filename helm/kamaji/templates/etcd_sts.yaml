@@ -24,7 +24,8 @@ spec:
             secretName: {{ include "etcd.caSecretName" . }}
       containers:
         - name: etcd
-          image: quay.io/coreos/etcd:v3.5.1
+          image: {{ .Values.etcd.image.repository }}:{{ .Values.etcd.image.tag | default "v3.5.4" }}
+          imagePullPolicy: {{ .Values.etcd.image.pullPolicy }}
           ports:
             - containerPort: 2379
               name: client
@@ -42,15 +43,16 @@ spec:
             - --initial-cluster-state=new
             - --initial-cluster=etcd-0=https://etcd-0.etcd.$(POD_NAMESPACE).svc.cluster.local:2380,etcd-1=https://etcd-1.etcd.$(POD_NAMESPACE).svc.cluster.local:2380,etcd-2=https://etcd-2.etcd.$(POD_NAMESPACE).svc.cluster.local:2380
             - --initial-advertise-peer-urls=https://$(POD_NAME).etcd.$(POD_NAMESPACE).svc.cluster.local:2380
+            - --advertise-client-urls=https://$(POD_NAME).etcd.$(POD_NAMESPACE).svc.cluster.local:2379
             - --initial-cluster-token=kamaji
             - --listen-client-urls=https://0.0.0.0:2379
-            - --advertise-client-urls={{ include "etcd.endpoints" . }}
+            - --listen-metrics-urls=http://0.0.0.0:2381
+            - --listen-peer-urls=https://0.0.0.0:2380
             - --client-cert-auth=true
+            - --peer-client-cert-auth=true
             - --trusted-ca-file=/etc/etcd/pki/ca.crt
             - --cert-file=/etc/etcd/pki/server.pem
             - --key-file=/etc/etcd/pki/server-key.pem
-            - --listen-peer-urls=https://0.0.0.0:2380
-            - --peer-client-cert-auth=true
             - --peer-trusted-ca-file=/etc/etcd/pki/ca.crt
             - --peer-cert-file=/etc/etcd/pki/peer.pem
             - --peer-key-file=/etc/etcd/pki/peer-key.pem
@@ -66,26 +68,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+          {{- with .Values.etcd.livenessProbe }}
           livenessProbe:
-            failureThreshold: 8
-            httpGet:
-              host: 127.0.0.1
-              path: /health
-              port: 2381
-              scheme: HTTP
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 15
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.etcd.startupProbe }}
           startupProbe:
-            failureThreshold: 24
-            httpGet:
-              host: 127.0.0.1
-              path: /health
-              port: 2381
-              scheme: HTTP
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 15
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
   volumeClaimTemplates:
     - metadata:
         name: data
