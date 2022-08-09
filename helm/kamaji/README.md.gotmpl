@@ -5,29 +5,52 @@
 
 {{ template "chart.description" . }}
 
-{{ template "chart.homepageLine" . }}
-
-### Pre-requisites
-
-Kamaji requires a [multi-tenant etcd cluster](https://github.com/clastix/kamaji-internal/blob/master/deploy/getting-started-with-kamaji.md#setup-internal-multi-tenant-etcd) cluster.
-The installation and provisioning processes are already put in place by the Helm Chart starting from v0.1.1 in order to streamline the local test.
-
-> For production use an externally managed etcd is highly recommended, the etcd addon offered by this chart is not considered production-grade.
-
-If you'd like to use an externally managed etcd instance, you can specify the overrides and by setting the value `etcd.deploy=false`.
-
-### Install Kamaji
-
-To install the chart with the release name `kamaji`:
-
-```console
-helm upgrade --install --namespace kamaji-system --create-namespace kamaji .
-```
-
 {{ template "chart.maintainersSection" . }}
 
 {{ template "chart.sourcesSection" . }}
 
 {{ template "chart.requirementsSection" . }}
+
+[Kamaji](https://github.com/clastix/kamaji) requires a [multi-tenant `etcd`](https://github.com/clastix/kamaji-internal/blob/master/deploy/getting-started-with-kamaji.md#setup-internal-multi-tenant-etcd) cluster.
+This Helm Chart starting from v0.1.1 provides the installation of an internal `etcd` in order to streamline the local test. If you'd like to use an externally managed etcd instance, you can specify the overrides and by setting the value `etcd.deploy=false`.
+
+> For production use an externally managed `etcd` is highly recommended, the `etcd` addon offered by this Chart is not considered production-grade.
+
+## Install Kamaji
+
+To install the Chart with the release name `kamaji`:
+
+
+        helm upgrade --install --namespace kamaji-system --create-namespace kamaji
+
+Show the status:
+
+        helm status kamaji -n kamaji-system
+
+Upgrade the Chart
+
+        helm upgrade kamaji -n kamaji-system .
+
+Uninstall the Chart
+
+        helm uninstall kamaji -n kamaji-system
+
+## Customize the installation
+
+There are two methods for specifying overrides of values during Chart installation: `--values` and `--set`.
+
+The `--values` option is the preferred method because it allows you to keep your overrides in a YAML file, rather than specifying them all on the command line. Create a copy of the YAML file `values.yaml` and add your overrides to it.
+
+Specify your overrides file when you install the Chart:
+
+        helm upgrade kamaji --install --namespace kamaji-system --create-namespace kamaji --values myvalues.yaml
+
+The values in your overrides file `myvalues.yaml` will override their counterparts in the Chart's values.yaml file. Any values in `values.yaml` that weren’t overridden will keep their defaults.
+
+If you only need to make minor customizations, you can specify them on the command line by using the `--set` option. For example:
+
+        helm upgrade kamaji --install --namespace kamaji-system --create-namespace kamaji --set etcd.deploy=false
+
+Here the values you can override:
 
 {{ template "chart.valuesSection" . }}

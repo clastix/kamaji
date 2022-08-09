@@ -2,26 +2,7 @@
 
 ![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
-A Kubernetes distribution aimed to build and operate a Managed Kubernetes service with a fraction of operational burde.
-
-**Homepage:** <https://github.com/clastix/kamaji-internal/tree/master/helm/kamaji>
-
-### Pre-requisites
-
-Kamaji requires a [multi-tenant etcd cluster](https://github.com/clastix/kamaji-internal/blob/master/deploy/getting-started-with-kamaji.md#setup-internal-multi-tenant-etcd) cluster.
-The installation and provisioning processes are already put in place by the Helm Chart starting from v0.1.1 in order to streamline the local test.
-
-> For production use an externally managed etcd is highly recommended, the etcd addon offered by this chart is not considered production-grade.
-
-If you'd like to use an externally managed etcd instance, you can specify the overrides and by setting the value `etcd.deploy=false`.
-
-### Install Kamaji
-
-To install the chart with the release name `kamaji`:
-
-```console
-helm upgrade --install --namespace kamaji-system --create-namespace kamaji .
-```
+Kamaji is a tool aimed to build and operate a Managed Kubernetes Service with a fraction of the operational burden. With Kamaji, you can deploy and operate hundreds of Kubernetes clusters as a hyper-scaler.
 
 ## Maintainers
 
@@ -30,14 +11,56 @@ helm upgrade --install --namespace kamaji-system --create-namespace kamaji .
 | Gonzalo Gabriel Jiménez Fuentes | <iam@mendrugory.com> |  |
 | Dario Tranchitella | <dario@tranchitella.eu> |  |
 | Massimiliano Giovagnoli | <me@maxgio.it> |  |
+| Adriano Pezzuto | <me@bsctl.io> |  |
 
 ## Source Code
 
-* <https://github.com/clastix/kamaji-internal>
+* <https://github.com/clastix/kamaji>
 
 ## Requirements
 
 Kubernetes: `>=1.18`
+
+[Kamaji](https://github.com/clastix/kamaji) requires a [multi-tenant `etcd`](https://github.com/clastix/kamaji-internal/blob/master/deploy/getting-started-with-kamaji.md#setup-internal-multi-tenant-etcd) cluster.
+This Helm Chart starting from v0.1.1 provides the installation of an internal `etcd` in order to streamline the local test. If you'd like to use an externally managed etcd instance, you can specify the overrides and by setting the value `etcd.deploy=false`.
+
+> For production use an externally managed `etcd` is highly recommended, the `etcd` addon offered by this Chart is not considered production-grade.
+
+## Install Kamaji
+
+To install the Chart with the release name `kamaji`:
+
+        helm upgrade --install --namespace kamaji-system --create-namespace kamaji
+
+Show the status:
+
+        helm status kamaji -n kamaji-system
+
+Upgrade the Chart
+
+        helm upgrade kamaji -n kamaji-system .
+
+Uninstall the Chart
+
+        helm uninstall kamaji -n kamaji-system
+
+## Customize the installation
+
+There are two methods for specifying overrides of values during Chart installation: `--values` and `--set`.
+
+The `--values` option is the preferred method because it allows you to keep your overrides in a YAML file, rather than specifying them all on the command line. Create a copy of the YAML file `values.yaml` and add your overrides to it.
+
+Specify your overrides file when you install the Chart:
+
+        helm upgrade kamaji --install --namespace kamaji-system --create-namespace kamaji --values myvalues.yaml
+
+The values in your overrides file `myvalues.yaml` will override their counterparts in the Chart's values.yaml file. Any values in `values.yaml` that weren’t overridden will keep their defaults.
+
+If you only need to make minor customizations, you can specify them on the command line by using the `--set` option. For example:
+
+        helm upgrade kamaji --install --namespace kamaji-system --create-namespace kamaji --set etcd.deploy=false
+
+Here the values you can override:
 
 ## Values
 
@@ -46,12 +69,13 @@ Kubernetes: `>=1.18`
 | affinity | object | `{}` | Kubernetes affinity rules to apply to Kamaji controller pods |
 | configPath | string | `"./kamaji.yaml"` | Configuration file path alternative. (default "./kamaji.yaml") |
 | etcd.compactionInterval | int | `0` | ETCD Compaction interval (e.g. "5m0s"). (default: "0" (disabled)) |
-| etcd.deploy | bool | `true` | Install an etcd 3.5 with enabled multi-tenancy along with Kamaji |
+| etcd.deploy | bool | `true` | Install an etcd with enabled multi-tenancy along with Kamaji |
+| etcd.image | object | `{"pullPolicy":"IfNotPresent","repository":"quay.io/coreos/etcd","tag":"v3.5.4"}` | Install specific etcd image |
+| etcd.livenessProbe | object | `{"failureThreshold":8,"httpGet":{"path":"/health?serializable=true","port":2381,"scheme":"HTTP"},"initialDelaySeconds":10,"periodSeconds":10,"timeoutSeconds":15}` | The livenessProbe for the etcd container |
 | etcd.overrides.caSecret.name | string | `"etcd-certs"` | Name of the secret which contains CA's certificate and private key. (default: "etcd-certs") |
 | etcd.overrides.caSecret.namespace | string | `"kamaji-system"` | Namespace of the secret which contains CA's certificate and private key. (default: "kamaji-system") |
 | etcd.overrides.clientSecret.name | string | `"root-client-certs"` | Name of the secret which contains ETCD client certificates. (default: "root-client-certs") |
 | etcd.overrides.clientSecret.namespace | string | `"kamaji-system"` | Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji-system") |
-| etcd.overrides.endpoints | string | `"https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379"` | (string) Comma-separated list of the endpoints of the etcd cluster's members. |
 | etcd.serviceAccount.create | bool | `true` | Create a ServiceAccount, required to install and provision the etcd backing storage (default: true) |
 | etcd.serviceAccount.name | string | `""` | Define the ServiceAccount name to use during the setup and provision of the etcd backing storage (default: "") |
 | extraArgs | list | `[]` | A list of extra arguments to add to the kamaji controller default ones |
