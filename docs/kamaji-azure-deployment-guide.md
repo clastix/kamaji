@@ -3,7 +3,6 @@ This guide will lead you through the process of creating a working Kamaji setup 
 
 - one bootstrap local workstation
 - an AKS Kubernetes cluster to run the Admin and Tenant Control Planes
-- an additional `etcd` cluster made of 3 replicas to host the datastore for the Tenants' clusters
 - an arbitrary number of Azure virtual machines to host `Tenant`s' workloads
 
   * [Prepare the bootstrap workspace](#prepare-the-bootstrap-workspace)
@@ -80,7 +79,7 @@ There are multiple ways to deploy the Kamaji controller:
 - Use Kustomize with Makefile
 - Use the Kamaji Helm Chart
 
-The Kamaji controller needs to access a multi-tenant `etcd` in order to provision the access for tenant `kube-apiserver`. The multi-tenant `etcd` cluster will be deployed as three replicas StatefulSet into the admin cluster. Data persistence for multi-tenant `etcd` cluster is required. the Helm [Chart](../helm/kamaji/) provides the installation of an internal `etcd`. However, an externally managed `etcd` is highly recommended. If you'd like to use an externally one, you can specify the overrides and by setting the value `etcd.deploy=false`.
+The Kamaji controller needs to access a multi-tenant `etcd` in order to provision the access for tenant `kube-apiserver`. The multi-tenant `etcd` cluster will be deployed as three replicas StatefulSet into the admin cluster. Data persistence for multi-tenant `etcd` cluster is required. The Helm [Chart](../helm/kamaji/) provides the installation of an internal `etcd`. However, an externally managed `etcd` is highly recommended. If you'd like to use an external one, you can specify the overrides and setting the value `etcd.deploy=false`.
 
 ### Install with Helm Chart
 Install with the `helm` in a dedicated namespace of the Admin cluster:
@@ -107,7 +106,7 @@ You just turned your AKS cluster into a Kamaji cluster to run multiple Tenant Co
 ### Tenant Control Plane
 With Kamaji on AKS, the tenant control plane is accessible:
 
-- from tenant work nodes through an internal loadbalancer
+- from tenant worker nodes through an internal loadbalancer
 - from tenant admin user through an external loadbalancer responding to `https://${TENANT_NAME}.${TENANT_NAME}.${TENANT_DOMAIN}:443`
 
 Create a tenant control plane of example:
