@@ -56,7 +56,7 @@ etcd:
       # -- Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji-system")
       namespace: kamaji-system
     # -- (string) Comma-separated list of the endpoints of the etcd cluster's members.
-    # endpoints: "https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379"
+    endpoints: "https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379"
   # -- ETCD Compaction interval (e.g. "5m0s"). (default: "0" (disabled))
   compactionInterval: 0
   # -- Number of committed transactions to trigger a snapshot to disk.
