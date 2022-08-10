@@ -3,7 +3,6 @@ This guide will lead you through the process of creating a working Kamaji setup 
 
 - one bootstrap local workstation
 - a Kubernetes cluster 1.22+, to run the Admin and Tenant Control Planes
-- an additional `etcd` cluster made of 3 replicas to host the datastore for the Tenants' clusters
 - an arbitrary number of machines to host Tenants' workloads
 
 > In this guide, we assume the machines are running `Ubuntu 20.04`.
@@ -54,7 +53,10 @@ There are multiple ways to deploy the Kamaji controller:
 - Use Kustomize with Makefile
 - Use the Kamaji Helm Chart
 
-The Kamaji controller needs to access a multi-tenant `etcd` in order to provision the access for tenant `kube-apiserver`. The multi-tenant `etcd` cluster will be deployed as three replicas StatefulSet into the admin cluster. Data persistence for multi-tenant `etcd` cluster is required. the Helm [Chart](../helm/kamaji/) provides the installation of an internal `etcd`. However, an externally managed `etcd` is highly recommended. If you'd like to use an externally one, you can specify the overrides and by setting the value `etcd.deploy=false`.
+### Multi-tenant datastore
+The Kamaji controller needs to access a multi-tenant datastore in order to save data of the tenants' clusters. Install a multi-tenant `etcd` in the admin cluster as three replicas StatefulSet with data persistence. The Helm [Chart](../helm/kamaji/) provides the installation of an internal `etcd`. However, an externally managed `etcd` is highly recommended. If you'd like to use an external one, you can specify the overrides by setting the value `etcd.deploy=false`.
+
+Optionally, Kamaji offers the possibility of using a different storage system than `etcd` for the tenants' clusters, like MySQL compatible database, thanks to the [kine](https://github.com/k3s-io/kine) integration [here](../deploy/mysql/README.md).
 
 ### Install with Helm Chart
 Install with the `helm` in a dedicated namespace of the Admin cluster:
@@ -200,7 +202,7 @@ The `LoadBalancer` service type is used to expose the Tenant Control Plane. Howe
 ### Konnectivity
 In addition to the standard control plane containers, Kamaji creates an instance of [konnectivity-server](https://kubernetes.io/docs/concepts/architecture/control-plane-node-communication/) running as sidecar container in the `tcp` pod and exposed on port `8132` of the `tcp` service.
 
-This is required when the tenant worker nodes are not reachable from the `tcp` pods. The Konnectivity service consists of two parts: the Konnectivity server in the tenant control plane network and the Konnectivity agents in the tenant worker nodes network. The Konnectivity agents initiate connections to the Konnectivity server and maintain the network connections. After enabling the Konnectivity service, all control plane to nodes traffic goes through these connections.
+This is required when the tenant worker nodes are not reachable from the `tcp` pods. The Konnectivity service consists of two parts: the Konnectivity server in the tenant control plane pod and the Konnectivity agents running on the tenant worker nodes. After worker nodes joined the tenant control plane, the Konnectivity agents initiate connections to the Konnectivity server and maintain the network connections. After enabling the Konnectivity service, all control plane to worker nodes traffic goes through these connections.
 
 > In Kamaji, Konnectivity is enabled by default and can be disabled when not required.
 
