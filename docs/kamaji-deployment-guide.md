@@ -31,6 +31,12 @@ We assume you have installed on your workstation:
 ## Access Admin cluster
 In Kamaji, an Admin Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The admin cluster acts as management cluster for all the Tenant clusters and implements Monitoring, Logging, and Governance of all the Kamaji setup, including all Tenant clusters. 
 
+Throughout the following instructions, shell variables are used to indicate values that you should adjust to your environment:
+
+```bash
+source kamaji.env
+```
+
 Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji setup. To work properly, the admin cluster should provide:
 
 - CNI module installed, eg. [Calico](https://github.com/projectcalico/calico), [Cilium](https://github.com/cilium/cilium).
@@ -40,18 +46,8 @@ Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji
 
 Make sure you have a `kubeconfig` file with admin permissions on the cluster you want to turn into Kamaji Admin Cluster.
 
-Throughout the following instructions, shell variables are used to indicate values that you should adjust to your environment:
-
-```bash
-source kamaji.env
-```
-
-## Install Kamaji controller
-There are multiple ways to deploy the Kamaji controller:
-
-- Use the single YAML file installer
-- Use Kustomize with Makefile
-- Use the Kamaji Helm Chart
+## Install Kamaji
+There are multiple ways to deploy Kamaji, including a [single YAML file](../config/install.yaml) and [Helm Chart](../helm/kamaji).
 
 ### Multi-tenant datastore
 The Kamaji controller needs to access a multi-tenant datastore in order to save data of the tenants' clusters. Install a multi-tenant `etcd` in the admin cluster as three replicas StatefulSet with data persistence. The Helm [Chart](../helm/kamaji/) provides the installation of an internal `etcd`. However, an externally managed `etcd` is highly recommended. If you'd like to use an external one, you can specify the overrides by setting the value `etcd.deploy=false`.
@@ -107,14 +103,17 @@ spec:
           requests:
             cpu: 500m
             memory: 512Mi
+          limits: {}
         controllerManager:
           requests:
             cpu: 250m
             memory: 256Mi
+          limits: {}
         scheduler:
           requests:
             cpu: 250m
             memory: 256Mi
+          limits: {}
     service:
       additionalMetadata:
         labels:
@@ -146,6 +145,7 @@ spec:
         requests:
           cpu: 100m
           memory: 128Mi
+        limits: {}
 EOF
 
 kubectl create namespace ${TENANT_NAMESPACE}
