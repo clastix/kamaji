@@ -72,14 +72,13 @@ And check you can access:
 kubectl cluster-info
 ```
 
-## Install Kamaji controller
-There are multiple ways to deploy the Kamaji controller:
+## Install Kamaji
+There are multiple ways to deploy Kamaji, including a [single YAML file](../config/install.yaml) and [Helm Chart](../helm/kamaji).
 
-- Use the single YAML file installer
-- Use Kustomize with Makefile
-- Use the Kamaji Helm Chart
+### Multi-tenant datastore
+The Kamaji controller needs to access a multi-tenant datastore in order to save data of the tenants' clusters. Install a multi-tenant `etcd` in the admin cluster as three replicas StatefulSet with data persistence. The Helm [Chart](../helm/kamaji/) provides the installation of an internal `etcd`. However, an externally managed `etcd` is highly recommended. If you'd like to use an external one, you can specify the overrides by setting the value `etcd.deploy=false`.
 
-The Kamaji controller needs to access a multi-tenant `etcd` in order to provision the access for tenant `kube-apiserver`. The multi-tenant `etcd` cluster will be deployed as three replicas StatefulSet into the admin cluster. Data persistence for multi-tenant `etcd` cluster is required. The Helm [Chart](../helm/kamaji/) provides the installation of an internal `etcd`. However, an externally managed `etcd` is highly recommended. If you'd like to use an external one, you can specify the overrides and setting the value `etcd.deploy=false`.
+Optionally, Kamaji offers the possibility of using a different storage system than `etcd` for the tenants' clusters, like MySQL compatible database, thanks to the [kine](https://github.com/k3s-io/kine) integration [here](../deploy/mysql/README.md).
 
 ### Install with Helm Chart
 Install with the `helm` in a dedicated namespace of the Admin cluster:
@@ -134,14 +133,17 @@ spec:
           requests:
             cpu: 500m
             memory: 512Mi
+          limits: {}
         controllerManager:
           requests:
             cpu: 250m
             memory: 256Mi
+          limits: {}
         scheduler:
           requests:
             cpu: 250m
             memory: 256Mi
+          limits: {} 
     service:
       additionalMetadata:
         labels:
@@ -175,6 +177,7 @@ spec:
         requests:
           cpu: 100m
           memory: 128Mi
+        limits: {}
 ---
 apiVersion: v1
 kind: Service
