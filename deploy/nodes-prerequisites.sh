@@ -18,7 +18,9 @@ EOF
 for i in "${!HOSTS[@]}"; do
   HOST=${HOSTS[$i]}
   ssh ${USER}@${HOST} -t 'sudo apt update && sudo apt install -y containerd'
-  ssh ${USER}@${HOST} -t 'sudo systemctl start containerd && sudo systemctl enable containerd'
+  ssh ${USER}@${HOST} -t 'sudo mkdir -p /etc/containerd'
+  ssh ${USER}@${HOST} -t 'containerd config default | sed -e "s#SystemdCgroup = false#SystemdCgroup = true#g" | sudo tee -a /etc/containerd/config.toml'
+  ssh ${USER}@${HOST} -t 'sudo systemctl restart containerd && sudo systemctl enable containerd'
   scp containerd.conf ${USER}@${HOST}:
   ssh ${USER}@${HOST} -t 'sudo chown -R root:root containerd.conf && sudo mv containerd.conf /etc/modules-load.d/containerd.conf'
   ssh ${USER}@${HOST} -t 'sudo modprobe overlay && sudo modprobe br_netfilter'
