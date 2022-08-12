@@ -21,10 +21,12 @@ runcmd:
   - sudo modprobe overlay
   - sudo modprobe br_netfilter
   - sudo sysctl --system
-  - sudo systemctl start containerd
+  - sudo mkdir -p /etc/containerd
+  - containerd config default | sed -e 's#SystemdCgroup = false#SystemdCgroup = true#g' | sudo tee -a /etc/containerd/config.toml
+  - sudo systemctl restart containerd
   - sudo systemctl enable containerd
   - sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
   - echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
   - sudo apt update
-  - sudo apt install -y kubelet kubeadm kubectl containerd
+  - sudo apt install -y kubelet=1.23.5-00 kubeadm=1.23.5-00 kubectl=1.23.5-00
   - sudo apt-mark hold kubelet kubeadm kubectl
