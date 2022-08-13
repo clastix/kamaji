@@ -44,6 +44,12 @@ etcd:
     create: true
     # -- Define the ServiceAccount name to use during the setup and provision of the etcd backing storage (default: "")
     name: ""
+  persistence:
+    size: 10Gi
+    storageClass: ""
+    accessModes:
+    - ReadWriteOnce
+
   overrides:
     caSecret:
       # -- Name of the secret which contains CA's certificate and private key. (default: "etcd-certs")
@@ -59,7 +65,6 @@ etcd:
     endpoints: "https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379"
   # -- ETCD Compaction interval (e.g. "5m0s"). (default: "0" (disabled))
   compactionInterval: 0
-  # -- Number of committed transactions to trigger a snapshot to disk.
 
 # -- The address the probe endpoint binds to. (default ":8081")
 healthProbeBindAddress: ":8081"

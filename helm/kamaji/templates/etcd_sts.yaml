@@ -58,6 +58,8 @@ spec:
             - --peer-key-file=/etc/etcd/pki/peer-key.pem
             - --auto-compaction-mode=periodic
             - --auto-compaction-retention=5m
+            - --snapshot-count=10000
+            - --quota-backend-bytes=8589934592
             - --v=8
           env:
             - name: POD_NAME
@@ -77,11 +79,15 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
   volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: 8Gi
+  - metadata:
+      name: data
+    spec:
+      storageClassName: {{ .Values.etcd.persistence.storageClassName }}
+      accessModes:
+      {{- range .Values.etcd.persistence.accessModes }}
+      - {{ . | quote }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.etcd.persistence.size }}
 {{- end }}
