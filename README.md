@@ -125,7 +125,7 @@ Q. And what about multi-tenant `etcd`? I never heard of it.
 
 A. Even if multi-tenant deployment for `etcd` is not a common practice, multi-tenancy, RBAC, and client authentication has been [supported](https://etcd.io/docs/v3.5/op-guide/authentication/) in `etcd` from a long time. 
 
-Q. You already provide a Kubernetes multi-tenancy solution with [Capsule](capsule.clastix.io). Why does Kamaji matter?
+Q. You already provide a Kubernetes multi-tenancy solution with [Capsule](https://capsule.clastix.io). Why does Kamaji matter?
 
 A. Lighter Multi-Tenancy solutions, like Capsule shares the Kubernetes control plane among all tenants keeping tenant namespaces isolated by policies. While these solutions are the right choice by balancing between features and ease of usage, there are cases where a tenant user requires access to the control plane, for example, when a tenant requires to manage CRDs on his own. With Kamaji, you can provide admin permissions to the tenants.
 
