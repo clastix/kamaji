@@ -76,10 +76,12 @@ Here the values you can override:
 | etcd.overrides.caSecret.namespace | string | `"kamaji-system"` | Namespace of the secret which contains CA's certificate and private key. (default: "kamaji-system") |
 | etcd.overrides.clientSecret.name | string | `"root-client-certs"` | Name of the secret which contains ETCD client certificates. (default: "root-client-certs") |
 | etcd.overrides.clientSecret.namespace | string | `"kamaji-system"` | Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji-system") |
-| etcd.overrides.endpoints | string | `"https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379"` | (string) Comma-separated list of the endpoints of the etcd cluster's members. |
+| etcd.overrides.endpoints | object | `{"etcd-0":"https://etcd-0.etcd.kamaji-system.svc.cluster.local","etcd-1":"https://etcd-1.etcd.kamaji-system.svc.cluster.local","etcd-2":"https://etcd-2.etcd.kamaji-system.svc.cluster.local"}` | (map) Dictionary of the endpoints for the etcd cluster's members, key is the name of the etcd server. Don't define any port, inflected from .etcd.peerApiPort value. |
+| etcd.peerApiPort | int | `2380` | The peer API port which servers are listening to. |
 | etcd.persistence.accessModes[0] | string | `"ReadWriteOnce"` |  |
 | etcd.persistence.size | string | `"10Gi"` |  |
 | etcd.persistence.storageClass | string | `""` |  |
+| etcd.port | int | `2379` | The client request port. |
 | etcd.serviceAccount.create | bool | `true` | Create a ServiceAccount, required to install and provision the etcd backing storage (default: true) |
 | etcd.serviceAccount.name | string | `""` | Define the ServiceAccount name to use during the setup and provision of the etcd backing storage (default: "") |
 | extraArgs | list | `[]` | A list of extra arguments to add to the kamaji controller default ones |

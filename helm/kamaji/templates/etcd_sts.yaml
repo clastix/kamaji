@@ -41,7 +41,7 @@ spec:
             - --data-dir=/var/run/etcd
             - --name=$(POD_NAME)
             - --initial-cluster-state=new
-            - --initial-cluster=etcd-0=https://etcd-0.etcd.$(POD_NAMESPACE).svc.cluster.local:2380,etcd-1=https://etcd-1.etcd.$(POD_NAMESPACE).svc.cluster.local:2380,etcd-2=https://etcd-2.etcd.$(POD_NAMESPACE).svc.cluster.local:2380
+            - --initial-cluster={{ include "etcd.initialCluster" . }}
             - --initial-advertise-peer-urls=https://$(POD_NAME).etcd.$(POD_NAMESPACE).svc.cluster.local:2380
             - --advertise-client-urls=https://$(POD_NAME).etcd.$(POD_NAMESPACE).svc.cluster.local:2379
             - --initial-cluster-token=kamaji

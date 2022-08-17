@@ -22,6 +22,12 @@ etcd:
   # -- Install an etcd with enabled multi-tenancy along with Kamaji
   deploy: true
 
+  # -- The peer API port which servers are listening to.
+  peerApiPort: 2380
+
+  # -- The client request port.
+  port: 2379
+
   # -- Install specific etcd image
   image:
     repository: quay.io/coreos/etcd
@@ -61,8 +67,11 @@ etcd:
       name: root-client-certs
       # -- Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji-system")
       namespace: kamaji-system
-    # -- (string) Comma-separated list of the endpoints of the etcd cluster's members.
-    endpoints: "https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379"
+    # -- (map) Dictionary of the endpoints for the etcd cluster's members, key is the name of the etcd server. Don't define any port, inflected from .etcd.peerApiPort value.
+    endpoints:
+      etcd-0: https://etcd-0.etcd.kamaji-system.svc.cluster.local
+      etcd-1: https://etcd-1.etcd.kamaji-system.svc.cluster.local
+      etcd-2: https://etcd-2.etcd.kamaji-system.svc.cluster.local
   # -- ETCD Compaction interval (e.g. "5m0s"). (default: "0" (disabled))
   compactionInterval: 0
 
