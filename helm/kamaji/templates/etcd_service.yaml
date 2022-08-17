@@ -9,9 +9,9 @@ metadata:
 spec:
   clusterIP: None
   ports:
-    - port: 2379
+    - port: {{ .Values.etcd.port }}
       name: client
-    - port: 2380
+    - port: {{ .Values.etcd.peerApiPort }}
       name: peer
   selector:
     {{- include "etcd.selectorLabels" . | nindent 4 }}

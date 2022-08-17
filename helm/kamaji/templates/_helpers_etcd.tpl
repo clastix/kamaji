@@ -93,19 +93,41 @@ Namespace of the etcd root-client secret.
 {{- end }}
 
 {{/*
-List the declared etcd endpoints, using the overrides in case of unmanaged etcd.
+Comma separated list of etcd endpoints, using the overrides in case of unmanaged etcd.
 */}}
 {{- define "etcd.endpoints" }}
+{{- $list := list -}}
 {{- if .Values.etcd.deploy }}
-{{- range $count := until 3 -}}
-    {{- printf "https://%s-%d.%s.%s.svc.cluster.local:2379" "etcd" $count ( include "etcd.serviceName" . ) $.Release.Namespace -}}
-    {{- if lt $count  ( sub 3 1 ) -}}
-      {{- printf "," -}}
+    {{- range $count := until 3 -}}
+        {{- $list = append $list (printf "https://%s-%d.%s.%s.svc.cluster.local:%d" "etcd" $count ( include "etcd.serviceName" . ) $.Release.Namespace (int $.Values.etcd.port) ) -}}
+    {{- end }}
+{{- else if .Values.etcd.overrides.endpoints }}
+    {{- range $v := .Values.etcd.overrides.endpoints -}}
+        {{- $list = append $list (printf "%s:%d" $v (int $.Values.etcd.peerApiPort) ) -}}
     {{- end -}}
+{{- else if not .Values.etcd.overrides.endpoints }}
+    {{- fail "A valid .Values.etcd.overrides.endpoints required!" }}
 {{- end }}
-{{- else }}
-{{- required "A valid .Values.etcd.overrides.endpoints required!" .Values.etcd.overrides.endpoints }}
+{{- join "," $list -}}
 {{- end }}
+
+{{/*
+Key-value of the etcd peers, using the overrides in case of unmanaged etcd.
+*/}}
+{{- define "etcd.initialCluster" }}
+{{- $list := list -}}
+{{- if .Values.etcd.deploy }}
+    {{- range $i, $count := until 3 -}}
+        {{- $list = append $list ( printf "etcd-%d=https://%s-%d.%s.%s.svc.cluster.local:%d" $i "etcd" $count ( include "etcd.serviceName" . ) $.Release.Namespace (int $.Values.etcd.peerApiPort) ) -}}
+    {{- end }}
+{{- else if .Values.etcd.overrides.endpoints }}
+    {{- range $k, $v := .Values.etcd.overrides.endpoints -}}
+        {{- $list = append $list ( printf "%s=%s:%d" $k $v (int $.Values.etcd.peerApiPort) ) -}}
+    {{- end -}}
+{{- else if not .Values.etcd.overrides.endpoints }}
+    {{- fail "A valid .Values.etcd.overrides.endpoints required!" }}
+{{- end }}
+{{- join "," $list -}}
 {{- end }}
 
 {{/*
