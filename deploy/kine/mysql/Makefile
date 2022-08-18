@@ -29,7 +29,7 @@ mariadb-kine-secret:
 		KEY=$$(cat $(ROOT_DIR)/certs/server.key | base64 | tr -d '\n') \
 		ROOT_USERNAME=$$(echo -n root | base64) \
 		ROOT_PASSWORD=$$(kubectl -n kamaji-system get secret mysql-config -o jsonpath='{.data.MYSQL_ROOT_PASSWORD}') \
-		envsubst < $(ROOT_DIR)/../kine/secret.yaml | kubectl -n kamaji-system apply -f -
+		envsubst < $(ROOT_DIR)/../secret.yaml | kubectl -n kamaji-system apply -f -
 
 mariadb-deployment:
 	@kubectl -n kamaji-system apply -f $(ROOT_DIR)/mariadb.yaml
