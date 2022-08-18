@@ -18,4 +18,4 @@ make -C etcd
 
 > This assumes you already have a running Kubernetes cluster and kubeconfig.
 
-Read [this](./mysql/README.md) in order to know more about.
+Read [this](kine/mysql/README.md) in order to know more about.
