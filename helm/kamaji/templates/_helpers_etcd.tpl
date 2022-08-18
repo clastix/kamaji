@@ -103,7 +103,7 @@ Comma separated list of etcd endpoints, using the overrides in case of unmanaged
     {{- end }}
 {{- else if .Values.etcd.overrides.endpoints }}
     {{- range $v := .Values.etcd.overrides.endpoints -}}
-        {{- $list = append $list (printf "%s:%d" $v (int $.Values.etcd.peerApiPort) ) -}}
+        {{- $list = append $list (printf "%s:%d" $v (int $.Values.etcd.port) ) -}}
     {{- end -}}
 {{- else if not .Values.etcd.overrides.endpoints }}
     {{- fail "A valid .Values.etcd.overrides.endpoints required!" }}
