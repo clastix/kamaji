@@ -647,6 +647,8 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 				ReadOnly:  true,
 			},
 		}
+		podSpec.Containers[kineIndex].TerminationMessagePath = corev1.TerminationMessagePathDefault
+		podSpec.Containers[kineIndex].TerminationMessagePolicy = corev1.TerminationMessageReadFile
 		podSpec.Containers[kineIndex].Env = []corev1.EnvVar{
 			{
 				Name:  "GODEBUG",
