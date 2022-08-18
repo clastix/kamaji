@@ -1,31 +1,40 @@
-mariadb_path := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
-.PHONY: mariadb mariadb-certificates mariadb-secrets
-
-mariadb: mariadb-certificates mariadb-secrets mariadb-deployment
+mariadb: mariadb-certificates mariadb-secret mariadb-kine-secret mariadb-deployment
 
 mariadb-certificates:
-	rm -rf $(mariadb_path)/certs && mkdir $(mariadb_path)/certs
-	cfssl gencert -initca $(mariadb_path)/ca-csr.json | cfssljson -bare $(mariadb_path)/certs/ca
-	@mv $(mariadb_path)/certs/ca.pem $(mariadb_path)/certs/ca.crt
-	@mv $(mariadb_path)/certs/ca-key.pem $(mariadb_path)/certs/ca.key
-	cfssl gencert -ca=$(mariadb_path)/certs/ca.crt -ca-key=$(mariadb_path)/certs/ca.key \
-		-config=$(mariadb_path)/config.json -profile=server \
-		$(mariadb_path)/server-csr.json | cfssljson -bare $(mariadb_path)/certs/server
-	@mv $(mariadb_path)/certs/server.pem $(mariadb_path)/certs/server.crt
-	@mv $(mariadb_path)/certs/server-key.pem $(mariadb_path)/certs/server.key
-	chmod 644 $(mariadb_path)/certs/*
+	rm -rf $(ROOT_DIR)/certs && mkdir $(ROOT_DIR)/certs
+	cfssl gencert -initca $(ROOT_DIR)/ca-csr.json | cfssljson -bare $(ROOT_DIR)/certs/ca
+	@mv $(ROOT_DIR)/certs/ca.pem $(ROOT_DIR)/certs/ca.crt
+	@mv $(ROOT_DIR)/certs/ca-key.pem $(ROOT_DIR)/certs/ca.key
+	cfssl gencert -ca=$(ROOT_DIR)/certs/ca.crt -ca-key=$(ROOT_DIR)/certs/ca.key \
+		-config=$(ROOT_DIR)/config.json -profile=server \
+		$(ROOT_DIR)/server-csr.json | cfssljson -bare $(ROOT_DIR)/certs/server
+	@mv $(ROOT_DIR)/certs/server.pem $(ROOT_DIR)/certs/server.crt
+	@mv $(ROOT_DIR)/certs/server-key.pem $(ROOT_DIR)/certs/server.key
+	chmod 644 $(ROOT_DIR)/certs/*
 
-mariadb-secrets:
+mariadb-secret:
 	@kubectl -n kamaji-system create secret generic mysql-config \
-		--from-file=$(mariadb_path)/certs/ca.crt --from-file=$(mariadb_path)/certs/ca.key \
-		--from-file=$(mariadb_path)/certs/server.key --from-file=$(mariadb_path)/certs/server.crt \
-		--from-file=$(mariadb_path)/mysql-ssl.cnf \
-		--from-literal=MYSQL_ROOT_PASSWORD=root
+		--from-file=$(ROOT_DIR)/certs/ca.crt --from-file=$(ROOT_DIR)/certs/ca.key \
+		--from-file=$(ROOT_DIR)/certs/server.key --from-file=$(ROOT_DIR)/certs/server.crt \
+		--from-file=$(ROOT_DIR)/mysql-ssl.cnf \
+		--from-literal=MYSQL_ROOT_PASSWORD=root \
+		--dry-run=client -o yaml | kubectl apply -f -
+
+mariadb-kine-secret: mariadb-secret
+	@\
+		CA=$$(cat $(ROOT_DIR)/certs/ca.crt | base64 | tr -d '\n') \
+		CRT=$$(cat $(ROOT_DIR)/certs/server.crt | base64 | tr -d '\n') \
+		KEY=$$(cat $(ROOT_DIR)/certs/server.key | base64 | tr -d '\n') \
+		ROOT_USERNAME=$$(echo -n root | base64) \
+		ROOT_PASSWORD=$$(kubectl -n kamaji-system get secret mysql-config -o jsonpath='{.data.MYSQL_ROOT_PASSWORD}') \
+		envsubst < $(ROOT_DIR)/../kine/secret.yaml | kubectl -n kamaji-system apply -f -
 
 mariadb-deployment:
-	@kubectl -n kamaji-system apply -f $(mariadb_path)/mariadb.yaml
+	@kubectl -n kamaji-system apply -f $(ROOT_DIR)/mariadb.yaml
 
-destroy:
-	@kubectl delete -n kamaji-system -f $(mariadb_path)/mariadb.yaml
-	@kubectl delete -n kamaji-system secret mysql-config
+mariadb-destroy:
+	@kubectl delete -n kamaji-system -f $(ROOT_DIR)/mariadb.yaml --ignore-not-found
+	@kubectl delete -n kamaji-system secret mysql-config --ignore-not-found
+	@kubectl delete -n kamaji-system secret kine-secret --ignore-not-found
