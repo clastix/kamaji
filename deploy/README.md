@@ -14,8 +14,13 @@ make -C kind
 make -C etcd
 ```
 
-## Multi-tenant MySQL-MariaDB cluster
+## Multi-tenant cluster using Kine
+
+`kine` is an `etcd` shim that allows using different datastore.
+
+Kamaji actually support the following backends:
+
+- [MySQL](kine/mysql/README.md)
+- [PostgreSQL](kine/postgresql/README.md)
 
 > This assumes you already have a running Kubernetes cluster and kubeconfig.
-
-Read [this](kine/mysql/README.md) in order to know more about.
