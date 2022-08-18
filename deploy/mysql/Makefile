@@ -22,7 +22,7 @@ mariadb-secret:
 		--from-literal=MYSQL_ROOT_PASSWORD=root \
 		--dry-run=client -o yaml | kubectl apply -f -
 
-mariadb-kine-secret: mariadb-secret
+mariadb-kine-secret:
 	@\
 		CA=$$(cat $(ROOT_DIR)/certs/ca.crt | base64 | tr -d '\n') \
 		CRT=$$(cat $(ROOT_DIR)/certs/server.crt | base64 | tr -d '\n') \
