@@ -1,0 +1,13 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql
+spec:
+  description: PostgreSQL cluster used by Kamaji along with kine
+  instances: 3
+  postgresql:
+    pg_hba:
+      - hostssl app all all cert  # makes authentication entirely based on certificates
+  primaryUpdateStrategy: unsupervised
+  storage:
+    size: 1Gi
