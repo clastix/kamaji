@@ -1324,33 +1324,35 @@ spec:
                         - name
                         type: object
                     type: object
-                  kineMySQL:
+                  kine:
                     properties:
                       certificate:
                         properties:
+                          checksum:
+                            type: string
                           lastUpdate:
                             format: date-time
-                            type: string
-                          resourceVersion:
                             type: string
                           secretName:
                             type: string
                         type: object
                       config:
                         properties:
-                          resourceVersion:
+                          checksum:
                             type: string
                           secretName:
                             type: string
                         type: object
+                      driver:
+                        type: string
                       setup:
                         properties:
+                          checksum:
+                            type: string
                           lastUpdate:
                             format: date-time
                             type: string
                           schema:
-                            type: string
-                          sqlConfigResourceVersion:
                             type: string
                           user:
                             type: string
