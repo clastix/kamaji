@@ -61,24 +61,25 @@ type ETCDStatus struct {
 }
 
 type SQLCertificateStatus struct {
-	SecretName      string      `json:"secretName,omitempty"`
-	ResourceVersion string      `json:"resourceVersion,omitempty"`
-	LastUpdate      metav1.Time `json:"lastUpdate,omitempty"`
+	SecretName string      `json:"secretName,omitempty"`
+	Checksum   string      `json:"checksum,omitempty"`
+	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 }
 
 type SQLConfigStatus struct {
-	SecretName      string `json:"secretName,omitempty"`
-	ResourceVersion string `json:"resourceVersion,omitempty"`
+	SecretName string `json:"secretName,omitempty"`
+	Checksum   string `json:"checksum,omitempty"`
 }
 
 type SQLSetupStatus struct {
-	Schema                   string      `json:"schema,omitempty"`
-	User                     string      `json:"user,omitempty"`
-	LastUpdate               metav1.Time `json:"lastUpdate,omitempty"`
-	SQLConfigResourceVersion string      `json:"sqlConfigResourceVersion,omitempty"`
+	Schema     string      `json:"schema,omitempty"`
+	User       string      `json:"user,omitempty"`
+	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
+	Checksum   string      `json:"checksum,omitempty"`
 }
 
-type KineMySQLStatus struct {
+type KineStatus struct {
+	Driver      string               `json:"driver,omitempty"`
 	Config      SQLConfigStatus      `json:"config,omitempty"`
 	Setup       SQLSetupStatus       `json:"setup,omitempty"`
 	Certificate SQLCertificateStatus `json:"certificate,omitempty"`
@@ -86,8 +87,8 @@ type KineMySQLStatus struct {
 
 // StorageStatus defines the observed state of StorageStatus.
 type StorageStatus struct {
-	ETCD      *ETCDStatus      `json:"etcd,omitempty"`
-	KineMySQL *KineMySQLStatus `json:"kineMySQL,omitempty"`
+	ETCD *ETCDStatus `json:"etcd,omitempty"`
+	Kine *KineStatus `json:"kine,omitempty"`
 }
 
 // KubeconfigStatus contains information about the generated kubeconfig.
