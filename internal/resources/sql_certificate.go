@@ -29,8 +29,8 @@ type SQLCertificate struct {
 }
 
 func (r *SQLCertificate) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Storage.KineMySQL.Certificate.SecretName != r.resource.GetName() ||
-		tenantControlPlane.Status.Storage.KineMySQL.Certificate.ResourceVersion != r.resource.ResourceVersion
+	return tenantControlPlane.Status.Storage.Kine.Certificate.SecretName != r.resource.GetName() ||
+		tenantControlPlane.Status.Storage.Kine.Certificate.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *SQLCertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -70,13 +70,13 @@ func (r *SQLCertificate) GetName() string {
 }
 
 func (r *SQLCertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	if tenantControlPlane.Status.Storage.KineMySQL == nil {
-		tenantControlPlane.Status.Storage.KineMySQL = &kamajiv1alpha1.KineMySQLStatus{}
+	if tenantControlPlane.Status.Storage.Kine == nil {
+		tenantControlPlane.Status.Storage.Kine = &kamajiv1alpha1.KineStatus{}
 	}
 
-	tenantControlPlane.Status.Storage.KineMySQL.Certificate.SecretName = r.resource.GetName()
-	tenantControlPlane.Status.Storage.KineMySQL.Certificate.ResourceVersion = r.resource.ResourceVersion
-	tenantControlPlane.Status.Storage.KineMySQL.Certificate.LastUpdate = metav1.Now()
+	tenantControlPlane.Status.Storage.Kine.Certificate.SecretName = r.resource.GetName()
+	tenantControlPlane.Status.Storage.Kine.Certificate.Checksum = r.resource.GetAnnotations()["checksum"]
+	tenantControlPlane.Status.Storage.Kine.Certificate.LastUpdate = metav1.Now()
 
 	return nil
 }
@@ -89,9 +89,19 @@ func (r *SQLCertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv
 			return err
 		}
 
-		if err := r.buildSecret(ctx, *sqlConfig); err != nil {
+		checksum, err := r.buildSecret(ctx, *sqlConfig)
+		if err != nil {
 			return err
 		}
+
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+
+		annotations["checksum"] = checksum
+
+		r.resource.SetAnnotations(annotations)
 
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),
@@ -106,26 +116,29 @@ func (r *SQLCertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv
 	}
 }
 
-func (r *SQLCertificate) buildSecret(ctx context.Context, sqlConfig corev1.Secret) error {
+func (r *SQLCertificate) buildSecret(ctx context.Context, sqlConfig corev1.Secret) (checksum string, err error) {
 	switch r.StorageType {
-	case types.KineMySQL:
+	case types.KineMySQL, types.KinePostgreSQL:
 		keys := []string{"ca.crt", "server.crt", "server.key"}
 
 		return r.buildKineSecret(ctx, keys, sqlConfig)
 	default:
-		return fmt.Errorf("storage type %s is not implemented", r.StorageType)
+		return "", fmt.Errorf("storage type %s is not implemented", r.StorageType)
 	}
 }
 
-func (r *SQLCertificate) buildKineSecret(ctx context.Context, keys []string, sqlConfig corev1.Secret) error {
+func (r *SQLCertificate) buildKineSecret(ctx context.Context, keys []string, sqlConfig corev1.Secret) (string, error) {
+	checksumMap := map[string]string{}
+
 	for _, key := range keys {
 		value, ok := sqlConfig.Data[key]
 		if !ok {
-			return fmt.Errorf("%s is not in sql config secret", key)
+			return "", fmt.Errorf("%s is not in sql config secret", key)
 		}
 
 		r.resource.Data[key] = value
+		checksumMap[key] = string(value)
 	}
 
-	return nil
+	return utilities.CalculateConfigMapChecksum(checksumMap), nil
 }

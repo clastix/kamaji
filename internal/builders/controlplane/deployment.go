@@ -40,11 +40,13 @@ const (
 	schedulerKubeconfig
 	controllerManagerKubeconfig
 	kineConfig
+	kineCerts
 )
 
 const (
 	apiServerFlagsAnnotation = "kube-apiserver.kamaji.clastix.io/args"
 	kineVolumeName           = "kine-config"
+	kineVolumeCertName       = "kine-certs"
 )
 
 type Deployment struct {
@@ -592,17 +594,36 @@ func (d *Deployment) buildKineVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha
 		podSpec.Volumes = volumes
 	}
 
-	if d.ETCDStorageType == types.KineMySQL {
+	if found, index := utilities.HasNamedVolume(podSpec.Volumes, kineVolumeCertName); found {
+		var volumes []corev1.Volume
+
+		volumes = append(volumes, podSpec.Volumes[:index]...)
+		volumes = append(volumes, podSpec.Volumes[index+1:]...)
+
+		podSpec.Volumes = volumes
+	}
+
+	if d.ETCDStorageType == types.KineMySQL || d.ETCDStorageType == types.KinePostgreSQL {
 		if index := int(kineConfig) + 1; len(podSpec.Volumes) < index {
 			podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
 		}
-
+		// Adding the volume to read Kine certificates:
+		// these must be subsequently fixed with a chmod due to pg issues with private key.
 		podSpec.Volumes[kineConfig].Name = kineVolumeName
 		podSpec.Volumes[kineConfig].VolumeSource = corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName:  tcp.Status.Storage.KineMySQL.Certificate.SecretName,
+				SecretName:  tcp.Status.Storage.Kine.Certificate.SecretName,
 				DefaultMode: pointer.Int32Ptr(420),
 			},
+		}
+		// Adding the Volume for the certificates with fixed permission
+		if index := int(kineCerts) + 1; len(podSpec.Volumes) < index {
+			podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
+		}
+
+		podSpec.Volumes[kineCerts].Name = kineVolumeCertName
+		podSpec.Volumes[kineCerts].VolumeSource = corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		}
 	}
 }
@@ -619,60 +640,95 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 
 		podSpec.Containers = containers
 	}
+	// In case of bare ETCD we exit without mangling the PodSpec resource.
+	if d.ETCDStorageType == types.ETCD {
+		return
+	}
 
-	if d.ETCDStorageType == types.KineMySQL {
-		if index := int(kineIndex) + 1; len(podSpec.Containers) < index {
-			podSpec.Containers = append(podSpec.Containers, corev1.Container{})
-		}
+	if index := int(kineIndex) + 1; len(podSpec.Containers) < index {
+		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
+	}
 
-		args := map[string]string{}
+	args := map[string]string{}
 
-		if tcp.Spec.ControlPlane.Deployment.ExtraArgs != nil {
-			args = utilities.ArgsFromSliceToMap(tcp.Spec.ControlPlane.Deployment.ExtraArgs.Kine)
-		}
+	if tcp.Spec.ControlPlane.Deployment.ExtraArgs != nil {
+		args = utilities.ArgsFromSliceToMap(tcp.Spec.ControlPlane.Deployment.ExtraArgs.Kine)
+	}
 
-		args["--endpoint"] = "mysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@tcp($(MYSQL_HOST):$(MYSQL_PORT))/$(MYSQL_SCHEMA)"
-		args["--ca-file"] = "/kine/ca.crt"
-		args["--cert-file"] = "/kine/server.crt"
-		args["--key-file"] = "/kine/server.key"
+	switch d.ETCDStorageType {
+	case types.KineMySQL:
+		args["--endpoint"] = "mysql://$(DB_USER):$(DB_PASSWORD)@tcp($(DB_HOST):$(DB_PORT))/$(DB_SCHEMA)"
+	case types.KinePostgreSQL:
+		args["--endpoint"] = "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_SCHEMA)"
+	}
 
-		podSpec.Containers[kineIndex].Name = kineContainerName
-		podSpec.Containers[kineIndex].Image = d.KineContainerImage
-		podSpec.Containers[kineIndex].Command = []string{"/bin/kine"}
-		podSpec.Containers[kineIndex].Args = utilities.ArgsFromMapToSlice(args)
-		podSpec.Containers[kineIndex].VolumeMounts = []corev1.VolumeMount{
-			{
-				Name:      kineVolumeName,
-				MountPath: "/kine",
-				ReadOnly:  true,
+	args["--ca-file"] = "/certs/ca.crt"
+	args["--cert-file"] = "/certs/server.crt"
+	args["--key-file"] = "/certs/server.key"
+
+	podSpec.InitContainers = []corev1.Container{
+		{
+			Name:                     "chmod",
+			Image:                    d.KineContainerImage,
+			ImagePullPolicy:          corev1.PullAlways,
+			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			Command:                  []string{"sh"},
+			Args: []string{
+				"-c",
+				"cp /kine/*.* /certs && chmod -R 600 /certs/*.*",
 			},
-		}
-		podSpec.Containers[kineIndex].TerminationMessagePath = corev1.TerminationMessagePathDefault
-		podSpec.Containers[kineIndex].TerminationMessagePolicy = corev1.TerminationMessageReadFile
-		podSpec.Containers[kineIndex].Env = []corev1.EnvVar{
-			{
-				Name:  "GODEBUG",
-				Value: "x509ignoreCN=0",
-			},
-		}
-		podSpec.Containers[kineIndex].EnvFrom = []corev1.EnvFromSource{
-			{
-				SecretRef: &corev1.SecretEnvSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: tcp.Status.Storage.KineMySQL.Config.SecretName,
-					},
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      kineVolumeName,
+					ReadOnly:  true,
+					MountPath: "/kine",
+				},
+				{
+					Name:      kineVolumeCertName,
+					MountPath: "/certs",
+					ReadOnly:  false,
 				},
 			},
-		}
-		podSpec.Containers[kineIndex].Ports = []corev1.ContainerPort{
-			{
-				ContainerPort: 2379,
-				Name:          "server",
-				Protocol:      corev1.ProtocolTCP,
-			},
-		}
-		podSpec.Containers[kineIndex].ImagePullPolicy = corev1.PullAlways
+		},
 	}
+
+	podSpec.Containers[kineIndex].Name = kineContainerName
+	podSpec.Containers[kineIndex].Image = d.KineContainerImage
+	podSpec.Containers[kineIndex].Command = []string{"/bin/kine"}
+	podSpec.Containers[kineIndex].Args = utilities.ArgsFromMapToSlice(args)
+	podSpec.Containers[kineIndex].VolumeMounts = []corev1.VolumeMount{
+		{
+			Name:      kineVolumeCertName,
+			MountPath: "/certs",
+			ReadOnly:  false,
+		},
+	}
+	podSpec.Containers[kineIndex].TerminationMessagePath = corev1.TerminationMessagePathDefault
+	podSpec.Containers[kineIndex].TerminationMessagePolicy = corev1.TerminationMessageReadFile
+	podSpec.Containers[kineIndex].Env = []corev1.EnvVar{
+		{
+			Name:  "GODEBUG",
+			Value: "x509ignoreCN=0",
+		},
+	}
+	podSpec.Containers[kineIndex].EnvFrom = []corev1.EnvFromSource{
+		{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: tcp.Status.Storage.Kine.Config.SecretName,
+				},
+			},
+		},
+	}
+	podSpec.Containers[kineIndex].Ports = []corev1.ContainerPort{
+		{
+			ContainerPort: 2379,
+			Name:          "server",
+			Protocol:      corev1.ProtocolTCP,
+		},
+	}
+	podSpec.Containers[kineIndex].ImagePullPolicy = corev1.PullAlways
 }
 
 func (d *Deployment) SetSelector(deploymentSpec *appsv1.DeploymentSpec, tcp *kamajiv1alpha1.TenantControlPlane) {

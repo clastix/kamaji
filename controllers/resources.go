@@ -81,7 +81,7 @@ func getDefaultDeleteableResources(config GroupDeleteableResourceBuilderConfigur
 				Endpoints:             getArrayFromString(config.tcpReconcilerConfig.ETCDEndpoints),
 			},
 		}
-	case types.KineMySQL:
+	case types.KineMySQL, types.KinePostgreSQL:
 		return []resources.DeleteableResource{
 			&resources.SQLSetup{
 				Client:       config.client,
@@ -215,13 +215,14 @@ func getKubernetesStorageResources(c client.Client, log logr.Logger, tcpReconcil
 				Endpoints:             getArrayFromString(tcpReconcilerConfig.ETCDEndpoints),
 			},
 		}
-	case types.KineMySQL:
+	case types.KineMySQL, types.KinePostgreSQL:
 		return []resources.Resource{
 			&resources.SQLStorageConfig{
 				Client: c,
 				Name:   "sql-config",
 				Host:   dbConnection.GetHost(),
 				Port:   dbConnection.GetPort(),
+				Driver: dbConnection.Driver(),
 			},
 			&resources.SQLSetup{
 				Client:       c,
@@ -232,8 +233,8 @@ func getKubernetesStorageResources(c client.Client, log logr.Logger, tcpReconcil
 				Client:                   c,
 				Name:                     "sql-certificate",
 				StorageType:              tcpReconcilerConfig.ETCDStorageType,
-				SQLConfigSecretName:      tcpReconcilerConfig.KineMySQLSecretName,
-				SQLConfigSecretNamespace: tcpReconcilerConfig.KineMySQLSecretNamespace,
+				SQLConfigSecretName:      tcpReconcilerConfig.KineSecretName,
+				SQLConfigSecretNamespace: tcpReconcilerConfig.KineSecretNamespace,
 			},
 		}
 	default:

@@ -17,10 +17,6 @@ import (
 	"github.com/clastix/kamaji/internal/sql"
 )
 
-const (
-	secretHashLabelKey = "component.kamaji.clastix.io/secret-hash"
-)
-
 type sqlSetupResource struct {
 	schema   string
 	user     string
@@ -35,13 +31,13 @@ type SQLSetup struct {
 }
 
 func (r *SQLSetup) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	if tenantControlPlane.Status.Storage.KineMySQL == nil {
+	if tenantControlPlane.Status.Storage.Kine == nil {
 		return true
 	}
 
-	return tenantControlPlane.Status.Storage.KineMySQL.Setup.Schema != r.resource.schema ||
-		tenantControlPlane.Status.Storage.KineMySQL.Setup.User != r.resource.user ||
-		tenantControlPlane.Status.Storage.KineMySQL.Setup.SQLConfigResourceVersion != tenantControlPlane.Status.Storage.KineMySQL.Config.ResourceVersion
+	return tenantControlPlane.Status.Storage.Kine.Setup.Schema != r.resource.schema ||
+		tenantControlPlane.Status.Storage.Kine.Setup.User != r.resource.user ||
+		tenantControlPlane.Status.Storage.Kine.Setup.Checksum != tenantControlPlane.Status.Storage.Kine.Config.Checksum
 }
 
 func (r *SQLSetup) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -56,16 +52,16 @@ func (r *SQLSetup) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha
 	secret := &corev1.Secret{}
 	namespacedName := types.NamespacedName{
 		Namespace: tenantControlPlane.GetNamespace(),
-		Name:      tenantControlPlane.Status.Storage.KineMySQL.Config.SecretName,
+		Name:      tenantControlPlane.Status.Storage.Kine.Config.SecretName,
 	}
 	if err := r.Client.Get(ctx, namespacedName, secret); err != nil {
 		return err
 	}
 
 	r.resource = sqlSetupResource{
-		schema:   string(secret.Data["MYSQL_SCHEMA"]),
-		user:     string(secret.Data["MYSQL_USER"]),
-		password: string(secret.Data["MYSQL_PASSWORD"]),
+		schema:   string(secret.Data["DB_SCHEMA"]),
+		user:     string(secret.Data["DB_USER"]),
+		password: string(secret.Data["DB_PASSWORD"]),
 	}
 
 	return nil
@@ -76,8 +72,8 @@ func (r *SQLSetup) GetClient() client.Client {
 }
 
 func (r *SQLSetup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	if tenantControlPlane.Status.Storage.KineMySQL.Setup.SQLConfigResourceVersion != "" &&
-		tenantControlPlane.Status.Storage.KineMySQL.Setup.SQLConfigResourceVersion != tenantControlPlane.Status.Storage.KineMySQL.Config.ResourceVersion {
+	if tenantControlPlane.Status.Storage.Kine.Setup.Checksum != "" &&
+		tenantControlPlane.Status.Storage.Kine.Setup.Checksum != tenantControlPlane.Status.Storage.Kine.Config.Checksum {
 		if err := r.Delete(ctx, tenantControlPlane); err != nil {
 			return controllerutil.OperationResultNone, err
 		}
@@ -135,14 +131,14 @@ func (r *SQLSetup) Delete(ctx context.Context, tenantControlPlane *kamajiv1alpha
 }
 
 func (r *SQLSetup) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	if tenantControlPlane.Status.Storage.KineMySQL == nil {
+	if tenantControlPlane.Status.Storage.Kine == nil {
 		return fmt.Errorf("sql configuration is not ready")
 	}
 
-	tenantControlPlane.Status.Storage.KineMySQL.Setup.Schema = r.resource.schema
-	tenantControlPlane.Status.Storage.KineMySQL.Setup.User = r.resource.user
-	tenantControlPlane.Status.Storage.KineMySQL.Setup.LastUpdate = metav1.Now()
-	tenantControlPlane.Status.Storage.KineMySQL.Setup.SQLConfigResourceVersion = tenantControlPlane.Status.Storage.KineMySQL.Config.ResourceVersion
+	tenantControlPlane.Status.Storage.Kine.Setup.Schema = r.resource.schema
+	tenantControlPlane.Status.Storage.Kine.Setup.User = r.resource.user
+	tenantControlPlane.Status.Storage.Kine.Setup.LastUpdate = metav1.Now()
+	tenantControlPlane.Status.Storage.Kine.Setup.Checksum = tenantControlPlane.Status.Storage.Kine.Config.Checksum
 
 	return nil
 }
