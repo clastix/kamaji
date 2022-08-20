@@ -49,54 +49,17 @@ At this moment you will have your KinD up and running and ETCD cluster in multit
 
 Now you're ready to [install Kamaji operator](#install-kamaji).
 
-#### Kine MySQL
+#### Kine
 
 > The MySQL-compatible cluster provisioning is omitted here.
 
-Kamaji offers the possibility of using a different storage system than `ETCD` for the tenants, like MySQL compatible databases.
+Kamaji offers the possibility of using a different storage system than `ETCD` for the tenants, like MySQL or PostgreSQL compatible databases.
 
-Once a compatible-mysql database is running, we need to provide information about it to kamaji:
+Read it more in the provided [guide](../deploy/kine/README.md).
 
-```
---etcd-storage-type=kine-mysql
---kine-mysql-host=<database host>
---kine-mysql-port=<database port>
---kine-mysql-secret-name=<secret name>
---kine-mysql-secret-namespace=<secret namespace>
-```
 
-The secret with the configuration and certificates for mysql should look like:
-```yaml
-apiVersion: v1
-data:
-  MYSQL_ROOT_PASSWORD: ...
-  ca.crt: ...
-  ca.key: ...
-  mysql-ssl.cnf: ...
-  server.crt:  ...
-  server.key:  ...
-kind: Secret
-metadata:
-  creationTimestamp: "2022-06-30T08:03:15Z"
-  name: mysql-config
-  namespace: kamaji-system
-  resourceVersion: "32228"
-  uid: 51b155a1-426c-42d2-8147-be680bf458a6
-type: Opaque
-```
 
-and `mysql-ssl.cnf`:
-```
-[mysqld]
-ssl-ca=/etc/mysql/conf.d/ca.crt
-ssl-cert=/etc/mysql/conf.d/server.crt
-ssl-key=/etc/mysql/conf.d/server.key
-require_secure_transport=ON
-```
-
-You can read more about it [here](../deploy/mysql/README.md).
-
-Assuming you adjusted the [Kamaji manifest](./config/install.yaml) to connect to the MySQL-compatible database, you can now install it.
+Assuming you adjusted the [Kamaji manifest](./config/install.yaml) to connect to Kine and compatible database using the proper driver, you can now install it.
 
 ### Install Kamaji
 

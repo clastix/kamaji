@@ -52,7 +52,7 @@ There are multiple ways to deploy Kamaji, including a [single YAML file](../conf
 ### Multi-tenant datastore
 The Kamaji controller needs to access a multi-tenant datastore in order to save data of the tenants' clusters. Install a multi-tenant `etcd` in the admin cluster as three replicas StatefulSet with data persistence. The Helm [Chart](../helm/kamaji/) provides the installation of an internal `etcd`. However, an externally managed `etcd` is highly recommended. If you'd like to use an external one, you can specify the overrides by setting the value `etcd.deploy=false`.
 
-Optionally, Kamaji offers the possibility of using a different storage system than `etcd` for the tenants' clusters, like MySQL compatible database, thanks to the [kine](https://github.com/k3s-io/kine) integration [here](../deploy/mysql/README.md).
+Optionally, Kamaji offers the possibility of using a different storage system than `etcd` for the tenants' clusters, like MySQL compatible database, thanks to the [kine](https://github.com/k3s-io/kine) integration [here](../deploy/kine/mysql/README.md).
 
 ### Install with Helm Chart
 Install with the `helm` in a dedicated namespace of the Admin cluster:

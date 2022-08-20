@@ -22,12 +22,12 @@ Available flags are the following:
 --etcd-client-secret-namespace       Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji")
 --etcd-compaction-interval           ETCD Compaction interval (i.e. "5m0s"). (default: "0" (disabled))
 --etcd-endpoints                     Comma-separated list with ETCD endpoints (i.e. https://etcd-0.etcd.kamaji.svc.cluster.local,https://etcd-1.etcd.kamaji.svc.cluster.local,https://etcd-2.etcd.kamaji.svc.cluster.local)
---etcd-storage-type                  ETCD Storage type (i.e. "etcd", "kine-mysql"). (default: "etcd")
+--etcd-storage-type                  ETCD Storage type (i.e. "etcd", "kine-mysql", "kine-postgresql"). (default: "etcd")
 --health-probe-bind-address string   The address the probe endpoint binds to. (default ":8081")
---kine-mysql-host                    Host where MySQL is running (default: "localhost")
---kine-mysql-port int                Port where MySQL is running (default: 3306)
---kine-mysql-secret-name             Name of the secret where the necessary configuration and certificates are. (default: "mysql-config")
---kine-mysql-secret-name             Name of the namespace of the secret where the necessary configuration and certificates are. (default: "kamaji-system")
+--kine-port int                      Port where the DB used by Kine is listening to.
+--kine-host string                   Host where the DB used by Kine is working.
+--kine-secret-name                   Name of the secret which contains the Kine configuration. (default: "kine-secret")
+--kine-secret-name                   Name of the namespace where the secret which contains the Kine configuration. (default: "kamaji-system")
 --kubeconfig string                  Paths to a kubeconfig. Only required if out-of-cluster.
 --leader-elect                       Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.
 --metrics-bind-address string        The address the metric endpoint binds to. (default ":8080")
