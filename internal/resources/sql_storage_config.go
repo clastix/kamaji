@@ -23,15 +23,17 @@ type SQLStorageConfig struct {
 	Name     string
 	Host     string
 	Port     int
+	Driver   string
 }
 
 func (r *SQLStorageConfig) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	if tenantControlPlane.Status.Storage.KineMySQL == nil {
+	if tenantControlPlane.Status.Storage.Kine == nil {
 		return true
 	}
 
-	return tenantControlPlane.Status.Storage.KineMySQL.Config.SecretName != r.resource.GetName() ||
-		tenantControlPlane.Status.Storage.KineMySQL.Config.ResourceVersion != r.resource.ResourceVersion
+	return tenantControlPlane.Status.Storage.Kine.Config.SecretName != r.resource.GetName() ||
+		tenantControlPlane.Status.Storage.Kine.Config.Checksum != r.resource.GetAnnotations()["checksum"] ||
+		tenantControlPlane.Status.Storage.Kine.Driver != r.Driver
 }
 
 func (r *SQLStorageConfig) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -70,42 +72,50 @@ func (r *SQLStorageConfig) GetName() string {
 }
 
 func (r *SQLStorageConfig) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	if tenantControlPlane.Status.Storage.KineMySQL == nil {
-		tenantControlPlane.Status.Storage.KineMySQL = &kamajiv1alpha1.KineMySQLStatus{}
+	if tenantControlPlane.Status.Storage.Kine == nil {
+		tenantControlPlane.Status.Storage.Kine = &kamajiv1alpha1.KineStatus{}
 	}
 
-	tenantControlPlane.Status.Storage.KineMySQL.Config.SecretName = r.resource.GetName()
-	tenantControlPlane.Status.Storage.KineMySQL.Config.ResourceVersion = r.resource.ResourceVersion
+	tenantControlPlane.Status.Storage.Kine.Driver = r.Driver
+	tenantControlPlane.Status.Storage.Kine.Config.SecretName = r.resource.GetName()
+	tenantControlPlane.Status.Storage.Kine.Config.Checksum = r.resource.GetAnnotations()["checksum"]
 
 	return nil
 }
 
 func (r *SQLStorageConfig) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		calculatedHash := utilities.HashValue(*r.resource)
-		savedHash, ok := r.resource.GetLabels()[secretHashLabelKey]
-
 		var password []byte
-		if ok && calculatedHash == savedHash {
-			password = r.resource.Data["MYSQL_PASSWORD"]
-		} else {
+
+		savedHash, ok := r.resource.GetAnnotations()["checksum"]
+		switch {
+		case ok && savedHash == utilities.CalculateConfigMapChecksum(r.resource.StringData):
+			password = r.resource.Data["DB_PASSWORD"]
+		default:
 			password = []byte(utilities.GenerateUUIDString())
 		}
 
 		r.resource.Data = map[string][]byte{
-			"MYSQL_HOST":     []byte(r.Host),
-			"MYSQL_PORT":     []byte(strconv.Itoa(r.Port)),
-			"MYSQL_SCHEMA":   []byte(tenantControlPlane.GetName()),
-			"MYSQL_USER":     []byte(tenantControlPlane.GetName()),
-			"MYSQL_PASSWORD": password,
+			"DB_HOST":     []byte(r.Host),
+			"DB_PORT":     []byte(strconv.Itoa(r.Port)),
+			"DB_SCHEMA":   []byte(tenantControlPlane.GetName()),
+			"DB_USER":     []byte(tenantControlPlane.GetName()),
+			"DB_PASSWORD": password,
 		}
+
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+
+		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		r.resource.SetAnnotations(annotations)
 
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),
 			map[string]string{
 				"kamaji.clastix.io/name":      tenantControlPlane.GetName(),
 				"kamaji.clastix.io/component": r.GetName(),
-				secretHashLabelKey:            utilities.HashValue(*r.resource),
 			},
 		))
 

@@ -14,12 +14,15 @@ type Driver int
 
 const (
 	MySQL Driver = iota
+	PostgreSQL
 )
 
 func (d Driver) ToString() string {
 	switch d {
 	case MySQL:
 		return "mysql"
+	case PostgreSQL:
+		return "postgresql"
 	default:
 		return ""
 	}
@@ -88,12 +91,15 @@ type DBConnection interface {
 	GetPort() int
 	Close() error
 	Check() error
+	Driver() string
 }
 
 func GetDBConnection(config ConnectionConfig) (DBConnection, error) {
 	switch config.SQLDriver {
 	case MySQL:
 		return getMySQLDB(config)
+	case PostgreSQL:
+		return getPostgreSQLDB(config)
 	default:
 		return nil, fmt.Errorf("%s is not a valid driver", config.SQLDriver.ToString())
 	}

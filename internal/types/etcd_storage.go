@@ -14,12 +14,13 @@ type ETCDStorageType int
 const (
 	ETCD ETCDStorageType = iota
 	KineMySQL
+	KinePostgreSQL
 )
 
-var etcdStorageTypeString = map[string]ETCDStorageType{"etcd": ETCD, "kine-mysql": KineMySQL}
+var etcdStorageTypeString = map[string]ETCDStorageType{"etcd": ETCD, "kine-mysql": KineMySQL, "kine-postgresql": KinePostgreSQL}
 
 func (s ETCDStorageType) String() string {
-	return [...]string{"etcd", "kine-mysql"}[s]
+	return [...]string{"etcd", "kine-mysql", "kine-postgresql"}[s]
 }
 
 // ParseETCDStorageType returns the ETCDStorageType given a string representation of the type.
@@ -36,7 +37,7 @@ func ParseETCDEndpoint(conf *viper.Viper) string {
 	switch ParseETCDStorageType(conf.GetString("etcd-storage-type")) {
 	case ETCD:
 		return conf.GetString("etcd-endpoints")
-	case KineMySQL:
+	case KineMySQL, KinePostgreSQL:
 		return "127.0.0.1:2379"
 	default:
 		panic("unsupported storage type")

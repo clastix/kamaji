@@ -47,10 +47,10 @@ type TenantControlPlaneReconcilerConfig struct {
 	ETCDCompactionInterval    string
 	TmpBaseDirectory          string
 	DBConnection              sql.DBConnection
-	KineMySQLSecretName       string
-	KineMySQLSecretNamespace  string
-	KineMySQLHost             string
-	KineMySQLPort             int
+	KineSecretName            string
+	KineSecretNamespace       string
+	KineHost                  string
+	KinePort                  int
 	KineContainerImage        string
 }
 

@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/go-pg/pg/v10"
 	"github.com/go-sql-driver/mysql"
 )
 
@@ -27,6 +28,22 @@ type MySQLConnection struct {
 	db   *sql.DB
 	host string
 	port int
+}
+
+func (c *MySQLConnection) Driver() string {
+	return "MySQL"
+}
+
+func getPostgreSQLDB(config ConnectionConfig) (DBConnection, error) {
+	opt := &pg.Options{
+		Addr:      fmt.Sprintf("%s:%d", config.Host, config.Port),
+		Database:  config.DBName,
+		User:      config.User,
+		Password:  config.Password,
+		TLSConfig: config.TLSConfig,
+	}
+
+	return &PostgreSQLConnection{db: pg.Connect(opt), port: config.Port, host: config.Host}, nil
 }
 
 func getMySQLDB(config ConnectionConfig) (DBConnection, error) {
