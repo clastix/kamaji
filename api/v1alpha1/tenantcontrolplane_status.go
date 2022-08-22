@@ -16,31 +16,34 @@ import (
 type APIServerCertificatesStatus struct {
 	SecretName string      `json:"secretName,omitempty"`
 	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
+	Checksum   string      `json:"checksum,omitempty"`
 }
 
 // ETCDCertificateStatus defines the observed state of ETCD Certificate for API server.
 type ETCDCertificateStatus struct {
 	SecretName string      `json:"secretName,omitempty"`
 	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
+	Checksum   string      `json:"checksum,omitempty"`
 }
 
 // ETCDCertificatesStatus defines the observed state of ETCD Certificate for API server.
 type ETCDCertificatesStatus struct {
-	APIServer ETCDCertificateStatus `json:"apiServer,omitempty"`
-	CA        ETCDCertificateStatus `json:"ca,omitempty"`
+	APIServer APIServerCertificatesStatus `json:"apiServer,omitempty"`
+	CA        ETCDCertificateStatus       `json:"ca,omitempty"`
 }
 
 // CertificatePrivateKeyPairStatus defines the status.
 type CertificatePrivateKeyPairStatus struct {
-	SecretName      string      `json:"secretName,omitempty"`
-	LastUpdate      metav1.Time `json:"lastUpdate,omitempty"`
-	ResourceVersion string      `json:"resourceVersion,omitempty"`
+	SecretName string      `json:"secretName,omitempty"`
+	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
+	Checksum   string      `json:"checksum,omitempty"`
 }
 
 // PublicKeyPrivateKeyPairStatus defines the status.
 type PublicKeyPrivateKeyPairStatus struct {
 	SecretName string      `json:"secretName,omitempty"`
 	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
+	Checksum   string      `json:"checksum,omitempty"`
 }
 
 // CertificatesStatus defines the observed state of ETCD Certificates.
@@ -129,22 +132,26 @@ type KubeadmPhasesStatus struct {
 type ExternalKubernetesObjectStatus struct {
 	Name      string `json:"name,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
-	// Resource version of k8s object
-	RV string `json:"resourceVersion,omitempty"`
+	Checksum  string `json:"checksum,omitempty"`
 	// Last time when k8s object was updated
 	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 }
 
 // KonnectivityStatus defines the status of Konnectivity as Addon.
 type KonnectivityStatus struct {
-	Enabled                     bool                            `json:"enabled"`
-	EgressSelectorConfiguration string                          `json:"egressSelectorConfiguration,omitempty"`
-	Certificate                 CertificatePrivateKeyPairStatus `json:"certificate,omitempty"`
-	Kubeconfig                  KubeconfigStatus                `json:"kubeconfig,omitempty"`
-	ServiceAccount              ExternalKubernetesObjectStatus  `json:"sa,omitempty"`
-	ClusterRoleBinding          ExternalKubernetesObjectStatus  `json:"clusterrolebinding,omitempty"`
-	Agent                       ExternalKubernetesObjectStatus  `json:"agent,omitempty"`
-	Service                     KubernetesServiceStatus         `json:"service,omitempty"`
+	Enabled            bool                            `json:"enabled"`
+	ConfigMap          KonnectivityConfigMap           `json:"configMap,omitempty"`
+	Certificate        CertificatePrivateKeyPairStatus `json:"certificate,omitempty"`
+	Kubeconfig         KubeconfigStatus                `json:"kubeconfig,omitempty"`
+	ServiceAccount     ExternalKubernetesObjectStatus  `json:"sa,omitempty"`
+	ClusterRoleBinding ExternalKubernetesObjectStatus  `json:"clusterrolebinding,omitempty"`
+	Agent              ExternalKubernetesObjectStatus  `json:"agent,omitempty"`
+	Service            KubernetesServiceStatus         `json:"service,omitempty"`
+}
+
+type KonnectivityConfigMap struct {
+	Name     string `json:"name,omitempty"`
+	Checksum string `json:"checksum,omitempty"`
 }
 
 // AddonStatus defines the observed state of an Addon.
