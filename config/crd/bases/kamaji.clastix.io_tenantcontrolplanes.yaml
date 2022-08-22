@@ -1285,8 +1285,6 @@ spec:
                         description: Version is the running Kubernetes version of
                           the Tenant Control Plane.
                         type: string
-                    required:
-                    - status
                     type: object
                 type: object
               storage:
