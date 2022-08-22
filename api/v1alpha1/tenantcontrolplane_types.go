@@ -64,13 +64,12 @@ type ControlPlane struct {
 	// Defining the options for the Tenant Control Plane Service resource.
 	Service ServiceSpec `json:"service"`
 	// Defining the options for an Optional Ingress which will expose API Server of the Tenant Control Plane
-	Ingress IngressSpec `json:"ingress,omitempty"`
+	Ingress *IngressSpec `json:"ingress,omitempty"`
 }
 
 // IngressSpec defines the options for the ingress which will expose API Server of the Tenant Control Plane.
 type IngressSpec struct {
 	AdditionalMetadata AdditionalMetadata `json:"additionalMetadata,omitempty"`
-	Enabled            bool               `json:"enabled"`
 	IngressClassName   string             `json:"ingressClassName,omitempty"`
 	// Hostname is an optional field which will be used as Ingress's Host. If it is not defined,
 	// Ingress's host will be "<tenant>.<namespace>.<domain>", where domain is specified under NetworkProfileSpec
