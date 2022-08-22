@@ -6,7 +6,6 @@ package resources
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +35,7 @@ func (r *ETCDCACertificatesResource) ShouldStatusBeUpdated(ctx context.Context, 
 		return true
 	}
 
-	return tenantControlPlane.Status.Certificates.ETCD.CA.SecretName != r.resource.GetName()
+	return tenantControlPlane.Status.Certificates.ETCD.CA.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *ETCDCACertificatesResource) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -73,6 +72,7 @@ func (r *ETCDCACertificatesResource) UpdateTenantControlPlaneStatus(ctx context.
 
 	tenantControlPlane.Status.Certificates.ETCD.CA.SecretName = r.resource.GetName()
 	tenantControlPlane.Status.Certificates.ETCD.CA.LastUpdate = metav1.Now()
+	tenantControlPlane.Status.Certificates.ETCD.CA.Checksum = r.resource.GetAnnotations()["checksum"]
 
 	return nil
 }
@@ -83,7 +83,16 @@ func (r *ETCDCACertificatesResource) getPrefixedName(tenantControlPlane *kamajiv
 
 func (r *ETCDCACertificatesResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		r.resource.SetLabels(utilities.KamajiLabels())
+		if etcdStatus := tenantControlPlane.Status.Certificates.ETCD; etcdStatus != nil && len(etcdStatus.CA.Checksum) > 0 && etcdStatus.CA.Checksum == r.resource.GetAnnotations()["checksum"] {
+			isValid, err := etcd.IsETCDCertificateAndKeyPairValid(r.resource.Data[kubeadmconstants.CACertName], r.resource.Data[kubeadmconstants.CAKeyName])
+			if err != nil {
+				r.Log.Info(fmt.Sprintf("etcd certificates are not valid: %s", err.Error()))
+			}
+
+			if isValid {
+				return nil
+			}
+		}
 
 		etcdCASecretNamespacedName := k8stypes.NamespacedName{Namespace: r.ETCDCASecretNamespace, Name: r.ETCDCASecretName}
 		etcdCASecret := &corev1.Secret{}
@@ -91,29 +100,20 @@ func (r *ETCDCACertificatesResource) mutate(ctx context.Context, tenantControlPl
 			return err
 		}
 
-		isValid, err := etcd.IsETCDCertificateAndKeyPairValid(r.resource.Data[kubeadmconstants.CACertName], r.resource.Data[kubeadmconstants.CAKeyName])
-		if err != nil {
-			r.Log.Info(fmt.Sprintf("etcd certificates are not valid: %s", err.Error()))
-		}
-
-		if reflect.DeepEqual(etcdCASecret.Data[kubeadmconstants.CACertName], r.resource.Data[kubeadmconstants.CACertName]) &&
-			reflect.DeepEqual(etcdCASecret.Data[kubeadmconstants.CAKeyName], r.resource.Data[kubeadmconstants.CAKeyName]) {
-			if isValid {
-				return nil
-			}
-
-			return fmt.Errorf("CA certificates provided into secrets %s/%s are not valid", r.ETCDCASecretNamespace, r.ETCDCASecretName)
-		}
-
 		r.resource.Data = map[string][]byte{
 			kubeadmconstants.CACertName: etcdCASecret.Data[kubeadmconstants.CACertName],
 			kubeadmconstants.CAKeyName:  etcdCASecret.Data[kubeadmconstants.CAKeyName],
 		}
 
-		if err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
-			return err
-		}
+		r.resource.SetLabels(utilities.KamajiLabels())
 
-		return nil
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		r.resource.SetAnnotations(annotations)
+
+		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
 }

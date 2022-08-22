@@ -30,7 +30,7 @@ type FrontProxyClientCertificate struct {
 }
 
 func (r *FrontProxyClientCertificate) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Certificates.FrontProxyClient.SecretName != r.resource.GetName()
+	return tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *FrontProxyClientCertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -75,15 +75,14 @@ func (r *FrontProxyClientCertificate) GetName() string {
 func (r *FrontProxyClientCertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.FrontProxyClient.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.FrontProxyClient.SecretName = r.resource.GetName()
+	tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum = r.resource.GetAnnotations()["checksum"]
 
 	return nil
 }
 
 func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		latestConfigRV := getLatestConfigRV(*tenantControlPlane)
-		actualConfigRV := r.resource.GetLabels()["latest-config-rv"]
-		if latestConfigRV == actualConfigRV {
+		if checksum := tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
 			isValid, err := kubeadm.IsCertificatePrivateKeyPairValid(
 				r.resource.Data[kubeadmconstants.FrontProxyClientCertName],
 				r.resource.Data[kubeadmconstants.FrontProxyClientKeyName],
@@ -125,11 +124,17 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),
 			map[string]string{
-				"latest-config-rv":            latestConfigRV,
 				"kamaji.clastix.io/name":      tenantControlPlane.GetName(),
 				"kamaji.clastix.io/component": r.GetName(),
 			},
 		))
+
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		r.resource.SetAnnotations(annotations)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

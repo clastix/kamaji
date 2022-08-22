@@ -74,15 +74,14 @@ func (r *SACertificate) GetName() string {
 func (r *SACertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.SA.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.SA.SecretName = r.resource.GetName()
+	tenantControlPlane.Status.Certificates.SA.Checksum = r.resource.GetAnnotations()["checksum"]
 
 	return nil
 }
 
 func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		latestConfigRV := getLatestConfigRV(*tenantControlPlane)
-		actualConfigRV := r.resource.GetLabels()["latest-config-rv"]
-		if latestConfigRV == actualConfigRV {
+		if checksum := tenantControlPlane.Status.Certificates.SA.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
 			isValid, err := kubeadm.IsPublicKeyPrivateKeyPairValid(
 				r.resource.Data[kubeadmconstants.ServiceAccountPublicKeyName],
 				r.resource.Data[kubeadmconstants.ServiceAccountPrivateKeyName],
@@ -113,11 +112,17 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),
 			map[string]string{
-				"latest-config-rv":            latestConfigRV,
 				"kamaji.clastix.io/name":      tenantControlPlane.GetName(),
 				"kamaji.clastix.io/component": r.GetName(),
 			},
 		))
+
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		r.resource.SetAnnotations(annotations)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

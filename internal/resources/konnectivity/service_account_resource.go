@@ -24,9 +24,7 @@ type ServiceAccountResource struct {
 }
 
 func (r *ServiceAccountResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount.Name != r.resource.GetName() ||
-		tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount.Namespace != r.resource.GetNamespace() ||
-		tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount.RV != r.resource.ObjectMeta.ResourceVersion
+	return tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *ServiceAccountResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -76,7 +74,7 @@ func (r *ServiceAccountResource) UpdateTenantControlPlaneStatus(ctx context.Cont
 		tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount = kamajiv1alpha1.ExternalKubernetesObjectStatus{
 			Name:      r.resource.GetName(),
 			Namespace: r.resource.GetNamespace(),
-			RV:        r.resource.ObjectMeta.ResourceVersion,
+			Checksum:  r.resource.GetAnnotations()["checksum"],
 		}
 		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 
@@ -98,6 +96,19 @@ func (r *ServiceAccountResource) mutate(ctx context.Context, tenantControlPlane 
 				"addonmanager.kubernetes.io/mode": "Reconcile",
 			},
 		))
+
+		c := r.resource.DeepCopy()
+		c.SetAnnotations(nil)
+		c.SetResourceVersion("")
+
+		yaml, _ := utilities.EncondeToYaml(c)
+
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations["checksum"] = utilities.MD5Checksum(yaml)
+		r.resource.SetAnnotations(annotations)
 
 		return nil
 	}

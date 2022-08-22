@@ -303,7 +303,7 @@ func (r *KubernetesDeploymentResource) syncVolumes(tenantControlPlane *kamajiv1a
 	r.resource.Spec.Template.Spec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		ConfigMap: &corev1.ConfigMapVolumeSource{
 			LocalObjectReference: corev1.LocalObjectReference{
-				Name: tenantControlPlane.Status.Addons.Konnectivity.EgressSelectorConfiguration,
+				Name: tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Name,
 			},
 			DefaultMode: pointer.Int32Ptr(420),
 		},

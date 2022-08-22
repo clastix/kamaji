@@ -31,8 +31,7 @@ func (r *SQLStorageConfig) ShouldStatusBeUpdated(ctx context.Context, tenantCont
 		return true
 	}
 
-	return tenantControlPlane.Status.Storage.Kine.Config.SecretName != r.resource.GetName() ||
-		tenantControlPlane.Status.Storage.Kine.Config.Checksum != r.resource.GetAnnotations()["checksum"] ||
+	return tenantControlPlane.Status.Storage.Kine.Config.Checksum != r.resource.GetAnnotations()["checksum"] ||
 		tenantControlPlane.Status.Storage.Kine.Driver != r.Driver
 }
 

@@ -28,7 +28,7 @@ type KubeconfigResource struct {
 }
 
 func (r *KubeconfigResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.SecretName != r.resource.GetName()
+	return tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *KubeconfigResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -74,6 +74,7 @@ func (r *KubeconfigResource) UpdateTenantControlPlaneStatus(ctx context.Context,
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.LastUpdate = metav1.Now()
 		tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.SecretName = r.resource.GetName()
+		tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum = r.resource.GetAnnotations()["checksum"]
 		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 
 		return nil
@@ -87,9 +88,7 @@ func (r *KubeconfigResource) UpdateTenantControlPlaneStatus(ctx context.Context,
 
 func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		latestCARV := tenantControlPlane.Status.Addons.Konnectivity.Certificate.ResourceVersion
-		actualCARV := r.resource.GetLabels()["latest-certificate-rv"]
-		if latestCARV == actualCARV {
+		if checksum := tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
 			return nil
 		}
 
@@ -151,10 +150,14 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			konnectivityKubeconfigFileName: kubeconfigBytes,
 		}
 
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),
 			map[string]string{
-				"latest-certificate-rv":       latestCARV,
 				"kamaji.clastix.io/name":      tenantControlPlane.GetName(),
 				"kamaji.clastix.io/component": r.GetName(),
 			},

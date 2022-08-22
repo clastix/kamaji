@@ -29,8 +29,7 @@ type SQLCertificate struct {
 }
 
 func (r *SQLCertificate) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Storage.Kine.Certificate.SecretName != r.resource.GetName() ||
-		tenantControlPlane.Status.Storage.Kine.Certificate.Checksum != r.resource.GetAnnotations()["checksum"]
+	return tenantControlPlane.Status.Storage.Kine.Certificate.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *SQLCertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {

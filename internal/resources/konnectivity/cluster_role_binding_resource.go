@@ -25,7 +25,7 @@ type ClusterRoleBindingResource struct {
 
 func (r *ClusterRoleBindingResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Name != r.resource.GetName() ||
-		tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.RV != r.resource.ObjectMeta.ResourceVersion
+		tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Checksum != r.resource.ObjectMeta.GetAnnotations()["checksum"]
 }
 
 func (r *ClusterRoleBindingResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -73,8 +73,8 @@ func (r *ClusterRoleBindingResource) UpdateTenantControlPlaneStatus(ctx context.
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 		tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding = kamajiv1alpha1.ExternalKubernetesObjectStatus{
-			Name: r.resource.GetName(),
-			RV:   r.resource.ObjectMeta.ResourceVersion,
+			Name:     r.resource.GetName(),
+			Checksum: r.resource.GetAnnotations()["checksum"],
 		}
 
 		return nil
@@ -109,6 +109,14 @@ func (r *ClusterRoleBindingResource) mutate(ctx context.Context, tenantControlPl
 				Name:     CertCommonName,
 			},
 		}
+
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+
+		yaml, _ := utilities.EncondeToYaml(r.resource)
+		annotations["checksum"] = utilities.MD5Checksum(yaml)
 
 		return nil
 	}

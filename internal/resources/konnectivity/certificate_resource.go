@@ -37,8 +37,7 @@ type CertificateResource struct {
 }
 
 func (r *CertificateResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Addons.Konnectivity.Certificate.SecretName != r.resource.GetName() ||
-		tenantControlPlane.Status.Addons.Konnectivity.Certificate.ResourceVersion != r.resource.ResourceVersion
+	return tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *CertificateResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -84,7 +83,7 @@ func (r *CertificateResource) UpdateTenantControlPlaneStatus(ctx context.Context
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Certificate.LastUpdate = metav1.Now()
 		tenantControlPlane.Status.Addons.Konnectivity.Certificate.SecretName = r.resource.GetName()
-		tenantControlPlane.Status.Addons.Konnectivity.Certificate.ResourceVersion = r.resource.ResourceVersion
+		tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum = r.resource.GetAnnotations()["checksum"]
 		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 
 		return nil
@@ -98,9 +97,7 @@ func (r *CertificateResource) UpdateTenantControlPlaneStatus(ctx context.Context
 
 func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		latestCARV := tenantControlPlane.Status.Certificates.CA.ResourceVersion
-		actualCARV := r.resource.GetLabels()["latest-ca-rv"]
-		if latestCARV == actualCARV {
+		if checksum := tenantControlPlane.Status.Certificates.CA.Checksum; len(checksum) > 0 && checksum == utilities.CalculateConfigMapChecksum(r.resource.StringData) {
 			isValid, err := isCertificateAndKeyPairValid(
 				r.resource.Data[corev1.TLSCertKey],
 				r.resource.Data[corev1.TLSPrivateKeyKey],
@@ -134,14 +131,21 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 			corev1.TLSCertKey:       cert.Bytes(),
 			corev1.TLSPrivateKeyKey: privKey.Bytes(),
 		}
+
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),
 			map[string]string{
-				"latest-ca-rv":                latestCARV,
 				"kamaji.clastix.io/name":      tenantControlPlane.GetName(),
 				"kamaji.clastix.io/component": r.GetName(),
 			},
 		))
+
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		r.resource.SetAnnotations(annotations)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

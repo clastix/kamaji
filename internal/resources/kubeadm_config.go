@@ -28,14 +28,7 @@ type KubeadmConfigResource struct {
 }
 
 func (r *KubeadmConfigResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	address, port, err := tenantControlPlane.AssignedControlPlaneAddress()
-	if err != nil {
-		return true
-	}
-
-	return !(tenantControlPlane.Status.KubeadmConfig.Checksum == r.resource.GetAnnotations()["checksum"] &&
-		tenantControlPlane.Status.KubeadmConfig.ConfigmapName == r.resource.GetName() &&
-		tenantControlPlane.Status.ControlPlaneEndpoint == r.getControlPlaneEndpoint(tenantControlPlane.Spec.ControlPlane.Ingress, address, port))
+	return tenantControlPlane.Status.KubeadmConfig.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *KubeadmConfigResource) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -116,9 +109,13 @@ func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.Tenant
 		}
 
 		r.resource.Data = data
-		r.resource.SetAnnotations(map[string]string{
-			"checksum": utilities.CalculateConfigMapChecksum(data),
-		})
+
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations["checksum"] = utilities.CalculateConfigMapChecksum(data)
+		r.resource.SetAnnotations(annotations)
 
 		if err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
 			return err
