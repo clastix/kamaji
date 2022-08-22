@@ -30,7 +30,7 @@ func (r *KubernetesIngressResource) ShouldStatusBeUpdated(ctx context.Context, t
 }
 
 func (r *KubernetesIngressResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return !tenantControlPlane.Spec.ControlPlane.Ingress.Enabled
+	return tenantControlPlane.Spec.ControlPlane.Ingress == nil
 }
 
 func (r *KubernetesIngressResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -46,7 +46,7 @@ func (r *KubernetesIngressResource) CleanUp(ctx context.Context, tenantControlPl
 }
 
 func (r *KubernetesIngressResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	if tenantControlPlane.Spec.ControlPlane.Ingress.Enabled {
+	if tenantControlPlane.Spec.ControlPlane.Ingress != nil {
 		tenantControlPlane.Status.Kubernetes.Ingress.IngressStatus = r.resource.Status
 		tenantControlPlane.Status.Kubernetes.Ingress.Name = r.resource.GetName()
 		tenantControlPlane.Status.Kubernetes.Ingress.Namespace = r.resource.GetNamespace()
@@ -54,7 +54,7 @@ func (r *KubernetesIngressResource) UpdateTenantControlPlaneStatus(ctx context.C
 		return nil
 	}
 
-	tenantControlPlane.Status.Kubernetes.Ingress = kamajiv1alpha1.KubernetesIngressStatus{}
+	tenantControlPlane.Status.Kubernetes.Ingress = &kamajiv1alpha1.KubernetesIngressStatus{}
 
 	return nil
 }
