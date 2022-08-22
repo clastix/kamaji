@@ -282,8 +282,6 @@ spec:
                               type: string
                             type: object
                         type: object
-                      enabled:
-                        type: boolean
                       hostname:
                         description: Hostname is an optional field which will be used
                           as Ingress's Host. If it is not defined, Ingress's host
@@ -292,8 +290,6 @@ spec:
                         type: string
                       ingressClassName:
                         type: string
-                    required:
-                    - enabled
                     type: object
                   service:
                     description: Defining the options for the Tenant Control Plane
