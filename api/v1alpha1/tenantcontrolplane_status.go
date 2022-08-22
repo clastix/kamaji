@@ -197,7 +197,7 @@ type KubernetesStatus struct {
 	Version    KubernetesVersion          `json:"version,omitempty"`
 	Deployment KubernetesDeploymentStatus `json:"deployment,omitempty"`
 	Service    KubernetesServiceStatus    `json:"service,omitempty"`
-	Ingress    KubernetesIngressStatus    `json:"ingress,omitempty"`
+	Ingress    *KubernetesIngressStatus   `json:"ingress,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Provisioning;Upgrading;Ready;NotReady
@@ -215,7 +215,7 @@ type KubernetesVersion struct {
 	Version string `json:"version,omitempty"`
 	// +kubebuilder:default=Provisioning
 	// Status returns the current status of the Kubernetes version, such as its provisioning state, or completed upgrade.
-	Status *KubernetesVersionStatus `json:"status"`
+	Status *KubernetesVersionStatus `json:"status,omitempty"`
 }
 
 // KubernetesDeploymentStatus defines the status for the Tenant Control Plane Deployment in the management cluster.
