@@ -423,6 +423,8 @@ spec:
                     properties:
                       agent:
                         properties:
+                          checksum:
+                            type: string
                           lastUpdate:
                             description: Last time when k8s object was updated
                             format: date-time
@@ -431,23 +433,22 @@ spec:
                             type: string
                           namespace:
                             type: string
-                          resourceVersion:
-                            description: Resource version of k8s object
-                            type: string
                         type: object
                       certificate:
                         description: CertificatePrivateKeyPairStatus defines the status.
                         properties:
+                          checksum:
+                            type: string
                           lastUpdate:
                             format: date-time
-                            type: string
-                          resourceVersion:
                             type: string
                           secretName:
                             type: string
                         type: object
                       clusterrolebinding:
                         properties:
+                          checksum:
+                            type: string
                           lastUpdate:
                             description: Last time when k8s object was updated
                             format: date-time
@@ -456,12 +457,14 @@ spec:
                             type: string
                           namespace:
                             type: string
-                          resourceVersion:
-                            description: Resource version of k8s object
+                        type: object
+                      configMap:
+                        properties:
+                          checksum:
+                            type: string
+                          name:
                             type: string
                         type: object
-                      egressSelectorConfiguration:
-                        type: string
                       enabled:
                         type: boolean
                       kubeconfig:
@@ -477,6 +480,8 @@ spec:
                         type: object
                       sa:
                         properties:
+                          checksum:
+                            type: string
                           lastUpdate:
                             description: Last time when k8s object was updated
                             format: date-time
@@ -484,9 +489,6 @@ spec:
                           name:
                             type: string
                           namespace:
-                            type: string
-                          resourceVersion:
-                            description: Resource version of k8s object
                             type: string
                         type: object
                       service:
@@ -617,10 +619,10 @@ spec:
                   apiServer:
                     description: CertificatePrivateKeyPairStatus defines the status.
                     properties:
+                      checksum:
+                        type: string
                       lastUpdate:
                         format: date-time
-                        type: string
-                      resourceVersion:
                         type: string
                       secretName:
                         type: string
@@ -628,10 +630,10 @@ spec:
                   apiServerKubeletClient:
                     description: CertificatePrivateKeyPairStatus defines the status.
                     properties:
+                      checksum:
+                        type: string
                       lastUpdate:
                         format: date-time
-                        type: string
-                      resourceVersion:
                         type: string
                       secretName:
                         type: string
@@ -639,10 +641,10 @@ spec:
                   ca:
                     description: CertificatePrivateKeyPairStatus defines the status.
                     properties:
+                      checksum:
+                        type: string
                       lastUpdate:
                         format: date-time
-                        type: string
-                      resourceVersion:
                         type: string
                       secretName:
                         type: string
@@ -651,8 +653,10 @@ spec:
                     description: ETCDCertificatesStatus defines the observed state of ETCD Certificate for API server.
                     properties:
                       apiServer:
-                        description: ETCDCertificateStatus defines the observed state of ETCD Certificate for API server.
+                        description: APIServerCertificatesStatus defines the observed state of ETCD Certificate for API server.
                         properties:
+                          checksum:
+                            type: string
                           lastUpdate:
                             format: date-time
                             type: string
@@ -662,6 +666,8 @@ spec:
                       ca:
                         description: ETCDCertificateStatus defines the observed state of ETCD Certificate for API server.
                         properties:
+                          checksum:
+                            type: string
                           lastUpdate:
                             format: date-time
                             type: string
@@ -672,10 +678,10 @@ spec:
                   frontProxyCA:
                     description: CertificatePrivateKeyPairStatus defines the status.
                     properties:
+                      checksum:
+                        type: string
                       lastUpdate:
                         format: date-time
-                        type: string
-                      resourceVersion:
                         type: string
                       secretName:
                         type: string
@@ -683,10 +689,10 @@ spec:
                   frontProxyClient:
                     description: CertificatePrivateKeyPairStatus defines the status.
                     properties:
+                      checksum:
+                        type: string
                       lastUpdate:
                         format: date-time
-                        type: string
-                      resourceVersion:
                         type: string
                       secretName:
                         type: string
@@ -694,6 +700,8 @@ spec:
                   sa:
                     description: PublicKeyPrivateKeyPairStatus defines the status.
                     properties:
+                      checksum:
+                        type: string
                       lastUpdate:
                         format: date-time
                         type: string
