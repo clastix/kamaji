@@ -47,9 +47,6 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 					Deployment: kamajiv1alpha1.DeploymentSpec{
 						Replicas: 1,
 					},
-					Ingress: kamajiv1alpha1.IngressSpec{
-						Enabled: false,
-					},
 					Service: kamajiv1alpha1.ServiceSpec{
 						ServiceType: "NodePort",
 					},

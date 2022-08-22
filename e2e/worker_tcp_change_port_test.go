@@ -41,9 +41,6 @@ var _ = Describe("validating kubeconfig", func() {
 					Deployment: kamajiv1alpha1.DeploymentSpec{
 						Replicas: 1,
 					},
-					Ingress: kamajiv1alpha1.IngressSpec{
-						Enabled: false,
-					},
 					Service: kamajiv1alpha1.ServiceSpec{
 						ServiceType: "NodePort",
 					},
