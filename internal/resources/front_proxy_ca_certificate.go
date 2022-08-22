@@ -29,7 +29,7 @@ type FrontProxyCACertificate struct {
 }
 
 func (r *FrontProxyCACertificate) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Certificates.FrontProxyCA.SecretName != r.resource.GetName()
+	return tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *FrontProxyCACertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -76,21 +76,24 @@ func (r *FrontProxyCACertificate) GetName() string {
 func (r *FrontProxyCACertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.FrontProxyCA.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.FrontProxyCA.SecretName = r.resource.GetName()
+	tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum = r.resource.GetAnnotations()["checksum"]
 
 	return nil
 }
 
 func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		isValid, err := kubeadm.IsCertificatePrivateKeyPairValid(
-			r.resource.Data[kubeadmconstants.FrontProxyCACertName],
-			r.resource.Data[kubeadmconstants.FrontProxyCAKeyName],
-		)
-		if err != nil {
-			r.Log.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.FrontProxyCACertAndKeyBaseName, err.Error()))
-		}
-		if isValid {
-			return nil
+		if checksum := tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
+			isValid, err := kubeadm.IsCertificatePrivateKeyPairValid(
+				r.resource.Data[kubeadmconstants.FrontProxyCACertName],
+				r.resource.Data[kubeadmconstants.FrontProxyCAKeyName],
+			)
+			if err != nil {
+				r.Log.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.FrontProxyCACertAndKeyBaseName, err.Error()))
+			}
+			if isValid {
+				return nil
+			}
 		}
 
 		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
@@ -115,6 +118,13 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 				"kamaji.clastix.io/component": r.GetName(),
 			},
 		))
+
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		r.resource.SetAnnotations(annotations)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

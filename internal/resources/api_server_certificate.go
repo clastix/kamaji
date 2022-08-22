@@ -30,7 +30,7 @@ type APIServerCertificate struct {
 }
 
 func (r *APIServerCertificate) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Certificates.APIServer.SecretName != r.resource.GetName()
+	return tenantControlPlane.Status.Certificates.APIServer.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *APIServerCertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -75,15 +75,14 @@ func (r *APIServerCertificate) GetName() string {
 func (r *APIServerCertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.APIServer.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.APIServer.SecretName = r.resource.GetName()
+	tenantControlPlane.Status.Certificates.APIServer.Checksum = r.resource.GetAnnotations()["checksum"]
 
 	return nil
 }
 
 func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		latestConfigRV := getLatestConfigRV(*tenantControlPlane)
-		actualConfigRV := r.resource.GetLabels()["latest-config-rv"]
-		if latestConfigRV == actualConfigRV {
+		if checksum := tenantControlPlane.Status.Certificates.APIServer.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
 			isValid, err := kubeadm.IsCertificatePrivateKeyPairValid(
 				r.resource.Data[kubeadmconstants.APIServerCertName],
 				r.resource.Data[kubeadmconstants.APIServerKeyName],
@@ -122,10 +121,16 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 			kubeadmconstants.APIServerKeyName:  certificateKeyPair.PrivateKey,
 		}
 
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		r.resource.SetAnnotations(annotations)
+
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),
 			map[string]string{
-				"latest-config-rv":            latestConfigRV,
 				"kamaji.clastix.io/name":      tenantControlPlane.GetName(),
 				"kamaji.clastix.io/component": r.GetName(),
 			},

@@ -32,9 +32,7 @@ type Agent struct {
 }
 
 func (r *Agent) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Addons.Konnectivity.Agent.Name != r.resource.GetName() ||
-		tenantControlPlane.Status.Addons.Konnectivity.Agent.Namespace != r.resource.GetNamespace() ||
-		tenantControlPlane.Status.Addons.Konnectivity.Agent.RV != r.resource.ObjectMeta.ResourceVersion
+	return tenantControlPlane.Status.Addons.Konnectivity.Agent.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *Agent) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -84,7 +82,7 @@ func (r *Agent) UpdateTenantControlPlaneStatus(ctx context.Context, tenantContro
 		tenantControlPlane.Status.Addons.Konnectivity.Agent = kamajiv1alpha1.ExternalKubernetesObjectStatus{
 			Name:       r.resource.GetName(),
 			Namespace:  r.resource.GetNamespace(),
-			RV:         r.resource.ObjectMeta.ResourceVersion,
+			Checksum:   r.resource.GetAnnotations()["checksum"],
 			LastUpdate: metav1.Now(),
 		}
 		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
@@ -195,6 +193,18 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			SuccessThreshold:    1,
 			FailureThreshold:    3,
 		}
+		// Creating a copy to remove the metadata that would be changed at every reconciliation
+		c := r.resource.DeepCopy()
+		c.SetAnnotations(nil)
+		c.SetResourceVersion("")
+
+		yaml, _ := utilities.EncondeToYaml(c)
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations["checksum"] = utilities.MD5Checksum(yaml)
+		r.resource.SetAnnotations(annotations)
 
 		return nil
 	}

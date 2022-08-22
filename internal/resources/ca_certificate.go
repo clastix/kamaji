@@ -30,7 +30,7 @@ type CACertificate struct {
 
 func (r *CACertificate) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Certificates.CA.SecretName != r.resource.GetName() ||
-		tenantControlPlane.Status.Certificates.CA.ResourceVersion != r.resource.ResourceVersion
+		tenantControlPlane.Status.Certificates.CA.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *CACertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -75,22 +75,24 @@ func (r *CACertificate) GetName() string {
 func (r *CACertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.CA.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.CA.SecretName = r.resource.GetName()
-	tenantControlPlane.Status.Certificates.CA.ResourceVersion = r.resource.ResourceVersion
+	tenantControlPlane.Status.Certificates.CA.Checksum = r.resource.GetAnnotations()["checksum"]
 
 	return nil
 }
 
 func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		isValid, err := kubeadm.IsCertificatePrivateKeyPairValid(
-			r.resource.Data[kubeadmconstants.CACertName],
-			r.resource.Data[kubeadmconstants.CAKeyName],
-		)
-		if err != nil {
-			r.Log.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.CACertAndKeyBaseName, err.Error()))
-		}
-		if isValid {
-			return nil
+		if checksum := tenantControlPlane.Status.Certificates.CA.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
+			isValid, err := kubeadm.IsCertificatePrivateKeyPairValid(
+				r.resource.Data[kubeadmconstants.CACertName],
+				r.resource.Data[kubeadmconstants.CAKeyName],
+			)
+			if err != nil {
+				r.Log.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.CACertAndKeyBaseName, err.Error()))
+			}
+			if isValid {
+				return nil
+			}
 		}
 
 		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
@@ -115,6 +117,13 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 				"kamaji.clastix.io/component": r.GetName(),
 			},
 		))
+
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		r.resource.SetAnnotations(annotations)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

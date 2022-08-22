@@ -33,7 +33,7 @@ func (r *ETCDCertificatesResource) ShouldStatusBeUpdated(ctx context.Context, te
 		return true
 	}
 
-	return tenantControlPlane.Status.Certificates.ETCD.APIServer.SecretName != r.resource.GetName()
+	return tenantControlPlane.Status.Certificates.ETCD.APIServer.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *ETCDCertificatesResource) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -70,6 +70,7 @@ func (r *ETCDCertificatesResource) UpdateTenantControlPlaneStatus(ctx context.Co
 
 	tenantControlPlane.Status.Certificates.ETCD.APIServer.SecretName = r.resource.GetName()
 	tenantControlPlane.Status.Certificates.ETCD.APIServer.LastUpdate = metav1.Now()
+	tenantControlPlane.Status.Certificates.ETCD.APIServer.Checksum = r.resource.GetAnnotations()["checksum"]
 
 	return nil
 }
@@ -80,25 +81,25 @@ func (r *ETCDCertificatesResource) getPrefixedName(tenantControlPlane *kamajiv1a
 
 func (r *ETCDCertificatesResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		r.resource.SetLabels(utilities.KamajiLabels())
-
 		if tenantControlPlane.Status.Certificates.ETCD == nil {
 			return fmt.Errorf("etcd is still synchronizing latest changes")
+		}
+
+		if checksum := tenantControlPlane.Status.Certificates.ETCD.APIServer.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
+			isValid, err := etcd.IsETCDCertificateAndKeyPairValid(r.resource.Data[kubeadmconstants.APIServerEtcdClientCertName], r.resource.Data[kubeadmconstants.APIServerEtcdClientKeyName])
+			if err != nil {
+				r.Log.Info(fmt.Sprintf("etcd certificates are not valid: %s", err.Error()))
+			}
+
+			if isValid {
+				return nil
+			}
 		}
 
 		etcdCASecretNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.ETCD.CA.SecretName}
 		etcdCASecret := &corev1.Secret{}
 		if err := r.Client.Get(ctx, etcdCASecretNamespacedName, etcdCASecret); err != nil {
 			return err
-		}
-
-		isValid, err := etcd.IsETCDCertificateAndKeyPairValid(r.resource.Data[kubeadmconstants.APIServerEtcdClientCertName], r.resource.Data[kubeadmconstants.APIServerEtcdClientKeyName])
-		if err != nil {
-			r.Log.Info(fmt.Sprintf("etcd certificates are not valid: %s", err.Error()))
-		}
-
-		if isValid {
-			return nil
 		}
 
 		cert, privKey, err := etcd.GetETCDCACertificateAndKeyPair(
@@ -115,10 +116,15 @@ func (r *ETCDCertificatesResource) mutate(ctx context.Context, tenantControlPlan
 			kubeadmconstants.APIServerEtcdClientKeyName:  privKey.Bytes(),
 		}
 
-		if err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
-			return err
-		}
+		r.resource.SetLabels(utilities.KamajiLabels())
 
-		return nil
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		r.resource.SetAnnotations(annotations)
+
+		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
 }

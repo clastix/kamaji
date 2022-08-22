@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
 var letters = []byte("abcdefghijklmnopqrstuvwxyz")
@@ -42,8 +40,4 @@ func randomString(n int) string {
 	}
 
 	return string(b)
-}
-
-func getLatestConfigRV(tenantControlPlane kamajiv1alpha1.TenantControlPlane) string {
-	return tenantControlPlane.Status.KubeadmConfig.Checksum
 }

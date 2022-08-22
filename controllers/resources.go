@@ -228,6 +228,7 @@ func getKubernetesStorageResources(c client.Client, log logr.Logger, tcpReconcil
 				Client:       c,
 				Name:         "sql-setup",
 				DBConnection: dbConnection,
+				Driver:       dbConnection.Driver(),
 			},
 			&resources.SQLCertificate{
 				Client:                   c,

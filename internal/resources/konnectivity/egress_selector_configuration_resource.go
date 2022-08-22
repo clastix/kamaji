@@ -59,19 +59,20 @@ func (r *EgressSelectorConfigurationResource) GetName() string {
 }
 
 func (r *EgressSelectorConfigurationResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Addons.Konnectivity.EgressSelectorConfiguration != r.resource.GetName()
+	return tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *EgressSelectorConfigurationResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
-		tenantControlPlane.Status.Addons.Konnectivity.EgressSelectorConfiguration = r.resource.GetName()
+		tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Name = r.resource.GetName()
+		tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Checksum = r.resource.GetAnnotations()["checksum"]
 
 		return nil
 	}
 
-	tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
-	tenantControlPlane.Status.Addons.Konnectivity.EgressSelectorConfiguration = ""
+	tenantControlPlane.Status.Addons.Konnectivity.Enabled = false
+	tenantControlPlane.Status.Addons.Konnectivity.ConfigMap = kamajiv1alpha1.KonnectivityConfigMap{}
 
 	return nil
 }
@@ -108,6 +109,12 @@ func (r *EgressSelectorConfigurationResource) mutate(ctx context.Context, tenant
 		r.resource.Data = map[string]string{
 			"egress-selector-configuration.yaml": string(yamlConfiguration),
 		}
+
+		annotations := r.resource.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations["checksum"] = utilities.MD5Checksum(yamlConfiguration)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

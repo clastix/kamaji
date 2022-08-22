@@ -28,6 +28,7 @@ type SQLSetup struct {
 	Client       client.Client
 	DBConnection sql.DBConnection
 	Name         string
+	Driver       string
 }
 
 func (r *SQLSetup) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -35,8 +36,7 @@ func (r *SQLSetup) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane
 		return true
 	}
 
-	return tenantControlPlane.Status.Storage.Kine.Setup.Schema != r.resource.schema ||
-		tenantControlPlane.Status.Storage.Kine.Setup.User != r.resource.user ||
+	return tenantControlPlane.Status.Storage.Kine.Driver != r.Driver &&
 		tenantControlPlane.Status.Storage.Kine.Setup.Checksum != tenantControlPlane.Status.Storage.Kine.Config.Checksum
 }
 

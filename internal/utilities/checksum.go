@@ -24,7 +24,11 @@ func CalculateConfigMapChecksum(data map[string]string) string {
 		checksum += data[key]
 	}
 
-	hash := md5.Sum([]byte(checksum))
+	return MD5Checksum([]byte(checksum))
+}
+
+func MD5Checksum(value []byte) string {
+	hash := md5.Sum(value)
 
 	return hex.EncodeToString(hash[:])
 }
