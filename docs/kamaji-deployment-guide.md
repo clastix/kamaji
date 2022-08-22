@@ -119,8 +119,6 @@ spec:
         labels:
           tenant.clastix.io: ${TENANT_NAME}
       serviceType: LoadBalancer
-    ingress:
-      enabled: false
   kubernetes:
     version: ${TENANT_VERSION}
     kubelet:

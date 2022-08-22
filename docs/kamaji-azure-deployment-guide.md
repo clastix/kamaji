@@ -155,8 +155,6 @@ spec:
         annotations:
           service.beta.kubernetes.io/azure-load-balancer-internal: "true"
       serviceType: LoadBalancer
-    ingress:
-      enabled: false
   kubernetes:
     version: ${TENANT_VERSION}
     kubelet:
