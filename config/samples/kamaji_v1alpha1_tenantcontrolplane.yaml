@@ -8,8 +8,6 @@ spec:
       replicas: 1
     service:
       serviceType: LoadBalancer
-    ingress:
-      enabled: false
   kubernetes:
     version: "v1.23.1"
     kubelet:

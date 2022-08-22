@@ -97,8 +97,6 @@ spec:
           tenant.clastix.io: tenant1
           kind.clastix.io: service
       serviceType: NodePort
-    ingress:
-      enabled: false
   kubernetes:
     version: "v1.23.4"
     kubelet:
