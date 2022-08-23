@@ -30,7 +30,7 @@ This Helm Chart starting from v0.1.1 provides the installation of an internal `e
 
 To install the Chart with the release name `kamaji`:
 
-        helm upgrade --install --namespace kamaji-system --create-namespace kamaji
+        helm upgrade --install --namespace kamaji-system --create-namespace clastix/kamaji
 
 Show the status:
 
@@ -38,7 +38,7 @@ Show the status:
 
 Upgrade the Chart
 
-        helm upgrade kamaji -n kamaji-system .
+        helm upgrade kamaji -n kamaji-system clastix/kamaji
 
 Uninstall the Chart
 
@@ -52,13 +52,13 @@ The `--values` option is the preferred method because it allows you to keep your
 
 Specify your overrides file when you install the Chart:
 
-        helm upgrade kamaji --install --namespace kamaji-system --create-namespace kamaji --values myvalues.yaml
+        helm upgrade kamaji --install --namespace kamaji-system --create-namespace clastix/kamaji --values myvalues.yaml
 
 The values in your overrides file `myvalues.yaml` will override their counterparts in the Chart's values.yaml file. Any values in `values.yaml` that weren’t overridden will keep their defaults.
 
 If you only need to make minor customizations, you can specify them on the command line by using the `--set` option. For example:
 
-        helm upgrade kamaji --install --namespace kamaji-system --create-namespace kamaji --set etcd.deploy=false
+        helm upgrade kamaji --install --namespace kamaji-system --create-namespace clastix/kamaji --set etcd.deploy=false
 
 Here the values you can override:
 
