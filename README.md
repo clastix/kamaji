@@ -73,7 +73,7 @@ Here are a few:
 - [ ] Terraform provider
 - [ ] Custom Prometheus metrics for monitoring and alerting
 - [x] `kine` integration for MySQL as datastore
-- [ ] `kine` integration for PostgreSQL as datastore
+- [x] `kine` integration for PostgreSQL as datastore
 - [ ] Deeper `kubeadm` integration
 - [ ] Pooling of multiple `etcd` datastores
 - [ ] Autoscaling of Tenant Control Plane pods
