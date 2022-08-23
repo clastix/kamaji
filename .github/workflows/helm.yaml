@@ -16,7 +16,7 @@ jobs:
         with:
           version: 3.3.4
       - name: Linting Chart
-        run: helm lint ./helm/kamaji
+        run: helm lint ./charts/kamaji
   release:
     if: startsWith(github.ref, 'refs/tags/helm-v')
     runs-on: ubuntu-latest
@@ -26,7 +26,7 @@ jobs:
         uses: stefanprodan/helm-gh-pages@master
         with:
           token: ${{ secrets.BOT_GITHUB_TOKEN }}
-          charts_dir: helm
+          charts_dir: charts
           charts_url: https://clastix.github.io/charts
           owner: clastix
           repository: charts
