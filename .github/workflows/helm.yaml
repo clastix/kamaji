@@ -3,7 +3,7 @@ name: Helm Chart
 on:
   push:
     branches: [ "*" ]
-    tags: [ "helm-v" ]
+    tags: [ "helm-v*" ]
   pull_request:
     branches: [ "*" ]
 
