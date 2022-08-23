@@ -47,10 +47,10 @@ Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji
 Make sure you have a `kubeconfig` file with admin permissions on the cluster you want to turn into Kamaji Admin Cluster.
 
 ## Install Kamaji
-There are multiple ways to deploy Kamaji, including a [single YAML file](../config/install.yaml) and [Helm Chart](../helm/kamaji).
+There are multiple ways to deploy Kamaji, including a [single YAML file](../config/install.yaml) and [Helm Chart](../charts/kamaji).
 
 ### Multi-tenant datastore
-The Kamaji controller needs to access a multi-tenant datastore in order to save data of the tenants' clusters. Install a multi-tenant `etcd` in the admin cluster as three replicas StatefulSet with data persistence. The Helm [Chart](../helm/kamaji/) provides the installation of an internal `etcd`. However, an externally managed `etcd` is highly recommended. If you'd like to use an external one, you can specify the overrides by setting the value `etcd.deploy=false`.
+The Kamaji controller needs to access a multi-tenant datastore in order to save data of the tenants' clusters. Install a multi-tenant `etcd` in the admin cluster as three replicas StatefulSet with data persistence. The Helm [Chart](../charts/kamaji/) provides the installation of an internal `etcd`. However, an externally managed `etcd` is highly recommended. If you'd like to use an external one, you can specify the overrides by setting the value `etcd.deploy=false`.
 
 Optionally, Kamaji offers the possibility of using a different storage system than `etcd` for the tenants' clusters, like MySQL compatible database, thanks to the [kine](https://github.com/k3s-io/kine) integration [here](../deploy/kine/mysql/README.md).
 
@@ -58,7 +58,7 @@ Optionally, Kamaji offers the possibility of using a different storage system th
 Install with the `helm` in a dedicated namespace of the Admin cluster:
 
 ```bash
-helm install --create-namespace --namespace kamaji-system kamaji ../helm/kamaji
+helm install --create-namespace --namespace kamaji-system kamaji clastix/kamaji
 ```
 
 The Kamaji controller and the multi-tenant `etcd` are now running:
