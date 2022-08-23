@@ -97,7 +97,7 @@ kustomize: ## Download kustomize locally if necessary.
 
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	cp config/crd/bases/kamaji.clastix.io_tenantcontrolplanes.yaml helm/kamaji/crds/tenantcontrolplane.yaml
+	cp config/crd/bases/kamaji.clastix.io_tenantcontrolplanes.yaml charts/kamaji/crds/tenantcontrolplane.yaml
 
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
@@ -244,5 +244,5 @@ env:
 
 .PHONY: e2e
 e2e: env load helm ginkgo ## Create a KinD cluster, install Kamaji on it and run the test suite.
-	$(HELM) upgrade --debug --install kamaji ./helm/kamaji --create-namespace --namespace kamaji-system --set "image.pullPolicy=Never"
+	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.pullPolicy=Never"
 	$(GINKGO) -v ./e2e
