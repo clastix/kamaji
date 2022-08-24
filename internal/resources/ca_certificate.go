@@ -24,7 +24,6 @@ type CACertificate struct {
 	resource     *corev1.Secret
 	Client       client.Client
 	Log          logr.Logger
-	Name         string
 	TmpDirectory string
 }
 
@@ -53,7 +52,7 @@ func (r *CACertificate) Define(_ context.Context, tenantControlPlane *kamajiv1al
 }
 
 func (r *CACertificate) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
+	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
 }
 
 func (r *CACertificate) GetClient() client.Client {
@@ -69,7 +68,7 @@ func (r *CACertificate) CreateOrUpdate(ctx context.Context, tenantControlPlane *
 }
 
 func (r *CACertificate) GetName() string {
-	return r.Name
+	return "ca"
 }
 
 func (r *CACertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {

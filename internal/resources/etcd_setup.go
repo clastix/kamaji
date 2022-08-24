@@ -24,7 +24,6 @@ type ETCDSetupResource struct {
 	resource  *etcdSetupResource
 	Client    client.Client
 	Log       logr.Logger
-	Name      string
 	DataStore kamajiv1alpha1.DataStore
 }
 
@@ -84,7 +83,7 @@ func (r *ETCDSetupResource) Delete(ctx context.Context, tenantControlPlane *kama
 }
 
 func (r *ETCDSetupResource) GetName() string {
-	return r.Name
+	return "etcd-setup"
 }
 
 func (r *ETCDSetupResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {

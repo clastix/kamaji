@@ -25,7 +25,6 @@ type APIServerKubeletClientCertificate struct {
 	resource     *corev1.Secret
 	Client       client.Client
 	Log          logr.Logger
-	Name         string
 	TmpDirectory string
 }
 
@@ -53,7 +52,7 @@ func (r *APIServerKubeletClientCertificate) Define(_ context.Context, tenantCont
 }
 
 func (r *APIServerKubeletClientCertificate) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
+	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
 }
 
 func (r *APIServerKubeletClientCertificate) GetClient() client.Client {
@@ -69,7 +68,7 @@ func (r *APIServerKubeletClientCertificate) CreateOrUpdate(ctx context.Context, 
 }
 
 func (r *APIServerKubeletClientCertificate) GetName() string {
-	return r.Name
+	return "api-server-kubelet-client-certificate"
 }
 
 func (r *APIServerKubeletClientCertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {

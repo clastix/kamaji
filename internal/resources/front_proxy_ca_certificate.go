@@ -24,7 +24,6 @@ type FrontProxyCACertificate struct {
 	resource     *corev1.Secret
 	Client       client.Client
 	Log          logr.Logger
-	Name         string
 	TmpDirectory string
 }
 
@@ -48,13 +47,11 @@ func (r *FrontProxyCACertificate) Define(_ context.Context, tenantControlPlane *
 		},
 	}
 
-	r.Name = "front-proxy-ca-certificate"
-
 	return nil
 }
 
 func (r *FrontProxyCACertificate) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
+	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
 }
 
 func (r *FrontProxyCACertificate) GetClient() client.Client {
@@ -70,7 +67,7 @@ func (r *FrontProxyCACertificate) CreateOrUpdate(ctx context.Context, tenantCont
 }
 
 func (r *FrontProxyCACertificate) GetName() string {
-	return r.Name
+	return "front-proxy-ca-certificate"
 }
 
 func (r *FrontProxyCACertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {

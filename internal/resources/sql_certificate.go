@@ -37,7 +37,7 @@ func (r *SQLCertificate) CleanUp(context.Context, *kamajiv1alpha1.TenantControlP
 	return false, nil
 }
 
-func (r *SQLCertificate) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *SQLCertificate) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.getPrefixedName(tenantControlPlane),
@@ -50,7 +50,7 @@ func (r *SQLCertificate) Define(ctx context.Context, tenantControlPlane *kamajiv
 }
 
 func (r *SQLCertificate) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
+	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
 }
 
 func (r *SQLCertificate) GetClient() client.Client {

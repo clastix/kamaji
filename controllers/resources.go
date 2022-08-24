@@ -69,7 +69,6 @@ func getDefaultDeleteableResources(config GroupDeleteableResourceBuilderConfigur
 	case kamajiv1alpha1.EtcdDriver:
 		return []resources.DeleteableResource{
 			&resources.ETCDSetupResource{
-				Name:      "etcd-setup",
 				Client:    config.client,
 				Log:       config.log,
 				DataStore: dataStore,
@@ -79,7 +78,6 @@ func getDefaultDeleteableResources(config GroupDeleteableResourceBuilderConfigur
 		return []resources.DeleteableResource{
 			&resources.SQLSetup{
 				Client:       config.client,
-				Name:         "sql-setup",
 				DBConnection: config.DBConnection,
 			},
 		}
@@ -91,7 +89,6 @@ func getDefaultDeleteableResources(config GroupDeleteableResourceBuilderConfigur
 func getUpgradeResources(c client.Client, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubernetesUpgrade{
-			Name:   "upgrade",
 			Client: c,
 		},
 	}
@@ -117,7 +114,6 @@ func getKubeadmConfigResources(c client.Client, tmpDirectory string, dataStore k
 
 	return []resources.Resource{
 		&resources.KubeadmConfigResource{
-			Name:         "kubeadmconfig",
 			ETCDs:        endpoints,
 			Client:       c,
 			TmpDirectory: tmpDirectory,
@@ -128,37 +124,31 @@ func getKubeadmConfigResources(c client.Client, tmpDirectory string, dataStore k
 func getKubernetesCertificatesResources(c client.Client, log logr.Logger, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
 	return []resources.Resource{
 		&resources.CACertificate{
-			Name:         "ca",
 			Client:       c,
 			Log:          log,
 			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.FrontProxyCACertificate{
-			Name:         "front-proxy-ca-certificate",
 			Client:       c,
 			Log:          log,
 			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.SACertificate{
-			Name:         "sa-certificate",
 			Client:       c,
 			Log:          log,
 			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.APIServerCertificate{
-			Name:         "api-server-certificate",
 			Client:       c,
 			Log:          log,
 			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.APIServerKubeletClientCertificate{
-			Name:         "api-server-kubelet-client-certificate",
 			Client:       c,
 			Log:          log,
 			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.FrontProxyClientCertificate{
-			Name:         "front-proxy-client-certificate",
 			Client:       c,
 			Log:          log,
 			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
@@ -208,7 +198,6 @@ func getKubernetesStorageResources(c client.Client, log logr.Logger, tcpReconcil
 				Log:    log,
 			},
 			&resources.ETCDSetupResource{
-				Name:      "etcd-setup",
 				Client:    c,
 				Log:       log,
 				DataStore: ds,
@@ -225,13 +214,11 @@ func getKubernetesStorageResources(c client.Client, log logr.Logger, tcpReconcil
 			},
 			&resources.SQLSetup{
 				Client:       c,
-				Name:         "sql-setup",
 				DBConnection: dbConnection,
 				Driver:       dbConnection.Driver(),
 			},
 			&resources.SQLCertificate{
 				Client:    c,
-				Name:      "sql-certificate",
 				DataStore: ds,
 			},
 		}
