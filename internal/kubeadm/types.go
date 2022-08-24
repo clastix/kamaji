@@ -44,7 +44,6 @@ type Parameters struct {
 	TenantControlPlaneVersion      string
 	TenantControlPlaneCGroupDriver string
 	ETCDs                          []string
-	ETCDCompactionInterval         string
 	CertificatesDir                string
 	KubeconfigDir                  string
 }

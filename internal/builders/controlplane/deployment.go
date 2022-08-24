@@ -18,7 +18,6 @@ import (
 	"k8s.io/utils/pointer"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/types"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -51,7 +50,7 @@ type Deployment struct {
 	Address                string
 	ETCDEndpoints          []string
 	ETCDCompactionInterval string
-	ETCDStorageType        types.ETCDStorageType
+	ETCDStorageType        kamajiv1alpha1.Driver
 	KineContainerImage     string
 }
 
@@ -117,7 +116,7 @@ func (d *Deployment) buildPKIVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1
 		},
 	}
 
-	if d.ETCDStorageType == types.ETCD {
+	if d.ETCDStorageType == kamajiv1alpha1.EtcdDriver {
 		sources = append(sources, corev1.VolumeProjection{
 			Secret: d.secretProjection(tcp.Status.Certificates.ETCD.APIServer.SecretName, constants.APIServerEtcdClientCertName, constants.APIServerEtcdClientKeyName),
 		})
@@ -550,8 +549,7 @@ func (d *Deployment) buildKubeAPIServerCommand(tenantControlPlane *kamajiv1alpha
 		"--tls-private-key-file":               path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKeyName),
 	}
 
-	if d.ETCDStorageType == types.ETCD {
-		desiredArgs["--etcd-compaction-interval"] = d.ETCDCompactionInterval
+	if d.ETCDStorageType == kamajiv1alpha1.EtcdDriver {
 		desiredArgs["--etcd-cafile"] = path.Join(v1beta3.DefaultCertificatesDir, constants.EtcdCACertName)
 		desiredArgs["--etcd-certfile"] = path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerEtcdClientCertName)
 		desiredArgs["--etcd-keyfile"] = path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerEtcdClientKeyName)
@@ -601,7 +599,7 @@ func (d *Deployment) removeKineVolumes(podSpec *corev1.PodSpec) {
 }
 
 func (d *Deployment) buildKineVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	if d.ETCDStorageType == types.ETCD {
+	if d.ETCDStorageType == kamajiv1alpha1.EtcdDriver {
 		d.removeKineVolumes(podSpec)
 
 		return
@@ -648,7 +646,7 @@ func (d *Deployment) removeKineContainers(podSpec *corev1.PodSpec) {
 }
 
 func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	if d.ETCDStorageType == types.ETCD {
+	if d.ETCDStorageType == kamajiv1alpha1.EtcdDriver {
 		d.removeKineContainers(podSpec)
 
 		return
@@ -668,9 +666,9 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 	}
 
 	switch d.ETCDStorageType {
-	case types.KineMySQL:
+	case kamajiv1alpha1.KineMySQLDriver:
 		args["--endpoint"] = "mysql://$(DB_USER):$(DB_PASSWORD)@tcp($(DB_HOST):$(DB_PORT))/$(DB_SCHEMA)"
-	case types.KinePostgreSQL:
+	case kamajiv1alpha1.KinePostgreSQLDriver:
 		args["--endpoint"] = "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_SCHEMA)"
 	}
 

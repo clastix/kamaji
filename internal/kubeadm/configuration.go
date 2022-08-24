@@ -90,7 +90,7 @@ func getKubeadmClusterConfiguration(params Parameters) kubeadmapi.ClusterConfigu
 			}, params.TenantControlPlaneCertSANs...),
 			ControlPlaneComponent: kubeadmapi.ControlPlaneComponent{
 				ExtraArgs: map[string]string{
-					"etcd-compaction-interval": params.ETCDCompactionInterval,
+					"etcd-compaction-interval": "0s",
 					"etcd-prefix":              fmt.Sprintf("/%s", params.TenantControlPlaneName),
 				},
 			},

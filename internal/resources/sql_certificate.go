@@ -5,11 +5,9 @@ package resources
 
 import (
 	"context"
-	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -20,12 +18,11 @@ import (
 )
 
 type SQLCertificate struct {
-	resource                 *corev1.Secret
-	Client                   client.Client
-	Name                     string
-	StorageType              types.ETCDStorageType
-	SQLConfigSecretName      string
-	SQLConfigSecretNamespace string
+	resource    *corev1.Secret
+	Client      client.Client
+	Name        string
+	StorageType types.ETCDStorageType
+	DataStore   kamajiv1alpha1.DataStore
 }
 
 func (r *SQLCertificate) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -82,15 +79,25 @@ func (r *SQLCertificate) UpdateTenantControlPlaneStatus(ctx context.Context, ten
 
 func (r *SQLCertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		sqlConfig := &corev1.Secret{}
-		namespacedName := k8stypes.NamespacedName{Namespace: r.SQLConfigSecretNamespace, Name: r.SQLConfigSecretName}
-		if err := r.Client.Get(ctx, namespacedName, sqlConfig); err != nil {
-			return err
+		ca, err := r.DataStore.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, r.Client)
+		if err != nil {
+			return nil
 		}
 
-		checksum, err := r.buildSecret(ctx, *sqlConfig)
+		crt, err := r.DataStore.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, r.Client)
 		if err != nil {
-			return err
+			return nil
+		}
+
+		key, err := r.DataStore.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, r.Client)
+		if err != nil {
+			return nil
+		}
+
+		r.resource.Data = map[string][]byte{
+			"ca.crt":     ca,
+			"server.crt": crt,
+			"server.key": key,
 		}
 
 		annotations := r.resource.GetAnnotations()
@@ -98,7 +105,7 @@ func (r *SQLCertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv
 			annotations = map[string]string{}
 		}
 
-		annotations["checksum"] = checksum
+		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
 
 		r.resource.SetAnnotations(annotations)
 
@@ -113,31 +120,4 @@ func (r *SQLCertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
-}
-
-func (r *SQLCertificate) buildSecret(ctx context.Context, sqlConfig corev1.Secret) (checksum string, err error) {
-	switch r.StorageType {
-	case types.KineMySQL, types.KinePostgreSQL:
-		keys := []string{"ca.crt", "server.crt", "server.key"}
-
-		return r.buildKineSecret(ctx, keys, sqlConfig)
-	default:
-		return "", fmt.Errorf("storage type %s is not implemented", r.StorageType)
-	}
-}
-
-func (r *SQLCertificate) buildKineSecret(ctx context.Context, keys []string, sqlConfig corev1.Secret) (string, error) {
-	checksumMap := map[string]string{}
-
-	for _, key := range keys {
-		value, ok := sqlConfig.Data[key]
-		if !ok {
-			return "", fmt.Errorf("%s is not in sql config secret", key)
-		}
-
-		r.resource.Data[key] = value
-		checksumMap[key] = string(value)
-	}
-
-	return utilities.CalculateConfigMapChecksum(checksumMap), nil
 }
