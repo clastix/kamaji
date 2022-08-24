@@ -46,7 +46,7 @@ type PublicKeyPrivateKeyPairStatus struct {
 	Checksum   string      `json:"checksum,omitempty"`
 }
 
-// CertificatesStatus defines the observed state of ETCD Certificates.
+// CertificatesStatus defines the observed state of ETCD TLSConfig.
 type CertificatesStatus struct {
 	CA                     CertificatePrivateKeyPairStatus `json:"ca,omitempty"`
 	APIServer              CertificatePrivateKeyPairStatus `json:"apiServer,omitempty"`

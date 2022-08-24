@@ -16,4 +16,12 @@ resources:
   kind: TenantControlPlane
   path: github.com/clastix/kamaji/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: false
+  domain: clastix.io
+  group: kamaji
+  kind: DataStore
+  path: github.com/clastix/kamaji/api/v1alpha1
+  version: v1alpha1
 version: "3"
