@@ -52,7 +52,7 @@ func (r *SACertificate) Define(_ context.Context, tenantControlPlane *kamajiv1al
 }
 
 func (r *SACertificate) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
+	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
 }
 
 func (r *SACertificate) GetClient() client.Client {
@@ -68,7 +68,7 @@ func (r *SACertificate) CreateOrUpdate(ctx context.Context, tenantControlPlane *
 }
 
 func (r *SACertificate) GetName() string {
-	return r.Name
+	return "sa-certificate"
 }
 
 func (r *SACertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {

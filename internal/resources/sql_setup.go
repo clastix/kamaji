@@ -27,7 +27,6 @@ type SQLSetup struct {
 	resource     sqlSetupResource
 	Client       client.Client
 	DBConnection sql.DBConnection
-	Name         string
 	Driver       string
 }
 
@@ -107,7 +106,7 @@ func (r *SQLSetup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaj
 }
 
 func (r *SQLSetup) GetName() string {
-	return r.Name
+	return "sql-setup"
 }
 
 func (r *SQLSetup) Delete(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {

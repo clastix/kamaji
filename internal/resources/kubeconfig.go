@@ -61,7 +61,7 @@ func (r *KubeconfigResource) Define(ctx context.Context, tenantControlPlane *kam
 }
 
 func (r *KubeconfigResource) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
+	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
 }
 
 func (r *KubeconfigResource) GetClient() client.Client {

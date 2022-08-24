@@ -19,7 +19,6 @@ import (
 )
 
 type KubernetesUpgrade struct {
-	Name    string
 	Client  client.Client
 	upgrade upgrade.Upgrade
 
@@ -86,7 +85,7 @@ func (k *KubernetesUpgrade) CreateOrUpdate(ctx context.Context, tenantControlPla
 }
 
 func (k *KubernetesUpgrade) GetName() string {
-	return k.Name
+	return "upgrade"
 }
 
 func (k *KubernetesUpgrade) ShouldStatusBeUpdated(context.Context, *kamajiv1alpha1.TenantControlPlane) bool {

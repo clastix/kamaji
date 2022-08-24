@@ -21,7 +21,6 @@ import (
 type KubeadmConfigResource struct {
 	resource     *corev1.ConfigMap
 	Client       client.Client
-	Name         string
 	ETCDs        []string
 	TmpDirectory string
 }
@@ -50,7 +49,7 @@ func (r *KubeadmConfigResource) Define(_ context.Context, tenantControlPlane *ka
 }
 
 func (r *KubeadmConfigResource) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
+	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
 }
 
 func (r *KubeadmConfigResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
@@ -58,7 +57,7 @@ func (r *KubeadmConfigResource) CreateOrUpdate(ctx context.Context, tenantContro
 }
 
 func (r *KubeadmConfigResource) GetName() string {
-	return r.Name
+	return "kubeadmconfig"
 }
 
 func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {

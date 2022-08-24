@@ -25,7 +25,6 @@ type APIServerCertificate struct {
 	resource     *corev1.Secret
 	Client       client.Client
 	Log          logr.Logger
-	Name         string
 	TmpDirectory string
 }
 
@@ -53,7 +52,7 @@ func (r *APIServerCertificate) Define(_ context.Context, tenantControlPlane *kam
 }
 
 func (r *APIServerCertificate) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
+	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
 }
 
 func (r *APIServerCertificate) GetClient() client.Client {
@@ -69,7 +68,7 @@ func (r *APIServerCertificate) CreateOrUpdate(ctx context.Context, tenantControl
 }
 
 func (r *APIServerCertificate) GetName() string {
-	return r.Name
+	return "api-server-certificate"
 }
 
 func (r *APIServerCertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
