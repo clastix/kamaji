@@ -28,7 +28,6 @@ const (
 	apiServerIndex orderedIndex = iota
 	schedulerIndex
 	controllerManagerIndex
-	kineIndex
 )
 
 const (
@@ -39,13 +38,12 @@ const (
 	usrLocalShareCACertificates
 	schedulerKubeconfig
 	controllerManagerKubeconfig
-	kineConfig
-	kineCerts
 )
 
 const (
 	apiServerFlagsAnnotation = "kube-apiserver.kamaji.clastix.io/args"
-	kineVolumeName           = "kine-config"
+	kineContainerName        = "kine"
+	kineVolumeChmod          = "kine-config"
 	kineVolumeCertName       = "kine-certs"
 )
 
@@ -582,10 +580,8 @@ func (d *Deployment) secretProjection(secretName, certKeyName, keyName string) *
 	}
 }
 
-func (d *Deployment) buildKineVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	// Kine is expecting an additional volume for its configuration, and it must be removed before proceeding with the
-	// customized storage that is idempotent
-	if found, index := utilities.HasNamedVolume(podSpec.Volumes, kineVolumeName); found {
+func (d *Deployment) removeKineVolumes(podSpec *corev1.PodSpec) {
+	if found, index := utilities.HasNamedVolume(podSpec.Volumes, kineVolumeChmod); found {
 		var volumes []corev1.Volume
 
 		volumes = append(volumes, podSpec.Volumes[:index]...)
@@ -602,37 +598,44 @@ func (d *Deployment) buildKineVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha
 
 		podSpec.Volumes = volumes
 	}
+}
 
-	if d.ETCDStorageType == types.KineMySQL || d.ETCDStorageType == types.KinePostgreSQL {
-		if index := int(kineConfig) + 1; len(podSpec.Volumes) < index {
-			podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
-		}
-		// Adding the volume to read Kine certificates:
-		// these must be subsequently fixed with a chmod due to pg issues with private key.
-		podSpec.Volumes[kineConfig].Name = kineVolumeName
-		podSpec.Volumes[kineConfig].VolumeSource = corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  tcp.Status.Storage.Kine.Certificate.SecretName,
-				DefaultMode: pointer.Int32Ptr(420),
-			},
-		}
-		// Adding the Volume for the certificates with fixed permission
-		if index := int(kineCerts) + 1; len(podSpec.Volumes) < index {
-			podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
-		}
+func (d *Deployment) buildKineVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
+	if d.ETCDStorageType == types.ETCD {
+		d.removeKineVolumes(podSpec)
 
-		podSpec.Volumes[kineCerts].Name = kineVolumeCertName
-		podSpec.Volumes[kineCerts].VolumeSource = corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		}
+		return
+	}
+	// Adding the volume for chmod'ed Kine certificates.
+	found, index := utilities.HasNamedVolume(podSpec.Volumes, kineVolumeChmod)
+	if !found {
+		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
+		index = len(podSpec.Volumes) - 1
+	}
+
+	podSpec.Volumes[index].Name = kineVolumeChmod
+	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  tcp.Status.Storage.Kine.Certificate.SecretName,
+			DefaultMode: pointer.Int32Ptr(420),
+		},
+	}
+	// Adding the volume to read Kine certificates:
+	// these must be subsequently fixed with a chmod due to pg issues with private key.
+	if found, index = utilities.HasNamedVolume(podSpec.Volumes, kineVolumeCertName); !found {
+		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
+		index = len(podSpec.Volumes) - 1
+	}
+
+	podSpec.Volumes[index].Name = kineVolumeCertName
+	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+		EmptyDir: &corev1.EmptyDirVolumeSource{},
 	}
 }
 
-func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	const kineContainerName = "kine"
-	// Kine is expecting an additional container, and it must be removed before proceeding with the additional one
-	// in order to make this function idempotent.
-	if found, index := utilities.HasNamedContainer(podSpec.Containers, kineContainerName); found {
+func (d *Deployment) removeKineContainers(podSpec *corev1.PodSpec) {
+	found, index := utilities.HasNamedContainer(podSpec.Containers, kineContainerName)
+	if found {
 		var containers []corev1.Container
 
 		containers = append(containers, podSpec.Containers[:index]...)
@@ -640,13 +643,22 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 
 		podSpec.Containers = containers
 	}
-	// In case of bare ETCD we exit without mangling the PodSpec resource.
+
+	podSpec.InitContainers = nil
+}
+
+func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
 	if d.ETCDStorageType == types.ETCD {
+		d.removeKineContainers(podSpec)
+
 		return
 	}
-
-	if index := int(kineIndex) + 1; len(podSpec.Containers) < index {
+	// Kine is expecting an additional container, and it must be removed before proceeding with the additional one
+	// in order to make this function idempotent.
+	found, index := utilities.HasNamedContainer(podSpec.Containers, kineContainerName)
+	if !found {
 		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
+		index = len(podSpec.Containers) - 1
 	}
 
 	args := map[string]string{}
@@ -680,7 +692,7 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 			},
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      kineVolumeName,
+					Name:      kineVolumeChmod,
 					ReadOnly:  true,
 					MountPath: "/kine",
 				},
@@ -693,26 +705,26 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 		},
 	}
 
-	podSpec.Containers[kineIndex].Name = kineContainerName
-	podSpec.Containers[kineIndex].Image = d.KineContainerImage
-	podSpec.Containers[kineIndex].Command = []string{"/bin/kine"}
-	podSpec.Containers[kineIndex].Args = utilities.ArgsFromMapToSlice(args)
-	podSpec.Containers[kineIndex].VolumeMounts = []corev1.VolumeMount{
+	podSpec.Containers[index].Name = kineContainerName
+	podSpec.Containers[index].Image = d.KineContainerImage
+	podSpec.Containers[index].Command = []string{"/bin/kine"}
+	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
+	podSpec.Containers[index].VolumeMounts = []corev1.VolumeMount{
 		{
 			Name:      kineVolumeCertName,
 			MountPath: "/certs",
 			ReadOnly:  false,
 		},
 	}
-	podSpec.Containers[kineIndex].TerminationMessagePath = corev1.TerminationMessagePathDefault
-	podSpec.Containers[kineIndex].TerminationMessagePolicy = corev1.TerminationMessageReadFile
-	podSpec.Containers[kineIndex].Env = []corev1.EnvVar{
+	podSpec.Containers[index].TerminationMessagePath = corev1.TerminationMessagePathDefault
+	podSpec.Containers[index].TerminationMessagePolicy = corev1.TerminationMessageReadFile
+	podSpec.Containers[index].Env = []corev1.EnvVar{
 		{
 			Name:  "GODEBUG",
 			Value: "x509ignoreCN=0",
 		},
 	}
-	podSpec.Containers[kineIndex].EnvFrom = []corev1.EnvFromSource{
+	podSpec.Containers[index].EnvFrom = []corev1.EnvFromSource{
 		{
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -721,14 +733,14 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 			},
 		},
 	}
-	podSpec.Containers[kineIndex].Ports = []corev1.ContainerPort{
+	podSpec.Containers[index].Ports = []corev1.ContainerPort{
 		{
 			ContainerPort: 2379,
 			Name:          "server",
 			Protocol:      corev1.ProtocolTCP,
 		},
 	}
-	podSpec.Containers[kineIndex].ImagePullPolicy = corev1.PullAlways
+	podSpec.Containers[index].ImagePullPolicy = corev1.PullAlways
 }
 
 func (d *Deployment) SetSelector(deploymentSpec *appsv1.DeploymentSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
