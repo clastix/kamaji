@@ -28,7 +28,7 @@ type ETCDCACertificatesResource struct {
 	DataStore kamajiv1alpha1.DataStore
 }
 
-func (r *ETCDCACertificatesResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *ETCDCACertificatesResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	if tenantControlPlane.Status.Certificates.ETCD == nil {
 		return true
 	}
@@ -36,15 +36,15 @@ func (r *ETCDCACertificatesResource) ShouldStatusBeUpdated(ctx context.Context, 
 	return tenantControlPlane.Status.Certificates.ETCD.CA.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
-func (r *ETCDCACertificatesResource) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *ETCDCACertificatesResource) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *ETCDCACertificatesResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *ETCDCACertificatesResource) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
-func (r *ETCDCACertificatesResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *ETCDCACertificatesResource) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.getPrefixedName(tenantControlPlane),
@@ -63,7 +63,7 @@ func (r *ETCDCACertificatesResource) GetName() string {
 	return r.Name
 }
 
-func (r *ETCDCACertificatesResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *ETCDCACertificatesResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Status.Certificates.ETCD == nil {
 		tenantControlPlane.Status.Certificates.ETCD = &kamajiv1alpha1.ETCDCertificatesStatus{}
 	}

@@ -29,19 +29,19 @@ type APIServerKubeletClientCertificate struct {
 	TmpDirectory string
 }
 
-func (r *APIServerKubeletClientCertificate) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *APIServerKubeletClientCertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Certificates.APIServerKubeletClient.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
-func (r *APIServerKubeletClientCertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *APIServerKubeletClientCertificate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *APIServerKubeletClientCertificate) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *APIServerKubeletClientCertificate) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
-func (r *APIServerKubeletClientCertificate) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *APIServerKubeletClientCertificate) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.getPrefixedName(tenantControlPlane),
@@ -72,7 +72,7 @@ func (r *APIServerKubeletClientCertificate) GetName() string {
 	return r.Name
 }
 
-func (r *APIServerKubeletClientCertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *APIServerKubeletClientCertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.APIServerKubeletClient.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.APIServerKubeletClient.SecretName = r.resource.GetName()
 	tenantControlPlane.Status.Certificates.APIServerKubeletClient.Checksum = r.resource.GetAnnotations()["checksum"]

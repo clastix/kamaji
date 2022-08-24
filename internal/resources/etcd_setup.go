@@ -28,7 +28,7 @@ type ETCDSetupResource struct {
 	DataStore kamajiv1alpha1.DataStore
 }
 
-func (r *ETCDSetupResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *ETCDSetupResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	if tenantControlPlane.Status.Storage.ETCD == nil {
 		return true
 	}
@@ -37,15 +37,15 @@ func (r *ETCDSetupResource) ShouldStatusBeUpdated(ctx context.Context, tenantCon
 		tenantControlPlane.Status.Storage.ETCD.User.Name != r.resource.user.Name
 }
 
-func (r *ETCDSetupResource) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *ETCDSetupResource) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *ETCDSetupResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *ETCDSetupResource) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
-func (r *ETCDSetupResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *ETCDSetupResource) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &etcdSetupResource{
 		role: etcd.Role{Name: tenantControlPlane.Name, Exists: false},
 		user: etcd.User{Name: tenantControlPlane.Name, Exists: false},
@@ -54,7 +54,7 @@ func (r *ETCDSetupResource) Define(ctx context.Context, tenantControlPlane *kama
 	return nil
 }
 
-func (r *ETCDSetupResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+func (r *ETCDSetupResource) CreateOrUpdate(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	return r.reconcile(ctx)
 }
 
@@ -87,7 +87,7 @@ func (r *ETCDSetupResource) GetName() string {
 	return r.Name
 }
 
-func (r *ETCDSetupResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *ETCDSetupResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Status.Storage.ETCD == nil {
 		tenantControlPlane.Status.Storage.ETCD = &kamajiv1alpha1.ETCDStatus{}
 	}

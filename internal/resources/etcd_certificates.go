@@ -28,7 +28,7 @@ type ETCDCertificatesResource struct {
 	Name     string
 }
 
-func (r *ETCDCertificatesResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *ETCDCertificatesResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	if tenantControlPlane.Status.Certificates.ETCD == nil {
 		return true
 	}
@@ -36,15 +36,15 @@ func (r *ETCDCertificatesResource) ShouldStatusBeUpdated(ctx context.Context, te
 	return tenantControlPlane.Status.Certificates.ETCD.APIServer.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
-func (r *ETCDCertificatesResource) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *ETCDCertificatesResource) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *ETCDCertificatesResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *ETCDCertificatesResource) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
-func (r *ETCDCertificatesResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *ETCDCertificatesResource) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.getPrefixedName(tenantControlPlane),

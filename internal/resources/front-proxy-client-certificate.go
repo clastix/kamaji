@@ -29,19 +29,19 @@ type FrontProxyClientCertificate struct {
 	TmpDirectory string
 }
 
-func (r *FrontProxyClientCertificate) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *FrontProxyClientCertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
-func (r *FrontProxyClientCertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *FrontProxyClientCertificate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *FrontProxyClientCertificate) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *FrontProxyClientCertificate) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
-func (r *FrontProxyClientCertificate) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *FrontProxyClientCertificate) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.getPrefixedName(tenantControlPlane),
@@ -72,7 +72,7 @@ func (r *FrontProxyClientCertificate) GetName() string {
 	return r.Name
 }
 
-func (r *FrontProxyClientCertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *FrontProxyClientCertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.FrontProxyClient.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.FrontProxyClient.SecretName = r.resource.GetName()
 	tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum = r.resource.GetAnnotations()["checksum"]

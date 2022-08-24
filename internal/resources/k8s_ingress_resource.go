@@ -24,7 +24,7 @@ type KubernetesIngressResource struct {
 	Name     string
 }
 
-func (r *KubernetesIngressResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *KubernetesIngressResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return !(tenantControlPlane.Status.Kubernetes.Ingress.Name == r.resource.GetName() &&
 		tenantControlPlane.Status.Kubernetes.Ingress.Namespace == r.resource.GetNamespace())
 }
@@ -33,7 +33,7 @@ func (r *KubernetesIngressResource) ShouldCleanup(tenantControlPlane *kamajiv1al
 	return tenantControlPlane.Spec.ControlPlane.Ingress == nil
 }
 
-func (r *KubernetesIngressResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *KubernetesIngressResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	if err := r.Client.Delete(ctx, r.resource); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return false, err
@@ -45,7 +45,7 @@ func (r *KubernetesIngressResource) CleanUp(ctx context.Context, tenantControlPl
 	return true, nil
 }
 
-func (r *KubernetesIngressResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubernetesIngressResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Spec.ControlPlane.Ingress != nil {
 		tenantControlPlane.Status.Kubernetes.Ingress.IngressStatus = r.resource.Status
 		tenantControlPlane.Status.Kubernetes.Ingress.Name = r.resource.GetName()
@@ -59,7 +59,7 @@ func (r *KubernetesIngressResource) UpdateTenantControlPlaneStatus(ctx context.C
 	return nil
 }
 
-func (r *KubernetesIngressResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubernetesIngressResource) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      tenantControlPlane.GetName(),

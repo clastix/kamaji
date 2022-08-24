@@ -25,15 +25,15 @@ type SQLCertificate struct {
 	DataStore   kamajiv1alpha1.DataStore
 }
 
-func (r *SQLCertificate) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *SQLCertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Storage.Kine.Certificate.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
-func (r *SQLCertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *SQLCertificate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *SQLCertificate) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *SQLCertificate) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
@@ -65,7 +65,7 @@ func (r *SQLCertificate) GetName() string {
 	return r.Name
 }
 
-func (r *SQLCertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *SQLCertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Status.Storage.Kine == nil {
 		tenantControlPlane.Status.Storage.Kine = &kamajiv1alpha1.KineStatus{}
 	}
