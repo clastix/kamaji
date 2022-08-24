@@ -21,18 +21,10 @@ var (
 )
 
 const (
-	envPrefix                        = "KAMAJI"
-	defaultETCDStorageType           = "etcd"
-	defaultETCDCASecretName          = "etcd-certs"
-	defaultETCDCASecretNamespace     = "kamaji-system"
-	defaultETCDEndpoints             = "etcd-server:2379"
-	defaultETCDCompactionInterval    = "0"
-	defaultETCDClientSecretName      = "root-client-certs"
-	defaultETCDClientSecretNamespace = "kamaji-system"
-	defaultTmpDirectory              = "/tmp/kamaji"
-	defaultKineSecretName            = "kine-secret"
-	defaultKineSecretNamespace       = "kamaji-system"
-	defaultKineImage                 = "rancher/kine:v0.9.2-amd64"
+	envPrefix           = "KAMAJI"
+	defaultTmpDirectory = "/tmp/kamaji"
+	defaultKineImage    = "rancher/kine:v0.9.2-amd64"
+	defaultDataStore    = "etcd"
 )
 
 func InitConfig() (*viper.Viper, error) {
@@ -44,19 +36,9 @@ func InitConfig() (*viper.Viper, error) {
 	flag.String("health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.Bool("leader-elect", false, "Enable leader election for controller manager. "+
 		"Enabling this will ensure there is only one active controller manager.")
-	flag.String("etcd-storage-type", defaultETCDStorageType, "Type of storage for ETCD (i.e etcd, kine-mysql, kine-psql)")
-	flag.String("etcd-ca-secret-name", defaultETCDCASecretName, "Name of the secret which contains CA's certificate and private key.")
-	flag.String("etcd-ca-secret-namespace", defaultETCDCASecretNamespace, "Namespace of the secret which contains CA's certificate and private key.")
-	flag.String("etcd-client-secret-name", defaultETCDClientSecretName, "Name of the secret which contains ETCD client certificates")
-	flag.String("etcd-client-secret-namespace", defaultETCDClientSecretNamespace, "Name of the namespace where the secret which contains ETCD client certificates is")
-	flag.String("etcd-endpoints", defaultETCDEndpoints, "Comma-separated list with ETCD endpoints (i.e. https://etcd-0.etcd.kamaji-system.svc.cluster.local,https://etcd-1.etcd.kamaji-system.svc.cluster.local,https://etcd-2.etcd.kamaji-system.svc.cluster.local)")
-	flag.String("etcd-compaction-interval", defaultETCDCompactionInterval, "ETCD Compaction interval (i.e. \"5m0s\"). (default: \"0\" (disabled))")
 	flag.String("tmp-directory", defaultTmpDirectory, "Directory which will be used to work with temporary files.")
-	flag.String("kine-secret-name", defaultKineSecretName, "Name of the secret which contains the Kine configuration.")
-	flag.String("kine-secret-namespace", defaultKineSecretNamespace, "Name of the namespace where the secret which contains the Kine configuration.")
-	flag.String("kine-host", "", "Host where the DB used by Kine is working.")
-	flag.Int("kine-port", 0, "Port where the DB used by Kine is listening to.")
 	flag.String("kine-image", defaultKineImage, "Container image along with tag to use for the Kine sidecar container (used only if etcd-storage-type is set to one of kine strategies)")
+	flag.String("datastore", defaultDataStore, "The default DataStore that should be used by Kamaji to setup the required storage")
 
 	// Setup zap configuration
 	opts := zap.Options{
@@ -84,43 +66,13 @@ func InitConfig() (*viper.Viper, error) {
 	if err := config.BindEnv("leader-elect", fmt.Sprintf("%s_LEADER_ELECTION", envPrefix)); err != nil {
 		return nil, err
 	}
-	if err := config.BindEnv("etcd-storage-type", fmt.Sprintf("%s_ETCD_STORAGE_TYPE", envPrefix)); err != nil {
-		return nil, err
-	}
-	if err := config.BindEnv("etcd-ca-secret-name", fmt.Sprintf("%s_ETCD_CA_SECRET_NAME", envPrefix)); err != nil {
-		return nil, err
-	}
-	if err := config.BindEnv("etcd-ca-secret-namespace", fmt.Sprintf("%s_ETCD_CA_SECRET_NAMESPACE", envPrefix)); err != nil {
-		return nil, err
-	}
-	if err := config.BindEnv("etcd-client-secret-name", fmt.Sprintf("%s_ETCD_CLIENT_SECRET_NAME", envPrefix)); err != nil {
-		return nil, err
-	}
-	if err := config.BindEnv("etcd-client-secret-namespace", fmt.Sprintf("%s_ETCD_CLIENT_SECRET_NAMESPACE", envPrefix)); err != nil {
-		return nil, err
-	}
-	if err := config.BindEnv("etcd-endpoints", fmt.Sprintf("%s_ETCD_ENDPOINTS", envPrefix)); err != nil {
-		return nil, err
-	}
-	if err := config.BindEnv("etcd-compaction-interval", fmt.Sprintf("%s_ETCD_COMPACTION_INTERVAL", envPrefix)); err != nil {
-		return nil, err
-	}
 	if err := config.BindEnv("tmp-directory", fmt.Sprintf("%s_TMP_DIRECTORY", envPrefix)); err != nil {
 		return nil, err
 	}
-	if err := config.BindEnv("kine-secret-name", fmt.Sprintf("%s_KINE_SECRET_NAME", envPrefix)); err != nil {
-		return nil, err
-	}
-	if err := config.BindEnv("kine-secret-namespace", fmt.Sprintf("%s_KINE_SECRET_NAMESPACE", envPrefix)); err != nil {
-		return nil, err
-	}
-	if err := config.BindEnv("kine-host", fmt.Sprintf("%s_KINE_HOST", envPrefix)); err != nil {
-		return nil, err
-	}
-	if err := config.BindEnv("kine-port", fmt.Sprintf("%s_KINE_PORT", envPrefix)); err != nil {
-		return nil, err
-	}
 	if err := config.BindEnv("kine-image", fmt.Sprintf("%s_KINE_IMAGE", envPrefix)); err != nil {
+		return nil, err
+	}
+	if err := config.BindEnv("datastore", fmt.Sprintf("%s_DATASTORE", envPrefix)); err != nil {
 		return nil, err
 	}
 

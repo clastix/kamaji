@@ -20,7 +20,6 @@ import (
 	"github.com/clastix/kamaji/controllers"
 	"github.com/clastix/kamaji/internal"
 	"github.com/clastix/kamaji/internal/config"
-	"github.com/clastix/kamaji/internal/types"
 )
 
 var (
@@ -60,24 +59,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	tcpChannel := make(controllers.TenantControlPlaneChannel)
+
+	if err = (&controllers.DataStore{TenantControlPlaneTrigger: tcpChannel, ResourceName: conf.GetString("datastore")}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "DataStore")
+		os.Exit(1)
+	}
+
 	reconciler := &controllers.TenantControlPlaneReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Config: controllers.TenantControlPlaneReconcilerConfig{
-			ETCDStorageType:           types.ParseETCDStorageType(conf.GetString("etcd-storage-type")),
-			ETCDCASecretName:          conf.GetString("etcd-ca-secret-name"),
-			ETCDCASecretNamespace:     conf.GetString("etcd-ca-secret-namespace"),
-			ETCDClientSecretName:      conf.GetString("etcd-client-secret-name"),
-			ETCDClientSecretNamespace: conf.GetString("etcd-client-secret-namespace"),
-			ETCDEndpoints:             types.ParseETCDEndpoint(conf),
-			ETCDCompactionInterval:    conf.GetString("etcd-compaction-interval"),
-			TmpBaseDirectory:          conf.GetString("tmp-directory"),
-			KineSecretName:            conf.GetString("kine-secret-name"),
-			KineSecretNamespace:       conf.GetString("kine-secret-namespace"),
-			KineHost:                  conf.GetString("kine-host"),
-			KinePort:                  conf.GetInt("kine-port"),
-			KineContainerImage:        conf.GetString("kine-image"),
+			DataStoreName:      conf.GetString("datastore"),
+			KineContainerImage: conf.GetString("kine-image"),
+			TmpBaseDirectory:   conf.GetString("tmp-directory"),
 		},
+		TriggerChan: tcpChannel,
 	}
 
 	if err := reconciler.SetupWithManager(mgr); err != nil {

@@ -8,18 +8,11 @@ import (
 
 	"github.com/go-logr/logr"
 	etcdclient "go.etcd.io/etcd/client/v3"
-	corev1 "k8s.io/api/core/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
-	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/etcd"
-)
-
-const (
-	caKeyName = kubeadmconstants.CACertName
 )
 
 type etcdSetupResource struct {
@@ -28,13 +21,11 @@ type etcdSetupResource struct {
 }
 
 type ETCDSetupResource struct {
-	resource              *etcdSetupResource
-	Client                client.Client
-	Log                   logr.Logger
-	Name                  string
-	Endpoints             []string
-	ETCDClientCertsSecret k8stypes.NamespacedName
-	ETCDCACertsSecret     k8stypes.NamespacedName
+	resource  *etcdSetupResource
+	Client    client.Client
+	Log       logr.Logger
+	Name      string
+	DataStore kamajiv1alpha1.DataStore
 }
 
 func (r *ETCDSetupResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -144,21 +135,26 @@ func (r *ETCDSetupResource) reconcile(ctx context.Context) (controllerutil.Opera
 }
 
 func (r *ETCDSetupResource) getETCDClient(ctx context.Context) (*etcdclient.Client, error) {
-	var certsClientSecret corev1.Secret
-	if err := r.Client.Get(ctx, r.ETCDClientCertsSecret, &certsClientSecret); err != nil {
+	ca, err := r.DataStore.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, r.Client)
+	if err != nil {
 		return nil, err
 	}
 
-	var certsCASecret corev1.Secret
-	if err := r.Client.Get(ctx, r.ETCDCACertsSecret, &certsCASecret); err != nil {
+	crt, err := r.DataStore.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, r.Client)
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := r.DataStore.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, r.Client)
+	if err != nil {
 		return nil, err
 	}
 
 	config := etcd.Config{
-		ETCDCertificate: certsClientSecret.Data[corev1.TLSCertKey],
-		ETCDPrivateKey:  certsClientSecret.Data[corev1.TLSPrivateKeyKey],
-		ETCDCA:          certsCASecret.Data[caKeyName],
-		Endpoints:       r.Endpoints,
+		ETCDCertificate: crt,
+		ETCDPrivateKey:  key,
+		ETCDCA:          ca,
+		Endpoints:       r.DataStore.Spec.Endpoints,
 	}
 
 	return etcd.NewClient(config)

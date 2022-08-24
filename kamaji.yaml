@@ -1,16 +1,6 @@
-etcd-storage-type: etcd
-etcd-ca-secret-name: "etcd-certs"
-etcd-ca-secret-namespace: kamaji-system
-etcd-endpoints: https://etcd-0.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-1.etcd.kamaji-system.svc.cluster.local:2379,https://etcd-2.etcd.kamaji-system.svc.cluster.local:2379
-etcd-client-secret-name: root-client-certs
-etcd-client-secret-namespaced: kamaji-system
-etcd-compaction: "0"
 metrics-bind-address: :8080
 health-probe-bind-address: :8081
 leader-elect: false
 tmp-directory: /tmp/kamaji
-kine-mysql-secret-name: "mysql-config"
-kine-mysql-secret-namespace: kamaji-system
-kine-mysql-host: localhost
-kine-mysql-port: 3306
+datastore: etcd
 kine-image: rancher/kine:v0.9.2-amd64

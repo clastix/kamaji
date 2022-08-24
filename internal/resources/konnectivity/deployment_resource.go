@@ -33,12 +33,11 @@ const (
 )
 
 type KubernetesDeploymentResource struct {
-	resource               *appsv1.Deployment
-	Client                 client.Client
-	ETCDStorageType        types.ETCDStorageType
-	ETCDEndpoints          []string
-	ETCDCompactionInterval string
-	Name                   string
+	resource        *appsv1.Deployment
+	Client          client.Client
+	ETCDStorageType types.ETCDStorageType
+	ETCDEndpoints   []string
+	Name            string
 }
 
 func (r *KubernetesDeploymentResource) isStatusEqual(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {

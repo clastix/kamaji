@@ -19,12 +19,11 @@ import (
 )
 
 type KubeadmConfigResource struct {
-	resource               *corev1.ConfigMap
-	Client                 client.Client
-	Name                   string
-	ETCDs                  []string
-	ETCDCompactionInterval string
-	TmpDirectory           string
+	resource     *corev1.ConfigMap
+	Client       client.Client
+	Name         string
+	ETCDs        []string
+	TmpDirectory string
 }
 
 func (r *KubeadmConfigResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -98,7 +97,6 @@ func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.Tenant
 			TenantControlPlaneServiceCIDR: tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
 			TenantControlPlaneVersion:     tenantControlPlane.Spec.Kubernetes.Version,
 			ETCDs:                         r.ETCDs,
-			ETCDCompactionInterval:        r.ETCDCompactionInterval,
 			CertificatesDir:               r.TmpDirectory,
 		}
 

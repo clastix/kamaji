@@ -10,7 +10,6 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,12 +21,11 @@ import (
 )
 
 type ETCDCACertificatesResource struct {
-	resource              *corev1.Secret
-	Client                client.Client
-	Log                   logr.Logger
-	Name                  string
-	ETCDCASecretName      string
-	ETCDCASecretNamespace string
+	resource  *corev1.Secret
+	Client    client.Client
+	Log       logr.Logger
+	Name      string
+	DataStore kamajiv1alpha1.DataStore
 }
 
 func (r *ETCDCACertificatesResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -83,6 +81,10 @@ func (r *ETCDCACertificatesResource) getPrefixedName(tenantControlPlane *kamajiv
 
 func (r *ETCDCACertificatesResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
+		if r.DataStore.Spec.TLSConfig.CertificateAuthority.PrivateKey == nil {
+			return fmt.Errorf("missing private key, cannot generate certificate for the given tenant control plane")
+		}
+
 		if etcdStatus := tenantControlPlane.Status.Certificates.ETCD; etcdStatus != nil && len(etcdStatus.CA.Checksum) > 0 && etcdStatus.CA.Checksum == r.resource.GetAnnotations()["checksum"] {
 			isValid, err := etcd.IsETCDCertificateAndKeyPairValid(r.resource.Data[kubeadmconstants.CACertName], r.resource.Data[kubeadmconstants.CAKeyName])
 			if err != nil {
@@ -94,15 +96,19 @@ func (r *ETCDCACertificatesResource) mutate(ctx context.Context, tenantControlPl
 			}
 		}
 
-		etcdCASecretNamespacedName := k8stypes.NamespacedName{Namespace: r.ETCDCASecretNamespace, Name: r.ETCDCASecretName}
-		etcdCASecret := &corev1.Secret{}
-		if err := r.Client.Get(ctx, etcdCASecretNamespacedName, etcdCASecret); err != nil {
+		ca, err := r.DataStore.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, r.Client)
+		if err != nil {
+			return err
+		}
+
+		key, err := r.DataStore.Spec.TLSConfig.CertificateAuthority.PrivateKey.GetContent(ctx, r.Client)
+		if err != nil {
 			return err
 		}
 
 		r.resource.Data = map[string][]byte{
-			kubeadmconstants.CACertName: etcdCASecret.Data[kubeadmconstants.CACertName],
-			kubeadmconstants.CAKeyName:  etcdCASecret.Data[kubeadmconstants.CAKeyName],
+			kubeadmconstants.CACertName: ca,
+			kubeadmconstants.CAKeyName:  key,
 		}
 
 		r.resource.SetLabels(utilities.KamajiLabels())

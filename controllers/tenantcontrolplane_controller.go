@@ -7,22 +7,25 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
 	"github.com/clastix/kamaji/internal/resources"
-	"github.com/clastix/kamaji/internal/sql"
-	"github.com/clastix/kamaji/internal/types"
 )
 
 const (
@@ -32,26 +35,16 @@ const (
 // TenantControlPlaneReconciler reconciles a TenantControlPlane object.
 type TenantControlPlaneReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	Config TenantControlPlaneReconcilerConfig
+	Scheme      *runtime.Scheme
+	Config      TenantControlPlaneReconcilerConfig
+	TriggerChan TenantControlPlaneChannel
 }
 
 // TenantControlPlaneReconcilerConfig gives the necessary configuration for TenantControlPlaneReconciler.
 type TenantControlPlaneReconcilerConfig struct {
-	ETCDStorageType           types.ETCDStorageType
-	ETCDCASecretName          string
-	ETCDCASecretNamespace     string
-	ETCDClientSecretName      string
-	ETCDClientSecretNamespace string
-	ETCDEndpoints             string
-	ETCDCompactionInterval    string
-	TmpBaseDirectory          string
-	DBConnection              sql.DBConnection
-	KineSecretName            string
-	KineSecretNamespace       string
-	KineHost                  string
-	KinePort                  int
-	KineContainerImage        string
+	DataStoreName      string
+	KineContainerImage string
+	TmpBaseDirectory   string
 }
 
 //+kubebuilder:rbac:groups=kamaji.clastix.io,resources=tenantcontrolplanes,verbs=get;list;watch;create;update;patch;delete
@@ -82,7 +75,12 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
-	dbConnection, err := r.getStorageConnection(ctx)
+	ds := kamajiv1alpha1.DataStore{}
+	if err = r.Client.Get(ctx, k8stypes.NamespacedName{Name: r.Config.DataStoreName}, &ds); err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "cannot retrieve kamajiv1alpha.DataStore object")
+	}
+
+	dbConnection, err := r.getStorageConnection(ctx, ds)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -104,7 +102,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			tenantControlPlane:  *tenantControlPlane,
 			DBConnection:        dbConnection,
 		}
-		registeredDeletableResources := GetDeletableResources(groupDeleteableResourceBuilderConfiguration)
+		registeredDeletableResources := GetDeletableResources(groupDeleteableResourceBuilderConfiguration, ds)
 
 		for _, resource := range registeredDeletableResources {
 			if err := resources.HandleDeletion(ctx, resource, tenantControlPlane); err != nil {
@@ -134,9 +132,10 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		log:                 log,
 		tcpReconcilerConfig: r.Config,
 		tenantControlPlane:  *tenantControlPlane,
+		DataStore:           ds,
 		DBConnection:        dbConnection,
 	}
-	registeredResources := GetResources(groupResourceBuilderConfiguration)
+	registeredResources := GetResources(groupResourceBuilderConfiguration, ds)
 
 	for _, resource := range registeredResources {
 		result, err := resources.Handle(ctx, resource, tenantControlPlane)
@@ -171,6 +170,14 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 // SetupWithManager sets up the controller with the Manager.
 func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		Watches(&source.Channel{Source: r.TriggerChan}, handler.Funcs{GenericFunc: func(genericEvent event.GenericEvent, limitingInterface workqueue.RateLimitingInterface) {
+			limitingInterface.AddRateLimited(ctrl.Request{
+				NamespacedName: k8stypes.NamespacedName{
+					Namespace: genericEvent.Object.GetNamespace(),
+					Name:      genericEvent.Object.GetName(),
+				},
+			})
+		}}).
 		For(&kamajiv1alpha1.TenantControlPlane{}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ConfigMap{}).

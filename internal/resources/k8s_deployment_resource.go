@@ -14,18 +14,16 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	builder "github.com/clastix/kamaji/internal/builders/controlplane"
-	"github.com/clastix/kamaji/internal/types"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type KubernetesDeploymentResource struct {
-	resource               *appsv1.Deployment
-	Client                 client.Client
-	ETCDStorageType        types.ETCDStorageType
-	ETCDEndpoints          []string
-	ETCDCompactionInterval string
-	Name                   string
-	KineContainerImage     string
+	resource           *appsv1.Deployment
+	Client             client.Client
+	DataStoreDriver    kamajiv1alpha1.Driver
+	ETCDEndpoints      []string
+	Name               string
+	KineContainerImage string
 }
 
 func (r *KubernetesDeploymentResource) isStatusEqual(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -65,11 +63,10 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 		}
 
 		d := builder.Deployment{
-			Address:                address,
-			ETCDEndpoints:          r.ETCDEndpoints,
-			ETCDCompactionInterval: r.ETCDCompactionInterval,
-			ETCDStorageType:        r.ETCDStorageType,
-			KineContainerImage:     r.KineContainerImage,
+			Address:            address,
+			ETCDEndpoints:      r.ETCDEndpoints,
+			ETCDStorageType:    r.DataStoreDriver,
+			KineContainerImage: r.KineContainerImage,
 		}
 		d.SetLabels(r.resource, utilities.MergeMaps(utilities.CommonLabels(tenantControlPlane.GetName()), tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Labels))
 		d.SetAnnotations(r.resource, utilities.MergeMaps(r.resource.Annotations, tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Annotations))
@@ -135,7 +132,7 @@ func (r *KubernetesDeploymentResource) deploymentTemplateLabels(ctx context.Cont
 		"component.kamaji.clastix.io/scheduler-kubeconfig":                  hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.KubeConfig.Scheduler.SecretName),
 	}
 
-	if r.ETCDStorageType == types.ETCD {
+	if r.DataStoreDriver == kamajiv1alpha1.EtcdDriver {
 		labels["component.kamaji.clastix.io/etcd-ca-certificates"] = hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.ETCD.CA.SecretName)
 		labels["component.kamaji.clastix.io/etcd-certificates"] = hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.ETCD.APIServer.SecretName)
 	}
