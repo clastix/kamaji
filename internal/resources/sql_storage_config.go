@@ -26,7 +26,7 @@ type SQLStorageConfig struct {
 	Driver   string
 }
 
-func (r *SQLStorageConfig) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *SQLStorageConfig) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	if tenantControlPlane.Status.Storage.Kine == nil {
 		return true
 	}
@@ -35,15 +35,15 @@ func (r *SQLStorageConfig) ShouldStatusBeUpdated(ctx context.Context, tenantCont
 		tenantControlPlane.Status.Storage.Kine.Driver != r.Driver
 }
 
-func (r *SQLStorageConfig) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *SQLStorageConfig) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *SQLStorageConfig) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *SQLStorageConfig) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
-func (r *SQLStorageConfig) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *SQLStorageConfig) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.getPrefixedName(tenantControlPlane),
@@ -70,7 +70,7 @@ func (r *SQLStorageConfig) GetName() string {
 	return r.Name
 }
 
-func (r *SQLStorageConfig) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *SQLStorageConfig) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Status.Storage.Kine == nil {
 		tenantControlPlane.Status.Storage.Kine = &kamajiv1alpha1.KineStatus{}
 	}
@@ -82,7 +82,7 @@ func (r *SQLStorageConfig) UpdateTenantControlPlaneStatus(ctx context.Context, t
 	return nil
 }
 
-func (r *SQLStorageConfig) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
+func (r *SQLStorageConfig) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
 		var password []byte
 

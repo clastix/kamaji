@@ -28,19 +28,19 @@ type FrontProxyCACertificate struct {
 	TmpDirectory string
 }
 
-func (r *FrontProxyCACertificate) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *FrontProxyCACertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
-func (r *FrontProxyCACertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *FrontProxyCACertificate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *FrontProxyCACertificate) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *FrontProxyCACertificate) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
-func (r *FrontProxyCACertificate) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *FrontProxyCACertificate) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.getPrefixedName(tenantControlPlane),
@@ -73,7 +73,7 @@ func (r *FrontProxyCACertificate) GetName() string {
 	return r.Name
 }
 
-func (r *FrontProxyCACertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *FrontProxyCACertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.FrontProxyCA.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.FrontProxyCA.SecretName = r.resource.GetName()
 	tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum = r.resource.GetAnnotations()["checksum"]

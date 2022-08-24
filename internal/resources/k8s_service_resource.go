@@ -25,17 +25,17 @@ type KubernetesServiceResource struct {
 	Name     string
 }
 
-func (r *KubernetesServiceResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *KubernetesServiceResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Kubernetes.Service.Name != r.resource.GetName() ||
 		tenantControlPlane.Status.Kubernetes.Service.Namespace != r.resource.GetNamespace() ||
 		tenantControlPlane.Status.Kubernetes.Service.Port != r.resource.Spec.Ports[0].Port
 }
 
-func (r *KubernetesServiceResource) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *KubernetesServiceResource) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *KubernetesServiceResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *KubernetesServiceResource) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
@@ -55,7 +55,7 @@ func (r *KubernetesServiceResource) UpdateTenantControlPlaneStatus(ctx context.C
 	return nil
 }
 
-func (r *KubernetesServiceResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubernetesServiceResource) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      tenantControlPlane.GetName(),

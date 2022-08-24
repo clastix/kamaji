@@ -28,20 +28,20 @@ type CACertificate struct {
 	TmpDirectory string
 }
 
-func (r *CACertificate) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *CACertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Certificates.CA.SecretName != r.resource.GetName() ||
 		tenantControlPlane.Status.Certificates.CA.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
-func (r *CACertificate) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *CACertificate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *CACertificate) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *CACertificate) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
-func (r *CACertificate) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *CACertificate) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.getPrefixedName(tenantControlPlane),
@@ -72,7 +72,7 @@ func (r *CACertificate) GetName() string {
 	return r.Name
 }
 
-func (r *CACertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *CACertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.CA.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.CA.SecretName = r.resource.GetName()
 	tenantControlPlane.Status.Certificates.CA.Checksum = r.resource.GetAnnotations()["checksum"]

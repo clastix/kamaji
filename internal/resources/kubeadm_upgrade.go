@@ -47,25 +47,25 @@ func (k *KubernetesUpgrade) CleanUp(context.Context, *kamajiv1alpha1.TenantContr
 	return false, nil
 }
 
-func (k *KubernetesUpgrade) CreateOrUpdate(ctx context.Context, plane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+func (k *KubernetesUpgrade) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	// A new installation, no need to upgrade
-	if len(plane.Status.Kubernetes.Version.Version) == 0 {
+	if len(tenantControlPlane.Status.Kubernetes.Version.Version) == 0 {
 		k.inProgress = false
 
 		return controllerutil.OperationResultNone, nil
 	}
 	// No version change, no need to upgrade
-	if plane.Status.Kubernetes.Version.Version == plane.Spec.Kubernetes.Version {
+	if tenantControlPlane.Status.Kubernetes.Version.Version == tenantControlPlane.Spec.Kubernetes.Version {
 		k.inProgress = false
 
 		return controllerutil.OperationResultNone, nil
 	}
 	// An upgrade is in progress, let it go
-	if status := plane.Status.Kubernetes.Version.Status; status != nil && *status == kamajiv1alpha1.VersionUpgrading {
+	if status := tenantControlPlane.Status.Kubernetes.Version.Status; status != nil && *status == kamajiv1alpha1.VersionUpgrading {
 		return controllerutil.OperationResultNone, nil
 	}
 	// Checking if the upgrade is allowed, or not
-	restClient, err := utilities.GetTenantRESTClient(ctx, k.Client, plane)
+	restClient, err := utilities.GetTenantRESTClient(ctx, k.Client, tenantControlPlane)
 	if err != nil {
 		return controllerutil.OperationResultNone, errors.Wrap(err, "cannot create REST client required for Kubernetes upgrade plan")
 	}
@@ -93,7 +93,7 @@ func (k *KubernetesUpgrade) ShouldStatusBeUpdated(context.Context, *kamajiv1alph
 	return k.inProgress
 }
 
-func (k *KubernetesUpgrade) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (k *KubernetesUpgrade) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if k.inProgress {
 		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionUpgrading
 	}

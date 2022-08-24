@@ -55,7 +55,7 @@ func (r *KubeadmAddonResource) SetKubeadmConfigChecksum(checksum string) {
 	r.kubeadmConfigChecksum = checksum
 }
 
-func (r *KubeadmAddonResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *KubeadmAddonResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return !r.isStatusEqual(tenantControlPlane)
 }
 
@@ -90,7 +90,7 @@ func (r *KubeadmAddonResource) CleanUp(ctx context.Context, tenantControlPlane *
 	return true, nil
 }
 
-func (r *KubeadmAddonResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubeadmAddonResource) Define(context.Context, *kamajiv1alpha1.TenantControlPlane) error {
 	return nil
 }
 
@@ -129,7 +129,7 @@ func (r *KubeadmAddonResource) GetName() string {
 	return r.Name
 }
 
-func (r *KubeadmAddonResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubeadmAddonResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	status, err := r.GetStatus(tenantControlPlane)
 	if err != nil {
 		return err

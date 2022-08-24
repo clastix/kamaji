@@ -31,7 +31,7 @@ type SQLSetup struct {
 	Driver       string
 }
 
-func (r *SQLSetup) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *SQLSetup) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	if tenantControlPlane.Status.Storage.Kine == nil {
 		return true
 	}
@@ -40,11 +40,11 @@ func (r *SQLSetup) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane
 		tenantControlPlane.Status.Storage.Kine.Setup.Checksum != tenantControlPlane.Status.Storage.Kine.Config.Checksum
 }
 
-func (r *SQLSetup) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *SQLSetup) ShouldCleanup(_ *kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *SQLSetup) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *SQLSetup) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
@@ -130,7 +130,7 @@ func (r *SQLSetup) Delete(ctx context.Context, tenantControlPlane *kamajiv1alpha
 	return nil
 }
 
-func (r *SQLSetup) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *SQLSetup) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Status.Storage.Kine == nil {
 		return fmt.Errorf("sql configuration is not ready")
 	}
@@ -143,7 +143,7 @@ func (r *SQLSetup) UpdateTenantControlPlaneStatus(ctx context.Context, tenantCon
 	return nil
 }
 
-func (r *SQLSetup) createDB(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+func (r *SQLSetup) createDB(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	exists, err := r.DBConnection.DBExists(ctx, r.resource.schema)
 	if err != nil {
 		return controllerutil.OperationResultNone, err
@@ -160,7 +160,7 @@ func (r *SQLSetup) createDB(ctx context.Context, tenantControlPlane *kamajiv1alp
 	return controllerutil.OperationResultCreated, nil
 }
 
-func (r *SQLSetup) deleteDB(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *SQLSetup) deleteDB(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) error {
 	exists, err := r.DBConnection.DBExists(ctx, r.resource.schema)
 	if err != nil {
 		return err
@@ -177,7 +177,7 @@ func (r *SQLSetup) deleteDB(ctx context.Context, tenantControlPlane *kamajiv1alp
 	return nil
 }
 
-func (r *SQLSetup) createUser(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+func (r *SQLSetup) createUser(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	exists, err := r.DBConnection.UserExists(ctx, r.resource.user)
 	if err != nil {
 		return controllerutil.OperationResultNone, err
@@ -194,7 +194,7 @@ func (r *SQLSetup) createUser(ctx context.Context, tenantControlPlane *kamajiv1a
 	return controllerutil.OperationResultCreated, nil
 }
 
-func (r *SQLSetup) deleteUser(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *SQLSetup) deleteUser(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) error {
 	exists, err := r.DBConnection.UserExists(ctx, r.resource.user)
 	if err != nil {
 		return err
@@ -211,7 +211,7 @@ func (r *SQLSetup) deleteUser(ctx context.Context, tenantControlPlane *kamajiv1a
 	return nil
 }
 
-func (r *SQLSetup) createGrantPrivileges(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+func (r *SQLSetup) createGrantPrivileges(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	exists, err := r.DBConnection.GrantPrivilegesExists(ctx, r.resource.user, r.resource.schema)
 	if err != nil {
 		return controllerutil.OperationResultNone, err
@@ -228,7 +228,7 @@ func (r *SQLSetup) createGrantPrivileges(ctx context.Context, tenantControlPlane
 	return controllerutil.OperationResultCreated, nil
 }
 
-func (r *SQLSetup) revokeGrantPrivileges(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *SQLSetup) revokeGrantPrivileges(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) error {
 	exists, err := r.DBConnection.GrantPrivilegesExists(ctx, r.resource.user, r.resource.schema)
 	if err != nil {
 		return err

@@ -55,19 +55,19 @@ func (r *KubeadmPhase) SetKubeadmConfigChecksum(checksum string) {
 	r.checksum = checksum
 }
 
-func (r *KubeadmPhase) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *KubeadmPhase) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return !r.isStatusEqual(tenantControlPlane)
 }
 
-func (r *KubeadmPhase) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *KubeadmPhase) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *KubeadmPhase) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *KubeadmPhase) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
-func (r *KubeadmPhase) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubeadmPhase) Define(context.Context, *kamajiv1alpha1.TenantControlPlane) error {
 	return nil
 }
 
@@ -120,7 +120,7 @@ func (r *KubeadmPhase) GetName() string {
 	return r.Name
 }
 
-func (r *KubeadmPhase) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubeadmPhase) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	status, err := r.GetStatus(tenantControlPlane)
 	if err != nil {
 		return err
