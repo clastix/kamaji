@@ -59,14 +59,6 @@ $ make mariadb-secrets
 Previous certificates and MySQL configuration have to be available in order to be used.
 They will be under the secret `kamaji-system:mysql-config`, used by the MySQL/MariaDB instance.
 
-## Kine Secret
-
-```bash
-$ make mariadb-kine-secret
-```
-
-Organize the required Kine data such as username, password, CA, certificate, and private key to be stored in the Kamaji desired format.
-
 ## Deployment
 
 ```bash
