@@ -1,0 +1,34 @@
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: DataStore
+metadata:
+  name: mysql
+spec:
+  driver: MySQL
+  endpoints:
+    - mariadb.kamaji-system.svc:3306
+  basicAuth:
+    username:
+      content: cm9vdA==
+    password:
+      secretReference:
+        name: mysql-config
+        namespace: kamaji-system
+        keyPath: MYSQL_ROOT_PASSWORD
+  tlsConfig:
+    certificateAuthority:
+      certificate:
+        secretReference:
+          name: mysql-config
+          namespace: kamaji-system
+          keyPath: "ca.crt"
+    clientCertificate:
+      certificate:
+        secretReference:
+          name: mysql-config
+          namespace: kamaji-system
+          keyPath: "server.crt"
+      privateKey:
+        secretReference:
+          name: mysql-config
+          namespace: kamaji-system
+          keyPath: "server.key"
