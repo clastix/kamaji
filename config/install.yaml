@@ -1236,6 +1236,26 @@ rules:
 - apiGroups:
   - kamaji.clastix.io
   resources:
+  - datastores
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kamaji.clastix.io
+  resources:
+  - datastores/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - kamaji.clastix.io
+  resources:
   - tenantcontrolplanes
   verbs:
   - create
@@ -1438,3 +1458,39 @@ spec:
         runAsNonRoot: true
       serviceAccountName: kamaji-controller-manager
       terminationGracePeriodSeconds: 10
+---
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: DataStore
+metadata:
+  name: kamaji-etcd
+  namespace: kamaji-system
+spec:
+  basicAuth: null
+  driver: etcd
+  endpoints:
+  - etcd-0.etcd.kamaji-system.svc:2379
+  - etcd-1.etcd.kamaji-system.svc:2379
+  - etcd-2.etcd.kamaji-system.svc:2379
+  tlsConfig:
+    certificateAuthority:
+      certificate:
+        secretReference:
+          keyPath: ca.crt
+          name: etcd-certs
+          namespace: kamaji-system
+      privateKey:
+        secretReference:
+          keyPath: ca.key
+          name: etcd-certs
+          namespace: kamaji-system
+    clientCertificate:
+      certificate:
+        secretReference:
+          keyPath: tls.crt
+          name: root-client-certs
+          namespace: kamaji-system
+      privateKey:
+        secretReference:
+          keyPath: tls.key
+          name: root-client-certs
+          namespace: kamaji-system
