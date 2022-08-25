@@ -1,0 +1,19 @@
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: DataStore
+metadata:
+  name: {{ include "datastore.fullname" . }}
+  labels:
+    {{- include "datastore.labels" . | nindent 4 }}
+spec:
+  driver: {{ .Values.datastore.driver }}
+  endpoints:
+    {{- include "datastore.endpoints" . | indent 4 }}
+{{- if (and .Values.datastore.basicAuth.usernameSecret.name .Values.datastore.basicAuth.passwordSecret.name) }}
+  basicAuth:
+    {{- .Values.datastore.basicAuth | toYaml | nindent 4 }}
+{{- end }}
+  tlsConfig:
+    certificateAuthority:
+      {{- include "datastore.certificateAuthority" . | indent 6 }}
+    clientCertificate:
+      {{- include "datastore.clientCertificate" . | indent 6 }}

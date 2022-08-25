@@ -108,7 +108,7 @@ Comma separated list of etcd endpoints, using the overrides in case of unmanaged
 {{- else if not .Values.etcd.overrides.endpoints }}
     {{- fail "A valid .Values.etcd.overrides.endpoints required!" }}
 {{- end }}
-{{- join "," $list -}}
+{{- $list | toYaml }}
 {{- end }}
 
 {{/*

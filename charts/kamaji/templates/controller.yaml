@@ -40,16 +40,11 @@ spec:
           protocol: TCP
       - args:
         - --config-file={{ .Values.configPath }}
-        - --etcd-ca-secret-name={{ include "etcd.caSecretName" . }}
-        - --etcd-ca-secret-namespace={{ include "etcd.caSecretNamespace" . }}
-        - --etcd-client-secret-name={{ include "etcd.clientSecretName" . }}
-        - --etcd-client-secret-namespace={{ include "etcd.clientSecretNamespace" . }}
-        - --etcd-compaction-interval={{ .Values.etcd.compactionInterval }}
-        - --etcd-endpoints={{ include "etcd.endpoints" . }}
         - --health-probe-bind-address={{ .Values.healthProbeBindAddress }}
         - --leader-elect
         - --metrics-bind-address={{ .Values.metricsBindAddress }}
         - --tmp-directory={{ .Values.temporaryDirectoryPath }}
+        - --datastore={{ include "datastore.fullname" . }}
         {{- if .Values.loggingDevel.enable }}
         - --zap-devel
         {{- end }}

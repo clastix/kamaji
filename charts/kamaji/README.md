@@ -1,6 +1,6 @@
 # kamaji
 
-![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 Kamaji is a tool aimed to build and operate a Managed Kubernetes Service with a fraction of the operational burden. With Kamaji, you can deploy and operate hundreds of Kubernetes clusters as a hyper-scaler.
 
@@ -68,6 +68,27 @@ Here the values you can override:
 |-----|------|---------|-------------|
 | affinity | object | `{}` | Kubernetes affinity rules to apply to Kamaji controller pods |
 | configPath | string | `"./kamaji.yaml"` | Configuration file path alternative. (default "./kamaji.yaml") |
+| datastore.basicAuth.passwordSecret.keyPath | string | `nil` | The Secret key where the data is stored. |
+| datastore.basicAuth.passwordSecret.name | string | `nil` | The name of the Secret containing the password used to connect to the relational database. |
+| datastore.basicAuth.passwordSecret.namespace | string | `nil` | The namespace of the Secret containing the password used to connect to the relational database. |
+| datastore.basicAuth.usernameSecret.keyPath | string | `nil` | The Secret key where the data is stored. |
+| datastore.basicAuth.usernameSecret.name | string | `nil` | The name of the Secret containing the username used to connect to the relational database. |
+| datastore.basicAuth.usernameSecret.namespace | string | `nil` | The namespace of the Secret containing the username used to connect to the relational database. |
+| datastore.driver | string | `"etcd"` | (string) The Kamaji Datastore driver, supported: etcd, MySQL, PostgreSQL (defaults=etcd). |
+| datastore.endpoints | list | `[]` | (array) List of endpoints of the selected Datastore. When letting the Chart install the etcd datastore, this field is populated automatically. |
+| datastore.nameOverride | string | `nil` | The Datastore name override, if empty defaults to `default` |
+| datastore.tlsConfig.certificateAuthority.certificate.keyPath | string | `nil` | Key of the Secret which contains the content of the certificate. |
+| datastore.tlsConfig.certificateAuthority.certificate.name | string | `nil` | Name of the Secret containing the CA required to establish the mandatory SSL/TLS connection to the datastore. |
+| datastore.tlsConfig.certificateAuthority.certificate.namespace | string | `nil` | Namespace of the Secret containing the CA required to establish the mandatory SSL/TLS connection to the datastore. |
+| datastore.tlsConfig.certificateAuthority.privateKey.keyPath | string | `nil` | Key of the Secret which contains the content of the private key. |
+| datastore.tlsConfig.certificateAuthority.privateKey.name | string | `nil` | Name of the Secret containing the CA private key required to establish the mandatory SSL/TLS connection to the datastore. |
+| datastore.tlsConfig.certificateAuthority.privateKey.namespace | string | `nil` | Namespace of the Secret containing the CA private key required to establish the mandatory SSL/TLS connection to the datastore. |
+| datastore.tlsConfig.clientCertificate.certificate.keyPath | string | `nil` | Key of the Secret which contains the content of the certificate. |
+| datastore.tlsConfig.clientCertificate.certificate.name | string | `nil` | Name of the Secret containing the client certificate required to establish the mandatory SSL/TLS connection to the datastore. |
+| datastore.tlsConfig.clientCertificate.certificate.namespace | string | `nil` | Namespace of the Secret containing the client certificate required to establish the mandatory SSL/TLS connection to the datastore. |
+| datastore.tlsConfig.clientCertificate.privateKey.keyPath | string | `nil` | Key of the Secret which contains the content of the private key. |
+| datastore.tlsConfig.clientCertificate.privateKey.name | string | `nil` | Name of the Secret containing the client certificate private key required to establish the mandatory SSL/TLS connection to the datastore. |
+| datastore.tlsConfig.clientCertificate.privateKey.namespace | string | `nil` | Namespace of the Secret containing the client certificate private key required to establish the mandatory SSL/TLS connection to the datastore. |
 | etcd.compactionInterval | int | `0` | ETCD Compaction interval (e.g. "5m0s"). (default: "0" (disabled)) |
 | etcd.deploy | bool | `true` | Install an etcd with enabled multi-tenancy along with Kamaji |
 | etcd.image | object | `{"pullPolicy":"IfNotPresent","repository":"quay.io/coreos/etcd","tag":"v3.5.4"}` | Install specific etcd image |
@@ -112,3 +133,9 @@ Here the values you can override:
 | serviceAccount.name | string | `"kamaji-controller-manager"` |  |
 | temporaryDirectoryPath | string | `"/tmp/kamaji"` | Directory which will be used to work with temporary files. (default "/tmp/kamaji") |
 | tolerations | list | `[]` | Kubernetes node taints that the Kamaji controller pods would tolerate |
+
+## Installing and managing etcd as DataStore
+
+Kamaji supports multiple data store, although `etcd` is the default one: thus, an initial cluster will be created upon the Chart installation.
+
+The `DataStore` resource can be configured with the proper values in case of overrides when using a different driver, otherwise all the required data will be inherited by the Chart values.

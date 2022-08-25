@@ -103,6 +103,32 @@ rules:
   - update
   - watch
 - apiGroups:
+    - kamaji.clastix.io
+  resources:
+    - datastores
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - kamaji.clastix.io
+  resources:
+    - datastores/finalizers
+  verbs:
+    - update
+- apiGroups:
+    - kamaji.clastix.io
+  resources:
+    - datastores/status
+  verbs:
+    - get
+    - patch
+    - update
+- apiGroups:
   - kamaji.clastix.io
   resources:
   - tenantcontrolplanes

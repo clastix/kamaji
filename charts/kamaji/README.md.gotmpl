@@ -54,3 +54,9 @@ If you only need to make minor customizations, you can specify them on the comma
 Here the values you can override:
 
 {{ template "chart.valuesSection" . }}
+
+## Installing and managing etcd as DataStore
+
+Kamaji supports multiple data store, although `etcd` is the default one: thus, an initial cluster will be created upon the Chart installation.
+
+The `DataStore` resource can be configured with the proper values in case of overrides when using a different driver, otherwise all the required data will be inherited by the Chart values.
