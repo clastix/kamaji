@@ -1,0 +1,34 @@
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: DataStore
+metadata:
+  name: etcd
+spec:
+  driver: etcd
+  endpoints:
+    - etcd-0.etcd.kamaji-system.svc:2379
+    - etcd-1.etcd.kamaji-system.svc:2379
+    - etcd-2.etcd.kamaji-system.svc:2379
+  basicAuth: null
+  tlsConfig:
+    certificateAuthority:
+      certificate:
+        secretReference:
+          name: etcd-certs
+          namespace: kamaji-system
+          keyPath: "ca.crt"
+      privateKey:
+        secretReference:
+          name: etcd-certs
+          namespace: kamaji-system
+          keyPath: "ca.key"
+    clientCertificate:
+      certificate:
+        secretReference:
+          name: root-client-certs
+          namespace: kamaji-system
+          keyPath: "tls.crt"
+      privateKey:
+        secretReference:
+          name: root-client-certs
+          namespace: kamaji-system
+          keyPath: "tls.key"
