@@ -57,9 +57,7 @@ Kamaji offers the possibility of using a different storage system than `ETCD` fo
 
 Read it more in the provided [guide](../deploy/kine/README.md).
 
-
-
-Assuming you adjusted the [Kamaji manifest](./config/install.yaml) to connect to Kine and compatible database using the proper driver, you can now install it.
+Assuming you adjusted the [Kamaji manifest](../config/install.yaml) to connect to Kine and compatible database using the proper driver, you can now install it.
 
 ### Install Kamaji
 

@@ -1,6 +1,7 @@
 # PostgreSQL as Kubernetes Storage
 
-Kamaji offers the possibility of having a different storage system than `etcd` thanks to [kine](https://github.com/k3s-io/kine). One of the implementations is [PostgreSQL](https://www.postgresql.org/).
+Kamaji offers the possibility of having a different storage system than `etcd` thanks to [kine](https://github.com/k3s-io/kine).
+One of the implementations is [PostgreSQL](https://www.postgresql.org/).
 
 Kamaji project is developed using [kind](https://kind.sigs.k8s.io), therefore, a PostgreSQL instance must be deployed in advance into the local kubernetes cluster in order to be used as storage for the tenants.
 For the sake of simplicity, the [cloudnative-pg](https://cloudnative-pg.io/) Operator will be used to simplify the setup of it.
@@ -34,7 +35,6 @@ validatingwebhookconfiguration.admissionregistration.k8s.io/cnpg-validating-webh
 deployment "cnpg-controller-manager" successfully rolled out
 cluster.postgresql.cnpg.io/postgresql unchanged
 secret/postgres-root-cert created
-secret/kine-secret created
 ```
 
 ## Operator setup
@@ -55,15 +55,13 @@ $ make postgresql-secret
 
 This target will download locally the `kubectl-cnpg` utility to generate an SSL certificate required to secure the connection to the PostgreSQL instance.
 
-## Kine Secret generation
+## Certificate generation
 
 ```bash
-$ make postgresql-kine-secret
+$ make postgresql-secret
 ```
 
-Generate the Kine secret required for Kamaji.
-
-> Requires the generation of the `postgresql-secret`
+Generate the Certificate required to connect to the DataStore.
 
 ## Teardown
 

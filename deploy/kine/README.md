@@ -7,38 +7,17 @@ This can help in overcoming the `etcd` limitation regarding scalability and clus
 
 ## Kamaji additional CLI flags
 
-Once a compatible database is running, we need to provide information about it to Kamaji by using the following flags:
+Kamaji read the data store configuration from a cluster-scoped resource named `DataStore`, containing all tha required details to secure a connection using a specific driver. 
+
+- [Example of a `etcd` DataStore](./../../config/samples/kamaji_v1alpha1_datastore_etcd.yaml)
+- [Example of a `MySQL` DataStore](./../../config/samples/kamaji_v1alpha1_datastore_mysql.yaml)
+- [Example of a `PostgreSQL` DataStore](./../../config/samples/kamaji_v1alpha1_datastore_postgresql.yaml)
+
+Once the datastore is running, and the `DataStore` has been created with the required details, we need to provide information about it to Kamaji by using the following flag and pointing to the resource name:
 
 ```
---etcd-storage-type={kine-mysql,kine-postgresql}
---kine-host=<database host>
---kine-port=<database port>
---kine-secret-name=<secret name>
---kine-secret-namespace=<secret namespace>
+--datastore={.metadata.name}
 ```
-
-## Kine Secret
-
-The Kine Secret must be configured as follows:
-
-```yaml
-apiVersion: v1
-data:
-  ca.crt: "content of the Certificate Authority for SSL connection"
-  password: "password of the super user"
-  server.crt: "content of the certificate for SSL connection"
-  server.key: "content of the private key for SSL connection"
-  username: "username of the super user"
-kind: Secret
-metadata:
-  name: kine-secret
-  namespace: kamaji-system
-type: kamaji.clastix.io/kine
-```
-
-> Please, pay attention to the type `kamaji.clastix.io/kine`: this check is enforced at the code level to ensure the required data is provided.
-
-> Actually, the `kine` integration expects a secured connection to the database since the sensitivity data of the Tenant.
 
 ## Drivers
 
