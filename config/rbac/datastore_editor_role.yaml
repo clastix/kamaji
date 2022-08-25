@@ -1,0 +1,24 @@
+# permissions for end users to edit datastores.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: datastore-editor-role
+rules:
+- apiGroups:
+  - kamaji.clastix.io
+  resources:
+  - datastores
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kamaji.clastix.io
+  resources:
+  - datastores/status
+  verbs:
+  - get
