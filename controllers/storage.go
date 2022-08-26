@@ -14,26 +14,10 @@ import (
 	"github.com/pkg/errors"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/sql"
+	"github.com/clastix/kamaji/internal/datastore"
 )
 
-func (r *TenantControlPlaneReconciler) getStorageConnection(ctx context.Context, ds kamajiv1alpha1.DataStore) (sql.DBConnection, error) {
-	var driver sql.Driver
-	var dbName string
-
-	// TODO: https://github.com/clastix/kamaji/issues/67
-	switch ds.Spec.Driver {
-	case kamajiv1alpha1.EtcdDriver:
-		return nil, nil
-	case kamajiv1alpha1.KineMySQLDriver:
-		driver = sql.MySQL
-		dbName = "mysql"
-	case kamajiv1alpha1.KinePostgreSQLDriver:
-		driver = sql.PostgreSQL
-	default:
-		return nil, nil
-	}
-
+func (r *TenantControlPlaneReconciler) getStorageConnection(ctx context.Context, ds kamajiv1alpha1.DataStore) (datastore.Connection, error) {
 	ca, err := ds.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, r.Client)
 	if err != nil {
 		return nil, err
@@ -74,29 +58,47 @@ func (r *TenantControlPlaneReconciler) getStorageConnection(ctx context.Context,
 		password = string(p)
 	}
 
-	host, stringPort, err := net.SplitHostPort(ds.Spec.Endpoints[0])
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot retrieve host-port pair from DataStore endpoints")
+	eps := make([]datastore.ConnectionEndpoint, 0, len(ds.Spec.Endpoints))
+
+	for _, ep := range ds.Spec.Endpoints {
+		host, stringPort, err := net.SplitHostPort(ep)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot retrieve host-port pair from DataStore endpoints")
+		}
+
+		port, err := strconv.Atoi(stringPort)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot convert port from string for the given DataStore")
+		}
+
+		eps = append(eps, datastore.ConnectionEndpoint{
+			Host: host,
+			Port: port,
+		})
 	}
 
-	port, err := strconv.Atoi(stringPort)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot convert port from string for the given DataStore")
-	}
-
-	return sql.GetDBConnection(
-		sql.ConnectionConfig{
-			SQLDriver: driver,
-			User:      user,
-			Password:  password,
-			Host:      host,
-			Port:      port,
-			DBName:    dbName,
-			TLSConfig: &tls.Config{
-				ServerName:   host,
-				RootCAs:      rootCAs,
-				Certificates: []tls.Certificate{certificate},
-			},
+	cc := datastore.ConnectionConfig{
+		User:      user,
+		Password:  password,
+		Endpoints: eps,
+		TLSConfig: &tls.Config{
+			RootCAs:      rootCAs,
+			Certificates: []tls.Certificate{certificate},
 		},
-	)
+	}
+
+	switch ds.Spec.Driver {
+	case kamajiv1alpha1.KineMySQLDriver:
+		cc.TLSConfig.ServerName = cc.Endpoints[0].Host
+
+		return datastore.NewMySQLConnection(cc)
+	case kamajiv1alpha1.KinePostgreSQLDriver:
+		cc.TLSConfig.ServerName = cc.Endpoints[0].Host
+
+		return datastore.NewPostgreSQLConnection(cc)
+	case kamajiv1alpha1.EtcdDriver:
+		return datastore.NewETCDConnection(cc)
+	default:
+		return nil, fmt.Errorf("%s is not a valid driver", ds.Spec.Driver)
+	}
 }

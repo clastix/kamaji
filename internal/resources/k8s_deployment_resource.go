@@ -20,8 +20,7 @@ import (
 type KubernetesDeploymentResource struct {
 	resource           *appsv1.Deployment
 	Client             client.Client
-	DataStoreDriver    kamajiv1alpha1.Driver
-	ETCDEndpoints      []string
+	DataStore          kamajiv1alpha1.DataStore
 	Name               string
 	KineContainerImage string
 }
@@ -64,8 +63,7 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 
 		d := builder.Deployment{
 			Address:            address,
-			ETCDEndpoints:      r.ETCDEndpoints,
-			ETCDStorageType:    r.DataStoreDriver,
+			DataStore:          r.DataStore,
 			KineContainerImage: r.KineContainerImage,
 		}
 		d.SetLabels(r.resource, utilities.MergeMaps(utilities.CommonLabels(tenantControlPlane.GetName()), tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Labels))
@@ -130,11 +128,6 @@ func (r *KubernetesDeploymentResource) deploymentTemplateLabels(ctx context.Cont
 		"component.kamaji.clastix.io/front-proxy-client-certificate":        hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.FrontProxyClient.SecretName),
 		"component.kamaji.clastix.io/service-account":                       hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.SA.SecretName),
 		"component.kamaji.clastix.io/scheduler-kubeconfig":                  hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.KubeConfig.Scheduler.SecretName),
-	}
-
-	if r.DataStoreDriver == kamajiv1alpha1.EtcdDriver {
-		labels["component.kamaji.clastix.io/etcd-ca-certificates"] = hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.ETCD.CA.SecretName)
-		labels["component.kamaji.clastix.io/etcd-certificates"] = hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.ETCD.APIServer.SecretName)
 	}
 
 	return labels

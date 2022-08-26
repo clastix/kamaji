@@ -18,7 +18,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/types"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -33,11 +32,10 @@ const (
 )
 
 type KubernetesDeploymentResource struct {
-	resource        *appsv1.Deployment
-	Client          client.Client
-	ETCDStorageType types.ETCDStorageType
-	ETCDEndpoints   []string
-	Name            string
+	resource      *appsv1.Deployment
+	Client        client.Client
+	ETCDEndpoints []string
+	Name          string
 }
 
 func (r *KubernetesDeploymentResource) isStatusEqual(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {

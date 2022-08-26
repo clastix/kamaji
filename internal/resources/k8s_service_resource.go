@@ -22,7 +22,6 @@ import (
 type KubernetesServiceResource struct {
 	resource *corev1.Service
 	Client   client.Client
-	Name     string
 }
 
 func (r *KubernetesServiceResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -62,8 +61,6 @@ func (r *KubernetesServiceResource) Define(_ context.Context, tenantControlPlane
 			Namespace: tenantControlPlane.GetNamespace(),
 		},
 	}
-
-	r.Name = "service"
 
 	return nil
 }
@@ -124,5 +121,5 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 }
 
 func (r *KubernetesServiceResource) GetName() string {
-	return r.Name
+	return "service"
 }

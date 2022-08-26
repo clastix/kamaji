@@ -1,7 +1,7 @@
 // Copyright 2022 Clastix Labs
 // SPDX-License-Identifier: Apache-2.0
 
-package sql
+package datastore
 
 import (
 	"context"
@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/go-pg/pg/v10"
+
+	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
 const (
@@ -24,13 +26,12 @@ const (
 )
 
 type PostgreSQLConnection struct {
-	db   *pg.DB
-	host string
-	port int
+	db         *pg.DB
+	connection ConnectionEndpoint
 }
 
 func (r *PostgreSQLConnection) Driver() string {
-	return "PostgreSQL"
+	return string(kamajiv1alpha1.KinePostgreSQLDriver)
 }
 
 func (r *PostgreSQLConnection) UserExists(ctx context.Context, user string) (bool, error) {
@@ -109,18 +110,14 @@ func (r *PostgreSQLConnection) RevokePrivileges(ctx context.Context, user, dbNam
 	return err
 }
 
-func (r *PostgreSQLConnection) GetHost() string {
-	return r.host
-}
-
-func (r *PostgreSQLConnection) GetPort() int {
-	return r.port
+func (r *PostgreSQLConnection) GetConnectionString() string {
+	return r.connection.String()
 }
 
 func (r *PostgreSQLConnection) Close() error {
 	return r.db.Close()
 }
 
-func (r *PostgreSQLConnection) Check() error {
-	return r.db.Ping(context.Background())
+func (r *PostgreSQLConnection) Check(ctx context.Context) error {
+	return r.db.Ping(ctx)
 }

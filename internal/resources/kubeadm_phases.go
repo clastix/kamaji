@@ -15,6 +15,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
+	"github.com/clastix/kamaji/internal/resources/utils"
 )
 
 type kubeadmPhase int
@@ -104,7 +105,7 @@ func enrichBootstrapToken(bootstrapToken *bootstraptokenv1.BootstrapToken) {
 	}
 
 	if bootstrapToken.Token.ID == "" {
-		bootstrapToken.Token.ID = fmt.Sprintf("%s.%s", randomString(6), randomString(16))
+		bootstrapToken.Token.ID = fmt.Sprintf("%s.%s", utils.RandomString(6), utils.RandomString(16))
 	}
 }
 
