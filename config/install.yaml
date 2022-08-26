@@ -1048,78 +1048,36 @@ spec:
               storage:
                 description: Storage Status contains information about Kubernetes storage system
                 properties:
-                  etcd:
-                    description: ETCDStatus defines the observed state of ETCDStatus.
+                  certificate:
                     properties:
-                      role:
-                        properties:
-                          exists:
-                            type: boolean
-                          name:
-                            type: string
-                          permissions:
-                            items:
-                              properties:
-                                key:
-                                  type: string
-                                rangeEnd:
-                                  type: string
-                                type:
-                                  type: integer
-                              type: object
-                            type: array
-                        required:
-                        - exists
-                        - name
-                        type: object
-                      user:
-                        properties:
-                          exists:
-                            type: boolean
-                          name:
-                            type: string
-                          roles:
-                            items:
-                              type: string
-                            type: array
-                        required:
-                        - exists
-                        - name
-                        type: object
-                    type: object
-                  kine:
-                    properties:
-                      certificate:
-                        properties:
-                          checksum:
-                            type: string
-                          lastUpdate:
-                            format: date-time
-                            type: string
-                          secretName:
-                            type: string
-                        type: object
-                      config:
-                        properties:
-                          checksum:
-                            type: string
-                          secretName:
-                            type: string
-                        type: object
-                      driver:
+                      checksum:
                         type: string
-                      setup:
-                        properties:
-                          checksum:
-                            type: string
-                          lastUpdate:
-                            format: date-time
-                            type: string
-                          schema:
-                            type: string
-                          user:
-                            type: string
-                        type: object
+                      lastUpdate:
+                        format: date-time
+                        type: string
+                      secretName:
+                        type: string
+                    type: object
+                  config:
+                    properties:
+                      checksum:
+                        type: string
+                      secretName:
+                        type: string
+                    type: object
+                  driver:
+                    type: string
+                  setup:
+                    properties:
+                      checksum:
+                        type: string
+                      lastUpdate:
+                        format: date-time
+                        type: string
+                      schema:
+                        type: string
+                      user:
+                        type: string
                     type: object
                 type: object
             type: object
