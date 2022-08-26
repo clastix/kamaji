@@ -12,9 +12,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/datastore"
 	"github.com/clastix/kamaji/internal/resources"
+	ds "github.com/clastix/kamaji/internal/resources/datastore"
 	"github.com/clastix/kamaji/internal/resources/konnectivity"
-	"github.com/clastix/kamaji/internal/sql"
 )
 
 type GroupResourceBuilderConfiguration struct {
@@ -22,7 +23,7 @@ type GroupResourceBuilderConfiguration struct {
 	log                 logr.Logger
 	tcpReconcilerConfig TenantControlPlaneReconcilerConfig
 	tenantControlPlane  kamajiv1alpha1.TenantControlPlane
-	DBConnection        sql.DBConnection
+	Connection          datastore.Connection
 	DataStore           kamajiv1alpha1.DataStore
 }
 
@@ -31,14 +32,14 @@ type GroupDeleteableResourceBuilderConfiguration struct {
 	log                 logr.Logger
 	tcpReconcilerConfig TenantControlPlaneReconcilerConfig
 	tenantControlPlane  kamajiv1alpha1.TenantControlPlane
-	DBConnection        sql.DBConnection
+	connection          datastore.Connection
 }
 
 // GetResources returns a list of resources that will be used to provide tenant control planes
 // Currently there is only a default approach
 // TODO: the idea of this function is to become a factory to return the group of resources according to the given configuration.
-func GetResources(config GroupResourceBuilderConfiguration, dataStore kamajiv1alpha1.DataStore) []resources.Resource {
-	return getDefaultResources(config, dataStore)
+func GetResources(config GroupResourceBuilderConfiguration) []resources.Resource {
+	return getDefaultResources(config)
 }
 
 // GetDeletableResources returns a list of resources that have to be deleted when tenant control planes are deleted
@@ -48,14 +49,14 @@ func GetDeletableResources(config GroupDeleteableResourceBuilderConfiguration, d
 	return getDefaultDeleteableResources(config, dataStore)
 }
 
-func getDefaultResources(config GroupResourceBuilderConfiguration, dataStore kamajiv1alpha1.DataStore) []resources.Resource {
+func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.Resource {
 	resources := append(getUpgradeResources(config.client, config.tenantControlPlane), getKubernetesServiceResources(config.client, config.tenantControlPlane)...)
-	resources = append(resources, getKubeadmConfigResources(config.client, getTmpDirectory(config.tcpReconcilerConfig.TmpBaseDirectory, config.tenantControlPlane), dataStore)...)
+	resources = append(resources, getKubeadmConfigResources(config.client, getTmpDirectory(config.tcpReconcilerConfig.TmpBaseDirectory, config.tenantControlPlane), config.DataStore)...)
 	resources = append(resources, getKubernetesCertificatesResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubeconfigResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
-	resources = append(resources, getKubernetesStorageResources(config.client, config.log, config.tcpReconcilerConfig, config.DBConnection, config.tenantControlPlane, dataStore)...)
+	resources = append(resources, getKubernetesStorageResources(config.client, config.Connection, config.DataStore)...)
 	resources = append(resources, getInternalKonnectivityResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
-	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, dataStore)...)
+	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.DataStore)...)
 	resources = append(resources, getKubernetesIngressResources(config.client, config.tenantControlPlane)...)
 	resources = append(resources, getKubeadmPhaseResources(config.client, config.log, config.tenantControlPlane)...)
 	resources = append(resources, getKubeadmAddonResources(config.client, config.log, config.tenantControlPlane)...)
@@ -65,24 +66,11 @@ func getDefaultResources(config GroupResourceBuilderConfiguration, dataStore kam
 }
 
 func getDefaultDeleteableResources(config GroupDeleteableResourceBuilderConfiguration, dataStore kamajiv1alpha1.DataStore) []resources.DeleteableResource {
-	switch dataStore.Spec.Driver {
-	case kamajiv1alpha1.EtcdDriver:
-		return []resources.DeleteableResource{
-			&resources.ETCDSetupResource{
-				Client:    config.client,
-				Log:       config.log,
-				DataStore: dataStore,
-			},
-		}
-	case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver:
-		return []resources.DeleteableResource{
-			&resources.SQLSetup{
-				Client:       config.client,
-				DBConnection: config.DBConnection,
-			},
-		}
-	default:
-		return []resources.DeleteableResource{}
+	return []resources.DeleteableResource{
+		&ds.Setup{
+			Client:     config.client,
+			Connection: config.connection,
+		},
 	}
 }
 
@@ -182,66 +170,30 @@ func getKubeconfigResources(c client.Client, log logr.Logger, tcpReconcilerConfi
 	}
 }
 
-func getKubernetesStorageResources(c client.Client, log logr.Logger, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, dbConnection sql.DBConnection, tenantControlPlane kamajiv1alpha1.TenantControlPlane, ds kamajiv1alpha1.DataStore) []resources.Resource {
-	switch ds.Spec.Driver {
-	case kamajiv1alpha1.EtcdDriver:
-		return []resources.Resource{
-			&resources.ETCDCACertificatesResource{
-				Name:      "etcd-ca-certificates",
-				Client:    c,
-				Log:       log,
-				DataStore: ds,
-			},
-			&resources.ETCDCertificatesResource{
-				Name:   "etcd-certificates",
-				Client: c,
-				Log:    log,
-			},
-			&resources.ETCDSetupResource{
-				Client:    c,
-				Log:       log,
-				DataStore: ds,
-			},
-		}
-	case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver:
-		return []resources.Resource{
-			&resources.SQLStorageConfig{
-				Client: c,
-				Name:   "sql-config",
-				Host:   dbConnection.GetHost(),
-				Port:   dbConnection.GetPort(),
-				Driver: dbConnection.Driver(),
-			},
-			&resources.SQLSetup{
-				Client:       c,
-				DBConnection: dbConnection,
-				Driver:       dbConnection.Driver(),
-			},
-			&resources.SQLCertificate{
-				Client:    c,
-				DataStore: ds,
-			},
-		}
-	default:
-		return []resources.Resource{}
+func getKubernetesStorageResources(c client.Client, dbConnection datastore.Connection, datastore kamajiv1alpha1.DataStore) []resources.Resource {
+	return []resources.Resource{
+		&ds.Config{
+			Client:     c,
+			ConnString: dbConnection.GetConnectionString(),
+			Driver:     dbConnection.Driver(),
+		},
+		&ds.Setup{
+			Client:     c,
+			Connection: dbConnection,
+			DataStore:  datastore,
+		},
+		&ds.Certificate{
+			Client:    c,
+			DataStore: datastore,
+		},
 	}
 }
 
 func getKubernetesDeploymentResources(c client.Client, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, dataStore kamajiv1alpha1.DataStore) []resources.Resource {
-	var endpoints []string
-
-	switch dataStore.Spec.Driver {
-	case kamajiv1alpha1.EtcdDriver:
-		endpoints = dataStore.Spec.Endpoints
-	default:
-		endpoints = []string{"127.0.0.1:2379"}
-	}
-
 	return []resources.Resource{
 		&resources.KubernetesDeploymentResource{
 			Client:             c,
-			ETCDEndpoints:      endpoints,
-			DataStoreDriver:    dataStore.Spec.Driver,
+			DataStore:          dataStore,
 			KineContainerImage: tcpReconcilerConfig.KineContainerImage,
 		},
 	}

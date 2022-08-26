@@ -1,7 +1,7 @@
 // Copyright 2022 Clastix Labs
 // SPDX-License-Identifier: Apache-2.0
 
-package resources
+package utils
 
 import (
 	"math/rand"
@@ -12,7 +12,7 @@ import (
 
 var letters = []byte("abcdefghijklmnopqrstuvwxyz")
 
-func updateOperationResult(current controllerutil.OperationResult, op controllerutil.OperationResult) controllerutil.OperationResult {
+func UpdateOperationResult(current controllerutil.OperationResult, op controllerutil.OperationResult) controllerutil.OperationResult {
 	if current == controllerutil.OperationResultCreated || op == controllerutil.OperationResultCreated {
 		return controllerutil.OperationResultCreated
 	}
@@ -32,7 +32,7 @@ func updateOperationResult(current controllerutil.OperationResult, op controller
 	return controllerutil.OperationResultNone
 }
 
-func randomString(n int) string {
+func RandomString(n int) string {
 	rand.Seed(time.Now().UnixNano())
 	b := make([]byte, n)
 	for i := range b {

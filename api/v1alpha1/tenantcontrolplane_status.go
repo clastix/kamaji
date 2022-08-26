@@ -8,8 +8,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/clastix/kamaji/internal/etcd"
 )
 
 // APIServerCertificatesStatus defines the observed state of ETCD Certificate for API server.
@@ -57,41 +55,30 @@ type CertificatesStatus struct {
 	ETCD                   *ETCDCertificatesStatus         `json:"etcd,omitempty"`
 }
 
-// ETCDStatus defines the observed state of ETCDStatus.
-type ETCDStatus struct {
-	Role etcd.Role `json:"role,omitempty"`
-	User etcd.User `json:"user,omitempty"`
-}
-
-type SQLCertificateStatus struct {
+type DataStoreCertificateStatus struct {
 	SecretName string      `json:"secretName,omitempty"`
 	Checksum   string      `json:"checksum,omitempty"`
 	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 }
 
-type SQLConfigStatus struct {
+type DataStoreConfigStatus struct {
 	SecretName string `json:"secretName,omitempty"`
 	Checksum   string `json:"checksum,omitempty"`
 }
 
-type SQLSetupStatus struct {
+type DataStoreSetupStatus struct {
 	Schema     string      `json:"schema,omitempty"`
 	User       string      `json:"user,omitempty"`
 	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 	Checksum   string      `json:"checksum,omitempty"`
 }
 
-type KineStatus struct {
-	Driver      string               `json:"driver,omitempty"`
-	Config      SQLConfigStatus      `json:"config,omitempty"`
-	Setup       SQLSetupStatus       `json:"setup,omitempty"`
-	Certificate SQLCertificateStatus `json:"certificate,omitempty"`
-}
-
 // StorageStatus defines the observed state of StorageStatus.
 type StorageStatus struct {
-	ETCD *ETCDStatus `json:"etcd,omitempty"`
-	Kine *KineStatus `json:"kine,omitempty"`
+	Driver      string                     `json:"driver,omitempty"`
+	Config      DataStoreConfigStatus      `json:"config,omitempty"`
+	Setup       DataStoreSetupStatus       `json:"setup,omitempty"`
+	Certificate DataStoreCertificateStatus `json:"certificate,omitempty"`
 }
 
 // KubeconfigStatus contains information about the generated kubeconfig.
@@ -163,9 +150,8 @@ type AddonStatus struct {
 
 // AddonsStatus defines the observed state of the different Addons.
 type AddonsStatus struct {
-	CoreDNS   AddonStatus `json:"coreDNS,omitempty"`
-	KubeProxy AddonStatus `json:"kubeProxy,omitempty"`
-
+	CoreDNS      AddonStatus        `json:"coreDNS,omitempty"`
+	KubeProxy    AddonStatus        `json:"kubeProxy,omitempty"`
 	Konnectivity KonnectivityStatus `json:"konnectivity,omitempty"`
 }
 

@@ -42,16 +42,14 @@ const (
 const (
 	apiServerFlagsAnnotation = "kube-apiserver.kamaji.clastix.io/args"
 	kineContainerName        = "kine"
-	kineVolumeChmod          = "kine-config"
+	dataStoreCerts           = "kine-config"
 	kineVolumeCertName       = "kine-certs"
 )
 
 type Deployment struct {
-	Address                string
-	ETCDEndpoints          []string
-	ETCDCompactionInterval string
-	ETCDStorageType        kamajiv1alpha1.Driver
-	KineContainerImage     string
+	Address            string
+	KineContainerImage string
+	DataStore          kamajiv1alpha1.DataStore
 }
 
 func (d *Deployment) SetContainers(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane, address string) {
@@ -116,19 +114,24 @@ func (d *Deployment) buildPKIVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1
 		},
 	}
 
-	if d.ETCDStorageType == kamajiv1alpha1.EtcdDriver {
-		sources = append(sources, corev1.VolumeProjection{
-			Secret: d.secretProjection(tcp.Status.Certificates.ETCD.APIServer.SecretName, constants.APIServerEtcdClientCertName, constants.APIServerEtcdClientKeyName),
-		})
+	if d.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
 		sources = append(sources, corev1.VolumeProjection{
 			Secret: &corev1.SecretProjection{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: tcp.Status.Certificates.ETCD.CA.SecretName,
+					Name: tcp.Status.Storage.Certificate.SecretName,
 				},
 				Items: []corev1.KeyToPath{
 					{
-						Key:  constants.CACertName,
-						Path: constants.EtcdCACertName,
+						Key:  "ca.crt",
+						Path: "etcd/ca.crt",
+					},
+					{
+						Key:  "server.crt",
+						Path: "etcd/server.crt",
+					},
+					{
+						Key:  "server.key",
+						Path: "etcd/server.key",
 					},
 				},
 			},
@@ -530,7 +533,6 @@ func (d *Deployment) buildKubeAPIServerCommand(tenantControlPlane *kamajiv1alpha
 		"--client-ca-file":                     path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
 		"--enable-admission-plugins":           strings.Join(tenantControlPlane.Spec.Kubernetes.AdmissionControllers.ToSlice(), ","),
 		"--enable-bootstrap-token-auth":        "true",
-		"--etcd-servers":                       strings.Join(d.ETCDEndpoints, ","),
 		"--service-cluster-ip-range":           tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
 		"--kubelet-client-certificate":         path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientCertName),
 		"--kubelet-client-key":                 path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientKeyName),
@@ -549,12 +551,23 @@ func (d *Deployment) buildKubeAPIServerCommand(tenantControlPlane *kamajiv1alpha
 		"--tls-private-key-file":               path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKeyName),
 	}
 
-	if d.ETCDStorageType == kamajiv1alpha1.EtcdDriver {
-		desiredArgs["--etcd-cafile"] = path.Join(v1beta3.DefaultCertificatesDir, constants.EtcdCACertName)
-		desiredArgs["--etcd-certfile"] = path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerEtcdClientCertName)
-		desiredArgs["--etcd-keyfile"] = path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerEtcdClientKeyName)
+	switch d.DataStore.Spec.Driver {
+	case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver:
+		desiredArgs["--etcd-servers"] = "http://127.0.0.1:2379"
+	case kamajiv1alpha1.EtcdDriver:
+		httpsEndpoints := make([]string, 0, len(d.DataStore.Spec.Endpoints))
+
+		for _, ep := range d.DataStore.Spec.Endpoints {
+			httpsEndpoints = append(httpsEndpoints, fmt.Sprintf("https://%s", ep))
+		}
+
 		desiredArgs["--etcd-prefix"] = fmt.Sprintf("/%s", tenantControlPlane.GetName())
+		desiredArgs["--etcd-servers"] = strings.Join(httpsEndpoints, ",")
+		desiredArgs["--etcd-cafile"] = "/etc/kubernetes/pki/etcd/ca.crt"
+		desiredArgs["--etcd-certfile"] = "/etc/kubernetes/pki/etcd/server.crt"
+		desiredArgs["--etcd-keyfile"] = "/etc/kubernetes/pki/etcd/server.key"
 	}
+
 	// Order matters, here: extraArgs could try to overwrite some arguments managed by Kamaji and that would be crucial.
 	// Adding as first element of the array of maps, we're sure that these overrides will be sanitized by our configuration.
 	return utilities.MergeMaps(extraArgs, current, desiredArgs)
@@ -579,15 +592,6 @@ func (d *Deployment) secretProjection(secretName, certKeyName, keyName string) *
 }
 
 func (d *Deployment) removeKineVolumes(podSpec *corev1.PodSpec) {
-	if found, index := utilities.HasNamedVolume(podSpec.Volumes, kineVolumeChmod); found {
-		var volumes []corev1.Volume
-
-		volumes = append(volumes, podSpec.Volumes[:index]...)
-		volumes = append(volumes, podSpec.Volumes[index+1:]...)
-
-		podSpec.Volumes = volumes
-	}
-
 	if found, index := utilities.HasNamedVolume(podSpec.Volumes, kineVolumeCertName); found {
 		var volumes []corev1.Volume
 
@@ -599,24 +603,24 @@ func (d *Deployment) removeKineVolumes(podSpec *corev1.PodSpec) {
 }
 
 func (d *Deployment) buildKineVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	if d.ETCDStorageType == kamajiv1alpha1.EtcdDriver {
-		d.removeKineVolumes(podSpec)
-
-		return
-	}
 	// Adding the volume for chmod'ed Kine certificates.
-	found, index := utilities.HasNamedVolume(podSpec.Volumes, kineVolumeChmod)
+	found, index := utilities.HasNamedVolume(podSpec.Volumes, dataStoreCerts)
 	if !found {
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
 		index = len(podSpec.Volumes) - 1
 	}
 
-	podSpec.Volumes[index].Name = kineVolumeChmod
+	podSpec.Volumes[index].Name = dataStoreCerts
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
-			SecretName:  tcp.Status.Storage.Kine.Certificate.SecretName,
+			SecretName:  tcp.Status.Storage.Certificate.SecretName,
 			DefaultMode: pointer.Int32Ptr(420),
 		},
+	}
+	if d.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
+		d.removeKineVolumes(podSpec)
+
+		return
 	}
 	// Adding the volume to read Kine certificates:
 	// these must be subsequently fixed with a chmod due to pg issues with private key.
@@ -646,7 +650,7 @@ func (d *Deployment) removeKineContainers(podSpec *corev1.PodSpec) {
 }
 
 func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	if d.ETCDStorageType == kamajiv1alpha1.EtcdDriver {
+	if d.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
 		d.removeKineContainers(podSpec)
 
 		return
@@ -665,11 +669,11 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 		args = utilities.ArgsFromSliceToMap(tcp.Spec.ControlPlane.Deployment.ExtraArgs.Kine)
 	}
 
-	switch d.ETCDStorageType {
+	switch d.DataStore.Spec.Driver {
 	case kamajiv1alpha1.KineMySQLDriver:
-		args["--endpoint"] = "mysql://$(DB_USER):$(DB_PASSWORD)@tcp($(DB_HOST):$(DB_PORT))/$(DB_SCHEMA)"
+		args["--endpoint"] = "mysql://$(DB_USER):$(DB_PASSWORD)@tcp($(DB_CONNECTION_STRING))/$(DB_SCHEMA)"
 	case kamajiv1alpha1.KinePostgreSQLDriver:
-		args["--endpoint"] = "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_SCHEMA)"
+		args["--endpoint"] = "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_CONNECTION_STRING)/$(DB_SCHEMA)"
 	}
 
 	args["--ca-file"] = "/certs/ca.crt"
@@ -690,7 +694,7 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 			},
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      kineVolumeChmod,
+					Name:      dataStoreCerts,
 					ReadOnly:  true,
 					MountPath: "/kine",
 				},
@@ -726,7 +730,7 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 		{
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: tcp.Status.Storage.Kine.Config.SecretName,
+					Name: tcp.Status.Storage.Config.SecretName,
 				},
 			},
 		},

@@ -1,15 +1,23 @@
 // Copyright 2022 Clastix Labs
 // SPDX-License-Identifier: Apache-2.0
 
-package sql
+package datastore
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/go-sql-driver/mysql"
+
+	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+)
+
+const (
+	defaultProtocol = "tcp"
+	sqlErrorNoRows  = "sql: no rows in result set"
 )
 
 const (
@@ -25,36 +33,44 @@ const (
 )
 
 type MySQLConnection struct {
-	db   *sql.DB
-	host string
-	port int
+	db        *sql.DB
+	connector ConnectionEndpoint
 }
 
 func (c *MySQLConnection) Driver() string {
-	return "MySQL"
+	return string(kamajiv1alpha1.KineMySQLDriver)
 }
 
-func getPostgreSQLDB(config ConnectionConfig) (DBConnection, error) {
+func NewPostgreSQLConnection(config ConnectionConfig) (Connection, error) {
 	opt := &pg.Options{
-		Addr:      fmt.Sprintf("%s:%d", config.Host, config.Port),
+		Addr:      config.Endpoints[0].String(),
 		Database:  config.DBName,
 		User:      config.User,
 		Password:  config.Password,
 		TLSConfig: config.TLSConfig,
 	}
 
-	return &PostgreSQLConnection{db: pg.Connect(opt), port: config.Port, host: config.Host}, nil
+	return &PostgreSQLConnection{db: pg.Connect(opt), connection: config.Endpoints[0]}, nil
 }
 
-func getMySQLDB(config ConnectionConfig) (DBConnection, error) {
-	tlsKey := "mysql"
-	dataSourceName := config.GetDataSourceName()
-	mysqlConfig, err := mysql.ParseDSN(dataSourceName)
+func NewMySQLConnection(config ConnectionConfig) (Connection, error) {
+	nameDB := fmt.Sprintf("%s(%s)", defaultProtocol, config.Endpoints[0].String())
+
+	var parameters string
+	if len(config.Parameters) > 0 {
+		parameters = url.Values(config.Parameters).Encode()
+	}
+
+	dsn := fmt.Sprintf("%s%s/%s?%s", config.getDataSourceNameUserPassword(), nameDB, config.DBName, parameters)
+
+	mysqlConfig, err := mysql.ParseDSN(dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := mysql.RegisterTLSConfig(tlsKey, config.TLSConfig); err != nil {
+	tlsKey := "mysql"
+
+	if err = mysql.RegisterTLSConfig(tlsKey, config.TLSConfig); err != nil {
 		return nil, err
 	}
 
@@ -67,27 +83,19 @@ func getMySQLDB(config ConnectionConfig) (DBConnection, error) {
 		return nil, err
 	}
 
-	return &MySQLConnection{
-		db:   db,
-		host: config.Host,
-		port: config.Port,
-	}, nil
+	return &MySQLConnection{db: db, connector: config.Endpoints[0]}, nil
 }
 
-func (c *MySQLConnection) GetHost() string {
-	return c.host
-}
-
-func (c *MySQLConnection) GetPort() int {
-	return c.port
+func (c *MySQLConnection) GetConnectionString() string {
+	return c.connector.String()
 }
 
 func (c *MySQLConnection) Close() error {
 	return c.db.Close()
 }
 
-func (c *MySQLConnection) Check() error {
-	return c.db.Ping()
+func (c *MySQLConnection) Check(ctx context.Context) error {
+	return c.db.PingContext(ctx)
 }
 
 func (c *MySQLConnection) CreateUser(ctx context.Context, user, password string) error {
@@ -106,7 +114,7 @@ func (c *MySQLConnection) UserExists(ctx context.Context, user string) (bool, er
 	checker := func(row *sql.Row) (bool, error) {
 		var name string
 		if err := row.Scan(&name); err != nil {
-			if checkEmptyQueryResult(err) {
+			if c.checkEmptyQueryResult(err) {
 				return false, nil
 			}
 
@@ -123,7 +131,7 @@ func (c *MySQLConnection) DBExists(ctx context.Context, dbName string) (bool, er
 	checker := func(row *sql.Row) (bool, error) {
 		var name string
 		if err := row.Scan(&name); err != nil {
-			if checkEmptyQueryResult(err) {
+			if c.checkEmptyQueryResult(err) {
 				return false, nil
 			}
 
@@ -190,4 +198,8 @@ func (c *MySQLConnection) mutate(ctx context.Context, nonFilledStatement string,
 	}
 
 	return nil
+}
+
+func (c *MySQLConnection) checkEmptyQueryResult(err error) bool {
+	return err.Error() == sqlErrorNoRows
 }

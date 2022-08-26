@@ -50,11 +50,11 @@ type TenantControlPlaneReconcilerConfig struct {
 //+kubebuilder:rbac:groups=kamaji.clastix.io,resources=tenantcontrolplanes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=kamaji.clastix.io,resources=tenantcontrolplanes/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=kamaji.clastix.io,resources=tenantcontrolplanes/finalizers,verbs=update
-// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 
 func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
@@ -80,17 +80,11 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, errors.Wrap(err, "cannot retrieve kamajiv1alpha.DataStore object")
 	}
 
-	dbConnection, err := r.getStorageConnection(ctx, ds)
+	dsConnection, err := r.getStorageConnection(ctx, ds)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	defer func() {
-		// TODO: Currently, etcd is not accessed using this dbConnection. For that reason we need this check
-		// Check: https://github.com/clastix/kamaji/issues/67
-		if dbConnection != nil {
-			dbConnection.Close()
-		}
-	}()
+	defer dsConnection.Close()
 
 	if markedToBeDeleted {
 		log.Info("marked for deletion, performing clean-up")
@@ -100,12 +94,12 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			log:                 log,
 			tcpReconcilerConfig: r.Config,
 			tenantControlPlane:  *tenantControlPlane,
-			DBConnection:        dbConnection,
+			connection:          dsConnection,
 		}
 		registeredDeletableResources := GetDeletableResources(groupDeleteableResourceBuilderConfiguration, ds)
 
 		for _, resource := range registeredDeletableResources {
-			if err := resources.HandleDeletion(ctx, resource, tenantControlPlane); err != nil {
+			if err = resources.HandleDeletion(ctx, resource, tenantControlPlane); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
@@ -113,7 +107,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		if hasFinalizer {
 			log.Info("removing finalizer")
 
-			if err := r.RemoveFinalizer(ctx, tenantControlPlane); err != nil {
+			if err = r.RemoveFinalizer(ctx, tenantControlPlane); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
@@ -133,9 +127,9 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		tcpReconcilerConfig: r.Config,
 		tenantControlPlane:  *tenantControlPlane,
 		DataStore:           ds,
-		DBConnection:        dbConnection,
+		Connection:          dsConnection,
 	}
-	registeredResources := GetResources(groupResourceBuilderConfiguration, ds)
+	registeredResources := GetResources(groupResourceBuilderConfiguration)
 
 	for _, resource := range registeredResources {
 		result, err := resources.Handle(ctx, resource, tenantControlPlane)
