@@ -99,7 +99,7 @@ Comma separated list of etcd endpoints, using the overrides in case of unmanaged
 {{- $list := list -}}
 {{- if .Values.etcd.deploy }}
     {{- range $count := until 3 -}}
-        {{- $list = append $list (printf "https://%s-%d.%s.%s.svc.cluster.local:%d" "etcd" $count ( include "etcd.serviceName" . ) $.Release.Namespace (int $.Values.etcd.port) ) -}}
+        {{- $list = append $list (printf "%s-%d.%s.%s.svc.cluster.local:%d" "etcd" $count ( include "etcd.serviceName" . ) $.Release.Namespace (int $.Values.etcd.port) ) -}}
     {{- end }}
 {{- else if .Values.etcd.overrides.endpoints }}
     {{- range $v := .Values.etcd.overrides.endpoints -}}
