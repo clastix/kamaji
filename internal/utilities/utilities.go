@@ -99,7 +99,6 @@ func GenerateUUIDString() string {
 // SecretHashValue function returns the md5 value for the secret of the given name and namespace.
 func SecretHashValue(ctx context.Context, client client.Client, namespace, name string) (string, error) {
 	secret := &corev1.Secret{}
-
 	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, secret); err != nil {
 		return "", errors.Wrap(err, "cannot retrieve *corev1.Secret for resource version retrieval")
 	}

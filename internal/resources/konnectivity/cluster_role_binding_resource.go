@@ -62,7 +62,7 @@ func (r *ClusterRoleBindingResource) Define(ctx context.Context, tenantControlPl
 }
 
 func (r *ClusterRoleBindingResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(ctx, tenantControlPlane))
+	return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate())
 }
 
 func (r *ClusterRoleBindingResource) GetName() string {
@@ -86,7 +86,7 @@ func (r *ClusterRoleBindingResource) UpdateTenantControlPlaneStatus(ctx context.
 	return nil
 }
 
-func (r *ClusterRoleBindingResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
+func (r *ClusterRoleBindingResource) mutate() controllerutil.MutateFn {
 	return func() error {
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),

@@ -100,6 +100,7 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 		}
 
 		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
+
 		secretCA := &corev1.Secret{}
 		if err = r.Client.Get(ctx, namespacedName, secretCA); err != nil {
 			return err

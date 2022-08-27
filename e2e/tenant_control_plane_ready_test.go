@@ -18,7 +18,6 @@ import (
 var _ = Describe("Deploy a TenantControlPlane resource", func() {
 	// Fill TenantControlPlane object
 	tcp := kamajiv1alpha1.TenantControlPlane{
-		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tcp-clusterip",
 			Namespace: "default",

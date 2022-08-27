@@ -112,10 +112,10 @@ func (r *KubernetesDeploymentResource) UpdateTenantControlPlaneStatus(_ context.
 }
 
 func (r *KubernetesDeploymentResource) deploymentTemplateLabels(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (labels map[string]string) {
-	hash := func(ctx context.Context, namespace, secretName string) (hash string) {
-		hash, _ = utilities.SecretHashValue(ctx, r.Client, namespace, secretName)
+	hash := func(ctx context.Context, namespace, secretName string) string {
+		h, _ := utilities.SecretHashValue(ctx, r.Client, namespace, secretName)
 
-		return
+		return h
 	}
 
 	labels = map[string]string{

@@ -94,7 +94,7 @@ func (r *TenantControlPlaneReconciler) getStorageConnection(ctx context.Context,
 		return datastore.NewMySQLConnection(cc)
 	case kamajiv1alpha1.KinePostgreSQLDriver:
 		cc.TLSConfig.ServerName = cc.Endpoints[0].Host
-
+		//nolint:contextcheck
 		return datastore.NewPostgreSQLConnection(cc)
 	case kamajiv1alpha1.EtcdDriver:
 		return datastore.NewETCDConnection(cc)

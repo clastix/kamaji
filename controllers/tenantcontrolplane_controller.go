@@ -96,7 +96,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			tenantControlPlane:  *tenantControlPlane,
 			connection:          dsConnection,
 		}
-		registeredDeletableResources := GetDeletableResources(groupDeleteableResourceBuilderConfiguration, ds)
+		registeredDeletableResources := GetDeletableResources(groupDeleteableResourceBuilderConfiguration)
 
 		for _, resource := range registeredDeletableResources {
 			if err = resources.HandleDeletion(ctx, resource, tenantControlPlane); err != nil {

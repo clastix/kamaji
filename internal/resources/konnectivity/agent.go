@@ -70,7 +70,7 @@ func (r *Agent) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 }
 
 func (r *Agent) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(ctx, tenantControlPlane))
+	return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(tenantControlPlane))
 }
 
 func (r *Agent) GetName() string {
@@ -96,8 +96,8 @@ func (r *Agent) UpdateTenantControlPlaneStatus(ctx context.Context, tenantContro
 	return nil
 }
 
-func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
-	return func() (err error) {
+func (r *Agent) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
+	return func() error {
 		address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
 		if err != nil {
 			return err

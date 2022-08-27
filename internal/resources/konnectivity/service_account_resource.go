@@ -61,8 +61,8 @@ func (r *ServiceAccountResource) Define(ctx context.Context, tenantControlPlane 
 	return nil
 }
 
-func (r *ServiceAccountResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(ctx, tenantControlPlane))
+func (r *ServiceAccountResource) CreateOrUpdate(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate())
 }
 
 func (r *ServiceAccountResource) GetName() string {
@@ -87,7 +87,7 @@ func (r *ServiceAccountResource) UpdateTenantControlPlaneStatus(ctx context.Cont
 	return nil
 }
 
-func (r *ServiceAccountResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
+func (r *ServiceAccountResource) mutate() controllerutil.MutateFn {
 	return func() error {
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),
