@@ -46,6 +46,7 @@ type Parameters struct {
 	ETCDs                          []string
 	CertificatesDir                string
 	KubeconfigDir                  string
+	KubeProxyImage                 string
 }
 
 type KubeletConfiguration struct {
