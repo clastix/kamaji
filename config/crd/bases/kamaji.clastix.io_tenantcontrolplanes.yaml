@@ -1,10 +1,9 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.6.1
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: tenantcontrolplanes.kamaji.clastix.io
 spec:
@@ -119,7 +118,13 @@ spec:
                     - proxyPort
                     type: object
                   kubeProxy:
-                    description: AddonSpec defines the spec for every addon.
+                    properties:
+                      imageOverride:
+                        description: Specify the image overried of the kube-proxy
+                          to install in the Tenant Cluster. If not specified, the
+                          Kubernetes default one will be used, according to the specified
+                          version.
+                        type: string
                     type: object
                 type: object
               controlPlane:
@@ -554,15 +559,15 @@ spec:
                               description: "Condition contains details for one aspect
                                 of the current state of this API Resource. --- This
                                 struct is intended for direct use as an array at the
-                                field path .status.conditions.  For example, \n \ttype
-                                FooStatus struct{ \t    // Represents the observations
-                                of a foo's current state. \t    // Known .status.conditions.type
+                                field path .status.conditions.  For example, \n type
+                                FooStatus struct{ // Represents the observations of
+                                a foo's current state. // Known .status.conditions.type
                                 are: \"Available\", \"Progressing\", and \"Degraded\"
-                                \t    // +patchMergeKey=type \t    // +patchStrategy=merge
-                                \t    // +listType=map \t    // +listMapKey=type \t
-                                \   Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                                patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                                \n \t    // other fields \t}"
+                                // +patchMergeKey=type // +patchStrategy=merge //
+                                +listType=map // +listMapKey=type Conditions []metav1.Condition
+                                `json:\"conditions,omitempty\" patchStrategy:\"merge\"
+                                patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
+                                \n // other fields }"
                               properties:
                                 lastTransitionTime:
                                   description: lastTransitionTime is the last time
@@ -666,11 +671,10 @@ spec:
                                               the error shall comply with the following
                                               rules: - built-in error values shall
                                               be specified in this file and those
-                                              shall use   CamelCase names - cloud
-                                              provider specific error values must
-                                              have names that comply with the   format
-                                              foo.example.com/CamelCase. --- The regex
-                                              it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)'
+                                              shall use CamelCase names - cloud provider
+                                              specific error values must have names
+                                              that comply with the format foo.example.com/CamelCase.
+                                              --- The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)'
                                             maxLength: 316
                                             pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                                             type: string
@@ -1060,9 +1064,9 @@ spec:
                                           with the service port The format of the
                                           error shall comply with the following rules:
                                           - built-in error values shall be specified
-                                          in this file and those shall use   CamelCase
+                                          in this file and those shall use CamelCase
                                           names - cloud provider specific error values
-                                          must have names that comply with the   format
+                                          must have names that comply with the format
                                           foo.example.com/CamelCase. --- The regex
                                           it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)'
                                         maxLength: 316
@@ -1111,15 +1115,14 @@ spec:
                           description: "Condition contains details for one aspect
                             of the current state of this API Resource. --- This struct
                             is intended for direct use as an array at the field path
-                            .status.conditions.  For example, \n \ttype FooStatus
-                            struct{ \t    // Represents the observations of a foo's
-                            current state. \t    // Known .status.conditions.type
-                            are: \"Available\", \"Progressing\", and \"Degraded\"
-                            \t    // +patchMergeKey=type \t    // +patchStrategy=merge
-                            \t    // +listType=map \t    // +listMapKey=type \t    Conditions
-                            []metav1.Condition `json:\"conditions,omitempty\" patchStrategy:\"merge\"
+                            .status.conditions.  For example, \n type FooStatus struct{
+                            // Represents the observations of a foo's current state.
+                            // Known .status.conditions.type are: \"Available\", \"Progressing\",
+                            and \"Degraded\" // +patchMergeKey=type // +patchStrategy=merge
+                            // +listType=map // +listMapKey=type Conditions []metav1.Condition
+                            `json:\"conditions,omitempty\" patchStrategy:\"merge\"
                             patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
-                            \n \t    // other fields \t}"
+                            \n // other fields }"
                           properties:
                             lastTransitionTime:
                               description: lastTransitionTime is the last time the
@@ -1218,9 +1221,9 @@ spec:
                                           with the service port The format of the
                                           error shall comply with the following rules:
                                           - built-in error values shall be specified
-                                          in this file and those shall use   CamelCase
+                                          in this file and those shall use CamelCase
                                           names - cloud provider specific error values
-                                          must have names that comply with the   format
+                                          must have names that comply with the format
                                           foo.example.com/CamelCase. --- The regex
                                           it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)'
                                         maxLength: 316
@@ -1326,9 +1329,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
