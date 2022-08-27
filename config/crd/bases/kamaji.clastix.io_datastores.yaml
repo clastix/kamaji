@@ -63,11 +63,11 @@ spec:
                               where the content is stored. This value is mandatory.
                             type: string
                           name:
-                            description: Name is unique within a namespace to reference
+                            description: name is unique within a namespace to reference
                               a secret resource.
                             type: string
                           namespace:
-                            description: Namespace defines the space within which
+                            description: namespace defines the space within which
                               the secret name must be unique.
                             type: string
                         required:
@@ -88,11 +88,11 @@ spec:
                               where the content is stored. This value is mandatory.
                             type: string
                           name:
-                            description: Name is unique within a namespace to reference
+                            description: name is unique within a namespace to reference
                               a secret resource.
                             type: string
                           namespace:
-                            description: Namespace defines the space within which
+                            description: namespace defines the space within which
                               the secret name must be unique.
                             type: string
                         required:
@@ -137,11 +137,11 @@ spec:
                                   is mandatory.
                                 type: string
                               name:
-                                description: Name is unique within a namespace to
+                                description: name is unique within a namespace to
                                   reference a secret resource.
                                 type: string
                               namespace:
-                                description: Namespace defines the space within which
+                                description: namespace defines the space within which
                                   the secret name must be unique.
                                 type: string
                             required:
@@ -163,11 +163,11 @@ spec:
                                   is mandatory.
                                 type: string
                               name:
-                                description: Name is unique within a namespace to
+                                description: name is unique within a namespace to
                                   reference a secret resource.
                                 type: string
                               namespace:
-                                description: Namespace defines the space within which
+                                description: namespace defines the space within which
                                   the secret name must be unique.
                                 type: string
                             required:
@@ -196,11 +196,11 @@ spec:
                                   is mandatory.
                                 type: string
                               name:
-                                description: Name is unique within a namespace to
+                                description: name is unique within a namespace to
                                   reference a secret resource.
                                 type: string
                               namespace:
-                                description: Namespace defines the space within which
+                                description: namespace defines the space within which
                                   the secret name must be unique.
                                 type: string
                             required:
@@ -222,11 +222,11 @@ spec:
                                   is mandatory.
                                 type: string
                               name:
-                                description: Name is unique within a namespace to
+                                description: name is unique within a namespace to
                                   reference a secret resource.
                                 type: string
                               namespace:
-                                description: Namespace defines the space within which
+                                description: namespace defines the space within which
                                   the secret name must be unique.
                                 type: string
                             required:
