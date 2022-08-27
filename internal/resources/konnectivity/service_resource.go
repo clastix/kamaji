@@ -125,7 +125,7 @@ func (r *ServiceResource) CreateOrUpdate(ctx context.Context, tenantControlPlane
 }
 
 func (r *ServiceResource) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) func() error {
-	return func() (err error) {
+	return func() error {
 		switch len(r.resource.Spec.Ports) {
 		case 0:
 			return fmt.Errorf("current state of the Service is not ready to be mangled for Konnectivity")

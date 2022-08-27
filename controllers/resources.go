@@ -45,27 +45,27 @@ func GetResources(config GroupResourceBuilderConfiguration) []resources.Resource
 // GetDeletableResources returns a list of resources that have to be deleted when tenant control planes are deleted
 // Currently there is only a default approach
 // TODO: the idea of this function is to become a factory to return the group of deleteable resources according to the given configuration.
-func GetDeletableResources(config GroupDeleteableResourceBuilderConfiguration, dataStore kamajiv1alpha1.DataStore) []resources.DeleteableResource {
-	return getDefaultDeleteableResources(config, dataStore)
+func GetDeletableResources(config GroupDeleteableResourceBuilderConfiguration) []resources.DeleteableResource {
+	return getDefaultDeleteableResources(config)
 }
 
 func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.Resource {
-	resources := append(getUpgradeResources(config.client, config.tenantControlPlane), getKubernetesServiceResources(config.client, config.tenantControlPlane)...)
+	resources := append(getUpgradeResources(config.client), getKubernetesServiceResources(config.client)...)
 	resources = append(resources, getKubeadmConfigResources(config.client, getTmpDirectory(config.tcpReconcilerConfig.TmpBaseDirectory, config.tenantControlPlane), config.DataStore)...)
 	resources = append(resources, getKubernetesCertificatesResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubeconfigResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubernetesStorageResources(config.client, config.Connection, config.DataStore)...)
-	resources = append(resources, getInternalKonnectivityResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
+	resources = append(resources, getInternalKonnectivityResources(config.client, config.log)...)
 	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.DataStore)...)
-	resources = append(resources, getKubernetesIngressResources(config.client, config.tenantControlPlane)...)
-	resources = append(resources, getKubeadmPhaseResources(config.client, config.log, config.tenantControlPlane)...)
-	resources = append(resources, getKubeadmAddonResources(config.client, config.log, config.tenantControlPlane)...)
-	resources = append(resources, getExternalKonnectivityResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
+	resources = append(resources, getKubernetesIngressResources(config.client)...)
+	resources = append(resources, getKubeadmPhaseResources(config.client, config.log)...)
+	resources = append(resources, getKubeadmAddonResources(config.client, config.log)...)
+	resources = append(resources, getExternalKonnectivityResources(config.client)...)
 
 	return resources
 }
 
-func getDefaultDeleteableResources(config GroupDeleteableResourceBuilderConfiguration, dataStore kamajiv1alpha1.DataStore) []resources.DeleteableResource {
+func getDefaultDeleteableResources(config GroupDeleteableResourceBuilderConfiguration) []resources.DeleteableResource {
 	return []resources.DeleteableResource{
 		&ds.Setup{
 			Client:     config.client,
@@ -74,7 +74,7 @@ func getDefaultDeleteableResources(config GroupDeleteableResourceBuilderConfigur
 	}
 }
 
-func getUpgradeResources(c client.Client, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
+func getUpgradeResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubernetesUpgrade{
 			Client: c,
@@ -82,7 +82,7 @@ func getUpgradeResources(c client.Client, tenantControlPlane kamajiv1alpha1.Tena
 	}
 }
 
-func getKubernetesServiceResources(c client.Client, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
+func getKubernetesServiceResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubernetesServiceResource{
 			Client: c,
@@ -199,7 +199,7 @@ func getKubernetesDeploymentResources(c client.Client, tcpReconcilerConfig Tenan
 	}
 }
 
-func getKubernetesIngressResources(c client.Client, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
+func getKubernetesIngressResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubernetesIngressResource{
 			Client: c,
@@ -207,7 +207,7 @@ func getKubernetesIngressResources(c client.Client, tenantControlPlane kamajiv1a
 	}
 }
 
-func getKubeadmPhaseResources(c client.Client, log logr.Logger, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
+func getKubeadmPhaseResources(c client.Client, log logr.Logger) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubeadmPhase{
 			Name:   "upload-config-kubeadm",
@@ -230,7 +230,7 @@ func getKubeadmPhaseResources(c client.Client, log logr.Logger, tenantControlPla
 	}
 }
 
-func getKubeadmAddonResources(c client.Client, log logr.Logger, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
+func getKubeadmAddonResources(c client.Client, log logr.Logger) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubeadmAddonResource{
 			Name:         "coredns",
@@ -247,7 +247,7 @@ func getKubeadmAddonResources(c client.Client, log logr.Logger, tenantControlPla
 	}
 }
 
-func getExternalKonnectivityResources(c client.Client, log logr.Logger, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
+func getExternalKonnectivityResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
 		&konnectivity.ServiceAccountResource{
 			Client: c,
@@ -272,7 +272,7 @@ func getExternalKonnectivityResources(c client.Client, log logr.Logger, tcpRecon
 	}
 }
 
-func getInternalKonnectivityResources(c client.Client, log logr.Logger, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
+func getInternalKonnectivityResources(c client.Client, log logr.Logger) []resources.Resource {
 	return []resources.Resource{
 		&konnectivity.EgressSelectorConfigurationResource{
 			Client: c,

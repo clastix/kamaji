@@ -41,6 +41,7 @@ func InitConfig() (*viper.Viper, error) {
 	flag.String("datastore", defaultDataStore, "The default DataStore that should be used by Kamaji to setup the required storage")
 
 	// Setup zap configuration
+
 	opts := zap.Options{
 		Development: true,
 	}

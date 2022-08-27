@@ -77,7 +77,7 @@ func (r *EgressSelectorConfigurationResource) UpdateTenantControlPlaneStatus(ctx
 	return nil
 }
 
-func (r *EgressSelectorConfigurationResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) func() error {
+func (r *EgressSelectorConfigurationResource) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) func() error {
 	return func() error {
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels()))
 

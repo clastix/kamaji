@@ -146,6 +146,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 		kubeconfig, err := kubeadm.CreateKubeconfig(
 			r.KubeConfigFileName,
+
 			kubeadm.CertificatePrivateKeyPair{
 				Certificate: apiServerCertificatesSecret.Data[kubeadmconstants.CACertName],
 				PrivateKey:  apiServerCertificatesSecret.Data[kubeadmconstants.CAKeyName],

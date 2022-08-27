@@ -38,10 +38,6 @@ type KubernetesDeploymentResource struct {
 	Name          string
 }
 
-func (r *KubernetesDeploymentResource) isStatusEqual(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return r.resource.Status.String() == tenantControlPlane.Status.Kubernetes.Deployment.DeploymentStatus.String()
-}
-
 func (r *KubernetesDeploymentResource) ShouldStatusBeUpdated(context.Context, *kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
@@ -107,7 +103,7 @@ func (r *KubernetesDeploymentResource) Define(ctx context.Context, tenantControl
 	return nil
 }
 
-func (r *KubernetesDeploymentResource) syncContainer(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubernetesDeploymentResource) syncContainer(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) {
 	found, index := utilities.HasNamedContainer(r.resource.Spec.Template.Spec.Containers, konnectivityServerName)
 	if !found {
 		r.resource.Spec.Template.Spec.Containers = append(r.resource.Spec.Template.Spec.Containers, corev1.Container{})
@@ -192,8 +188,6 @@ func (r *KubernetesDeploymentResource) syncContainer(tenantControlPlane *kamajiv
 	if resources := tenantControlPlane.Spec.Addons.Konnectivity.Resources; resources != nil {
 		r.resource.Spec.Template.Spec.Containers[index].Resources = *resources
 	}
-
-	return nil
 }
 
 func (r *KubernetesDeploymentResource) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
@@ -208,15 +202,13 @@ func (r *KubernetesDeploymentResource) mutate(_ context.Context, tenantControlPl
 			return fmt.Errorf("the Deployment resource is not ready to be mangled for Konnectivity server enrichment")
 		}
 
-		if err = r.syncContainer(tenantControlPlane); err != nil {
-			return errors.Wrap(err, "cannot sync konnectivity-server container")
-		}
+		r.syncContainer(tenantControlPlane)
+
 		if err = r.patchKubeAPIServerContainer(); err != nil {
 			return errors.Wrap(err, "cannot sync patch kube-apiserver container")
 		}
-		if err = r.syncVolumes(tenantControlPlane); err != nil {
-			return errors.Wrap(err, "cannot patch required konnectivity volumes")
-		}
+
+		r.syncVolumes(tenantControlPlane)
 
 		return nil
 	}
@@ -245,9 +237,7 @@ func (r *KubernetesDeploymentResource) patchKubeAPIServerContainer() error {
 	// Adding the egress selector config file flag
 	args := utilities.ArgsFromSliceToMap(r.resource.Spec.Template.Spec.Containers[index].Args)
 
-	if utilities.ArgsAddFlagValue(args, "--egress-selector-config-file", konnectivityEgressSelectorConfigurationPath) {
-		// LOG
-	}
+	utilities.ArgsAddFlagValue(args, "--egress-selector-config-file", konnectivityEgressSelectorConfigurationPath)
 
 	r.resource.Spec.Template.Spec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
 
@@ -274,7 +264,7 @@ func (r *KubernetesDeploymentResource) patchKubeAPIServerContainer() error {
 	return nil
 }
 
-func (r *KubernetesDeploymentResource) syncVolumes(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubernetesDeploymentResource) syncVolumes(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) {
 	found, index := false, 0
 	// Defining volumes for the UDS socket
 	found, index = utilities.HasNamedVolume(r.resource.Spec.Template.Spec.Volumes, konnectivityUDSVolume)
@@ -319,6 +309,4 @@ func (r *KubernetesDeploymentResource) syncVolumes(tenantControlPlane *kamajiv1a
 			DefaultMode: pointer.Int32Ptr(420),
 		},
 	}
-
-	return nil
 }

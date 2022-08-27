@@ -6,7 +6,6 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -66,7 +65,7 @@ var _ = Describe("validating kubeconfig", func() {
 
 		var err error
 
-		kubeconfigFile, err = ioutil.TempFile("", "kamaji")
+		kubeconfigFile, err = os.CreateTemp("", "kamaji")
 		Expect(err).ToNot(HaveOccurred())
 	})
 

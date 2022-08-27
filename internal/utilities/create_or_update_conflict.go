@@ -6,6 +6,7 @@ package utilities
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,8 +18,10 @@ import (
 // without enqueuing back the request in order to get the latest changes of the resource.
 func CreateOrUpdateWithConflict(ctx context.Context, client client.Client, resource client.Object, f controllerutil.MutateFn) (res controllerutil.OperationResult, err error) {
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() (scopeErr error) {
-		if scopeErr = client.Get(ctx, k8stypes.NamespacedName{Namespace: resource.GetNamespace(), Name: resource.GetName()}, resource); err != nil {
-			return err
+		if scopeErr = client.Get(ctx, k8stypes.NamespacedName{Namespace: resource.GetNamespace(), Name: resource.GetName()}, resource); scopeErr != nil {
+			if !errors.IsNotFound(scopeErr) {
+				return scopeErr
+			}
 		}
 
 		res, scopeErr = controllerutil.CreateOrUpdate(ctx, client, resource, f)

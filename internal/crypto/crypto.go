@@ -60,7 +60,7 @@ func GetPublickKey(pubKey []byte) (*rsa.PublicKey, error) {
 		return nil, err
 	}
 
-	return pub.(*rsa.PublicKey), nil // nolint:forcetypeassert
+	return pub.(*rsa.PublicKey), nil //nolint:forcetypeassert
 }
 
 func GenerateCertificateKeyPairBytes(template *x509.Certificate, bitSize int, caCert *x509.Certificate, caKey *rsa.PrivateKey) (*bytes.Buffer, *bytes.Buffer, error) {
@@ -76,16 +76,18 @@ func GenerateCertificateKeyPairBytes(template *x509.Certificate, bitSize int, ca
 
 	certPEM := &bytes.Buffer{}
 	if err := pem.Encode(certPEM, &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: certBytes,
+		Type:    "CERTIFICATE",
+		Headers: nil,
+		Bytes:   certBytes,
 	}); err != nil {
 		return nil, nil, err
 	}
 
 	certPrivKeyPEM := &bytes.Buffer{}
 	if err := pem.Encode(certPrivKeyPEM, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
+		Type:    "RSA PRIVATE KEY",
+		Headers: nil,
+		Bytes:   x509.MarshalPKCS1PrivateKey(certPrivKey),
 	}); err != nil {
 		return nil, nil, err
 	}
@@ -132,7 +134,7 @@ func checkCertificateValidity(cert x509.Certificate) bool {
 }
 
 func checkCertificateKeyPair(cert x509.Certificate, privKey rsa.PrivateKey) bool {
-	return checkPublicKeys(*cert.PublicKey.(*rsa.PublicKey), privKey.PublicKey) // nolint:forcetypeassert
+	return checkPublicKeys(*cert.PublicKey.(*rsa.PublicKey), privKey.PublicKey) //nolint:forcetypeassert
 }
 
 func checkPublicKeys(a rsa.PublicKey, b rsa.PublicKey) bool {

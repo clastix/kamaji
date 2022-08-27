@@ -63,5 +63,5 @@ func ArgsAddFlagValue(args map[string]string, flag, value string) bool {
 
 	args[flag] = value
 
-	return ok == false
+	return !ok
 }

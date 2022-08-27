@@ -7,7 +7,6 @@ import (
 	"crypto"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -147,7 +146,7 @@ func readCertificateFiles(name string, directory string, extensions ...string) (
 	for _, extension := range extensions {
 		fileName := fmt.Sprintf("%s.%s", name, extension)
 		path := filepath.Join(directory, fileName)
-		content, err := ioutil.ReadFile(path)
+		content, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
@@ -160,6 +159,6 @@ func readCertificateFiles(name string, directory string, extensions ...string) (
 func deleteCertificateDirectory(certificateDirectory string) {
 	if err := os.RemoveAll(certificateDirectory); err != nil {
 		// TODO(prometherion): we should log rather than printing to stdout
-		fmt.Printf("Error removing %s: %s", certificateDirectory, err.Error()) // nolint:forbidigo
+		fmt.Printf("Error removing %s: %s", certificateDirectory, err.Error()) //nolint:forbidigo
 	}
 }

@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -37,7 +36,6 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 
 	JustBeforeEach(func() {
 		tcp = kamajiv1alpha1.TenantControlPlane{
-			TypeMeta: metav1.TypeMeta{},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "worker-nodes-join",
 				Namespace: "default",
@@ -84,7 +82,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 		})
 		Expect(err).ToNot(HaveOccurred())
 
-		kubeconfigFile, err = ioutil.TempFile("", "kamaji")
+		kubeconfigFile, err = os.CreateTemp("", "kamaji")
 		Expect(err).ToNot(HaveOccurred())
 	})
 

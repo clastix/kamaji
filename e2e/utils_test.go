@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os/exec"
 
 	. "github.com/onsi/ginkgo"
@@ -96,7 +96,7 @@ func PrintKamajiLogs() {
 
 		defer podLogs.Close()
 
-		podBytes, err := ioutil.ReadAll(podLogs)
+		podBytes, err := io.ReadAll(podLogs)
 		Expect(err).ToNot(HaveOccurred())
 
 		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: retrieving Kamaji Pod logs")

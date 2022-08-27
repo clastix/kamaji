@@ -80,6 +80,7 @@ func removeCoreDNSDeployment(ctx context.Context, client kubernetes.Interface) e
 
 func removeCoreDNSConfigMap(ctx context.Context, client kubernetes.Interface) error {
 	name, _ := getCoreDNSConfigMapName(ctx)
+
 	opts := metav1.DeleteOptions{}
 
 	return client.CoreV1().ConfigMaps(kubeSystemNamespace).Delete(ctx, name, opts)
@@ -152,6 +153,7 @@ func RemoveKubeProxy(ctx context.Context, client kubernetes.Interface) error {
 
 func removeKubeProxyDaemonSet(ctx context.Context, client kubernetes.Interface) error {
 	name, _ := getKubeProxyDaemonSetName(ctx)
+
 	opts := metav1.DeleteOptions{}
 
 	return client.AppsV1().DaemonSets(kubeSystemNamespace).Delete(ctx, name, opts)
@@ -159,6 +161,7 @@ func removeKubeProxyDaemonSet(ctx context.Context, client kubernetes.Interface) 
 
 func removeKubeProxyConfigMap(ctx context.Context, client kubernetes.Interface) error {
 	name, _ := getKubeProxyConfigMapName(ctx)
+
 	opts := metav1.DeleteOptions{}
 
 	return client.CoreV1().ConfigMaps(kubeSystemNamespace).Delete(ctx, name, opts)
@@ -167,6 +170,7 @@ func removeKubeProxyConfigMap(ctx context.Context, client kubernetes.Interface) 
 func removeKubeProxyRBAC(ctx context.Context, client kubernetes.Interface) error {
 	// TODO: Currently, kube-proxy is installed using kubeadm phases, therefore, name is the same.
 	name, _ := getKubeProxyRBACName(ctx)
+
 	opts := metav1.DeleteOptions{}
 	var result error
 
@@ -361,6 +365,7 @@ func createKubeProxyAddon(client kubernetes.Interface) error {
 func getKubeproxyConfigmapContent(config *Configuration) ([]byte, error) {
 	zeroDuration := metav1.Duration{Duration: 0}
 	oneSecondDuration := metav1.Duration{Duration: time.Second}
+
 	kubeProxyConfiguration := kubeproxyconfig.KubeProxyConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "KubeProxyConfiguration",

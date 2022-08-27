@@ -262,7 +262,7 @@ func (d *Deployment) BuildScheduler(podSpec *corev1.PodSpec, tenantControlPlane 
 	args["--authorization-kubeconfig"] = kubeconfig
 	args["--bind-address"] = "0.0.0.0"
 	args["--kubeconfig"] = kubeconfig
-	args["--leader-elect"] = "true" // nolint:goconst
+	args["--leader-elect"] = "true" //nolint:goconst
 
 	podSpec.Containers[schedulerIndex].Name = "kube-scheduler"
 	podSpec.Containers[schedulerIndex].Image = fmt.Sprintf("k8s.gcr.io/kube-scheduler:%s", tenantControlPlane.Spec.Kubernetes.Version)
@@ -289,6 +289,7 @@ func (d *Deployment) BuildScheduler(podSpec *corev1.PodSpec, tenantControlPlane 
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	}
+
 	podSpec.Containers[schedulerIndex].StartupProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
@@ -383,6 +384,7 @@ func (d *Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContr
 			MountPath: "/usr/local/share/ca-certificates",
 		},
 	}
+
 	podSpec.Containers[controllerManagerIndex].LivenessProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
@@ -397,6 +399,7 @@ func (d *Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContr
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	}
+
 	podSpec.Containers[controllerManagerIndex].StartupProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{

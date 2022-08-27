@@ -4,7 +4,6 @@
 package kubeadm
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -19,12 +18,12 @@ func buildCertificateDirectoryWithCA(ca CertificatePrivateKeyPair, directory str
 	}
 
 	certPath := path.Join(directory, kubeadmconstants.CACertName)
-	if err := ioutil.WriteFile(certPath, ca.Certificate, os.FileMode(0o600)); err != nil {
+	if err := os.WriteFile(certPath, ca.Certificate, os.FileMode(0o600)); err != nil {
 		return err
 	}
 
 	keyPath := path.Join(directory, kubeadmconstants.CAKeyName)
-	if err := ioutil.WriteFile(keyPath, ca.PrivateKey, os.FileMode(0o600)); err != nil {
+	if err := os.WriteFile(keyPath, ca.PrivateKey, os.FileMode(0o600)); err != nil {
 		return err
 	}
 
@@ -44,7 +43,7 @@ func CreateKubeconfig(kubeconfigName string, ca CertificatePrivateKeyPair, confi
 
 	path := filepath.Join(config.InitConfiguration.CertificatesDir, kubeconfigName)
 
-	return ioutil.ReadFile(path)
+	return os.ReadFile(path)
 }
 
 func IsKubeconfigValid(kubeconfigBytes []byte) bool {

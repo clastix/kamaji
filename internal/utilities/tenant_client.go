@@ -43,7 +43,6 @@ func GetTenantRESTClient(ctx context.Context, client client.Client, tenantContro
 
 func GetKubeconfigSecret(ctx context.Context, client client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*corev1.Secret, error) {
 	secret := &corev1.Secret{}
-
 	if err := client.Get(ctx, k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.KubeConfig.Admin.SecretName}, secret); err != nil {
 		return nil, err
 	}
