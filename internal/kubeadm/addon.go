@@ -113,7 +113,7 @@ func AddKubeProxy(client kubernetes.Interface, config *Configuration) error {
 		return err
 	}
 
-	if err := createKubeProxyAddon(client); err != nil {
+	if err := createKubeProxyAddon(client, config.Parameters.KubeProxyImage); err != nil {
 		return err
 	}
 
@@ -244,7 +244,7 @@ func createKubeProxyConfigMap(client kubernetes.Interface, config *Configuration
 	return apiclient.CreateOrUpdateConfigMap(client, configMap)
 }
 
-func createKubeProxyAddon(client kubernetes.Interface) error {
+func createKubeProxyAddon(client kubernetes.Interface, image string) error {
 	daemonSet := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kube-proxy",
@@ -285,7 +285,7 @@ func createKubeProxyAddon(client kubernetes.Interface) error {
 									},
 								},
 							},
-							Image:           "k8s.gcr.io/kube-proxy:v1.21.2",
+							Image:           image,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kube-proxy",
 							SecurityContext: &corev1.SecurityContext{

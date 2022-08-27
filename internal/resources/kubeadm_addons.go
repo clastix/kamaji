@@ -60,12 +60,12 @@ func (r *KubeadmAddonResource) ShouldStatusBeUpdated(_ context.Context, tenantCo
 }
 
 func (r *KubeadmAddonResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	spec, err := r.getSpec(tenantControlPlane)
+	ok, err := r.getSpec(tenantControlPlane)
 	if err != nil {
 		return false
 	}
 
-	return spec == nil
+	return ok
 }
 
 func (r *KubeadmAddonResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -151,14 +151,14 @@ func (r *KubeadmAddonResource) GetStatus(tenantControlPlane *kamajiv1alpha1.Tena
 	}
 }
 
-func (r *KubeadmAddonResource) getSpec(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*kamajiv1alpha1.AddonSpec, error) {
+func (r *KubeadmAddonResource) getSpec(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	switch r.KubeadmAddon {
 	case AddonCoreDNS:
-		return tenantControlPlane.Spec.Addons.CoreDNS, nil
+		return tenantControlPlane.Spec.Addons.CoreDNS == nil, nil
 	case AddonKubeProxy:
-		return tenantControlPlane.Spec.Addons.KubeProxy, nil
+		return tenantControlPlane.Spec.Addons.KubeProxy == nil, nil
 	default:
-		return nil, fmt.Errorf("%s has no spec", r.KubeadmAddon)
+		return false, fmt.Errorf("%s has no spec", r.KubeadmAddon)
 	}
 }
 

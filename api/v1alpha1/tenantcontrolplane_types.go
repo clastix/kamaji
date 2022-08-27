@@ -112,6 +112,12 @@ type ServiceSpec struct {
 // AddonSpec defines the spec for every addon.
 type AddonSpec struct{}
 
+type KubeProxySpec struct {
+	// Specify the image overried of the kube-proxy to install in the Tenant Cluster.
+	// If not specified, the Kubernetes default one will be used, according to the specified version.
+	ImageOverride string `json:"imageOverride,omitempty"`
+}
+
 // KonnectivitySpec defines the spec for Konnectivity.
 type KonnectivitySpec struct {
 	// Port of Konnectivity proxy server.
@@ -133,7 +139,7 @@ type KonnectivitySpec struct {
 type AddonsSpec struct {
 	CoreDNS      *AddonSpec        `json:"coreDNS,omitempty"`
 	Konnectivity *KonnectivitySpec `json:"konnectivity,omitempty"`
-	KubeProxy    *AddonSpec        `json:"kubeProxy,omitempty"`
+	KubeProxy    *KubeProxySpec    `json:"kubeProxy,omitempty"`
 }
 
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.

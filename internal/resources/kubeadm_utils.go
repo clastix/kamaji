@@ -5,6 +5,7 @@ package resources
 
 import (
 	"context"
+	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -39,6 +40,11 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, tenantContr
 		TenantControlPlaneCertSANs:     tenantControlPlane.Spec.NetworkProfile.CertSANs,
 		TenantControlPlanePort:         tenantControlPlane.Spec.NetworkProfile.Port,
 		TenantControlPlaneCGroupDriver: tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(),
+		KubeProxyImage:                 fmt.Sprintf("k8s.gcr.io/kube-proxy:%s", tenantControlPlane.Spec.Kubernetes.Version),
+	}
+
+	if kubeProxy := tenantControlPlane.Spec.Addons.KubeProxy; kubeProxy != nil && len(kubeProxy.ImageOverride) > 0 {
+		config.Parameters.KubeProxyImage = kubeProxy.ImageOverride
 	}
 
 	checksum := config.Checksum()
