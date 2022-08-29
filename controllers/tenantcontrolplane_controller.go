@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	finalizer = "finalizer.kamaji.clastix.io"
+	tenantControlPlaneFinalizer = "finalizer.kamaji.clastix.io"
 )
 
 // TenantControlPlaneReconciler reconciles a TenantControlPlane object.
@@ -42,9 +42,9 @@ type TenantControlPlaneReconciler struct {
 
 // TenantControlPlaneReconcilerConfig gives the necessary configuration for TenantControlPlaneReconciler.
 type TenantControlPlaneReconcilerConfig struct {
-	DataStoreName      string
-	KineContainerImage string
-	TmpBaseDirectory   string
+	DefaultDataStoreName string
+	KineContainerImage   string
+	TmpBaseDirectory     string
 }
 
 //+kubebuilder:rbac:groups=kamaji.clastix.io,resources=tenantcontrolplanes,verbs=get;list;watch;create;update;patch;delete
@@ -69,18 +69,18 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	markedToBeDeleted := tenantControlPlane.GetDeletionTimestamp() != nil
-	hasFinalizer := hasFinalizer(*tenantControlPlane)
+	hasFinalizer := controllerutil.ContainsFinalizer(tenantControlPlane, tenantControlPlaneFinalizer)
 
 	if markedToBeDeleted && !hasFinalizer {
 		return ctrl.Result{}, nil
 	}
-
-	ds := kamajiv1alpha1.DataStore{}
-	if err = r.Client.Get(ctx, k8stypes.NamespacedName{Name: r.Config.DataStoreName}, &ds); err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "cannot retrieve kamajiv1alpha.DataStore object")
+	// Retrieving the DataStore to use for the current reconciliation
+	ds, err := r.dataStore(ctx, tenantControlPlane)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
-	dsConnection, err := r.getStorageConnection(ctx, ds)
+	dsConnection, err := r.getStorageConnection(ctx, *ds)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -126,7 +126,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		log:                 log,
 		tcpReconcilerConfig: r.Config,
 		tenantControlPlane:  *tenantControlPlane,
-		DataStore:           ds,
+		DataStore:           *ds,
 		Connection:          dsConnection,
 	}
 	registeredResources := GetResources(groupResourceBuilderConfiguration)
@@ -215,24 +215,34 @@ func (r *TenantControlPlaneReconciler) updateStatus(ctx context.Context, namespa
 	return nil
 }
 
-func hasFinalizer(tenantControlPlane kamajiv1alpha1.TenantControlPlane) bool {
-	for _, f := range tenantControlPlane.GetFinalizers() {
-		if f == finalizer {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (r *TenantControlPlaneReconciler) AddFinalizer(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	controllerutil.AddFinalizer(tenantControlPlane, finalizer)
+	controllerutil.AddFinalizer(tenantControlPlane, tenantControlPlaneFinalizer)
 
 	return r.Update(ctx, tenantControlPlane)
 }
 
 func (r *TenantControlPlaneReconciler) RemoveFinalizer(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	controllerutil.RemoveFinalizer(tenantControlPlane, finalizer)
+	controllerutil.RemoveFinalizer(tenantControlPlane, tenantControlPlaneFinalizer)
 
 	return r.Update(ctx, tenantControlPlane)
+}
+
+// dataStore retrieves the override DataStore for the given Tenant Control Plane if specified,
+// otherwise fallback to the default one specified in the Kamaji setup.
+func (r *TenantControlPlaneReconciler) dataStore(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*kamajiv1alpha1.DataStore, error) {
+	dataStoreName := tenantControlPlane.Spec.DataStore
+	if len(dataStoreName) == 0 {
+		dataStoreName = r.Config.DefaultDataStoreName
+	}
+
+	if statusDataStore := tenantControlPlane.Status.Storage.DataStoreName; len(statusDataStore) > 0 && dataStoreName != statusDataStore {
+		return nil, fmt.Errorf("migration from a DataStore (current: %s) to another one (desired: %s) is not yet supported", statusDataStore, dataStoreName)
+	}
+
+	ds := &kamajiv1alpha1.DataStore{}
+	if err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: dataStoreName}, ds); err != nil {
+		return nil, errors.Wrap(err, "cannot retrieve *kamajiv1alpha.DataStore object")
+	}
+
+	return ds, nil
 }

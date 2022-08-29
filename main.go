@@ -18,6 +18,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers"
+	"github.com/clastix/kamaji/indexers"
 	"github.com/clastix/kamaji/internal"
 	"github.com/clastix/kamaji/internal/config"
 )
@@ -35,6 +36,8 @@ func init() {
 }
 
 func main() {
+	ctx := ctrl.SetupSignalHandler()
+
 	conf, err := config.InitConfig()
 	if err != nil {
 		log.Fatalf("Error reading configuration.")
@@ -61,7 +64,7 @@ func main() {
 
 	tcpChannel := make(controllers.TenantControlPlaneChannel)
 
-	if err = (&controllers.DataStore{TenantControlPlaneTrigger: tcpChannel, ResourceName: conf.GetString("datastore")}).SetupWithManager(mgr); err != nil {
+	if err = (&controllers.DataStore{TenantControlPlaneTrigger: tcpChannel}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DataStore")
 		os.Exit(1)
 	}
@@ -70,15 +73,20 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Config: controllers.TenantControlPlaneReconcilerConfig{
-			DataStoreName:      conf.GetString("datastore"),
-			KineContainerImage: conf.GetString("kine-image"),
-			TmpBaseDirectory:   conf.GetString("tmp-directory"),
+			DefaultDataStoreName: conf.GetString("datastore"),
+			KineContainerImage:   conf.GetString("kine-image"),
+			TmpBaseDirectory:     conf.GetString("tmp-directory"),
 		},
 		TriggerChan: tcpChannel,
 	}
 
 	if err := reconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
+		os.Exit(1)
+	}
+
+	if err = (&indexers.TenantControlPlaneStatusDataStore{}).SetupWithManager(ctx, mgr); err != nil {
+		setupLog.Error(err, "unable to create indexer", "indexer", "TenantControlPlaneStatusDataStore")
 		os.Exit(1)
 	}
 
@@ -94,7 +102,7 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}

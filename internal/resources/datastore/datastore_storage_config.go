@@ -20,12 +20,12 @@ type Config struct {
 	resource   *corev1.Secret
 	Client     client.Client
 	ConnString string
-	Driver     string
+	DataStore  kamajiv1alpha1.DataStore
 }
 
 func (r *Config) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Storage.Config.Checksum != r.resource.GetAnnotations()["checksum"] ||
-		tenantControlPlane.Status.Storage.Driver != r.Driver
+		tenantControlPlane.Status.Storage.DataStoreName != r.DataStore.GetName()
 }
 
 func (r *Config) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
@@ -64,7 +64,8 @@ func (r *Config) GetName() string {
 }
 
 func (r *Config) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	tenantControlPlane.Status.Storage.Driver = r.Driver
+	tenantControlPlane.Status.Storage.Driver = string(r.DataStore.Spec.Driver)
+	tenantControlPlane.Status.Storage.DataStoreName = r.DataStore.GetName()
 	tenantControlPlane.Status.Storage.Config.SecretName = r.resource.GetName()
 	tenantControlPlane.Status.Storage.Config.Checksum = r.resource.GetAnnotations()["checksum"]
 
