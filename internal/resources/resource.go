@@ -27,6 +27,7 @@ type Resource interface {
 }
 
 type DeleteableResource interface {
+	GetName() string
 	Define(context.Context, *kamajiv1alpha1.TenantControlPlane) error
 	Delete(context.Context, *kamajiv1alpha1.TenantControlPlane) error
 }

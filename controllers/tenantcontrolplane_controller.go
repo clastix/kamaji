@@ -62,6 +62,8 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	tenantControlPlane := &kamajiv1alpha1.TenantControlPlane{}
 	isTenantControlPlane, err := r.getTenantControlPlane(ctx, req.NamespacedName, tenantControlPlane)
 	if err != nil {
+		log.Error(err, "cannot retrieve the required instance")
+
 		return ctrl.Result{}, err
 	}
 	if !isTenantControlPlane {
@@ -77,11 +79,15 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Retrieving the DataStore to use for the current reconciliation
 	ds, err := r.dataStore(ctx, tenantControlPlane)
 	if err != nil {
+		log.Error(err, "cannot retrieve the DataStore for the given instance")
+
 		return ctrl.Result{}, err
 	}
 
 	dsConnection, err := r.getStorageConnection(ctx, *ds)
 	if err != nil {
+		log.Error(err, "cannot generate the DataStore connection for the given instance")
+
 		return ctrl.Result{}, err
 	}
 	defer dsConnection.Close()
@@ -100,6 +106,8 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 		for _, resource := range registeredDeletableResources {
 			if err = resources.HandleDeletion(ctx, resource, tenantControlPlane); err != nil {
+				log.Error(err, "resource deletion failed", "resource", resource.GetName())
+
 				return ctrl.Result{}, err
 			}
 		}
@@ -108,6 +116,8 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			log.Info("removing finalizer")
 
 			if err = r.RemoveFinalizer(ctx, tenantControlPlane); err != nil {
+				log.Error(err, "cannot remove the finalizer for the given resource")
+
 				return ctrl.Result{}, err
 			}
 		}
@@ -140,6 +150,8 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 				return ctrl.Result{Requeue: true}, nil
 			}
 
+			log.Error(err, "handling of resource failed", "resource", resource.GetName())
+
 			return ctrl.Result{}, err
 		}
 
@@ -148,6 +160,8 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 
 		if err := r.updateStatus(ctx, req.NamespacedName, resource); err != nil {
+			log.Error(err, "update of the resource failed", "resource", resource.GetName())
+
 			return ctrl.Result{}, err
 		}
 
