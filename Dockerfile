@@ -22,6 +22,7 @@ COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
 COPY internal/ internal/
+COPY indexers/ indexers/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build \
