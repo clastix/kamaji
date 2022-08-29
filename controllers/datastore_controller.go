@@ -116,6 +116,8 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	if err := r.client.List(ctx, &tcpList, client.MatchingFieldsSelector{
 		Selector: fields.OneTermEqualSelector(indexers.TenantControlPlaneUsedDataStoreKey, ds.GetName()),
 	}); err != nil {
+		log.Error(err, "cannot retrieve list of the Tenant Control Plane using the following instance")
+
 		return reconcile.Result{}, err
 	}
 	// Updating the status with the list of Tenant Control Plane using the following Data Source
@@ -127,6 +129,8 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	ds.Status.UsedBy = tcpSets.List()
 
 	if err := r.client.Status().Update(ctx, ds); err != nil {
+		log.Error(err, "cannot update the status for the given instance")
+
 		return reconcile.Result{}, err
 	}
 	// Triggering the reconciliation of the Tenant Control Plane upon a Secret change
