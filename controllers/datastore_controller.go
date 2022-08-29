@@ -5,8 +5,8 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
 	k8stypes "k8s.io/apimachinery/pkg/types"
@@ -51,6 +51,8 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 			return reconcile.Result{}, nil
 		}
 
+		log.Error(err, "unable to retrieve the request")
+
 		return reconcile.Result{}, err
 	}
 	// Managing the finalizer, required to don't drop a DataSource if this is still used by a Tenant Control Plane.
@@ -77,15 +79,36 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	// A Data Source can trigger several Tenant Control Planes and requires a minimum validation:
 	// we have to ensure the data provided by the Data Source is valid and referencing an existing Secret object.
 	if _, err := ds.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, r.client); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "invalid Certificate Authority data")
+		log.Error(err, "invalid Certificate Authority data")
+
+		return reconcile.Result{}, err
+	}
+
+	if ds.Spec.Driver == kamajiv1alpha1.EtcdDriver {
+		if ds.Spec.TLSConfig.CertificateAuthority.PrivateKey == nil {
+			err := fmt.Errorf("a valid private key is required for the etcd driver")
+
+			log.Error(err, "missing Certificate Authority private key data")
+
+			return reconcile.Result{}, err
+		}
+		if _, err := ds.Spec.TLSConfig.CertificateAuthority.PrivateKey.GetContent(ctx, r.client); err != nil {
+			log.Error(err, "invalid Certificate Authority private key data")
+
+			return reconcile.Result{}, err
+		}
 	}
 
 	if _, err := ds.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, r.client); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "invalid Client Certificate data")
+		log.Error(err, "invalid Client Certificate data")
+
+		return reconcile.Result{}, err
 	}
 
 	if _, err := ds.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, r.client); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "invalid Client Certificate data")
+		log.Error(err, "invalid Client Certificate private key data")
+
+		return reconcile.Result{}, err
 	}
 
 	tcpList := kamajiv1alpha1.TenantControlPlaneList{}
