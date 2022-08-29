@@ -175,7 +175,7 @@ func getKubernetesStorageResources(c client.Client, dbConnection datastore.Conne
 		&ds.Config{
 			Client:     c,
 			ConnString: dbConnection.GetConnectionString(),
-			Driver:     dbConnection.Driver(),
+			DataStore:  datastore,
 		},
 		&ds.Setup{
 			Client:     c,

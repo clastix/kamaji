@@ -144,6 +144,10 @@ type AddonsSpec struct {
 
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 type TenantControlPlaneSpec struct {
+	// DataStore allows to specify a DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
+	// This parameter is optional and acts as an override over the default one which is used by the Kamaji Operator.
+	// Migration from a different DataStore to another one is not yet supported and the reconciliation will be blocked.
+	DataStore    string       `json:"dataStore,omitempty"`
 	ControlPlane ControlPlane `json:"controlPlane"`
 	// Kubernetes specification for tenant control plane
 	Kubernetes KubernetesSpec `json:"kubernetes"`

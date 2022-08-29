@@ -75,10 +75,11 @@ type DataStoreSetupStatus struct {
 
 // StorageStatus defines the observed state of StorageStatus.
 type StorageStatus struct {
-	Driver      string                     `json:"driver,omitempty"`
-	Config      DataStoreConfigStatus      `json:"config,omitempty"`
-	Setup       DataStoreSetupStatus       `json:"setup,omitempty"`
-	Certificate DataStoreCertificateStatus `json:"certificate,omitempty"`
+	Driver        string                     `json:"driver,omitempty"`
+	DataStoreName string                     `json:"dataStoreName,omitempty"`
+	Config        DataStoreConfigStatus      `json:"config,omitempty"`
+	Setup         DataStoreSetupStatus       `json:"setup,omitempty"`
+	Certificate   DataStoreCertificateStatus `json:"certificate,omitempty"`
 }
 
 // KubeconfigStatus contains information about the generated kubeconfig.
