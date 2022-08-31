@@ -123,13 +123,13 @@ type KonnectivitySpec struct {
 	// Port of Konnectivity proxy server.
 	ProxyPort int32 `json:"proxyPort"`
 	// Version for Konnectivity server and agent.
-	// +kubebuilder:default=v0.0.31
+	// +kubebuilder:default=v0.0.32
 	Version string `json:"version,omitempty"`
 	// ServerImage defines the container image for Konnectivity's server.
-	// +kubebuilder:default=us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-server
+	// +kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-server
 	ServerImage string `json:"serverImage,omitempty"`
 	// AgentImage defines the container image for Konnectivity's agent.
-	// +kubebuilder:default=us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-agent
+	// +kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-agent
 	AgentImage string `json:"agentImage,omitempty"`
 	// Resources define the amount of CPU and memory to allocate to the Konnectivity server.
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
