@@ -63,10 +63,24 @@ spec:
                 description: Addons contain which addons are enabled
                 properties:
                   coreDNS:
-                    description: AddonSpec defines the spec for every addon.
+                    description: Enables the DNS addon in the Tenant Cluster. The
+                      registry and the tag are configurable, the image is hard-coded
+                      to `coredns`.
+                    properties:
+                      imageRepository:
+                        description: ImageRepository sets the container registry to
+                          pull images from. if not set, the default ImageRepository
+                          will be used instead.
+                        type: string
+                      imageTag:
+                        description: ImageTag allows to specify a tag for the image.
+                          In case this value is set, kubeadm does not change automatically
+                          the version of the above components during upgrades.
+                        type: string
                     type: object
                   konnectivity:
-                    description: KonnectivitySpec defines the spec for Konnectivity.
+                    description: Enables the Konnectivity addon in the Tenant Cluster,
+                      required if the worker nodes are in a different network.
                     properties:
                       agentImage:
                         default: registry.k8s.io/kas-network-proxy/proxy-agent
@@ -118,12 +132,19 @@ spec:
                     - proxyPort
                     type: object
                   kubeProxy:
+                    description: Enables the kube-proxy addon in the Tenant Cluster.
+                      The registry and the tag are configurable, the image is hard-coded
+                      to `kube-proxy`.
                     properties:
-                      imageOverride:
-                        description: Specify the image overried of the kube-proxy
-                          to install in the Tenant Cluster. If not specified, the
-                          Kubernetes default one will be used, according to the specified
-                          version.
+                      imageRepository:
+                        description: ImageRepository sets the container registry to
+                          pull images from. if not set, the default ImageRepository
+                          will be used instead.
+                        type: string
+                      imageTag:
+                        description: ImageTag allows to specify a tag for the image.
+                          In case this value is set, kubeadm does not change automatically
+                          the version of the above components during upgrades.
                         type: string
                     type: object
                 type: object
