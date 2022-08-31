@@ -71,6 +71,7 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 		d.SetTemplateLabels(&r.resource.Spec.Template, r.deploymentTemplateLabels(ctx, tenantControlPlane))
 		d.SetStrategy(&r.resource.Spec)
 		d.SetSelector(&r.resource.Spec, tenantControlPlane)
+		d.SetTopologySpreadConstraints(&r.resource.Spec, tenantControlPlane.Spec.ControlPlane.Deployment.TopologySpreadConstraints)
 		d.SetReplicas(&r.resource.Spec, tenantControlPlane)
 		d.ResetKubeAPIServerFlags(r.resource, tenantControlPlane)
 		d.SetContainers(&r.resource.Spec.Template.Spec, tenantControlPlane, address)

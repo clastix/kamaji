@@ -772,6 +772,18 @@ func (d *Deployment) SetAnnotations(resource *appsv1.Deployment, annotations map
 	resource.SetAnnotations(annotations)
 }
 
+func (d *Deployment) SetTopologySpreadConstraints(spec *appsv1.DeploymentSpec, topologies []corev1.TopologySpreadConstraint) {
+	defaultSelector := spec.Selector
+
+	for index, topology := range topologies {
+		if topology.LabelSelector == nil {
+			topologies[index].LabelSelector = defaultSelector
+		}
+	}
+
+	spec.Template.Spec.TopologySpreadConstraints = topologies
+}
+
 // ResetKubeAPIServerFlags ensures that upon a change of the kube-apiserver extra flags the desired ones are properly
 // applied, also considering that the container could be lately patched by the konnectivity addon resources.
 func (d *Deployment) ResetKubeAPIServerFlags(resource *appsv1.Deployment, tcp *kamajiv1alpha1.TenantControlPlane) {
