@@ -5,7 +5,6 @@ package resources
 
 import (
 	"context"
-	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -40,11 +39,35 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, tenantContr
 		TenantControlPlaneCertSANs:     tenantControlPlane.Spec.NetworkProfile.CertSANs,
 		TenantControlPlanePort:         tenantControlPlane.Spec.NetworkProfile.Port,
 		TenantControlPlaneCGroupDriver: tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(),
-		KubeProxyImage:                 fmt.Sprintf("k8s.gcr.io/kube-proxy:%s", tenantControlPlane.Spec.Kubernetes.Version),
 	}
 
-	if kubeProxy := tenantControlPlane.Spec.Addons.KubeProxy; kubeProxy != nil && len(kubeProxy.ImageOverride) > 0 {
-		config.Parameters.KubeProxyImage = kubeProxy.ImageOverride
+	// If CoreDNS addon is enabled and with an override, adding these to the kubeadm init configuration
+	if coreDNS := tenantControlPlane.Spec.Addons.CoreDNS; coreDNS != nil {
+		config.Parameters.CoreDNSOptions = &kubeadm.AddonOptions{}
+
+		if len(coreDNS.ImageRepository) > 0 {
+			config.Parameters.CoreDNSOptions.Repository = coreDNS.ImageRepository
+		}
+
+		if len(coreDNS.ImageRepository) > 0 {
+			config.Parameters.CoreDNSOptions.Tag = coreDNS.ImageTag
+		}
+	}
+	// If the kube-proxy addon is enabled and with overrides, adding it to the kubeadm parameters
+	if kubeProxy := tenantControlPlane.Spec.Addons.KubeProxy; kubeProxy != nil {
+		config.Parameters.KubeProxyOptions = &kubeadm.AddonOptions{}
+
+		if len(kubeProxy.ImageRepository) > 0 {
+			config.Parameters.KubeProxyOptions.Repository = kubeProxy.ImageRepository
+		} else {
+			config.Parameters.KubeProxyOptions.Repository = "k8s.gcr.io"
+		}
+
+		if len(kubeProxy.ImageTag) > 0 {
+			config.Parameters.KubeProxyOptions.Tag = kubeProxy.ImageTag
+		} else {
+			config.Parameters.KubeProxyOptions.Tag = tenantControlPlane.Spec.Kubernetes.Version
+		}
 	}
 
 	checksum := config.Checksum()

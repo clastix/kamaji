@@ -115,12 +115,17 @@ type ServiceSpec struct {
 }
 
 // AddonSpec defines the spec for every addon.
-type AddonSpec struct{}
+type AddonSpec struct {
+	ImageOverrideTrait `json:",inline"`
+}
 
-type KubeProxySpec struct {
-	// Specify the image overried of the kube-proxy to install in the Tenant Cluster.
-	// If not specified, the Kubernetes default one will be used, according to the specified version.
-	ImageOverride string `json:"imageOverride,omitempty"`
+type ImageOverrideTrait struct {
+	// ImageRepository sets the container registry to pull images from.
+	// if not set, the default ImageRepository will be used instead.
+	ImageRepository string `json:"imageRepository,omitempty"`
+	// ImageTag allows to specify a tag for the image.
+	// In case this value is set, kubeadm does not change automatically the version of the above components during upgrades.
+	ImageTag string `json:"imageTag,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.
@@ -142,9 +147,14 @@ type KonnectivitySpec struct {
 
 // AddonsSpec defines the enabled addons and their features.
 type AddonsSpec struct {
-	CoreDNS      *AddonSpec        `json:"coreDNS,omitempty"`
+	// Enables the DNS addon in the Tenant Cluster.
+	// The registry and the tag are configurable, the image is hard-coded to `coredns`.
+	CoreDNS *AddonSpec `json:"coreDNS,omitempty"`
+	// Enables the Konnectivity addon in the Tenant Cluster, required if the worker nodes are in a different network.
 	Konnectivity *KonnectivitySpec `json:"konnectivity,omitempty"`
-	KubeProxy    *KubeProxySpec    `json:"kubeProxy,omitempty"`
+	// Enables the kube-proxy addon in the Tenant Cluster.
+	// The registry and the tag are configurable, the image is hard-coded to `kube-proxy`.
+	KubeProxy *AddonSpec `json:"kubeProxy,omitempty"`
 }
 
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.

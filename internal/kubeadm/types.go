@@ -46,7 +46,13 @@ type Parameters struct {
 	ETCDs                          []string
 	CertificatesDir                string
 	KubeconfigDir                  string
-	KubeProxyImage                 string
+	KubeProxyOptions               *AddonOptions
+	CoreDNSOptions                 *AddonOptions
+}
+
+type AddonOptions struct {
+	Repository string
+	Tag        string
 }
 
 type KubeletConfiguration struct {
