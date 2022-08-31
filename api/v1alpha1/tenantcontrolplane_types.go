@@ -85,6 +85,11 @@ type ControlPlaneComponentsResources struct {
 type DeploymentSpec struct {
 	// +kubebuilder:default=2
 	Replicas int32 `json:"replicas,omitempty"`
+	// TopologySpreadConstraints describes how the Tenant Control Plane pods ought to spread across topology
+	// domains. Scheduler will schedule pods in a way which abides by the constraints.
+	// In case of nil underlying LabelSelector, the Kamaji one for the given Tenant Control Plane will be used.
+	// All topologySpreadConstraints are ANDed.
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Resources defines the amount of memory and CPU to allocate to each component of the Control Plane
 	// (kube-apiserver, controller-manager, and scheduler).
 	Resources *ControlPlaneComponentsResources `json:"resources,omitempty"`
