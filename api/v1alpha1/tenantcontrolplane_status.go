@@ -208,6 +208,8 @@ type KubernetesVersion struct {
 // KubernetesDeploymentStatus defines the status for the Tenant Control Plane Deployment in the management cluster.
 type KubernetesDeploymentStatus struct {
 	appsv1.DeploymentStatus `json:",inline"`
+	// Selector is the label selector used to group the Tenant Control Plane Pods used by the scale subresource.
+	Selector string `json:"selector"`
 	// The name of the Deployment for the given cluster.
 	Name string `json:"name"`
 	// The namespace which the Deployment for the given cluster is deployed.
