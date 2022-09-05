@@ -104,6 +104,7 @@ func (r *KubernetesDeploymentResource) UpdateTenantControlPlaneStatus(_ context.
 
 	tenantControlPlane.Status.Kubernetes.Deployment = kamajiv1alpha1.KubernetesDeploymentStatus{
 		DeploymentStatus: r.resource.Status,
+		Selector:         metav1.FormatLabelSelector(r.resource.Spec.Selector),
 		Name:             r.resource.GetName(),
 		Namespace:        r.resource.GetNamespace(),
 		LastUpdate:       metav1.Now(),
