@@ -1227,6 +1227,10 @@ spec:
                           by this deployment (their labels match the selector).
                         format: int32
                         type: integer
+                      selector:
+                        description: Selector is the label selector used to group
+                          the Tenant Control Plane Pods used by the scale subresource.
+                        type: string
                       unavailableReplicas:
                         description: Total number of unavailable pods targeted by
                           this deployment. This is the total number of pods that are
@@ -1243,6 +1247,7 @@ spec:
                     required:
                     - name
                     - namespace
+                    - selector
                     type: object
                   ingress:
                     description: KubernetesIngressStatus defines the status for the
@@ -1547,4 +1552,8 @@ spec:
     served: true
     storage: true
     subresources:
+      scale:
+        labelSelectorPath: .status.kubernetesResources.deployment.selector
+        specReplicasPath: .spec.deployment.replicas
+        statusReplicasPath: .status.kubernetesResources.deployment.replicas
       status: {}
