@@ -543,6 +543,7 @@ func (d *Deployment) buildKubeAPIServerCommand(tenantControlPlane *kamajiv1alpha
 		"--proxy-client-cert-file":             path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientCertName),
 		"--proxy-client-key-file":              path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientKeyName),
 		"--requestheader-allowed-names":        "front-proxy-client",
+		"--requestheader-client-ca-file":       path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyCACertName),
 		"--requestheader-extra-headers-prefix": "X-Remote-Extra-",
 		"--requestheader-group-headers":        "X-Remote-Group",
 		"--requestheader-username-headers":     "X-Remote-User",
