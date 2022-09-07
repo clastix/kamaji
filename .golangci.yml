@@ -14,7 +14,6 @@ linters:
     - wrapcheck
     - gomnd
     - scopelint
-    - interfacer
     - varnamelen
     - testpackage
     - tagliatelle

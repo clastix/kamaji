@@ -18,7 +18,7 @@ type kamajiKubeVersionGetter struct {
 	upgrade.VersionGetter
 }
 
-func NewKamajiKubeVersionGetter(restClient *kubernetes.Clientset) upgrade.VersionGetter {
+func NewKamajiKubeVersionGetter(restClient kubernetes.Interface) upgrade.VersionGetter {
 	kubeVersionGetter := upgrade.NewOfflineVersionGetter(upgrade.NewKubeVersionGetter(restClient), KubeadmVersion)
 
 	return &kamajiKubeVersionGetter{VersionGetter: kubeVersionGetter}
