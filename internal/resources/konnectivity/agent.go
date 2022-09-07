@@ -204,7 +204,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		c.SetAnnotations(nil)
 		c.SetResourceVersion("")
 
-		yaml, _ := utilities.EncondeToYaml(c)
+		yaml, _ := utilities.EncodeToYaml(c)
 		annotations := r.resource.GetAnnotations()
 		if annotations == nil {
 			annotations = map[string]string{}
