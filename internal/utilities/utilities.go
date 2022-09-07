@@ -67,6 +67,41 @@ func EncondeToYaml(o runtime.Object) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
+func DecodeFromJSON(o string, to runtime.Object) (err error) {
+	scheme := runtime.NewScheme()
+
+	encoder := json.NewSerializerWithOptions(json.SimpleMetaFactory{}, scheme, scheme, json.SerializerOptions{
+		Yaml:   false,
+		Pretty: false,
+		Strict: false,
+	})
+
+	if to, _, err = encoder.Decode([]byte(o), nil, to); err != nil { //nolint:ineffassign,staticcheck
+		return
+	}
+
+	return
+}
+
+// EncodeToJSON returns the given object in JSON format and the error, respecting the Kubernetes struct tags.
+func EncodeToJSON(o runtime.Object) ([]byte, error) {
+	scheme := runtime.NewScheme()
+
+	encoder := json.NewSerializerWithOptions(json.SimpleMetaFactory{}, scheme, scheme, json.SerializerOptions{
+		Yaml:   false,
+		Pretty: false,
+		Strict: false,
+	})
+
+	buf := bytes.NewBuffer([]byte{})
+
+	if err := encoder.Encode(o, buf); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
 // IsValidIP checks if the given argument is an IP.
 func IsValidIP(ip string) bool {
 	return net.ParseIP(ip) != nil

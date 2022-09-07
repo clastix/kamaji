@@ -4,15 +4,14 @@
 package kubeadm
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	bootstraptokenv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
+	"k8s.io/kubernetes/cmd/kubeadm/app/util/config"
+
+	"github.com/clastix/kamaji/internal/utilities"
 )
 
 const (
@@ -21,128 +20,103 @@ const (
 	defaultKeyFile  = "/etc/kubernetes/pki/apiserver-etcd-client.key"
 )
 
-func CreateKubeadmInitConfiguration(params Parameters) Configuration {
-	config := kubeadmapi.InitConfiguration{
-		ClusterConfiguration: getKubeadmClusterConfiguration(params),
-		BootstrapTokens: []bootstraptokenv1.BootstrapToken{
-			{
-				Groups: []string{"system:bootstrappers:kubeadm:default-node-token"},
-				TTL:    &metav1.Duration{Duration: 48 * time.Hour},
-				Usages: []string{
-					"signing",
-					"authentication",
-				},
-			},
-		},
-		LocalAPIEndpoint: kubeadmapi.APIEndpoint{
-			AdvertiseAddress: params.TenantControlPlaneAddress,
-			BindPort:         params.TenantControlPlanePort,
-		},
-		NodeRegistration: kubeadmapi.NodeRegistrationOptions{
-			CRISocket: "unix:///run/containerd/containerd.sock",
-			Name:      params.TenantControlPlaneName,
-		},
+func CreateKubeadmInitConfiguration(params Parameters) (*Configuration, error) {
+	defaultConf, err := config.DefaultedStaticInitConfiguration()
+	if err != nil {
+		return nil, err
 	}
 
-	return Configuration{InitConfiguration: config}
-}
+	conf := defaultConf
+	// Due to unmarshaling error when GetKubeadmInitConfigurationFromMap function is issued,
+	// we have to store the ComponentConfigs to a null value.
+	conf.ClusterConfiguration.ComponentConfigs = nil
 
-func isHTTPS(url string) bool {
-	return strings.HasPrefix(url, "https")
-}
+	conf.LocalAPIEndpoint = kubeadmapi.APIEndpoint{
+		AdvertiseAddress: params.TenantControlPlaneAddress,
+		BindPort:         params.TenantControlPlanePort,
+	}
+	conf.NodeRegistration.Name = params.TenantControlPlaneName
 
-func getKubeadmClusterConfiguration(params Parameters) kubeadmapi.ClusterConfiguration {
 	caFile, certFile, keyFile := "", "", ""
-	if isHTTPS(params.ETCDs[0]) {
+	if strings.HasPrefix(params.ETCDs[0], "https") {
 		caFile, certFile, keyFile = defaultCAFile, defaultCertFile, defaultKeyFile
 	}
 
-	return kubeadmapi.ClusterConfiguration{
-		KubernetesVersion: params.TenantControlPlaneVersion,
-		ClusterName:       params.TenantControlPlaneName,
-		CertificatesDir:   "/etc/kubernetes/pki",
-		ImageRepository:   "k8s.gcr.io",
-		Networking: kubeadmapi.Networking{
-			DNSDomain:     "cluster.local",
-			PodSubnet:     params.TenantControlPlanePodCIDR,
-			ServiceSubnet: params.TenantControlPlaneServiceCIDR,
-		},
-		DNS: kubeadmapi.DNS{
-			Type: "CoreDNS",
-		},
-		ControlPlaneEndpoint: params.TenantControlPlaneEndpoint,
-		Etcd: kubeadmapi.Etcd{
-			External: &kubeadmapi.ExternalEtcd{
-				Endpoints: params.ETCDs,
-				CAFile:    caFile,
-				CertFile:  certFile,
-				KeyFile:   keyFile,
-			},
-		},
-		APIServer: kubeadmapi.APIServer{
-			CertSANs: append([]string{
-				"127.0.0.1",
-				"localhost",
-				params.TenantControlPlaneName,
-				fmt.Sprintf("%s.%s.svc", params.TenantControlPlaneName, params.TenantControlPlaneNamespace),
-				fmt.Sprintf("%s.%s.svc.cluster.local", params.TenantControlPlaneName, params.TenantControlPlaneNamespace),
-				params.TenantControlPlaneAddress,
-			}, params.TenantControlPlaneCertSANs...),
-			ControlPlaneComponent: kubeadmapi.ControlPlaneComponent{
-				ExtraArgs: map[string]string{
-					"etcd-compaction-interval": "0s",
-					"etcd-prefix":              fmt.Sprintf("/%s", params.TenantControlPlaneName),
-				},
-			},
+	conf.Etcd = kubeadmapi.Etcd{
+		External: &kubeadmapi.ExternalEtcd{
+			Endpoints: params.ETCDs,
+			CAFile:    caFile,
+			CertFile:  certFile,
+			KeyFile:   keyFile,
 		},
 	}
+	conf.Networking = kubeadmapi.Networking{
+		DNSDomain:     "cluster.local",
+		PodSubnet:     params.TenantControlPlanePodCIDR,
+		ServiceSubnet: params.TenantControlPlaneServiceCIDR,
+	}
+	conf.KubernetesVersion = params.TenantControlPlaneVersion
+	conf.ControlPlaneEndpoint = params.TenantControlPlaneEndpoint
+	conf.APIServer.CertSANs = append([]string{
+		"127.0.0.1",
+		"localhost",
+		params.TenantControlPlaneName,
+		fmt.Sprintf("%s.%s.svc", params.TenantControlPlaneName, params.TenantControlPlaneNamespace),
+		fmt.Sprintf("%s.%s.svc.cluster.local", params.TenantControlPlaneName, params.TenantControlPlaneNamespace),
+		params.TenantControlPlaneAddress,
+	}, params.TenantControlPlaneCertSANs...)
+	conf.APIServer.ControlPlaneComponent.ExtraArgs = map[string]string{
+		"etcd-compaction-interval": "0s",
+		"etcd-prefix":              fmt.Sprintf("/%s", params.TenantControlPlaneName),
+	}
+	conf.ClusterName = params.TenantControlPlaneName
+
+	return &Configuration{InitConfiguration: *conf}, nil
 }
 
 func GetKubeadmInitConfigurationMap(config Configuration) (map[string]string, error) {
-	initConfigurationString, err := getJSONStringFromStruct(config.InitConfiguration)
+	initConfigurationString, err := utilities.EncodeToJSON(&config.InitConfiguration)
 	if err != nil {
-		return map[string]string{}, err
+		return nil, err
 	}
 
-	clusterConfigurationString, err := getJSONStringFromStruct(config.InitConfiguration.ClusterConfiguration)
+	clusterConfigurationString, err := utilities.EncodeToJSON(&config.InitConfiguration.ClusterConfiguration)
 	if err != nil {
-		return map[string]string{}, err
+		return nil, err
 	}
 
 	return map[string]string{
-		kubeadmconstants.InitConfigurationKind:    initConfigurationString,
-		kubeadmconstants.ClusterConfigurationKind: clusterConfigurationString,
+		kubeadmconstants.InitConfigurationKind:    string(initConfigurationString),
+		kubeadmconstants.ClusterConfigurationKind: string(clusterConfigurationString),
 	}, nil
 }
 
-func GetKubeadmInitConfigurationFromMap(config map[string]string) (*Configuration, error) {
-	initConfigurationString, ok := config[kubeadmconstants.InitConfigurationKind]
+func GetKubeadmInitConfigurationFromMap(conf map[string]string) (*Configuration, error) {
+	initConfigurationString, ok := conf[kubeadmconstants.InitConfigurationKind]
 	if !ok {
 		return nil, fmt.Errorf("%s is not in the map", kubeadmconstants.InitConfigurationKind)
 	}
 
-	clusterConfigurationString, ok := config[kubeadmconstants.ClusterConfigurationKind]
+	clusterConfigurationString, ok := conf[kubeadmconstants.ClusterConfigurationKind]
 	if !ok {
 		return nil, fmt.Errorf("%s is not in the map", kubeadmconstants.ClusterConfigurationKind)
 	}
 
 	initConfiguration := kubeadmapi.InitConfiguration{}
-	if err := json.Unmarshal([]byte(initConfigurationString), &initConfiguration); err != nil {
+	if err := utilities.DecodeFromJSON(initConfigurationString, &initConfiguration); err != nil {
 		return nil, err
 	}
 
-	if err := json.Unmarshal([]byte(clusterConfigurationString), &initConfiguration.ClusterConfiguration); err != nil {
+	if err := utilities.DecodeFromJSON(clusterConfigurationString, &initConfiguration.ClusterConfiguration); err != nil {
 		return nil, err
 	}
+	// Due to some weird issues with unmarshaling of the ComponentConfigs struct,
+	// we have to extract the default value and assign it directly.
+	defaults, err := config.DefaultedStaticInitConfiguration()
+	if err != nil {
+		return nil, err
+	}
+	initConfiguration.ClusterConfiguration.ComponentConfigs = defaults.ComponentConfigs
 
 	return &Configuration{InitConfiguration: initConfiguration}, nil
-}
-
-func getJSONStringFromStruct(i interface{}) (string, error) {
-	b, err := json.Marshal(i)
-	if err != nil {
-		return "", err
-	}
-
-	return string(b), nil
 }

@@ -8,12 +8,15 @@ We assume you have installed on your workstation:
 
 - [Docker](https://docs.docker.com/engine/install/)
 - [KinD](https://kind.sigs.k8s.io/)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- [kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/)
+- [kubectl@v1.25.0](https://kubernetes.io/docs/tasks/tools/)
+- [kubeadm@v1.25.0](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/)
 - [jq](https://stedolan.github.io/jq/)
 - [openssl](https://www.openssl.org/)
 - [cfssl](https://github.com/cloudflare/cfssl)
 - [cfssljson](https://github.com/cloudflare/cfssl)
+
+> Starting from Kamaji v0.0.2, `kubectl` and `kubeadm` need to meet at least minimum version to `v1.25.0`:
+> this is required due to the latest changes addressed from the release Kubernetes 1.25 release regarding the `kubelet-config` ConfigMap required for the node join.
 
 ## Setup Kamaji on KinD
 
