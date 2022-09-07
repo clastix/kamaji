@@ -548,7 +548,7 @@ func (d *Deployment) buildKubeAPIServerCommand(tenantControlPlane *kamajiv1alpha
 		"--requestheader-group-headers":        "X-Remote-Group",
 		"--requestheader-username-headers":     "X-Remote-User",
 		"--secure-port":                        fmt.Sprintf("%d", tenantControlPlane.Spec.NetworkProfile.Port),
-		"--service-account-issuer":             fmt.Sprintf("https://localhost:%d", tenantControlPlane.Spec.NetworkProfile.Port),
+		"--service-account-issuer":             "https://kubernetes.default.svc.cluster.local",
 		"--service-account-key-file":           path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPublicKeyName),
 		"--service-account-signing-key-file":   path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName),
 		"--tls-cert-file":                      path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerCertName),
