@@ -292,7 +292,7 @@ func (r *KubernetesDeploymentResource) syncVolumes(tenantControlPlane *kamajiv1a
 			LocalObjectReference: corev1.LocalObjectReference{
 				Name: tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Name,
 			},
-			DefaultMode: pointer.Int32Ptr(420),
+			DefaultMode: pointer.Int32(420),
 		},
 	}
 	// Defining volume for the Konnectivity kubeconfig
@@ -306,7 +306,7 @@ func (r *KubernetesDeploymentResource) syncVolumes(tenantControlPlane *kamajiv1a
 	r.resource.Spec.Template.Spec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.SecretName,
-			DefaultMode: pointer.Int32Ptr(420),
+			DefaultMode: pointer.Int32(420),
 		},
 	}
 }
