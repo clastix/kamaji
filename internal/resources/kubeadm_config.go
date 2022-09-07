@@ -99,8 +99,11 @@ func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.Tenant
 			CertificatesDir:               r.TmpDirectory,
 		}
 
-		config := kubeadm.CreateKubeadmInitConfiguration(params)
-		data, err := kubeadm.GetKubeadmInitConfigurationMap(config)
+		config, err := kubeadm.CreateKubeadmInitConfiguration(params)
+		if err != nil {
+			return err
+		}
+		data, err := kubeadm.GetKubeadmInitConfigurationMap(*config)
 		if err != nil {
 			return err
 		}

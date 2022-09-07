@@ -4,13 +4,10 @@
 package kubeadm
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8sversion "k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/kubernetes"
 	kubelettypes "k8s.io/kubelet/config/v1beta1"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
@@ -37,10 +34,7 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) err
 		return err
 	}
 
-	configMapName, err := configMapName(config.Parameters.TenantControlPlaneVersion)
-	if err != nil {
-		return err
-	}
+	configMapName := kubeadmconstants.KubeletBaseConfigurationConfigMap
 
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -56,7 +50,7 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) err
 		return err
 	}
 
-	if err := createConfigMapRBACRules(client, config.Parameters.TenantControlPlaneVersion); err != nil {
+	if err := createConfigMapRBACRules(client); err != nil {
 		return errors.Wrap(err, "error creating kubelet configuration configmap RBAC rules")
 	}
 
@@ -120,16 +114,8 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration) ([]by
 	return utilities.EncondeToYaml(&kc)
 }
 
-func createConfigMapRBACRules(client kubernetes.Interface, kubernetesVersion string) error {
-	configMapName, err := configMapName(kubernetesVersion)
-	if err != nil {
-		return err
-	}
-
-	configMapRBACName, err := configMapRBACName(kubernetesVersion)
-	if err != nil {
-		return err
-	}
+func createConfigMapRBACRules(client kubernetes.Interface) error {
+	configMapRBACName := kubeadmconstants.KubeletBaseConfigMapRole
 
 	if err := apiclient.CreateOrUpdateRole(client, &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
@@ -141,7 +127,7 @@ func createConfigMapRBACRules(client kubernetes.Interface, kubernetesVersion str
 				Verbs:         []string{"get"},
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
-				ResourceNames: []string{configMapName},
+				ResourceNames: []string{kubeadmconstants.KubeletBaseConfigurationConfigMap},
 			},
 		},
 	}); err != nil {
@@ -169,22 +155,4 @@ func createConfigMapRBACRules(client kubernetes.Interface, kubernetesVersion str
 			},
 		},
 	})
-}
-
-func configMapName(kubernetesVersion string) (string, error) {
-	version, err := k8sversion.ParseSemantic(kubernetesVersion)
-	if err != nil {
-		return "", err
-	}
-
-	return kubeadmconstants.GetKubeletConfigMapName(version, true), nil
-}
-
-func configMapRBACName(kubernetesVersion string) (string, error) {
-	version, err := k8sversion.ParseSemantic(kubernetesVersion)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%s%d.%d", kubeadmconstants.KubeletBaseConfigMapRolePrefix, version.Major(), version.Minor()), nil
 }

@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/kubeadm/printers"
 	kamajiupgrade "github.com/clastix/kamaji/internal/upgrade"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -71,7 +72,7 @@ func (k *KubernetesUpgrade) CreateOrUpdate(ctx context.Context, tenantControlPla
 
 	versionGetter := kamajiupgrade.NewKamajiKubeVersionGetter(restClient)
 
-	if _, err = upgrade.GetAvailableUpgrades(versionGetter, false, false, true, restClient, ""); err != nil {
+	if _, err = upgrade.GetAvailableUpgrades(versionGetter, false, false, true, restClient, "", &printers.Discard{}); err != nil {
 		return controllerutil.OperationResultNone, errors.Wrap(err, "cannot retrieve available Upgrades for Kubernetes upgrade plan")
 	}
 
