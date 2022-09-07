@@ -143,7 +143,7 @@ func (d *Deployment) buildPKIVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1
 		VolumeSource: corev1.VolumeSource{
 			Projected: &corev1.ProjectedVolumeSource{
 				Sources:     sources,
-				DefaultMode: pointer.Int32Ptr(420),
+				DefaultMode: pointer.Int32(420),
 			},
 		},
 	}
@@ -159,7 +159,7 @@ func (d *Deployment) buildCAVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  tcp.Status.Certificates.CA.SecretName,
-				DefaultMode: pointer.Int32Ptr(420),
+				DefaultMode: pointer.Int32(420),
 			},
 		},
 	}
@@ -175,7 +175,7 @@ func (d *Deployment) buildSSLCertsVolume(podSpec *corev1.PodSpec, tcp *kamajiv1a
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  tcp.Status.Certificates.CA.SecretName,
-				DefaultMode: pointer.Int32Ptr(420),
+				DefaultMode: pointer.Int32(420),
 			},
 		},
 	}
@@ -191,7 +191,7 @@ func (d *Deployment) buildShareCAVolume(podSpec *corev1.PodSpec, tcp *kamajiv1al
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  tcp.Status.Certificates.CA.SecretName,
-				DefaultMode: pointer.Int32Ptr(420),
+				DefaultMode: pointer.Int32(420),
 			},
 		},
 	}
@@ -207,7 +207,7 @@ func (d *Deployment) buildLocalShareCAVolume(podSpec *corev1.PodSpec, tcp *kamaj
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  tcp.Status.Certificates.CA.SecretName,
-				DefaultMode: pointer.Int32Ptr(420),
+				DefaultMode: pointer.Int32(420),
 			},
 		},
 	}
@@ -223,7 +223,7 @@ func (d *Deployment) buildSchedulerVolume(podSpec *corev1.PodSpec, tcp *kamajiv1
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  tcp.Status.KubeConfig.Scheduler.SecretName,
-				DefaultMode: pointer.Int32Ptr(420),
+				DefaultMode: pointer.Int32(420),
 			},
 		},
 	}
@@ -239,7 +239,7 @@ func (d *Deployment) buildControllerManagerVolume(podSpec *corev1.PodSpec, tcp *
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  tcp.Status.KubeConfig.ControllerManager.SecretName,
-				DefaultMode: pointer.Int32Ptr(420),
+				DefaultMode: pointer.Int32(420),
 			},
 		},
 	}
@@ -619,7 +619,7 @@ func (d *Deployment) buildKineVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.Storage.Certificate.SecretName,
-			DefaultMode: pointer.Int32Ptr(420),
+			DefaultMode: pointer.Int32(420),
 		},
 	}
 	if d.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
