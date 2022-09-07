@@ -14,9 +14,7 @@ linters:
     - wrapcheck
     - gomnd
     - scopelint
-    - golint
     - interfacer
-    - maligned
     - varnamelen
     - testpackage
     - tagliatelle
@@ -38,6 +36,14 @@ linters:
     - gochecknoinits
     - funlen
     - dupl
-    - maintidx
     - cyclop
+    # deprecated linters
+    - deadcode
+    - golint
+    - interfacer
+    - structcheck
+    - varcheck
+    - nosnakecase
+    - ifshort
+    - maligned
   enable-all: true
