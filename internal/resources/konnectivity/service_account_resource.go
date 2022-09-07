@@ -107,7 +107,7 @@ func (r *ServiceAccountResource) mutate() controllerutil.MutateFn {
 		c.SetAnnotations(nil)
 		c.SetResourceVersion("")
 
-		yaml, _ := utilities.EncondeToYaml(c)
+		yaml, _ := utilities.EncodeToYaml(c)
 
 		annotations := r.resource.GetAnnotations()
 		if annotations == nil {

@@ -107,7 +107,7 @@ func (r *EgressSelectorConfigurationResource) mutate(_ context.Context, tenantCo
 			},
 		}
 
-		yamlConfiguration, err := utilities.EncondeToYaml(configuration)
+		yamlConfiguration, err := utilities.EncodeToYaml(configuration)
 		if err != nil {
 			return err
 		}

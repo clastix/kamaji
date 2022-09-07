@@ -121,7 +121,7 @@ func (r *ClusterRoleBindingResource) mutate() controllerutil.MutateFn {
 			annotations = map[string]string{}
 		}
 
-		yaml, _ := utilities.EncondeToYaml(r.resource)
+		yaml, _ := utilities.EncodeToYaml(r.resource)
 		annotations["checksum"] = utilities.MD5Checksum(yaml)
 
 		return nil

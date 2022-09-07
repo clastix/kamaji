@@ -111,7 +111,7 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration) ([]by
 		VolumeStatsAggPeriod:             zeroDuration,
 	}
 
-	return utilities.EncondeToYaml(&kc)
+	return utilities.EncodeToYaml(&kc)
 }
 
 func createConfigMapRBACRules(client kubernetes.Interface) error {

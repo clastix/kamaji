@@ -47,14 +47,23 @@ func AddTenantPrefix(name string, tenantControlPlane *kamajiv1alpha1.TenantContr
 	return fmt.Sprintf("%s%s%s", tenantControlPlane.GetName(), separator, name)
 }
 
-// EncondeToYaml returns the given object in yaml format and the error.
-func EncondeToYaml(o runtime.Object) ([]byte, error) {
+// EncodeToYaml returns the given object in yaml format and the error.
+func EncodeToYaml(o runtime.Object) ([]byte, error) {
 	scheme := runtime.NewScheme()
-	encoder := json.NewYAMLSerializer(json.SimpleMetaFactory{}, scheme, scheme)
-	buf := bytes.NewBuffer([]byte{})
-	err := encoder.Encode(o, buf)
 
-	return buf.Bytes(), err
+	encoder := json.NewSerializerWithOptions(json.SimpleMetaFactory{}, scheme, scheme, json.SerializerOptions{
+		Yaml:   true,
+		Pretty: false,
+		Strict: false,
+	})
+
+	buf := bytes.NewBuffer([]byte{})
+
+	if err := encoder.Encode(o, buf); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 func DecodeFromJSON(o string, to runtime.Object) (err error) {

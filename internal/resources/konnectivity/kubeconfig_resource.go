@@ -151,7 +151,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			CurrentContext: contextName,
 		}
 
-		kubeconfigBytes, err := utilities.EncondeToYaml(kubeconfig)
+		kubeconfigBytes, err := utilities.EncodeToYaml(kubeconfig)
 		if err != nil {
 			logger.Error(err, "cannot encode to YAML the kubeconfig")
 
