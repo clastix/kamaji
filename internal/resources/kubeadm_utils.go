@@ -6,6 +6,7 @@ package resources
 import (
 	"context"
 
+	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -13,19 +14,25 @@ import (
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
-func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr.Logger, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
 	if err != nil {
+		logger.Error(err, "cannot retrieve kubeadm configuration")
+
 		return controllerutil.OperationResultNone, err
 	}
 
 	kubeconfig, err := utilities.GetTenantKubeconfig(ctx, r.GetClient(), tenantControlPlane)
 	if err != nil {
+		logger.Error(err, "cannot retrieve kubeconfig configuration")
+
 		return controllerutil.OperationResultNone, err
 	}
 
 	address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
 	if err != nil {
+		logger.Error(err, "cannot retrieve Tenant Control Plane address")
+
 		return controllerutil.OperationResultNone, err
 	}
 
@@ -74,6 +81,8 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, tenantContr
 
 	status, err := r.GetStatus(tenantControlPlane)
 	if err != nil {
+		logger.Error(err, "cannot retrieve status")
+
 		return controllerutil.OperationResultNone, err
 	}
 
@@ -85,14 +94,20 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, tenantContr
 
 	client, err := utilities.GetTenantClientSet(ctx, r.GetClient(), tenantControlPlane)
 	if err != nil {
+		logger.Error(err, "cannot generate tenant client")
+
 		return controllerutil.OperationResultNone, err
 	}
 
 	fun, err := r.GetKubeadmFunction()
 	if err != nil {
+		logger.Error(err, "cannot retrieve kubeadm function")
+
 		return controllerutil.OperationResultNone, err
 	}
 	if err = fun(client, config); err != nil {
+		logger.Error(err, "kubeadm function failed")
+
 		return controllerutil.OperationResultNone, err
 	}
 

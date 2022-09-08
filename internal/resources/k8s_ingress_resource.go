@@ -13,6 +13,7 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -34,8 +35,12 @@ func (r *KubernetesIngressResource) ShouldCleanup(tenantControlPlane *kamajiv1al
 }
 
 func (r *KubernetesIngressResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+	logger := log.FromContext(ctx, "resource", r.GetName())
+
 	if err := r.Client.Delete(ctx, r.resource); err != nil {
 		if !k8serrors.IsNotFound(err) {
+			logger.Error(err, "cannot cleanup resource")
+
 			return false, err
 		}
 

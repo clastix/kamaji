@@ -6,11 +6,13 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/datastore"
@@ -44,12 +46,16 @@ func (r *Setup) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bo
 }
 
 func (r *Setup) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	logger := log.FromContext(ctx, "resource", r.GetName())
+
 	secret := &corev1.Secret{}
 	namespacedName := types.NamespacedName{
 		Namespace: tenantControlPlane.GetNamespace(),
 		Name:      tenantControlPlane.Status.Storage.Config.SecretName,
 	}
 	if err := r.Client.Get(ctx, namespacedName, secret); err != nil {
+		logger.Error(err, "cannot retrieve the DataStore Configuration secret")
+
 		return err
 	}
 
@@ -67,6 +73,8 @@ func (r *Setup) GetClient() client.Client {
 }
 
 func (r *Setup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	logger := log.FromContext(ctx, "resource", r.GetName())
+
 	if tenantControlPlane.Status.Storage.Setup.Checksum != "" &&
 		tenantControlPlane.Status.Storage.Setup.Checksum != tenantControlPlane.Status.Storage.Config.Checksum {
 		if err := r.Delete(ctx, tenantControlPlane); err != nil {
@@ -82,18 +90,24 @@ func (r *Setup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 
 	operationResult, err = r.createDB(ctx, tenantControlPlane)
 	if err != nil {
+		logger.Error(err, "unable to create the DataStore data")
+
 		return reconcilationResult, err
 	}
 	reconcilationResult = utils.UpdateOperationResult(reconcilationResult, operationResult)
 
 	operationResult, err = r.createUser(ctx, tenantControlPlane)
 	if err != nil {
+		logger.Error(err, "unable to create the DataStore user")
+
 		return reconcilationResult, err
 	}
 	reconcilationResult = utils.UpdateOperationResult(reconcilationResult, operationResult)
 
 	operationResult, err = r.createGrantPrivileges(ctx, tenantControlPlane)
 	if err != nil {
+		logger.Error(err, "unable to create the DataStore user privileges")
+
 		return reconcilationResult, err
 	}
 	reconcilationResult = utils.UpdateOperationResult(reconcilationResult, operationResult)
@@ -106,19 +120,23 @@ func (r *Setup) GetName() string {
 }
 
 func (r *Setup) Delete(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	if err := r.Define(ctx, tenantControlPlane); err != nil {
-		return err
-	}
+	logger := log.FromContext(ctx, "resource", r.GetName())
 
 	if err := r.revokeGrantPrivileges(ctx, tenantControlPlane); err != nil {
+		logger.Error(err, "unable to revoke privileges")
+
 		return err
 	}
 
 	if err := r.deleteDB(ctx, tenantControlPlane); err != nil {
+		logger.Error(err, "unable to delete datastore data")
+
 		return err
 	}
 
 	if err := r.deleteUser(ctx, tenantControlPlane); err != nil {
+		logger.Error(err, "unable to delete user")
+
 		return err
 	}
 
@@ -137,7 +155,7 @@ func (r *Setup) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlP
 func (r *Setup) createDB(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	exists, err := r.Connection.DBExists(ctx, r.resource.schema)
 	if err != nil {
-		return controllerutil.OperationResultNone, err
+		return controllerutil.OperationResultNone, errors.Wrap(err, "unable to check if datastore exists")
 	}
 
 	if exists {
@@ -145,7 +163,7 @@ func (r *Setup) createDB(ctx context.Context, _ *kamajiv1alpha1.TenantControlPla
 	}
 
 	if err := r.Connection.CreateDB(ctx, r.resource.schema); err != nil {
-		return controllerutil.OperationResultNone, err
+		return controllerutil.OperationResultNone, errors.Wrap(err, "unable to create the datastore")
 	}
 
 	return controllerutil.OperationResultCreated, nil
@@ -154,7 +172,7 @@ func (r *Setup) createDB(ctx context.Context, _ *kamajiv1alpha1.TenantControlPla
 func (r *Setup) deleteDB(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) error {
 	exists, err := r.Connection.DBExists(ctx, r.resource.schema)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to check if datastore exists")
 	}
 
 	if !exists {
@@ -162,7 +180,7 @@ func (r *Setup) deleteDB(ctx context.Context, _ *kamajiv1alpha1.TenantControlPla
 	}
 
 	if err := r.Connection.DeleteDB(ctx, r.resource.schema); err != nil {
-		return err
+		return errors.Wrap(err, "unable to delete the datastore")
 	}
 
 	return nil
@@ -171,7 +189,7 @@ func (r *Setup) deleteDB(ctx context.Context, _ *kamajiv1alpha1.TenantControlPla
 func (r *Setup) createUser(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	exists, err := r.Connection.UserExists(ctx, r.resource.user)
 	if err != nil {
-		return controllerutil.OperationResultNone, err
+		return controllerutil.OperationResultNone, errors.Wrap(err, "unable to check if user exists")
 	}
 
 	if exists {
@@ -179,7 +197,7 @@ func (r *Setup) createUser(ctx context.Context, _ *kamajiv1alpha1.TenantControlP
 	}
 
 	if err := r.Connection.CreateUser(ctx, r.resource.user, r.resource.password); err != nil {
-		return controllerutil.OperationResultNone, err
+		return controllerutil.OperationResultNone, errors.Wrap(err, "unable to create the user")
 	}
 
 	return controllerutil.OperationResultCreated, nil
@@ -188,7 +206,7 @@ func (r *Setup) createUser(ctx context.Context, _ *kamajiv1alpha1.TenantControlP
 func (r *Setup) deleteUser(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) error {
 	exists, err := r.Connection.UserExists(ctx, r.resource.user)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to check if user exists")
 	}
 
 	if !exists {
@@ -196,7 +214,7 @@ func (r *Setup) deleteUser(ctx context.Context, _ *kamajiv1alpha1.TenantControlP
 	}
 
 	if err := r.Connection.DeleteUser(ctx, r.resource.user); err != nil {
-		return err
+		return errors.Wrap(err, "unable to remove the user")
 	}
 
 	return nil
@@ -205,7 +223,7 @@ func (r *Setup) deleteUser(ctx context.Context, _ *kamajiv1alpha1.TenantControlP
 func (r *Setup) createGrantPrivileges(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	exists, err := r.Connection.GrantPrivilegesExists(ctx, r.resource.user, r.resource.schema)
 	if err != nil {
-		return controllerutil.OperationResultNone, err
+		return controllerutil.OperationResultNone, errors.Wrap(err, "unable to check if privileges exist")
 	}
 
 	if exists {
@@ -213,7 +231,7 @@ func (r *Setup) createGrantPrivileges(ctx context.Context, _ *kamajiv1alpha1.Ten
 	}
 
 	if err := r.Connection.GrantPrivileges(ctx, r.resource.user, r.resource.schema); err != nil {
-		return controllerutil.OperationResultNone, err
+		return controllerutil.OperationResultNone, errors.Wrap(err, "unable to grant privileges")
 	}
 
 	return controllerutil.OperationResultCreated, nil
@@ -222,7 +240,7 @@ func (r *Setup) createGrantPrivileges(ctx context.Context, _ *kamajiv1alpha1.Ten
 func (r *Setup) revokeGrantPrivileges(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) error {
 	exists, err := r.Connection.GrantPrivilegesExists(ctx, r.resource.user, r.resource.schema)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to check if privileges exist")
 	}
 
 	if !exists {
@@ -230,7 +248,7 @@ func (r *Setup) revokeGrantPrivileges(ctx context.Context, _ *kamajiv1alpha1.Ten
 	}
 
 	if err := r.Connection.RevokePrivileges(ctx, r.resource.user, r.resource.schema); err != nil {
-		return err
+		return errors.Wrap(err, "unable to revoke privileges")
 	}
 
 	return nil

@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	builder "github.com/clastix/kamaji/internal/builders/controlplane"
@@ -61,9 +62,13 @@ func (r *KubernetesDeploymentResource) Define(_ context.Context, tenantControlPl
 
 func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
+		logger := log.FromContext(ctx, "resource", r.GetName())
+
 		address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
 		if err != nil {
-			return errors.Wrap(err, "cannot create TenantControlPlane Deployment")
+			logger.Error(err, "cannot retrieve Tenant Control Plane address")
+
+			return err
 		}
 
 		d := builder.Deployment{

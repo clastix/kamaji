@@ -52,14 +52,14 @@ func GetDeletableResources(config GroupDeleteableResourceBuilderConfiguration) [
 func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.Resource {
 	resources := append(getUpgradeResources(config.client), getKubernetesServiceResources(config.client)...)
 	resources = append(resources, getKubeadmConfigResources(config.client, getTmpDirectory(config.tcpReconcilerConfig.TmpBaseDirectory, config.tenantControlPlane), config.DataStore)...)
-	resources = append(resources, getKubernetesCertificatesResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
-	resources = append(resources, getKubeconfigResources(config.client, config.log, config.tcpReconcilerConfig, config.tenantControlPlane)...)
+	resources = append(resources, getKubernetesCertificatesResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
+	resources = append(resources, getKubeconfigResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubernetesStorageResources(config.client, config.Connection, config.DataStore)...)
-	resources = append(resources, getInternalKonnectivityResources(config.client, config.log)...)
+	resources = append(resources, getInternalKonnectivityResources(config.client)...)
 	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.DataStore)...)
 	resources = append(resources, getKubernetesIngressResources(config.client)...)
-	resources = append(resources, getKubeadmPhaseResources(config.client, config.log)...)
-	resources = append(resources, getKubeadmAddonResources(config.client, config.log)...)
+	resources = append(resources, getKubeadmPhaseResources(config.client)...)
+	resources = append(resources, getKubeadmAddonResources(config.client)...)
 	resources = append(resources, getExternalKonnectivityResources(config.client)...)
 
 	return resources
@@ -109,61 +109,52 @@ func getKubeadmConfigResources(c client.Client, tmpDirectory string, dataStore k
 	}
 }
 
-func getKubernetesCertificatesResources(c client.Client, log logr.Logger, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
+func getKubernetesCertificatesResources(c client.Client, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
 	return []resources.Resource{
 		&resources.CACertificate{
 			Client:       c,
-			Log:          log,
 			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.FrontProxyCACertificate{
 			Client:       c,
-			Log:          log,
 			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.SACertificate{
 			Client:       c,
-			Log:          log,
 			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.APIServerCertificate{
 			Client:       c,
-			Log:          log,
 			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.APIServerKubeletClientCertificate{
 			Client:       c,
-			Log:          log,
 			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.FrontProxyClientCertificate{
 			Client:       c,
-			Log:          log,
 			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 	}
 }
 
-func getKubeconfigResources(c client.Client, log logr.Logger, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
+func getKubeconfigResources(c client.Client, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubeconfigResource{
 			Name:               "admin-kubeconfig",
 			Client:             c,
-			Log:                log,
 			KubeConfigFileName: resources.AdminKubeConfigFileName,
 			TmpDirectory:       getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.KubeconfigResource{
 			Name:               "controller-manager-kubeconfig",
 			Client:             c,
-			Log:                log,
 			KubeConfigFileName: resources.ControllerManagerKubeConfigFileName,
 			TmpDirectory:       getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.KubeconfigResource{
 			Name:               "scheduler-kubeconfig",
 			Client:             c,
-			Log:                log,
 			KubeConfigFileName: resources.SchedulerKubeConfigFileName,
 			TmpDirectory:       getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
@@ -207,41 +198,36 @@ func getKubernetesIngressResources(c client.Client) []resources.Resource {
 	}
 }
 
-func getKubeadmPhaseResources(c client.Client, log logr.Logger) []resources.Resource {
+func getKubeadmPhaseResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubeadmPhase{
 			Name:   "upload-config-kubeadm",
 			Client: c,
-			Log:    log,
 			Phase:  resources.PhaseUploadConfigKubeadm,
 		},
 		&resources.KubeadmPhase{
 			Name:   "upload-config-kubelet",
 			Client: c,
-			Log:    log,
 			Phase:  resources.PhaseUploadConfigKubelet,
 		},
 		&resources.KubeadmPhase{
 			Name:   "bootstrap-token",
 			Client: c,
-			Log:    log,
 			Phase:  resources.PhaseBootstrapToken,
 		},
 	}
 }
 
-func getKubeadmAddonResources(c client.Client, log logr.Logger) []resources.Resource {
+func getKubeadmAddonResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubeadmAddonResource{
 			Name:         "coredns",
 			Client:       c,
-			Log:          log,
 			KubeadmAddon: resources.AddonCoreDNS,
 		},
 		&resources.KubeadmAddonResource{
 			Name:         "kubeproxy",
 			Client:       c,
-			Log:          log,
 			KubeadmAddon: resources.AddonKubeProxy,
 		},
 	}
@@ -272,7 +258,7 @@ func getExternalKonnectivityResources(c client.Client) []resources.Resource {
 	}
 }
 
-func getInternalKonnectivityResources(c client.Client, log logr.Logger) []resources.Resource {
+func getInternalKonnectivityResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
 		&konnectivity.EgressSelectorConfigurationResource{
 			Client: c,
@@ -280,7 +266,6 @@ func getInternalKonnectivityResources(c client.Client, log logr.Logger) []resour
 		},
 		&konnectivity.CertificateResource{
 			Client: c,
-			Log:    log,
 			Name:   "konnectivity-certificate",
 		},
 		&konnectivity.KubeconfigResource{

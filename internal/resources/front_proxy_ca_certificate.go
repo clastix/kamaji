@@ -7,13 +7,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
@@ -23,7 +23,6 @@ import (
 type FrontProxyCACertificate struct {
 	resource     *corev1.Secret
 	Client       client.Client
-	Log          logr.Logger
 	TmpDirectory string
 }
 
@@ -80,13 +79,15 @@ func (r *FrontProxyCACertificate) UpdateTenantControlPlaneStatus(_ context.Conte
 
 func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
+		logger := log.FromContext(ctx, "resource", r.GetName())
+
 		if checksum := tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
 			isValid, err := kubeadm.IsCertificatePrivateKeyPairValid(
 				r.resource.Data[kubeadmconstants.FrontProxyCACertName],
 				r.resource.Data[kubeadmconstants.FrontProxyCAKeyName],
 			)
 			if err != nil {
-				r.Log.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.FrontProxyCACertAndKeyBaseName, err.Error()))
+				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.FrontProxyCACertAndKeyBaseName, err.Error()))
 			}
 			if isValid {
 				return nil
@@ -95,11 +96,15 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 
 		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
 		if err != nil {
+			logger.Error(err, "cannot retrieve kubeadm configuration")
+
 			return err
 		}
 
 		ca, err := kubeadm.GenerateCACertificatePrivateKeyPair(kubeadmconstants.FrontProxyCACertAndKeyBaseName, config)
 		if err != nil {
+			logger.Error(err, "cannot generate certificate and private key")
+
 			return err
 		}
 

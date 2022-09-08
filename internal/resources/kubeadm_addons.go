@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	clientset "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
@@ -31,7 +31,6 @@ func (d KubeadmAddon) String() string {
 
 type KubeadmAddonResource struct {
 	Client                client.Client
-	Log                   logr.Logger
 	Name                  string
 	KubeadmAddon          KubeadmAddon
 	kubeadmConfigChecksum string
@@ -69,18 +68,26 @@ func (r *KubeadmAddonResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.
 }
 
 func (r *KubeadmAddonResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+	logger := log.FromContext(ctx, "resource", r.GetName(), "addon", r.KubeadmAddon.String())
+
 	client, err := utilities.GetTenantClientSet(ctx, r.Client, tenantControlPlane)
 	if err != nil {
+		logger.Error(err, "cannot generate Tenant client")
+
 		return false, err
 	}
 
 	fun, err := r.getRemoveAddonFunction()
 	if err != nil {
+		logger.Error(err, "cannot get the remove addon function")
+
 		return false, err
 	}
 
 	if err := fun(ctx, client); err != nil {
 		if !k8serrors.IsNotFound(err) {
+			logger.Error(err, "error while performing clean-up")
+
 			return false, err
 		}
 
@@ -129,9 +136,13 @@ func (r *KubeadmAddonResource) GetName() string {
 	return r.Name
 }
 
-func (r *KubeadmAddonResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubeadmAddonResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	logger := log.FromContext(ctx, "resource", r.GetName(), "addon", r.KubeadmAddon.String())
+
 	status, err := r.GetStatus(tenantControlPlane)
 	if err != nil {
+		logger.Error(err, "cannot update Tenant Control Plane status")
+
 		return err
 	}
 
@@ -163,5 +174,7 @@ func (r *KubeadmAddonResource) getSpec(tenantControlPlane *kamajiv1alpha1.Tenant
 }
 
 func (r *KubeadmAddonResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	return KubeadmPhaseCreate(ctx, r, tenantControlPlane)
+	logger := log.FromContext(ctx, "resource", r.GetName(), "addon", r.KubeadmAddon.String())
+
+	return KubeadmPhaseCreate(ctx, r, logger, tenantControlPlane)
 }
