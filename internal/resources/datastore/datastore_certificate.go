@@ -6,7 +6,12 @@ package datastore
 import (
 	"bytes"
 	"context"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"fmt"
+	"math/big"
+	"math/rand"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/etcd"
+	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -85,7 +90,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 
 		if r.resource.GetAnnotations()["checksum"] == utilities.CalculateConfigMapChecksum(r.resource.StringData) {
 			if r.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
-				if isValid, _ := etcd.IsETCDCertificateAndKeyPairValid(r.resource.Data["server.crt"], r.resource.Data["server.key"]); isValid {
+				if isValid, _ := crypto.IsValidCertificateKeyPairBytes(r.resource.Data["server.crt"], r.resource.Data["server.key"]); isValid {
 					return nil
 				}
 			}
@@ -102,7 +107,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 				return err
 			}
 
-			crt, key, err = etcd.GetETCDCACertificateAndKeyPair(tenantControlPlane.GetName(), ca, privateKey)
+			crt, key, err = crypto.GetCertificateAndKeyPair(r.getCertificateTemplate(tenantControlPlane), ca, privateKey)
 			if err != nil {
 				return err
 			}
@@ -144,5 +149,27 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 		))
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
+	}
+}
+
+// getCertificateTemplate returns the template that must be used to generate a certificate,
+// used to perform the authentication against the DataStore.
+func (r *Certificate) getCertificateTemplate(tenant *kamajiv1alpha1.TenantControlPlane) *x509.Certificate {
+	return &x509.Certificate{
+		PublicKeyAlgorithm: x509.RSA,
+		SerialNumber:       big.NewInt(rand.Int63()),
+		Subject: pkix.Name{
+			CommonName:   tenant.GetName(),
+			Organization: []string{"system:masters"},
+		},
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().AddDate(10, 0, 0),
+		SubjectKeyId: []byte{1, 2, 3, 4, 6},
+		ExtKeyUsage: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageClientAuth,
+			x509.ExtKeyUsageServerAuth,
+			x509.ExtKeyUsageCodeSigning,
+		},
+		KeyUsage: x509.KeyUsageDigitalSignature,
 	}
 }
