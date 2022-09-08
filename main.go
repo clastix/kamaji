@@ -6,8 +6,10 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	goRuntime "runtime"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -29,6 +31,9 @@ var (
 )
 
 func init() {
+	// Seed is required to ensure non reproducibility for the certificates generate by Kamaji.
+	rand.Seed(time.Now().UnixNano())
+
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(kamajiv1alpha1.AddToScheme(scheme))
