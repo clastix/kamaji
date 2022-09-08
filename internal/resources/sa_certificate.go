@@ -29,7 +29,8 @@ type SACertificate struct {
 }
 
 func (r *SACertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Certificates.SA.SecretName != r.resource.GetName()
+	return tenantControlPlane.Status.Certificates.SA.SecretName != r.resource.GetName() ||
+		tenantControlPlane.Status.Certificates.SA.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
 func (r *SACertificate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
