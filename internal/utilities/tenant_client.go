@@ -12,11 +12,11 @@ import (
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
+	clientcmdapiv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	kubeconfigutil "github.com/clastix/kamaji/internal/kubeconfig"
 )
 
 func GetTenantClient(ctx context.Context, c client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (client.Client, error) {
@@ -38,7 +38,7 @@ func GetTenantClientSet(ctx context.Context, client client.Client, tenantControl
 	return clientset.NewForConfig(config)
 }
 
-func GetTenantKubeconfig(ctx context.Context, client client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*kubeconfigutil.Kubeconfig, error) {
+func GetTenantKubeconfig(ctx context.Context, client client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*clientcmdapiv1.Config, error) {
 	secretKubeconfig := &corev1.Secret{}
 	if err := client.Get(ctx, k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.KubeConfig.Admin.SecretName}, secretKubeconfig); err != nil {
 		return nil, err
@@ -49,7 +49,12 @@ func GetTenantKubeconfig(ctx context.Context, client client.Client, tenantContro
 		return nil, fmt.Errorf("%s is not into kubeconfig secret", kubeadmconstants.AdminKubeConfigFileName)
 	}
 
-	return kubeconfigutil.GetKubeconfigFromBytes(bytes)
+	kubeconfig := &clientcmdapiv1.Config{}
+	if err := DecodeFromYAML(string(bytes), kubeconfig); err != nil {
+		return nil, err
+	}
+
+	return kubeconfig, nil
 }
 
 func getRESTClientConfig(ctx context.Context, client client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*restclient.Config, error) {

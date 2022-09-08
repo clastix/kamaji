@@ -66,6 +66,22 @@ func EncodeToYaml(o runtime.Object) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func DecodeFromYAML(o string, to runtime.Object) (err error) {
+	scheme := runtime.NewScheme()
+
+	encoder := json.NewSerializerWithOptions(json.SimpleMetaFactory{}, scheme, scheme, json.SerializerOptions{
+		Yaml:   true,
+		Pretty: false,
+		Strict: false,
+	})
+
+	if to, _, err = encoder.Decode([]byte(o), nil, to); err != nil { //nolint:ineffassign,staticcheck
+		return
+	}
+
+	return
+}
+
 func DecodeFromJSON(o string, to runtime.Object) (err error) {
 	scheme := runtime.NewScheme()
 
