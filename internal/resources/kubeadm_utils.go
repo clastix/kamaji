@@ -19,7 +19,7 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, tenantContr
 		return controllerutil.OperationResultNone, err
 	}
 
-	kubeconfig, err := utilities.GetKubeconfig(ctx, r.GetClient(), tenantControlPlane)
+	kubeconfig, err := utilities.GetTenantKubeconfig(ctx, r.GetClient(), tenantControlPlane)
 	if err != nil {
 		return controllerutil.OperationResultNone, err
 	}
@@ -83,7 +83,7 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, tenantContr
 		return controllerutil.OperationResultNone, nil
 	}
 
-	client, err := utilities.GetTenantRESTClient(ctx, r.GetClient(), tenantControlPlane)
+	client, err := utilities.GetTenantClientSet(ctx, r.GetClient(), tenantControlPlane)
 	if err != nil {
 		return controllerutil.OperationResultNone, err
 	}

@@ -69,7 +69,7 @@ func (r *KubeadmAddonResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.
 }
 
 func (r *KubeadmAddonResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
-	client, err := utilities.GetTenantRESTClient(ctx, r.Client, tenantControlPlane)
+	client, err := utilities.GetTenantClientSet(ctx, r.Client, tenantControlPlane)
 	if err != nil {
 		return false, err
 	}

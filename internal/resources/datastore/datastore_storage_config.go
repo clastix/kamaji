@@ -6,6 +6,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -81,7 +82,7 @@ func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.Te
 		case ok && savedHash == utilities.CalculateConfigMapChecksum(r.resource.StringData):
 			password = r.resource.Data["DB_PASSWORD"]
 		default:
-			password = []byte(utilities.GenerateUUIDString())
+			password = []byte(uuid.New().String())
 		}
 
 		r.resource.Data = map[string][]byte{

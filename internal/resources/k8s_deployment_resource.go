@@ -5,6 +5,11 @@ package resources
 
 import (
 	"context"
+	"crypto/md5"
+	"fmt"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sort"
 
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -115,7 +120,7 @@ func (r *KubernetesDeploymentResource) UpdateTenantControlPlaneStatus(_ context.
 
 func (r *KubernetesDeploymentResource) deploymentTemplateLabels(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (labels map[string]string) {
 	hash := func(ctx context.Context, namespace, secretName string) string {
-		h, _ := utilities.SecretHashValue(ctx, r.Client, namespace, secretName)
+		h, _ := r.SecretHashValue(ctx, r.Client, namespace, secretName)
 
 		return h
 	}
@@ -159,4 +164,34 @@ func (r *KubernetesDeploymentResource) isProvisioning(tenantControlPlane *kamaji
 
 func (r *KubernetesDeploymentResource) isNotReady() bool {
 	return r.resource.Status.ReadyReplicas == 0
+}
+
+// SecretHashValue function returns the md5 value for the secret of the given name and namespace.
+func (r *KubernetesDeploymentResource) SecretHashValue(ctx context.Context, client client.Client, namespace, name string) (string, error) {
+	secret := &corev1.Secret{}
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, secret); err != nil {
+		return "", errors.Wrap(err, "cannot retrieve *corev1.Secret for resource version retrieval")
+	}
+
+	return r.HashValue(*secret), nil
+}
+
+// HashValue function returns the md5 value for the given secret.
+func (r *KubernetesDeploymentResource) HashValue(secret corev1.Secret) string {
+	// Go access map values in random way, it means we have to sort them.
+	keys := make([]string, 0, len(secret.Data))
+
+	for k := range secret.Data {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+	// Generating MD5 of Secret values, sorted by key
+	h := md5.New()
+
+	for _, key := range keys {
+		h.Write(secret.Data[key])
+	}
+
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
