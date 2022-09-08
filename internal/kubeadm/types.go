@@ -5,15 +5,15 @@ package kubeadm
 
 import (
 	json "github.com/json-iterator/go"
+	clientcmdapiv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
-	kubeconfigutil "github.com/clastix/kamaji/internal/kubeconfig"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type Configuration struct {
 	InitConfiguration kubeadmapi.InitConfiguration
-	Kubeconfig        kubeconfigutil.Kubeconfig
+	Kubeconfig        clientcmdapiv1.Config
 	Parameters        Parameters
 }
 
