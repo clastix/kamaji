@@ -124,7 +124,7 @@ func (k *KubernetesUpgrade) isUpgradable() error {
 		return nil
 	}
 	// Following minor release upgrades are allowed
-	if newK8sVersion.Minor() > oldK8sVersion.WithMinor(oldK8sVersion.Minor()+1).Minor() {
+	if newK8sVersion.Minor() == oldK8sVersion.Minor()+1 {
 		return nil
 	}
 
