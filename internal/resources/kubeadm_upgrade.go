@@ -65,14 +65,14 @@ func (k *KubernetesUpgrade) CreateOrUpdate(ctx context.Context, tenantControlPla
 		return controllerutil.OperationResultNone, nil
 	}
 	// Checking if the upgrade is allowed, or not
-	restClient, err := utilities.GetTenantRESTClient(ctx, k.Client, tenantControlPlane)
+	clientSet, err := utilities.GetTenantClientSet(ctx, k.Client, tenantControlPlane)
 	if err != nil {
 		return controllerutil.OperationResultNone, errors.Wrap(err, "cannot create REST client required for Kubernetes upgrade plan")
 	}
 
-	versionGetter := kamajiupgrade.NewKamajiKubeVersionGetter(restClient)
+	versionGetter := kamajiupgrade.NewKamajiKubeVersionGetter(clientSet)
 
-	if _, err = upgrade.GetAvailableUpgrades(versionGetter, false, false, true, restClient, "", &printers.Discard{}); err != nil {
+	if _, err = upgrade.GetAvailableUpgrades(versionGetter, false, false, true, clientSet, "", &printers.Discard{}); err != nil {
 		return controllerutil.OperationResultNone, errors.Wrap(err, "cannot retrieve available Upgrades for Kubernetes upgrade plan")
 	}
 
