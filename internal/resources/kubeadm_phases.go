@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	clientset "k8s.io/client-go/kubernetes"
 	bootstraptokenv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
@@ -32,7 +32,6 @@ func (d kubeadmPhase) String() string {
 
 type KubeadmPhase struct {
 	Client   client.Client
-	Log      logr.Logger
 	Name     string
 	Phase    kubeadmPhase
 	checksum string
@@ -121,9 +120,13 @@ func (r *KubeadmPhase) GetName() string {
 	return r.Name
 }
 
-func (r *KubeadmPhase) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubeadmPhase) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	logger := log.FromContext(ctx, "resource", r.GetName(), "phase", r.Phase.String())
+
 	status, err := r.GetStatus(tenantControlPlane)
 	if err != nil {
+		logger.Error(err, "unable to update the status")
+
 		return err
 	}
 
@@ -146,5 +149,7 @@ func (r *KubeadmPhase) GetStatus(tenantControlPlane *kamajiv1alpha1.TenantContro
 }
 
 func (r *KubeadmPhase) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	return KubeadmPhaseCreate(ctx, r, tenantControlPlane)
+	logger := log.FromContext(ctx, "resource", r.GetName(), "phase", r.Phase.String())
+
+	return KubeadmPhaseCreate(ctx, r, logger, tenantControlPlane)
 }

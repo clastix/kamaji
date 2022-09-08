@@ -12,6 +12,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
@@ -53,7 +54,7 @@ func (r *KubeadmConfigResource) getPrefixedName(tenantControlPlane *kamajiv1alph
 }
 
 func (r *KubeadmConfigResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(tenantControlPlane))
+	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
 func (r *KubeadmConfigResource) GetName() string {
@@ -76,10 +77,14 @@ func (r *KubeadmConfigResource) getControlPlaneEndpoint(ingress *kamajiv1alpha1.
 	return fmt.Sprintf("%s:%d", address, port)
 }
 
-func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
+func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
+		logger := log.FromContext(ctx, "resource", r.GetName())
+
 		address, port, err := tenantControlPlane.AssignedControlPlaneAddress()
 		if err != nil {
+			logger.Error(err, "cannot retrieve Tenant Control Plane address")
+
 			return err
 		}
 
@@ -105,6 +110,8 @@ func (r *KubeadmConfigResource) mutate(tenantControlPlane *kamajiv1alpha1.Tenant
 		}
 		data, err := kubeadm.GetKubeadmInitConfigurationMap(*config)
 		if err != nil {
+			logger.Error(err, "cannot retrieve kubeadm init configuration")
+
 			return err
 		}
 

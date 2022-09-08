@@ -15,6 +15,7 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -51,7 +52,9 @@ func (r *Agent) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 	return true, nil
 }
 
-func (r *Agent) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *Agent) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (err error) {
+	logger := log.FromContext(ctx, "resource", r.GetName())
+
 	r.resource = &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      AgentName,
@@ -59,18 +62,17 @@ func (r *Agent) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		},
 	}
 
-	client, err := utilities.GetTenantClient(ctx, r.Client, tenantControlPlane)
-	if err != nil {
+	if r.tenantClient, err = utilities.GetTenantClient(ctx, r.Client, tenantControlPlane); err != nil {
+		logger.Error(err, "unable to retrieve the Tenant Control Plane client")
+
 		return err
 	}
-
-	r.tenantClient = client
 
 	return nil
 }
 
 func (r *Agent) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(tenantControlPlane))
+	return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
 func (r *Agent) GetName() string {
@@ -96,10 +98,14 @@ func (r *Agent) UpdateTenantControlPlaneStatus(ctx context.Context, tenantContro
 	return nil
 }
 
-func (r *Agent) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
+func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
+		logger := log.FromContext(ctx, "resource", r.GetName())
+
 		address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
 		if err != nil {
+			logger.Error(err, "unable to retrieve the Tenant Control Plane address")
+
 			return err
 		}
 

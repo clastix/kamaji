@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -71,7 +72,9 @@ func (r *ServiceResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.Tenan
 	return tenantControlPlane.Spec.Addons.Konnectivity == nil
 }
 
-func (r *ServiceResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *ServiceResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+	logger := log.FromContext(ctx, "resource", r.GetName())
+
 	res, err := utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, func() error {
 		for index, port := range r.resource.Spec.Ports {
 			if port.Name == "konnectivity-server" {
@@ -88,8 +91,13 @@ func (r *ServiceResource) CleanUp(ctx context.Context, tenantControlPlane *kamaj
 
 		return nil
 	})
+	if err != nil {
+		logger.Error(err, "unable to cleanup the resource")
 
-	return res == controllerutil.OperationResultUpdated, err
+		return false, err
+	}
+
+	return res == controllerutil.OperationResultUpdated, nil
 }
 
 func (r *ServiceResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {

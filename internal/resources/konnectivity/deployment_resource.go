@@ -92,7 +92,7 @@ func (r *KubernetesDeploymentResource) CleanUp(ctx context.Context, _ *kamajiv1a
 	return res == controllerutil.OperationResultUpdated, err
 }
 
-func (r *KubernetesDeploymentResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubernetesDeploymentResource) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      tenantControlPlane.GetName(),

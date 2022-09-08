@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
@@ -15,6 +14,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
@@ -31,21 +31,20 @@ const (
 type KubeconfigResource struct {
 	resource           *corev1.Secret
 	Client             client.Client
-	Log                logr.Logger
 	Name               string
 	KubeConfigFileName string
 	TmpDirectory       string
 }
 
-func (r *KubeconfigResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *KubeconfigResource) ShouldStatusBeUpdated(context.Context, *kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *KubeconfigResource) ShouldCleanup(plane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *KubeconfigResource) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (r *KubeconfigResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *KubeconfigResource) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
@@ -77,8 +76,12 @@ func (r *KubeconfigResource) GetName() string {
 }
 
 func (r *KubeconfigResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	logger := log.FromContext(ctx, "resource", r.GetName())
+
 	status, err := r.getKubeconfigStatus(tenantControlPlane)
 	if err != nil {
+		logger.Error(err, "cannot retrieve status")
+
 		return err
 	}
 
@@ -116,18 +119,26 @@ func (r *KubeconfigResource) checksum(apiServerCertificatesSecret *corev1.Secret
 
 func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
+		logger := log.FromContext(ctx, "resource", r.GetName())
+
 		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
 		if err != nil {
+			logger.Error(err, "cannot retrieve kubeadm configuration")
+
 			return err
 		}
 
 		if err = r.customizeConfig(config); err != nil {
+			logger.Error(err, "cannot customize the configuration")
+
 			return err
 		}
 
 		apiServerCertificatesSecretNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
 		apiServerCertificatesSecret := &corev1.Secret{}
 		if err := r.Client.Get(ctx, apiServerCertificatesSecretNamespacedName, apiServerCertificatesSecret); err != nil {
+			logger.Error(err, "cannot retrieve the CA")
+
 			return err
 		}
 
@@ -135,6 +146,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 		status, err := r.getKubeconfigStatus(tenantControlPlane)
 		if err != nil {
+			logger.Error(err, "cannot retrieve status")
+
 			return err
 		}
 
@@ -152,6 +165,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			config,
 		)
 		if err != nil {
+			logger.Error(err, "cannot create a valid kubeconfig")
+
 			return err
 		}
 		r.resource.Data = map[string][]byte{

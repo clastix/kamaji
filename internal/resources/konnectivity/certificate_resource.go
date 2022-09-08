@@ -13,7 +13,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,6 +21,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/crypto"
@@ -32,7 +32,6 @@ import (
 type CertificateResource struct {
 	resource *corev1.Secret
 	Client   client.Client
-	Log      logr.Logger
 	Name     string
 }
 
@@ -44,9 +43,13 @@ func (r *CertificateResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.T
 	return tenantControlPlane.Spec.Addons.Konnectivity == nil
 }
 
-func (r *CertificateResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *CertificateResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+	logger := log.FromContext(ctx, "resource", r.GetName())
+
 	if err := r.Client.Delete(ctx, r.resource); err != nil {
 		if !k8serrors.IsNotFound(err) {
+			logger.Error(err, "cannot delete the required resource")
+
 			return false, err
 		}
 
@@ -56,7 +59,7 @@ func (r *CertificateResource) CleanUp(ctx context.Context, tenantControlPlane *k
 	return true, nil
 }
 
-func (r *CertificateResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *CertificateResource) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.getPrefixedName(tenantControlPlane),
@@ -97,13 +100,15 @@ func (r *CertificateResource) UpdateTenantControlPlaneStatus(ctx context.Context
 
 func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
+		logger := log.FromContext(ctx, "resource", r.GetName())
+
 		if checksum := tenantControlPlane.Status.Certificates.CA.Checksum; len(checksum) > 0 && checksum == utilities.CalculateConfigMapChecksum(r.resource.StringData) {
 			isValid, err := isCertificateAndKeyPairValid(
 				r.resource.Data[corev1.TLSCertKey],
 				r.resource.Data[corev1.TLSPrivateKeyKey],
 			)
 			if err != nil {
-				r.Log.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", konnectivityCertAndKeyBaseName, err.Error()))
+				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", konnectivityCertAndKeyBaseName, err.Error()))
 			}
 			if isValid {
 				return nil
@@ -113,6 +118,8 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
 		secretCA := &corev1.Secret{}
 		if err := r.Client.Get(ctx, namespacedName, secretCA); err != nil {
+			logger.Error(err, "cannot retrieve the CA secret")
+
 			return err
 		}
 
@@ -123,6 +130,8 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 		}
 		cert, privKey, err := getCertificateAndKeyPair(ca.Certificate, ca.PrivateKey)
 		if err != nil {
+			logger.Error(err, "cannot generate certificate and key pair")
+
 			return err
 		}
 

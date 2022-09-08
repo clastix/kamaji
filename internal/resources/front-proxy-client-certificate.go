@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
@@ -15,6 +14,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
@@ -24,7 +24,6 @@ import (
 type FrontProxyClientCertificate struct {
 	resource     *corev1.Secret
 	Client       client.Client
-	Log          logr.Logger
 	TmpDirectory string
 }
 
@@ -81,13 +80,15 @@ func (r *FrontProxyClientCertificate) UpdateTenantControlPlaneStatus(_ context.C
 
 func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
+		logger := log.FromContext(ctx, "resource", r.GetName())
+
 		if checksum := tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
 			isValid, err := kubeadm.IsCertificatePrivateKeyPairValid(
 				r.resource.Data[kubeadmconstants.FrontProxyClientCertName],
 				r.resource.Data[kubeadmconstants.FrontProxyClientKeyName],
 			)
 			if err != nil {
-				r.Log.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.FrontProxyClientCertAndKeyBaseName, err.Error()))
+				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.FrontProxyClientCertAndKeyBaseName, err.Error()))
 			}
 			if isValid {
 				return nil
@@ -96,12 +97,16 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 
 		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
 		if err != nil {
+			logger.Error(err, "cannot retrieve kubeadm configuration")
+
 			return err
 		}
 
 		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.FrontProxyCA.SecretName}
 		secretCA := &corev1.Secret{}
 		if err = r.Client.Get(ctx, namespacedName, secretCA); err != nil {
+			logger.Error(err, "cannot retrieve CA secret")
+
 			return err
 		}
 
@@ -112,6 +117,8 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 		}
 		certificateKeyPair, err := kubeadm.GenerateCertificatePrivateKeyPair(kubeadmconstants.FrontProxyClientCertAndKeyBaseName, config, ca)
 		if err != nil {
+			logger.Error(err, "cannot generate certificate and private key")
+
 			return err
 		}
 

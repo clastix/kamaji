@@ -7,13 +7,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
@@ -23,7 +23,6 @@ import (
 type SACertificate struct {
 	resource     *corev1.Secret
 	Client       client.Client
-	Log          logr.Logger
 	Name         string
 	TmpDirectory string
 }
@@ -72,7 +71,7 @@ func (r *SACertificate) GetName() string {
 	return "sa-certificate"
 }
 
-func (r *SACertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *SACertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.SA.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.SA.SecretName = r.resource.GetName()
 	tenantControlPlane.Status.Certificates.SA.Checksum = r.resource.GetAnnotations()["checksum"]
@@ -82,13 +81,15 @@ func (r *SACertificate) UpdateTenantControlPlaneStatus(ctx context.Context, tena
 
 func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
+		logger := log.FromContext(ctx, "resource", r.GetName())
+
 		if checksum := tenantControlPlane.Status.Certificates.SA.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
 			isValid, err := kubeadm.IsPublicKeyPrivateKeyPairValid(
 				r.resource.Data[kubeadmconstants.ServiceAccountPublicKeyName],
 				r.resource.Data[kubeadmconstants.ServiceAccountPrivateKeyName],
 			)
 			if err != nil {
-				r.Log.Info(fmt.Sprintf("%s public_key-private_key pair is not valid: %s", kubeadmconstants.ServiceAccountKeyBaseName, err.Error()))
+				logger.Info(fmt.Sprintf("%s public_key-private_key pair is not valid: %s", kubeadmconstants.ServiceAccountKeyBaseName, err.Error()))
 			}
 			if isValid {
 				return nil
@@ -97,11 +98,15 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 
 		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
 		if err != nil {
+			logger.Error(err, "cannot retrieve kubadm configuration")
+
 			return err
 		}
 
 		sa, err := kubeadm.GeneratePublicKeyPrivateKeyPair(kubeadmconstants.ServiceAccountKeyBaseName, config)
 		if err != nil {
+			logger.Error(err, "cannot generate certificate and private key")
+
 			return err
 		}
 

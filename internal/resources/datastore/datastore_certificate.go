@@ -18,6 +18,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/crypto"
@@ -81,8 +82,12 @@ func (r *Certificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantCo
 
 func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
+		logger := log.FromContext(ctx, "resource", r.GetName())
+
 		ca, err := r.DataStore.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, r.Client)
 		if err != nil {
+			logger.Error(err, "cannot retrieve CA certificate content")
+
 			return err
 		}
 
@@ -104,11 +109,15 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 			// certificate used for authentication is mandatory, along with the CA private key.
 			privateKey, err := r.DataStore.Spec.TLSConfig.CertificateAuthority.PrivateKey.GetContent(ctx, r.Client)
 			if err != nil {
+				logger.Error(err, "unable to retrieve CA private key content")
+
 				return err
 			}
 
 			crt, key, err = crypto.GetCertificateAndKeyPair(r.getCertificateTemplate(tenantControlPlane), ca, privateKey)
 			if err != nil {
+				logger.Error(err, "unable to generate certificate and private key")
+
 				return err
 			}
 		case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver:
@@ -116,12 +125,16 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 			// to connect to the desired schema and database.
 			crtBytes, err := r.DataStore.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, r.Client)
 			if err != nil {
+				logger.Error(err, "unable to retrieve certificate content")
+
 				return err
 			}
 			crt = bytes.NewBuffer(crtBytes)
 
 			keyBytes, err := r.DataStore.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, r.Client)
 			if err != nil {
+				logger.Error(err, "unable to retrieve private key content")
+
 				return err
 			}
 			key = bytes.NewBuffer(keyBytes)

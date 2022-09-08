@@ -1,5 +1,6 @@
 // Copyright 2022 Clastix Labs
 // SPDX-License-Identifier: Apache-2.0
+
 package konnectivity
 
 import (
@@ -12,6 +13,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -39,8 +41,12 @@ func (r *EgressSelectorConfigurationResource) ShouldCleanup(tenantControlPlane *
 }
 
 func (r *EgressSelectorConfigurationResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+	logger := log.FromContext(ctx, "resource", r.GetName())
+
 	if err := r.Client.Delete(ctx, r.resource); err != nil {
 		if !k8serrors.IsNotFound(err) {
+			logger.Error(err, "cannot delete the requested resource")
+
 			return false, err
 		}
 

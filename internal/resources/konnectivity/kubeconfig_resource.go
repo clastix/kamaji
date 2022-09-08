@@ -16,6 +16,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -27,7 +28,7 @@ type KubeconfigResource struct {
 	Name     string
 }
 
-func (r *KubeconfigResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *KubeconfigResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum != r.resource.GetAnnotations()["checksum"]
 }
 
@@ -35,9 +36,12 @@ func (r *KubeconfigResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.Te
 	return tenantControlPlane.Spec.Addons.Konnectivity == nil
 }
 
-func (r *KubeconfigResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *KubeconfigResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+	logger := log.FromContext(ctx, "resource", r.GetName())
 	if err := r.Client.Delete(ctx, r.resource); err != nil {
 		if !k8serrors.IsNotFound(err) {
+			logger.Error(err, "cannot delete the requested resourece")
+
 			return false, err
 		}
 
@@ -88,6 +92,8 @@ func (r *KubeconfigResource) UpdateTenantControlPlaneStatus(ctx context.Context,
 
 func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
+		logger := log.FromContext(ctx, "resource", r.GetName())
+
 		if checksum := tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
 			return nil
 		}
@@ -95,12 +101,16 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		caNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
 		secretCA := &corev1.Secret{}
 		if err := r.Client.Get(ctx, caNamespacedName, secretCA); err != nil {
+			logger.Error(err, "cannot retrieve the CA secret")
+
 			return err
 		}
 
 		certificateNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Addons.Konnectivity.Certificate.SecretName}
 		secretCertificate := &corev1.Secret{}
 		if err := r.Client.Get(ctx, certificateNamespacedName, secretCertificate); err != nil {
+			logger.Error(err, "cannot retrieve the Konnectivity Certificate secret")
+
 			return err
 		}
 
@@ -143,6 +153,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 		kubeconfigBytes, err := utilities.EncondeToYaml(kubeconfig)
 		if err != nil {
+			logger.Error(err, "cannot encode to YAML the kubeconfig")
+
 			return err
 		}
 
