@@ -138,10 +138,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
-		if status.Checksum == checksum {
-			if kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName]) {
-				return nil
-			}
+		if status.Checksum == checksum && kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName]) {
+			return nil
 		}
 
 		kubeconfig, err := kubeadm.CreateKubeconfig(
