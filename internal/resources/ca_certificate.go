@@ -128,7 +128,7 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
-		annotations[constants.Checksum] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		annotations[constants.Checksum] = utilities.CalculateMapChecksum(r.resource.Data)
 		r.resource.SetAnnotations(annotations)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())

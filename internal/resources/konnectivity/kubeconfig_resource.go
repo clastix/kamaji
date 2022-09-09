@@ -167,7 +167,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
-		annotations[constants.Checksum] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		annotations[constants.Checksum] = utilities.CalculateMapChecksum(r.resource.Data)
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),
 			map[string]string{

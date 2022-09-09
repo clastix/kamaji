@@ -89,7 +89,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 
 		r.resource.Data["ca.crt"] = ca
 
-		if r.resource.GetAnnotations()[constants.Checksum] == utilities.CalculateConfigMapChecksum(r.resource.StringData) {
+		if r.resource.GetAnnotations()[constants.Checksum] == utilities.CalculateMapChecksum(r.resource.Data) {
 			if r.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
 				if isValid, _ := crypto.IsValidCertificateKeyPairBytes(r.resource.Data["server.crt"], r.resource.Data["server.key"]); isValid {
 					return nil
@@ -145,7 +145,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
-		annotations[constants.Checksum] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		annotations[constants.Checksum] = utilities.CalculateMapChecksum(r.resource.Data)
 		r.resource.SetAnnotations(annotations)
 
 		r.resource.SetLabels(utilities.MergeMaps(

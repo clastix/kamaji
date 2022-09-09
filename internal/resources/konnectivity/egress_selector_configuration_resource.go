@@ -121,7 +121,7 @@ func (r *EgressSelectorConfigurationResource) mutate(_ context.Context, tenantCo
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
-		annotations[constants.Checksum] = utilities.MD5Checksum(yamlConfiguration)
+		annotations[constants.Checksum] = utilities.CalculateMapChecksum(r.resource.Data)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

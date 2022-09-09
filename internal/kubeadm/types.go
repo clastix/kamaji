@@ -22,13 +22,13 @@ func (c *Configuration) Checksum() string {
 	kubeconfig, _ := json.Marshal(c.Kubeconfig)
 	parameters, _ := json.Marshal(c.Parameters)
 
-	data := map[string]string{
-		"InitConfiguration": string(initConfiguration),
-		"Kubeconfig":        string(kubeconfig),
-		"Parameters":        string(parameters),
+	data := map[string][]byte{
+		"InitConfiguration": initConfiguration,
+		"Kubeconfig":        kubeconfig,
+		"Parameters":        parameters,
 	}
 
-	return utilities.CalculateConfigMapChecksum(data)
+	return utilities.CalculateMapChecksum(data)
 }
 
 type Parameters struct {
