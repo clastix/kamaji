@@ -11,6 +11,7 @@ import (
 	"github.com/go-pg/pg/v10"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/datastore/errors"
 )
 
 const (
@@ -30,6 +31,18 @@ type PostgreSQLConnection struct {
 	connection ConnectionEndpoint
 }
 
+func NewPostgreSQLConnection(config ConnectionConfig) (Connection, error) {
+	opt := &pg.Options{
+		Addr:      config.Endpoints[0].String(),
+		Database:  config.DBName,
+		User:      config.User,
+		Password:  config.Password,
+		TLSConfig: config.TLSConfig,
+	}
+
+	return &PostgreSQLConnection{db: pg.Connect(opt), connection: config.Endpoints[0]}, nil
+}
+
 func (r *PostgreSQLConnection) Driver() string {
 	return string(kamajiv1alpha1.KinePostgreSQLDriver)
 }
@@ -37,7 +50,7 @@ func (r *PostgreSQLConnection) Driver() string {
 func (r *PostgreSQLConnection) UserExists(ctx context.Context, user string) (bool, error) {
 	res, err := r.db.ExecContext(ctx, postgresqlUserExists, user)
 	if err != nil {
-		return false, err
+		return false, errors.NewCheckUserExistsError(err)
 	}
 
 	return res.RowsReturned() > 0, nil
@@ -46,7 +59,7 @@ func (r *PostgreSQLConnection) UserExists(ctx context.Context, user string) (boo
 func (r *PostgreSQLConnection) CreateUser(ctx context.Context, user, password string) error {
 	_, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlCreateUserStatement, user), password)
 	if err != nil {
-		return err
+		return errors.NewCreateUserError(err)
 	}
 
 	return nil
@@ -55,7 +68,7 @@ func (r *PostgreSQLConnection) CreateUser(ctx context.Context, user, password st
 func (r *PostgreSQLConnection) DBExists(ctx context.Context, dbName string) (bool, error) {
 	rows, err := r.db.ExecContext(ctx, postgresqlFetchDBStatement, dbName)
 	if err != nil {
-		return false, err
+		return false, errors.NewCheckDatabaseExistError(err)
 	}
 
 	return rows.RowsReturned() > 0, nil
@@ -64,7 +77,7 @@ func (r *PostgreSQLConnection) DBExists(ctx context.Context, dbName string) (boo
 func (r *PostgreSQLConnection) CreateDB(ctx context.Context, dbName string) error {
 	_, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlCreateDBStatement, dbName))
 	if err != nil {
-		return err
+		return errors.NewCreateDBError(err)
 	}
 
 	return nil
@@ -79,35 +92,42 @@ func (r *PostgreSQLConnection) GrantPrivilegesExists(ctx context.Context, user, 
 			return false, nil
 		}
 
-		return false, err
+		return false, errors.NewCheckGrantExistsError(err)
 	}
 
 	return hasDatabasePrivilege == "t", nil
 }
 
 func (r *PostgreSQLConnection) GrantPrivileges(ctx context.Context, user, dbName string) error {
-	res, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlGrantPrivilegesStatement, dbName, user))
-	_ = res
+	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlGrantPrivilegesStatement, dbName, user)); err != nil {
+		return errors.NewGrantPrivilegesError(err)
+	}
 
-	return err
+	return nil
 }
 
 func (r *PostgreSQLConnection) DeleteUser(ctx context.Context, user string) error {
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlDropRoleStatement, user))
+	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlDropRoleStatement, user)); err != nil {
+		return errors.NewDeleteUserError(err)
+	}
 
-	return err
+	return nil
 }
 
 func (r *PostgreSQLConnection) DeleteDB(ctx context.Context, dbName string) error {
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlDropDBStatement, dbName))
+	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlDropDBStatement, dbName)); err != nil {
+		return errors.NewCannotDeleteDatabaseError(err)
+	}
 
-	return err
+	return nil
 }
 
 func (r *PostgreSQLConnection) RevokePrivileges(ctx context.Context, user, dbName string) error {
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlRevokePrivilegesStatement, dbName, user))
+	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlRevokePrivilegesStatement, dbName, user)); err != nil {
+		return errors.NewRevokePrivilegesError(err)
+	}
 
-	return err
+	return nil
 }
 
 func (r *PostgreSQLConnection) GetConnectionString() string {
@@ -115,9 +135,17 @@ func (r *PostgreSQLConnection) GetConnectionString() string {
 }
 
 func (r *PostgreSQLConnection) Close() error {
-	return r.db.Close()
+	if err := r.db.Close(); err != nil {
+		return errors.NewCloseConnectionError(err)
+	}
+
+	return nil
 }
 
 func (r *PostgreSQLConnection) Check(ctx context.Context) error {
-	return r.db.Ping(ctx)
+	if err := r.db.Ping(ctx); err != nil {
+		return errors.NewCheckConnectionError(err)
+	}
+
+	return nil
 }

@@ -7,12 +7,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
+	goerrors "github.com/pkg/errors"
 	"go.etcd.io/etcd/api/v3/authpb"
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	etcdclient "go.etcd.io/etcd/client/v3"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/datastore/errors"
 )
 
 const (
@@ -49,66 +50,64 @@ type EtcdClient struct {
 }
 
 func (e *EtcdClient) CreateUser(ctx context.Context, user, password string) error {
-	_, err := e.Client.Auth.UserAddWithOptions(ctx, user, password, &etcdclient.UserAddOptions{
-		NoPassword: true,
-	})
+	if _, err := e.Client.Auth.UserAddWithOptions(ctx, user, password, &etcdclient.UserAddOptions{NoPassword: true}); err != nil {
+		return errors.NewCreateUserError(err)
+	}
 
-	return err
+	return nil
 }
 
-func (e *EtcdClient) CreateDB(ctx context.Context, dbName string) error {
+func (e *EtcdClient) CreateDB(context.Context, string) error {
 	return nil
 }
 
 func (e *EtcdClient) GrantPrivileges(ctx context.Context, user, dbName string) error {
-	_, err := e.Client.Auth.RoleAdd(ctx, dbName)
-	if err != nil {
-		return err
+	if _, err := e.Client.Auth.RoleAdd(ctx, dbName); err != nil {
+		return errors.NewGrantPrivilegesError(err)
 	}
 
 	permission := etcdclient.PermissionType(authpb.READWRITE)
 	key := e.buildKey(dbName)
-	if _, err = e.Client.RoleGrantPermission(ctx, user, key, rangeEnd, permission); err != nil {
-		return err
+	if _, err := e.Client.RoleGrantPermission(ctx, user, key, rangeEnd, permission); err != nil {
+		return errors.NewGrantPrivilegesError(err)
 	}
 
-	if _, err = e.Client.UserGrantRole(ctx, user, dbName); err != nil {
-		return err
+	if _, err := e.Client.UserGrantRole(ctx, user, dbName); err != nil {
+		return errors.NewGrantPrivilegesError(err)
 	}
 
-	return err
+	return nil
 }
 
 func (e *EtcdClient) UserExists(ctx context.Context, user string) (bool, error) {
-	_, err := e.Client.UserGet(ctx, user)
-	if err != nil {
-		if errors.As(err, &rpctypes.ErrGRPCUserNotFound) {
+	if _, err := e.Client.UserGet(ctx, user); err != nil {
+		if goerrors.As(err, &rpctypes.ErrGRPCUserNotFound) {
 			return false, nil
 		}
 
-		return false, err
+		return false, errors.NewCheckUserExistsError(err)
 	}
 
 	return true, nil
 }
 
-func (e *EtcdClient) DBExists(_ context.Context, dbName string) (bool, error) {
+func (e *EtcdClient) DBExists(context.Context, string) (bool, error) {
 	return true, nil
 }
 
 func (e *EtcdClient) GrantPrivilegesExists(ctx context.Context, username, dbName string) (bool, error) {
 	_, err := e.Client.RoleGet(ctx, dbName)
 	if err != nil {
-		if errors.As(err, &rpctypes.ErrGRPCRoleNotFound) {
+		if goerrors.As(err, &rpctypes.ErrGRPCRoleNotFound) {
 			return false, nil
 		}
 
-		return false, err
+		return false, errors.NewCheckGrantExistsError(err)
 	}
 
 	user, err := e.Client.UserGet(ctx, username)
 	if err != nil {
-		return false, err
+		return false, errors.NewCheckGrantExistsError(err)
 	}
 
 	for _, i := range user.Roles {
@@ -121,23 +120,29 @@ func (e *EtcdClient) GrantPrivilegesExists(ctx context.Context, username, dbName
 }
 
 func (e *EtcdClient) DeleteUser(ctx context.Context, user string) error {
-	_, err := e.Client.Auth.UserDelete(ctx, user)
+	if _, err := e.Client.Auth.UserDelete(ctx, user); err != nil {
+		return errors.NewDeleteUserError(err)
+	}
 
-	return err
+	return nil
 }
 
 func (e *EtcdClient) DeleteDB(ctx context.Context, dbName string) error {
 	withRange := etcdclient.WithRange(rangeEnd)
 	prefix := e.buildKey(dbName)
-	_, err := e.Client.Delete(ctx, prefix, withRange)
+	if _, err := e.Client.Delete(ctx, prefix, withRange); err != nil {
+		return errors.NewCannotDeleteDatabaseError(err)
+	}
 
-	return err
+	return nil
 }
 
 func (e *EtcdClient) RevokePrivileges(ctx context.Context, user, dbName string) error {
-	_, err := e.Client.Auth.RoleDelete(ctx, dbName)
+	if _, err := e.Client.Auth.RoleDelete(ctx, dbName); err != nil {
+		return errors.NewRevokePrivilegesError(err)
+	}
 
-	return err
+	return nil
 }
 
 func (e *EtcdClient) GetConnectionString() string {
@@ -147,13 +152,19 @@ func (e *EtcdClient) GetConnectionString() string {
 }
 
 func (e *EtcdClient) Close() error {
-	return e.Client.Close()
+	if err := e.Client.Close(); err != nil {
+		return errors.NewCloseConnectionError(err)
+	}
+
+	return nil
 }
 
 func (e *EtcdClient) Check(ctx context.Context) error {
-	_, err := e.Client.AuthStatus(ctx)
+	if _, err := e.Client.AuthStatus(ctx); err != nil {
+		return errors.NewCheckConnectionError(err)
+	}
 
-	return err
+	return nil
 }
 
 func (e *EtcdClient) Driver() string {
@@ -162,10 +173,4 @@ func (e *EtcdClient) Driver() string {
 
 func (e *EtcdClient) buildKey(roleName string) string {
 	return fmt.Sprintf("/%s/", roleName)
-}
-
-type Permission struct {
-	Type     int    `json:"type,omitempty"`
-	Key      string `json:"key,omitempty"`
-	RangeEnd string `json:"rangeEnd,omitempty"`
 }
