@@ -133,7 +133,7 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
-		annotations[constants.Checksum] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		annotations[constants.Checksum] = utilities.CalculateMapChecksum(r.resource.Data)
 		r.resource.SetAnnotations(annotations)
 
 		r.resource.SetLabels(utilities.MergeMaps(

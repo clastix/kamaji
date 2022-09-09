@@ -80,7 +80,7 @@ func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.Te
 
 		savedHash, ok := r.resource.GetAnnotations()[constants.Checksum]
 		switch {
-		case ok && savedHash == utilities.CalculateConfigMapChecksum(r.resource.StringData):
+		case ok && savedHash == utilities.CalculateMapChecksum(r.resource.Data):
 			password = r.resource.Data["DB_PASSWORD"]
 		default:
 			password = []byte(uuid.New().String())
@@ -98,7 +98,7 @@ func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.Te
 			annotations = map[string]string{}
 		}
 
-		annotations[constants.Checksum] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		annotations[constants.Checksum] = utilities.CalculateMapChecksum(r.resource.Data)
 		r.resource.SetAnnotations(annotations)
 
 		r.resource.SetLabels(utilities.MergeMaps(

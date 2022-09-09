@@ -109,20 +109,17 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 		if err != nil {
 			return err
 		}
-		data, err := kubeadm.GetKubeadmInitConfigurationMap(*config)
-		if err != nil {
+		if r.resource.Data, err = kubeadm.GetKubeadmInitConfigurationMap(*config); err != nil {
 			logger.Error(err, "cannot retrieve kubeadm init configuration")
 
 			return err
 		}
 
-		r.resource.Data = data
-
 		annotations := r.resource.GetAnnotations()
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
-		annotations[constants.Checksum] = utilities.CalculateConfigMapChecksum(data)
+		annotations[constants.Checksum] = utilities.CalculateMapChecksum(r.resource.Data)
 		r.resource.SetAnnotations(annotations)
 
 		if err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {

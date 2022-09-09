@@ -111,10 +111,10 @@ func (r *KubeconfigResource) CreateOrUpdate(ctx context.Context, tenantControlPl
 }
 
 func (r *KubeconfigResource) checksum(apiServerCertificatesSecret *corev1.Secret, kubeadmChecksum string) string {
-	return utilities.CalculateConfigMapChecksum(map[string]string{
-		"ca-cert-checksum": string(apiServerCertificatesSecret.Data[kubeadmconstants.CACertName]),
-		"ca-key-checksum":  string(apiServerCertificatesSecret.Data[kubeadmconstants.CAKeyName]),
-		"kubeadmconfig":    kubeadmChecksum,
+	return utilities.CalculateMapChecksum(map[string][]byte{
+		"ca-cert-checksum": apiServerCertificatesSecret.Data[kubeadmconstants.CACertName],
+		"ca-key-checksum":  apiServerCertificatesSecret.Data[kubeadmconstants.CAKeyName],
+		"kubeadmconfig":    []byte(kubeadmChecksum),
 	})
 }
 
