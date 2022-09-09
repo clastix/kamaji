@@ -6,12 +6,7 @@ package datastore
 import (
 	"bytes"
 	"context"
-	"crypto/x509"
-	"crypto/x509/pkix"
 	"fmt"
-	"math/big"
-	"math/rand"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -114,7 +109,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 				return err
 			}
 
-			crt, key, err = crypto.GetCertificateAndKeyPair(r.getCertificateTemplate(tenantControlPlane), ca, privateKey)
+			crt, key, err = crypto.GenerateCertificatePrivateKeyPair(crypto.NewCertificateTemplate(tenantControlPlane.GetName()), ca, privateKey)
 			if err != nil {
 				logger.Error(err, "unable to generate certificate and private key")
 
@@ -162,27 +157,5 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 		))
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
-	}
-}
-
-// getCertificateTemplate returns the template that must be used to generate a certificate,
-// used to perform the authentication against the DataStore.
-func (r *Certificate) getCertificateTemplate(tenant *kamajiv1alpha1.TenantControlPlane) *x509.Certificate {
-	return &x509.Certificate{
-		PublicKeyAlgorithm: x509.RSA,
-		SerialNumber:       big.NewInt(rand.Int63()),
-		Subject: pkix.Name{
-			CommonName:   tenant.GetName(),
-			Organization: []string{"system:masters"},
-		},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(10, 0, 0),
-		SubjectKeyId: []byte{1, 2, 3, 4, 6},
-		ExtKeyUsage: []x509.ExtKeyUsage{
-			x509.ExtKeyUsageClientAuth,
-			x509.ExtKeyUsageServerAuth,
-			x509.ExtKeyUsageCodeSigning,
-		},
-		KeyUsage: x509.KeyUsageDigitalSignature,
 	}
 }

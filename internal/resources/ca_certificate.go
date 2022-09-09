@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -83,7 +84,7 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
 		if checksum := tenantControlPlane.Status.Certificates.CA.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
-			isValid, err := kubeadm.IsCertificatePrivateKeyPairValid(
+			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
 				r.resource.Data[kubeadmconstants.CACertName],
 				r.resource.Data[kubeadmconstants.CAKeyName],
 			)
