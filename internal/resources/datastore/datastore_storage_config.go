@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -25,7 +26,7 @@ type Config struct {
 }
 
 func (r *Config) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Storage.Config.Checksum != r.resource.GetAnnotations()["checksum"] ||
+	return tenantControlPlane.Status.Storage.Config.Checksum != r.resource.GetAnnotations()[constants.Checksum] ||
 		tenantControlPlane.Status.Storage.DataStoreName != r.DataStore.GetName()
 }
 
@@ -68,7 +69,7 @@ func (r *Config) UpdateTenantControlPlaneStatus(_ context.Context, tenantControl
 	tenantControlPlane.Status.Storage.Driver = string(r.DataStore.Spec.Driver)
 	tenantControlPlane.Status.Storage.DataStoreName = r.DataStore.GetName()
 	tenantControlPlane.Status.Storage.Config.SecretName = r.resource.GetName()
-	tenantControlPlane.Status.Storage.Config.Checksum = r.resource.GetAnnotations()["checksum"]
+	tenantControlPlane.Status.Storage.Config.Checksum = r.resource.GetAnnotations()[constants.Checksum]
 
 	return nil
 }
@@ -77,7 +78,7 @@ func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.Te
 	return func() error {
 		var password []byte
 
-		savedHash, ok := r.resource.GetAnnotations()["checksum"]
+		savedHash, ok := r.resource.GetAnnotations()[constants.Checksum]
 		switch {
 		case ok && savedHash == utilities.CalculateConfigMapChecksum(r.resource.StringData):
 			password = r.resource.Data["DB_PASSWORD"]
@@ -97,7 +98,7 @@ func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.Te
 			annotations = map[string]string{}
 		}
 
-		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		annotations[constants.Checksum] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
 		r.resource.SetAnnotations(annotations)
 
 		r.resource.SetLabels(utilities.MergeMaps(

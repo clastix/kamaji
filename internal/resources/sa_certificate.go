@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -30,7 +31,7 @@ type SACertificate struct {
 
 func (r *SACertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Certificates.SA.SecretName != r.resource.GetName() ||
-		tenantControlPlane.Status.Certificates.SA.Checksum != r.resource.GetAnnotations()["checksum"]
+		tenantControlPlane.Status.Certificates.SA.Checksum != r.resource.GetAnnotations()[constants.Checksum]
 }
 
 func (r *SACertificate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
@@ -75,7 +76,7 @@ func (r *SACertificate) GetName() string {
 func (r *SACertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.SA.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.SA.SecretName = r.resource.GetName()
-	tenantControlPlane.Status.Certificates.SA.Checksum = r.resource.GetAnnotations()["checksum"]
+	tenantControlPlane.Status.Certificates.SA.Checksum = r.resource.GetAnnotations()[constants.Checksum]
 
 	return nil
 }
@@ -84,7 +85,7 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
-		if checksum := tenantControlPlane.Status.Certificates.SA.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
+		if checksum := tenantControlPlane.Status.Certificates.SA.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()[constants.Checksum] {
 			isValid, err := crypto.CheckPublicAndPrivateKeyValidity(r.resource.Data[kubeadmconstants.ServiceAccountPublicKeyName], r.resource.Data[kubeadmconstants.ServiceAccountPrivateKeyName])
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s public_key-private_key pair is not valid: %s", kubeadmconstants.ServiceAccountKeyBaseName, err.Error()))
@@ -125,7 +126,7 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
-		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		annotations[constants.Checksum] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
 		r.resource.SetAnnotations(annotations)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())

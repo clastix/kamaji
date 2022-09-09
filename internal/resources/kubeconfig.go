@@ -17,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -87,7 +88,7 @@ func (r *KubeconfigResource) UpdateTenantControlPlaneStatus(ctx context.Context,
 
 	status.LastUpdate = metav1.Now()
 	status.SecretName = r.resource.GetName()
-	status.Checksum = r.resource.Annotations["checksum"]
+	status.Checksum = r.resource.Annotations[constants.Checksum]
 
 	return nil
 }
@@ -182,7 +183,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		))
 
 		r.resource.SetAnnotations(map[string]string{
-			"checksum": checksum,
+			constants.Checksum: checksum,
 		})
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
