@@ -43,7 +43,7 @@ func (r *KubernetesDeploymentResource) ShouldStatusBeUpdated(context.Context, *k
 }
 
 func (r *KubernetesDeploymentResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity == nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil && tenantControlPlane.Status.Addons.Konnectivity.Enabled == true
 }
 
 func (r *KubernetesDeploymentResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {

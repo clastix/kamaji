@@ -9,8 +9,6 @@ const (
 
 	agentTokenName                  = "konnectivity-agent-token"
 	apiServerAPIVersion             = "apiserver.k8s.io/v1beta1"
-	certExpirationDelayYears        = 10
-	certOrganization                = "system:master"
 	defaultClusterName              = "kubernetes"
 	defaultUDSName                  = "/run/konnectivity/konnectivity-server.socket"
 	egressSelectorConfigurationKind = "EgressSelectorConfiguration"

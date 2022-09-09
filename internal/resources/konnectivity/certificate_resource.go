@@ -4,14 +4,8 @@
 package konnectivity
 
 import (
-	"bytes"
 	"context"
-	"crypto/x509"
-	"crypto/x509/pkix"
 	"fmt"
-	"math/big"
-	"math/rand"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -102,11 +96,8 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
-		if checksum := tenantControlPlane.Status.Certificates.CA.Checksum; len(checksum) > 0 && checksum == utilities.CalculateConfigMapChecksum(r.resource.StringData) {
-			isValid, err := isCertificateAndKeyPairValid(
-				r.resource.Data[corev1.TLSCertKey],
-				r.resource.Data[corev1.TLSPrivateKeyKey],
-			)
+		if checksum := tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum; len(checksum) > 0 && checksum == utilities.CalculateConfigMapChecksum(r.resource.StringData) {
+			isValid, err := crypto.IsValidCertificateKeyPairBytes(r.resource.Data[corev1.TLSCertKey], r.resource.Data[corev1.TLSPrivateKeyKey])
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", konnectivityCertAndKeyBaseName, err.Error()))
 			}
@@ -128,9 +119,10 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 			Certificate: secretCA.Data[kubeadmconstants.CACertName],
 			PrivateKey:  secretCA.Data[kubeadmconstants.CAKeyName],
 		}
-		cert, privKey, err := getCertificateAndKeyPair(ca.Certificate, ca.PrivateKey)
+
+		cert, privKey, err := crypto.GenerateCertificatePrivateKeyPair(crypto.NewCertificateTemplate(CertCommonName), ca.Certificate, ca.PrivateKey)
 		if err != nil {
-			logger.Error(err, "cannot generate certificate and key pair")
+			logger.Error(err, "unable to generate certificate and private key")
 
 			return err
 		}
@@ -157,37 +149,5 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 		r.resource.SetAnnotations(annotations)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
-	}
-}
-
-func getCertificateAndKeyPair(caCert []byte, caPrivKey []byte) (*bytes.Buffer, *bytes.Buffer, error) {
-	template := getCertTemplate()
-
-	return crypto.GetCertificateAndKeyPair(template, caCert, caPrivKey)
-}
-
-func isCertificateAndKeyPairValid(cert []byte, privKey []byte) (bool, error) {
-	return crypto.IsValidCertificateKeyPairBytes(cert, privKey)
-}
-
-func getCertTemplate() *x509.Certificate {
-	serialNumber := big.NewInt(rand.Int63())
-
-	return &x509.Certificate{
-		PublicKeyAlgorithm: x509.RSA,
-		SerialNumber:       serialNumber,
-		Subject: pkix.Name{
-			CommonName:   CertCommonName,
-			Organization: []string{certOrganization},
-		},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(certExpirationDelayYears, 0, 0),
-		SubjectKeyId: []byte{1, 2, 3, 4, 6},
-		ExtKeyUsage: []x509.ExtKeyUsage{
-			x509.ExtKeyUsageClientAuth,
-			x509.ExtKeyUsageServerAuth,
-			x509.ExtKeyUsageCodeSigning,
-		},
-		KeyUsage: x509.KeyUsageDigitalSignature,
 	}
 }

@@ -44,8 +44,8 @@ func GenerateCACertificatePrivateKeyPair(baseName string, config *Configuration)
 func GenerateCertificatePrivateKeyPair(baseName string, config *Configuration, ca CertificatePrivateKeyPair) (*CertificatePrivateKeyPair, error) {
 	defer deleteCertificateDirectory(config.InitConfiguration.CertificatesDir)
 
-	certificate, _ := cryptoKamaji.GetCertificate(ca.Certificate)
-	signer, _ := cryptoKamaji.GetPrivateKey(ca.PrivateKey)
+	certificate, _ := cryptoKamaji.ParseCertificateBytes(ca.Certificate)
+	signer, _ := cryptoKamaji.ParsePrivateKeyBytes(ca.PrivateKey)
 
 	kubeadmCert, err := getKubeadmCert(baseName)
 	if err != nil {
@@ -104,28 +104,6 @@ func GeneratePublicKeyPrivateKeyPair(baseName string, config *Configuration) (*P
 	}
 
 	return publicKeyPrivateKeyPair, err
-}
-
-func IsCertificatePrivateKeyPairValid(certificate []byte, privKey []byte) (bool, error) {
-	if len(certificate) == 0 {
-		return false, nil
-	}
-	if len(privKey) == 0 {
-		return false, nil
-	}
-
-	return cryptoKamaji.IsValidCertificateKeyPairBytes(certificate, privKey)
-}
-
-func IsPublicKeyPrivateKeyPairValid(pubKey []byte, privKey []byte) (bool, error) {
-	if len(pubKey) == 0 {
-		return false, nil
-	}
-	if len(privKey) == 0 {
-		return false, nil
-	}
-
-	return cryptoKamaji.IsValidKeyPairBytes(pubKey, privKey)
 }
 
 func initPhaseCertsSA(config *Configuration) error {

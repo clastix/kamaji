@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -84,10 +85,7 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
 		if checksum := tenantControlPlane.Status.Certificates.SA.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
-			isValid, err := kubeadm.IsPublicKeyPrivateKeyPairValid(
-				r.resource.Data[kubeadmconstants.ServiceAccountPublicKeyName],
-				r.resource.Data[kubeadmconstants.ServiceAccountPrivateKeyName],
-			)
+			isValid, err := crypto.CheckPublicAndPrivateKeyValidity(r.resource.Data[kubeadmconstants.ServiceAccountPublicKeyName], r.resource.Data[kubeadmconstants.ServiceAccountPrivateKeyName])
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s public_key-private_key pair is not valid: %s", kubeadmconstants.ServiceAccountKeyBaseName, err.Error()))
 			}

@@ -17,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -83,7 +84,7 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
 		if checksum := tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
-			isValid, err := kubeadm.IsCertificatePrivateKeyPairValid(
+			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
 				r.resource.Data[kubeadmconstants.FrontProxyClientCertName],
 				r.resource.Data[kubeadmconstants.FrontProxyClientKeyName],
 			)
