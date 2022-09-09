@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -25,7 +26,7 @@ type ServiceAccountResource struct {
 }
 
 func (r *ServiceAccountResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount.Checksum != r.resource.GetAnnotations()["checksum"]
+	return tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount.Checksum != r.resource.GetAnnotations()[constants.Checksum]
 }
 
 func (r *ServiceAccountResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -80,7 +81,7 @@ func (r *ServiceAccountResource) UpdateTenantControlPlaneStatus(_ context.Contex
 		tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount = kamajiv1alpha1.ExternalKubernetesObjectStatus{
 			Name:      r.resource.GetName(),
 			Namespace: r.resource.GetNamespace(),
-			Checksum:  r.resource.GetAnnotations()["checksum"],
+			Checksum:  r.resource.GetAnnotations()[constants.Checksum],
 		}
 		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 
@@ -113,7 +114,7 @@ func (r *ServiceAccountResource) mutate() controllerutil.MutateFn {
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
-		annotations["checksum"] = utilities.MD5Checksum(yaml)
+		annotations[constants.Checksum] = utilities.MD5Checksum(yaml)
 		r.resource.SetAnnotations(annotations)
 
 		return nil

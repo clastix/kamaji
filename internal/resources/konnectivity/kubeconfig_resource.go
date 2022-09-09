@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -29,7 +30,7 @@ type KubeconfigResource struct {
 }
 
 func (r *KubeconfigResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum != r.resource.GetAnnotations()["checksum"]
+	return tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum != r.resource.GetAnnotations()[constants.Checksum]
 }
 
 func (r *KubeconfigResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -78,7 +79,7 @@ func (r *KubeconfigResource) UpdateTenantControlPlaneStatus(ctx context.Context,
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.LastUpdate = metav1.Now()
 		tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.SecretName = r.resource.GetName()
-		tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum = r.resource.GetAnnotations()["checksum"]
+		tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum = r.resource.GetAnnotations()[constants.Checksum]
 		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 
 		return nil
@@ -94,7 +95,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
-		if checksum := tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
+		if checksum := tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()[constants.Checksum] {
 			return nil
 		}
 
@@ -166,7 +167,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
-		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		annotations[constants.Checksum] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),
 			map[string]string{

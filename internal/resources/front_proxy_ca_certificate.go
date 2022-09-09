@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -28,7 +29,7 @@ type FrontProxyCACertificate struct {
 }
 
 func (r *FrontProxyCACertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum != r.resource.GetAnnotations()["checksum"]
+	return tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum != r.resource.GetAnnotations()[constants.Checksum]
 }
 
 func (r *FrontProxyCACertificate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
@@ -73,7 +74,7 @@ func (r *FrontProxyCACertificate) GetName() string {
 func (r *FrontProxyCACertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.FrontProxyCA.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.FrontProxyCA.SecretName = r.resource.GetName()
-	tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum = r.resource.GetAnnotations()["checksum"]
+	tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum = r.resource.GetAnnotations()[constants.Checksum]
 
 	return nil
 }
@@ -82,7 +83,7 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
-		if checksum := tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()["checksum"] {
+		if checksum := tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()[constants.Checksum] {
 			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
 				r.resource.Data[kubeadmconstants.FrontProxyCACertName],
 				r.resource.Data[kubeadmconstants.FrontProxyCAKeyName],
@@ -126,7 +127,7 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
-		annotations["checksum"] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
+		annotations[constants.Checksum] = utilities.CalculateConfigMapChecksum(r.resource.StringData)
 		r.resource.SetAnnotations(annotations)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())

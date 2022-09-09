@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -26,7 +27,7 @@ type ClusterRoleBindingResource struct {
 
 func (r *ClusterRoleBindingResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Name != r.resource.GetName() ||
-		tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Checksum != r.resource.ObjectMeta.GetAnnotations()["checksum"]
+		tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Checksum != r.resource.ObjectMeta.GetAnnotations()[constants.Checksum]
 }
 
 func (r *ClusterRoleBindingResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -80,7 +81,7 @@ func (r *ClusterRoleBindingResource) UpdateTenantControlPlaneStatus(_ context.Co
 		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 		tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding = kamajiv1alpha1.ExternalKubernetesObjectStatus{
 			Name:     r.resource.GetName(),
-			Checksum: r.resource.GetAnnotations()["checksum"],
+			Checksum: r.resource.GetAnnotations()[constants.Checksum],
 		}
 
 		return nil
@@ -122,7 +123,7 @@ func (r *ClusterRoleBindingResource) mutate() controllerutil.MutateFn {
 		}
 
 		yaml, _ := utilities.EncodeToYaml(r.resource)
-		annotations["checksum"] = utilities.MD5Checksum(yaml)
+		annotations[constants.Checksum] = utilities.MD5Checksum(yaml)
 
 		return nil
 	}

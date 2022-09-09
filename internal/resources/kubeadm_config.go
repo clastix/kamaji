@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -27,7 +28,7 @@ type KubeadmConfigResource struct {
 }
 
 func (r *KubeadmConfigResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.KubeadmConfig.Checksum != r.resource.GetAnnotations()["checksum"]
+	return tenantControlPlane.Status.KubeadmConfig.Checksum != r.resource.GetAnnotations()[constants.Checksum]
 }
 
 func (r *KubeadmConfigResource) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
@@ -63,7 +64,7 @@ func (r *KubeadmConfigResource) GetName() string {
 
 func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.KubeadmConfig.LastUpdate = metav1.Now()
-	tenantControlPlane.Status.KubeadmConfig.Checksum = r.resource.GetAnnotations()["checksum"]
+	tenantControlPlane.Status.KubeadmConfig.Checksum = r.resource.GetAnnotations()[constants.Checksum]
 	tenantControlPlane.Status.KubeadmConfig.ConfigmapName = r.resource.GetName()
 
 	return nil
@@ -121,7 +122,7 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
-		annotations["checksum"] = utilities.CalculateConfigMapChecksum(data)
+		annotations[constants.Checksum] = utilities.CalculateConfigMapChecksum(data)
 		r.resource.SetAnnotations(annotations)
 
 		if err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
