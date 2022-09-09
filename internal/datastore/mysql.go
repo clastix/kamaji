@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/go-pg/pg/v10"
 	"github.com/go-sql-driver/mysql"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/datastore/errors"
 )
 
 const (
@@ -39,18 +39,6 @@ type MySQLConnection struct {
 
 func (c *MySQLConnection) Driver() string {
 	return string(kamajiv1alpha1.KineMySQLDriver)
-}
-
-func NewPostgreSQLConnection(config ConnectionConfig) (Connection, error) {
-	opt := &pg.Options{
-		Addr:      config.Endpoints[0].String(),
-		Database:  config.DBName,
-		User:      config.User,
-		Password:  config.Password,
-		TLSConfig: config.TLSConfig,
-	}
-
-	return &PostgreSQLConnection{db: pg.Connect(opt), connection: config.Endpoints[0]}, nil
 }
 
 func NewMySQLConnection(config ConnectionConfig) (Connection, error) {
@@ -91,23 +79,43 @@ func (c *MySQLConnection) GetConnectionString() string {
 }
 
 func (c *MySQLConnection) Close() error {
-	return c.db.Close()
+	if err := c.db.Close(); err != nil {
+		return errors.NewCloseConnectionError(err)
+	}
+
+	return nil
 }
 
 func (c *MySQLConnection) Check(ctx context.Context) error {
-	return c.db.PingContext(ctx)
+	if err := c.db.PingContext(ctx); err != nil {
+		return errors.NewCheckConnectionError(err)
+	}
+
+	return nil
 }
 
 func (c *MySQLConnection) CreateUser(ctx context.Context, user, password string) error {
-	return c.mutate(ctx, mysqlCreateUserStatement, user, password)
+	if err := c.mutate(ctx, mysqlCreateUserStatement, user, password); err != nil {
+		return errors.NewCreateUserError(err)
+	}
+
+	return nil
 }
 
 func (c *MySQLConnection) CreateDB(ctx context.Context, dbName string) error {
-	return c.mutate(ctx, mysqlCreateDBStatement, dbName)
+	if err := c.mutate(ctx, mysqlCreateDBStatement, dbName); err != nil {
+		return errors.NewCreateDBError(err)
+	}
+
+	return nil
 }
 
 func (c *MySQLConnection) GrantPrivileges(ctx context.Context, user, dbName string) error {
-	return c.mutate(ctx, mysqlGrantPrivilegesStatement, user, dbName)
+	if err := c.mutate(ctx, mysqlGrantPrivilegesStatement, user, dbName); err != nil {
+		return errors.NewGrantPrivilegesError(err)
+	}
+
+	return nil
 }
 
 func (c *MySQLConnection) UserExists(ctx context.Context, user string) (bool, error) {
@@ -124,7 +132,12 @@ func (c *MySQLConnection) UserExists(ctx context.Context, user string) (bool, er
 		return name == user, nil
 	}
 
-	return c.check(ctx, mysqlFetchUserStatement, checker, user)
+	ok, err := c.check(ctx, mysqlFetchUserStatement, checker, user)
+	if err != nil {
+		return false, errors.NewCheckUserExistsError(err)
+	}
+
+	return ok, nil
 }
 
 func (c *MySQLConnection) DBExists(ctx context.Context, dbName string) (bool, error) {
@@ -141,14 +154,19 @@ func (c *MySQLConnection) DBExists(ctx context.Context, dbName string) (bool, er
 		return name == dbName, nil
 	}
 
-	return c.check(ctx, mysqlFetchDBStatement, checker, dbName)
+	ok, err := c.check(ctx, mysqlFetchDBStatement, checker, dbName)
+	if err != nil {
+		return false, errors.NewCheckDatabaseExistError(err)
+	}
+
+	return ok, nil
 }
 
 func (c *MySQLConnection) GrantPrivilegesExists(ctx context.Context, user, dbName string) (bool, error) {
 	statementShowGrantsStatement := fmt.Sprintf(mysqlShowGrantsStatement, user)
 	rows, err := c.db.Query(statementShowGrantsStatement)
 	if err != nil {
-		return false, err
+		return false, errors.NewGrantPrivilegesError(err)
 	}
 
 	expected := fmt.Sprintf(mysqlGrantPrivilegesStatement, user, dbName)
@@ -156,7 +174,7 @@ func (c *MySQLConnection) GrantPrivilegesExists(ctx context.Context, user, dbNam
 
 	for rows.Next() {
 		if err = rows.Scan(&grant); err != nil {
-			return false, err
+			return false, errors.NewGrantPrivilegesError(err)
 		}
 
 		if grant == expected {
@@ -168,15 +186,27 @@ func (c *MySQLConnection) GrantPrivilegesExists(ctx context.Context, user, dbNam
 }
 
 func (c *MySQLConnection) DeleteUser(ctx context.Context, user string) error {
-	return c.mutate(ctx, mysqlDropUserStatement, user)
+	if err := c.mutate(ctx, mysqlDropUserStatement, user); err != nil {
+		return errors.NewDeleteUserError(err)
+	}
+
+	return nil
 }
 
 func (c *MySQLConnection) DeleteDB(ctx context.Context, dbName string) error {
-	return c.mutate(ctx, mysqlDropDBStatement, dbName)
+	if err := c.mutate(ctx, mysqlDropDBStatement, dbName); err != nil {
+		return errors.NewCannotDeleteDatabaseError(err)
+	}
+
+	return nil
 }
 
 func (c *MySQLConnection) RevokePrivileges(ctx context.Context, user, dbName string) error {
-	return c.mutate(ctx, mysqlRevokePrivilegesStatement, user, dbName)
+	if err := c.mutate(ctx, mysqlRevokePrivilegesStatement, user, dbName); err != nil {
+		return errors.NewRevokePrivilegesError(err)
+	}
+
+	return nil
 }
 
 func (c *MySQLConnection) check(ctx context.Context, nonFilledStatement string, checker func(*sql.Row) (bool, error), args ...any) (bool, error) {
