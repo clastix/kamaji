@@ -1554,6 +1554,6 @@ spec:
     subresources:
       scale:
         labelSelectorPath: .status.kubernetesResources.deployment.selector
-        specReplicasPath: .spec.deployment.replicas
+        specReplicasPath: .spec.controlPlane.deployment.replicas
         statusReplicasPath: .status.kubernetesResources.deployment.replicas
       status: {}
