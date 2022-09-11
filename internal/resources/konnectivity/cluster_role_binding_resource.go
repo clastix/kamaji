@@ -21,7 +21,6 @@ import (
 type ClusterRoleBindingResource struct {
 	resource     *rbacv1.ClusterRoleBinding
 	Client       client.Client
-	Name         string
 	tenantClient client.Client
 }
 
@@ -73,7 +72,7 @@ func (r *ClusterRoleBindingResource) CreateOrUpdate(ctx context.Context, _ *kama
 }
 
 func (r *ClusterRoleBindingResource) GetName() string {
-	return r.Name
+	return "konnectivity-clusterrolebinding"
 }
 
 func (r *ClusterRoleBindingResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
@@ -88,7 +87,6 @@ func (r *ClusterRoleBindingResource) UpdateTenantControlPlaneStatus(_ context.Co
 	}
 
 	tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding = kamajiv1alpha1.ExternalKubernetesObjectStatus{}
-	tenantControlPlane.Status.Addons.Konnectivity.Enabled = false
 
 	return nil
 }

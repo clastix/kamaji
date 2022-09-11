@@ -29,7 +29,6 @@ const (
 type Agent struct {
 	resource     *appsv1.DaemonSet
 	Client       client.Client
-	Name         string
 	tenantClient client.Client
 }
 
@@ -77,7 +76,7 @@ func (r *Agent) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 }
 
 func (r *Agent) GetName() string {
-	return r.Name
+	return "konnectivity-agent"
 }
 
 func (r *Agent) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
@@ -88,12 +87,10 @@ func (r *Agent) UpdateTenantControlPlaneStatus(ctx context.Context, tenantContro
 			Checksum:   r.resource.GetAnnotations()[constants.Checksum],
 			LastUpdate: metav1.Now(),
 		}
-		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 
 		return nil
 	}
 
-	tenantControlPlane.Status.Addons.Konnectivity.Enabled = false
 	tenantControlPlane.Status.Addons.Konnectivity.Agent = kamajiv1alpha1.ExternalKubernetesObjectStatus{}
 
 	return nil
