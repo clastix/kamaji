@@ -32,18 +32,23 @@ const (
 )
 
 type KubernetesDeploymentResource struct {
-	resource      *appsv1.Deployment
-	Client        client.Client
-	ETCDEndpoints []string
-	Name          string
+	resource *appsv1.Deployment
+	Client   client.Client
 }
 
-func (r *KubernetesDeploymentResource) ShouldStatusBeUpdated(context.Context, *kamajiv1alpha1.TenantControlPlane) bool {
-	return false
+func (r *KubernetesDeploymentResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+	switch {
+	case tenantControlPlane.Spec.Addons.Konnectivity == nil && tenantControlPlane.Status.Addons.Konnectivity.Enabled:
+		fallthrough
+	case tenantControlPlane.Spec.Addons.Konnectivity != nil && !tenantControlPlane.Status.Addons.Konnectivity.Enabled:
+		return true
+	default:
+		return false
+	}
 }
 
 func (r *KubernetesDeploymentResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity == nil && tenantControlPlane.Status.Addons.Konnectivity.Enabled == true
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil && tenantControlPlane.Status.Addons.Konnectivity.Enabled
 }
 
 func (r *KubernetesDeploymentResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -73,7 +78,7 @@ func (r *KubernetesDeploymentResource) CleanUp(ctx context.Context, _ *kamajiv1a
 			}
 
 			for _, volumeName := range []string{konnectivityUDSVolume, egressSelectorConfigurationVolume} {
-				if volumeFound, volumeIndex := utilities.HasNamedVolume(r.resource.Spec.Template.Spec.Volumes, egressSelectorConfigurationVolume); volumeFound {
+				if volumeFound, volumeIndex := utilities.HasNamedVolume(r.resource.Spec.Template.Spec.Volumes, volumeName); volumeFound {
 					logger.Info("removing Konnectivity volume " + volumeName)
 
 					var volumes []corev1.Volume
@@ -82,6 +87,19 @@ func (r *KubernetesDeploymentResource) CleanUp(ctx context.Context, _ *kamajiv1a
 					volumes = append(volumes, r.resource.Spec.Template.Spec.Volumes[volumeIndex+1:]...)
 
 					r.resource.Spec.Template.Spec.Volumes = volumes
+				}
+			}
+
+			for _, volumeMountName := range []string{konnectivityUDSVolume, egressSelectorConfigurationVolume, konnectivityServerKubeconfigVolume} {
+				if ok, i := utilities.HasNamedVolumeMount(r.resource.Spec.Template.Spec.Containers[index].VolumeMounts, volumeMountName); ok {
+					logger.Info("removing Konnectivity volume mount " + volumeMountName)
+
+					var volumesMounts []corev1.VolumeMount
+
+					volumesMounts = append(volumesMounts, r.resource.Spec.Template.Spec.Containers[index].VolumeMounts[:i]...)
+					volumesMounts = append(volumesMounts, r.resource.Spec.Template.Spec.Containers[index].VolumeMounts[i+1:]...)
+
+					r.resource.Spec.Template.Spec.Containers[index].VolumeMounts = volumesMounts
 				}
 			}
 		}
@@ -174,7 +192,7 @@ func (r *KubernetesDeploymentResource) syncContainer(tenantControlPlane *kamajiv
 			ReadOnly:  true,
 		},
 		{
-			Name:      "konnectivity-uds",
+			Name:      konnectivityUDSVolume,
 			MountPath: konnectivityServerPath,
 			ReadOnly:  false,
 		},
@@ -219,10 +237,12 @@ func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenan
 }
 
 func (r *KubernetesDeploymentResource) GetName() string {
-	return r.Name
+	return "konnectivity-deployment"
 }
 
-func (r *KubernetesDeploymentResource) UpdateTenantControlPlaneStatus(context.Context, *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubernetesDeploymentResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	tenantControlPlane.Status.Addons.Konnectivity.Enabled = tenantControlPlane.Spec.Addons.Konnectivity != nil
+
 	return nil
 }
 

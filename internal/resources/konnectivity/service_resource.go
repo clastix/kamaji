@@ -21,7 +21,6 @@ import (
 type ServiceResource struct {
 	resource *corev1.Service
 	Client   client.Client
-	Name     string
 }
 
 func (r *ServiceResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -106,13 +105,11 @@ func (r *ServiceResource) UpdateTenantControlPlaneStatus(_ context.Context, tena
 		tenantControlPlane.Status.Addons.Konnectivity.Service.Namespace = r.resource.GetNamespace()
 		tenantControlPlane.Status.Addons.Konnectivity.Service.Port = r.resource.Spec.Ports[1].Port
 		tenantControlPlane.Status.Addons.Konnectivity.Service.ServiceStatus = r.resource.Status
-		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 
 		return nil
 	}
 
 	tenantControlPlane.Status.Addons.Konnectivity.Service = kamajiv1alpha1.KubernetesServiceStatus{}
-	tenantControlPlane.Status.Addons.Konnectivity.Enabled = false
 
 	return nil
 }
@@ -151,5 +148,5 @@ func (r *ServiceResource) mutate(_ context.Context, tenantControlPlane *kamajiv1
 }
 
 func (r *ServiceResource) GetName() string {
-	return r.Name
+	return "konnectivity-service"
 }

@@ -23,13 +23,12 @@ import (
 type EgressSelectorConfigurationResource struct {
 	resource *corev1.ConfigMap
 	Client   client.Client
-	Name     string
 }
 
 func (r *EgressSelectorConfigurationResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.getPrefixedName(tenantControlPlane),
+			Name:      utilities.AddTenantPrefix(r.GetName(), tenantControlPlane),
 			Namespace: tenantControlPlane.GetNamespace(),
 		},
 	}
@@ -62,7 +61,7 @@ func (r *EgressSelectorConfigurationResource) CreateOrUpdate(ctx context.Context
 }
 
 func (r *EgressSelectorConfigurationResource) GetName() string {
-	return r.Name
+	return "konnectivity-egress-selector-configuration"
 }
 
 func (r *EgressSelectorConfigurationResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -71,14 +70,12 @@ func (r *EgressSelectorConfigurationResource) ShouldStatusBeUpdated(ctx context.
 
 func (r *EgressSelectorConfigurationResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
-		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 		tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Name = r.resource.GetName()
 		tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Checksum = r.resource.GetAnnotations()[constants.Checksum]
 
 		return nil
 	}
 
-	tenantControlPlane.Status.Addons.Konnectivity.Enabled = false
 	tenantControlPlane.Status.Addons.Konnectivity.ConfigMap = kamajiv1alpha1.KonnectivityConfigMap{}
 
 	return nil
@@ -125,8 +122,4 @@ func (r *EgressSelectorConfigurationResource) mutate(_ context.Context, tenantCo
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
-}
-
-func (r *EgressSelectorConfigurationResource) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
 }

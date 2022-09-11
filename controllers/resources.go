@@ -235,43 +235,19 @@ func getKubeadmAddonResources(c client.Client) []resources.Resource {
 
 func getExternalKonnectivityResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
-		&konnectivity.ServiceAccountResource{
-			Client: c,
-			Name:   "konnectivity-sa",
-		},
-		&konnectivity.ClusterRoleBindingResource{
-			Client: c,
-			Name:   "konnectivity-clusterrolebinding",
-		},
-		&konnectivity.KubernetesDeploymentResource{
-			Client: c,
-			Name:   "konnectivity-deployment",
-		},
-		&konnectivity.ServiceResource{
-			Client: c,
-			Name:   "konnectivity-service",
-		},
-		&konnectivity.Agent{
-			Client: c,
-			Name:   "konnectivity-agent",
-		},
+		&konnectivity.ServiceAccountResource{Client: c},
+		&konnectivity.ClusterRoleBindingResource{Client: c},
+		&konnectivity.KubernetesDeploymentResource{Client: c},
+		&konnectivity.ServiceResource{Client: c},
+		&konnectivity.Agent{Client: c},
 	}
 }
 
 func getInternalKonnectivityResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
-		&konnectivity.EgressSelectorConfigurationResource{
-			Client: c,
-			Name:   "konnectivity-egress-selector-configuration",
-		},
-		&konnectivity.CertificateResource{
-			Client: c,
-			Name:   "konnectivity-certificate",
-		},
-		&konnectivity.KubeconfigResource{
-			Client: c,
-			Name:   "konnectivity-kubeconfig",
-		},
+		&konnectivity.EgressSelectorConfigurationResource{Client: c},
+		&konnectivity.CertificateResource{Client: c},
+		&konnectivity.KubeconfigResource{Client: c},
 	}
 }
 

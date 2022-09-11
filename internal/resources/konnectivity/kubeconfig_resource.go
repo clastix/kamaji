@@ -26,7 +26,6 @@ import (
 type KubeconfigResource struct {
 	resource *corev1.Secret
 	Client   client.Client
-	Name     string
 }
 
 func (r *KubeconfigResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -52,10 +51,10 @@ func (r *KubeconfigResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.Tena
 	return true, nil
 }
 
-func (r *KubeconfigResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubeconfigResource) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.getPrefixedName(tenantControlPlane),
+			Name:      utilities.AddTenantPrefix(r.GetName(), tenantControlPlane),
 			Namespace: tenantControlPlane.GetNamespace(),
 		},
 	}
@@ -63,29 +62,23 @@ func (r *KubeconfigResource) Define(ctx context.Context, tenantControlPlane *kam
 	return nil
 }
 
-func (r *KubeconfigResource) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
-}
-
 func (r *KubeconfigResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	return controllerutil.CreateOrUpdate(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
 func (r *KubeconfigResource) GetName() string {
-	return r.Name
+	return "konnectivity-kubeconfig"
 }
 
-func (r *KubeconfigResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubeconfigResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.LastUpdate = metav1.Now()
 		tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.SecretName = r.resource.GetName()
 		tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum = r.resource.GetAnnotations()[constants.Checksum]
-		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 
 		return nil
 	}
 
-	tenantControlPlane.Status.Addons.Konnectivity.Enabled = false
 	tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig = kamajiv1alpha1.KubeconfigStatus{}
 
 	return nil
@@ -135,7 +128,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 				{
 					Name: clusterName,
 					Cluster: clientcmdapiv1.Cluster{
-						Server:                   r.getServer(*tenantControlPlane),
+						Server:                   fmt.Sprintf("https://%s:%d", "localhost", tenantControlPlane.Spec.NetworkProfile.Port),
 						CertificateAuthorityData: secretCA.Data[kubeadmconstants.CACertName],
 					},
 				},
@@ -178,8 +171,4 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
-}
-
-func (r *KubeconfigResource) getServer(tenantControlPlane kamajiv1alpha1.TenantControlPlane) string {
-	return fmt.Sprintf("https://%s:%d", "localhost", tenantControlPlane.Spec.NetworkProfile.Port)
 }

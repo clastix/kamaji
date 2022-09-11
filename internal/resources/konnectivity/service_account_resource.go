@@ -21,7 +21,6 @@ import (
 type ServiceAccountResource struct {
 	resource     *corev1.ServiceAccount
 	Client       client.Client
-	Name         string
 	tenantClient client.Client
 }
 
@@ -54,7 +53,7 @@ func (r *ServiceAccountResource) Define(ctx context.Context, tenantControlPlane 
 
 	r.resource = &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "konnectivity-agent",
+			Name:      AgentName,
 			Namespace: agentNamespace,
 		},
 	}
@@ -73,7 +72,7 @@ func (r *ServiceAccountResource) CreateOrUpdate(ctx context.Context, _ *kamajiv1
 }
 
 func (r *ServiceAccountResource) GetName() string {
-	return r.Name
+	return "konnectivity-sa"
 }
 
 func (r *ServiceAccountResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
@@ -83,12 +82,10 @@ func (r *ServiceAccountResource) UpdateTenantControlPlaneStatus(_ context.Contex
 			Namespace: r.resource.GetNamespace(),
 			Checksum:  r.resource.GetAnnotations()[constants.Checksum],
 		}
-		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 
 		return nil
 	}
 
-	tenantControlPlane.Status.Addons.Konnectivity.Enabled = false
 	tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount = kamajiv1alpha1.ExternalKubernetesObjectStatus{}
 
 	return nil

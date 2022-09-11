@@ -27,7 +27,6 @@ import (
 type CertificateResource struct {
 	resource *corev1.Secret
 	Client   client.Client
-	Name     string
 }
 
 func (r *CertificateResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -57,7 +56,7 @@ func (r *CertificateResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.Ten
 func (r *CertificateResource) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.getPrefixedName(tenantControlPlane),
+			Name:      utilities.AddTenantPrefix(r.GetName(), tenantControlPlane),
 			Namespace: tenantControlPlane.GetNamespace(),
 		},
 	}
@@ -65,16 +64,12 @@ func (r *CertificateResource) Define(_ context.Context, tenantControlPlane *kama
 	return nil
 }
 
-func (r *CertificateResource) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.Name, tenantControlPlane)
-}
-
 func (r *CertificateResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	return controllerutil.CreateOrUpdate(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
 func (r *CertificateResource) GetName() string {
-	return r.Name
+	return "konnectivity-certificate"
 }
 
 func (r *CertificateResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
@@ -82,13 +77,11 @@ func (r *CertificateResource) UpdateTenantControlPlaneStatus(ctx context.Context
 		tenantControlPlane.Status.Addons.Konnectivity.Certificate.LastUpdate = metav1.Now()
 		tenantControlPlane.Status.Addons.Konnectivity.Certificate.SecretName = r.resource.GetName()
 		tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum = r.resource.GetAnnotations()[constants.Checksum]
-		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 
 		return nil
 	}
 
 	tenantControlPlane.Status.Addons.Konnectivity.Certificate = kamajiv1alpha1.CertificatePrivateKeyPairStatus{}
-	tenantControlPlane.Status.Addons.Konnectivity.Enabled = false
 
 	return nil
 }
