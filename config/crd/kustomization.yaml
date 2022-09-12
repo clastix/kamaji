@@ -3,6 +3,7 @@
 # It should be run by config/default
 resources:
 - bases/kamaji.clastix.io_tenantcontrolplanes.yaml
+- bases/kamaji.clastix.io_datastores.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
