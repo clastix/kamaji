@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
 	"os"
@@ -15,6 +16,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
@@ -33,6 +35,9 @@ var (
 func init() {
 	// Seed is required to ensure non reproducibility for the certificates generate by Kamaji.
 	rand.Seed(time.Now().UnixNano())
+	// Avoid to pollute Kamaji stdout with useless details by the underlying klog implementations
+	klog.SetOutput(io.Discard)
+	klog.LogToStderr(false)
 
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
