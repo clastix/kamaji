@@ -67,11 +67,11 @@ etcd:
       name: root-client-certs
       # -- Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji-system")
       namespace: kamaji-system
-    # -- (map) Dictionary of the endpoints for the etcd cluster's members, key is the name of the etcd server. Don't define any port, inflected from .etcd.peerApiPort value.
+    # -- (map) Dictionary of the endpoints for the etcd cluster's members, key is the name of the etcd server. Don't define the protocol (TLS is automatically inflected), or any port, inflected from .etcd.peerApiPort value.
     endpoints:
-      etcd-0: https://etcd-0.etcd.kamaji-system.svc.cluster.local
-      etcd-1: https://etcd-1.etcd.kamaji-system.svc.cluster.local
-      etcd-2: https://etcd-2.etcd.kamaji-system.svc.cluster.local
+      etcd-0: etcd-0.etcd.kamaji-system.svc.cluster.local
+      etcd-1: etcd-1.etcd.kamaji-system.svc.cluster.local
+      etcd-2: etcd-2.etcd.kamaji-system.svc.cluster.local
   # -- ETCD Compaction interval (e.g. "5m0s"). (default: "0" (disabled))
   compactionInterval: 0
 

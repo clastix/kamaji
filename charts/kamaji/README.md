@@ -1,6 +1,6 @@
 # kamaji
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.9.1](https://img.shields.io/badge/Version-0.9.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 Kamaji is a tool aimed to build and operate a Managed Kubernetes Service with a fraction of the operational burden. With Kamaji, you can deploy and operate hundreds of Kubernetes clusters as a hyper-scaler.
 
@@ -97,7 +97,7 @@ Here the values you can override:
 | etcd.overrides.caSecret.namespace | string | `"kamaji-system"` | Namespace of the secret which contains CA's certificate and private key. (default: "kamaji-system") |
 | etcd.overrides.clientSecret.name | string | `"root-client-certs"` | Name of the secret which contains ETCD client certificates. (default: "root-client-certs") |
 | etcd.overrides.clientSecret.namespace | string | `"kamaji-system"` | Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji-system") |
-| etcd.overrides.endpoints | object | `{"etcd-0":"https://etcd-0.etcd.kamaji-system.svc.cluster.local","etcd-1":"https://etcd-1.etcd.kamaji-system.svc.cluster.local","etcd-2":"https://etcd-2.etcd.kamaji-system.svc.cluster.local"}` | (map) Dictionary of the endpoints for the etcd cluster's members, key is the name of the etcd server. Don't define any port, inflected from .etcd.peerApiPort value. |
+| etcd.overrides.endpoints | object | `{"etcd-0":"etcd-0.etcd.kamaji-system.svc.cluster.local","etcd-1":"etcd-1.etcd.kamaji-system.svc.cluster.local","etcd-2":"etcd-2.etcd.kamaji-system.svc.cluster.local"}` | (map) Dictionary of the endpoints for the etcd cluster's members, key is the name of the etcd server. Don't define the protocol (TLS is automatically inflected), or any port, inflected from .etcd.peerApiPort value. |
 | etcd.peerApiPort | int | `2380` | The peer API port which servers are listening to. |
 | etcd.persistence.accessModes[0] | string | `"ReadWriteOnce"` |  |
 | etcd.persistence.size | string | `"10Gi"` |  |
