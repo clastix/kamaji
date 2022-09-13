@@ -17,11 +17,10 @@ cnpg:
       sh -s -- -b $(shell git rev-parse --show-toplevel)/bin
 
 postgresql-secret: cnpg
-	@kubectl -n kamaji-system get secret postgres-root-cert > /dev/null 2>&1 || $(CNPG) certificate postgres-root-cert \
+	@kubectl -n kamaji-system get secret postgres-root-cert > /dev/null 2>&1 || $(CNPG) -n kamaji-system certificate postgres-root-cert \
     		--cnpg-cluster postgresql \
     		--cnpg-user $$(kubectl -n kamaji-system get secret postgresql-superuser -o jsonpath='{.data.username}' | base64 -d)
 
 postgresql-destroy:
 	@kubectl delete -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/releases/cnpg-1.16.0.yaml --ignore-not-found && \
-	kubectl delete secret postgres-root-cert --ignore-not-found && \
-	kubectl delete secret kine-secret --ignore-not-found
+	kubectl -n kamaji-system delete secret postgres-root-cert --ignore-not-found
