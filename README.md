@@ -75,7 +75,8 @@ Here are a few:
 - [x] `kine` integration for MySQL as datastore
 - [x] `kine` integration for PostgreSQL as datastore
 - [ ] Deeper `kubeadm` integration
-- [ ] Pooling of multiple `etcd` datastores
+- [x] Pool of multiple datastores
+- [ ] Automatic assigning of Tenant Control Plane to a datastore
 - [ ] Autoscaling of Tenant Control Plane pods
 
 

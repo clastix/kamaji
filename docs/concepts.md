@@ -9,17 +9,23 @@ High Availability and rolling updates of the Tenant Control Plane pods are provi
 
 Kamaji offers a [Custom Resource Definition](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/) to provide a declarative approach of managing a Tenant Control Plane. This *CRD* is called `TenantControlPlane`, or `tcp` in short.
 
+All the _“tenant clusters”_ built with Kamaji are fully compliant CNCF Kubernetes clusters and are compatible with the standard Kubernetes toolchains everybody knows and loves. See [CNCF compliance](./compliance.md).
+
 ## Tenant worker nodes
 And what about the tenant worker nodes? They are just _"worker nodes"_, i.e. regular virtual or bare metal machines, connecting to the APIs server of the Tenant Control Plane. Kamaji's goal is to manage the lifecycle of hundreds of these _“tenant clusters”_, not only one, so how to add another tenant cluster to Kamaji? As you could expect, you have just deploys a new Tenant Control Plane in one of the _“admin cluster”_ namespace, and then joins the tenant worker nodes to it.
 
-All the tenant clusters built with Kamaji are fully compliant CNCF Kubernetes clusters and are compatible with the standard Kubernetes toolchains everybody knows and loves.
+We have in roadmap, the Cluster APIs support as well as a Terraform provider so that you can create _“tenant clusters”_ in a declarative way.
 
-## Save the state
-Putting the Tenant Control Plane in a pod is the easiest part. Also, we have to make sure each tenant cluster saves the state to be able to store and retrieve data. A dedicated `etcd` cluster for each tenant cluster doesn’t scale well for a managed service because `etcd` data persistence can be cumbersome at scale, rising the operational effort to mitigate it. So we have to find an alternative keeping in mind our goal for a resilient and cost-optimized solution at the same time. As we can deploy any Kubernetes cluster with an external `etcd` cluster, we explored this option for the tenant control planes. On the admin cluster, we deploy a multi-tenant `etcd` cluster storing the state of multiple tenant clusters.
+## Datastores
+Putting the Tenant Control Plane in a pod is the easiest part. Also, we have to make sure each tenant cluster saves the state to be able to store and retrieve data. A dedicated `etcd` cluster for each tenant cluster doesn’t scale well for a managed service because `etcd` data persistence can be cumbersome at scale, rising the operational effort to mitigate it. So we have to find an alternative keeping in mind our goal for a resilient and cost-optimized solution at the same time.
 
-With this solution, the resiliency is guaranteed by the usual `etcd` mechanism, and the pods' count remains under control, so it solves the main goal of resiliency and costs optimization. The trade-off here is that we have to operate an external `etcd` cluster, in addition to `etcd` of the _“admin cluster”_ and manage the access to be sure that each _“tenant cluster”_ uses only its data. Also, there are limits in size in `etcd`, defaulted to 2GB and configurable to a maximum of 8GB. We’re solving this issue by pooling multiple `etcd` togheter and sharding the Tenant Control Planes.
+As we can deploy any Kubernetes cluster with an external `etcd` cluster, we explored this option for the tenant control planes. On the admin cluster, we can deploy a multi-tenant `etcd` datastore to save the state of multiple tenant clusters. Kamaji offers a Custom Resource Definition called `DataStore` to provide a declarative approach of managing Tenant datastores. With this solution, the resiliency is guaranteed by the usual `etcd` mechanism, and the pods' count remains under control, so it solves the main goal of resiliency and costs optimization. The trade-off here is that we have to operate an external datastore, in addition to `etcd` of the _“admin cluster”_ and manage the access to be sure that each _“tenant cluster”_ uses only its data.
 
-Optionally, Kamaji offers the possibility of using a different storage system than `etcd` to save the state of the tenants' clusters, like MySQL or PostgreSQL compatible databases, thanks to the [kine](https://github.com/k3s-io/kine) integration. 
+### Other storage drivers
+Kamaji offers the option of using a more capable datastore than `etcd` to save the state of multiple tenants' clusters. Thanks to the native [kine](https://github.com/k3s-io/kine) integration, you can run _MySQL_ or _PostgreSQL_ compatible databases as datastore for _“tenant clusters”_.
+
+### Pooling
+By default, Kamaji is expecting to persist all the _“tenant clusters”_ data in a unique datastore that could be backed by different drivers. However, you can pick a different datastore for a specific set of _“tenant clusters”_ that could have different resources assigned or a different tiering. Pooling of multiple datastore is an option you can leverage for a very large set of _“tenant clusters”_ so you can distribute the load properly. As future improvements, we have a _datastore scheduler_ feature in roadmap so that Kamaji itself can assign automatically a _“tenant cluster”_ to the best datastore in the pool.
 
 ## Requirements of design
 These are requirements of design behind Kamaji:
