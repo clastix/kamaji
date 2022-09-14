@@ -11,7 +11,7 @@
   - Deploy Kamaji on OpenStack
   - [Setup Konnectivity service](./konnectivity.md)
   - [MySQL as Kamaji datastore](./mysql-datastore.md)
-  - [PostgreSQL as Kamaji datastore](./posgresql-datastore.md)
+  - [PostgreSQL as Kamaji datastore](./postgresql-datastore.md)
   - [Tenant Cluster Upgrade](./upgrade.md)
 - [Reference](./reference.md)
 - [CNCF Conformance](./conformance.md)
