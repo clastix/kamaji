@@ -1,20 +1,3 @@
-<style>
-  table {
-    border: solid;
-    padding: 15px;
-    text-align: left;
-  }
-  th, td {
-    border-bottom: 1px solid #ddd;
-    padding: 10px;
-    border: solid;
-  }
-  tr
-  sup {
-    font-size: 15px;
-  }
-</style>
-
 # API Reference
 
 Packages:
