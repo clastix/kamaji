@@ -71,44 +71,13 @@ $ make yaml-installation-file
 
 ```
 
-It will generate a yaml installation file at `config/install.yaml`. It should be customize accordingly.
+It will generate a yaml installation file at `config/install.yaml`. It should be customized accordingly.
 
-## Tenant Control Planes
+## Custom Resource Definitions
 
-**Kamaji** offers a [CRD](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/) to provide a declarative approach of managing tenant control planes. This *CRD* is called `TenantControlPlane`, or `tcp` in short. Use the command `kubectl explain tcp.spec` to understand the fields and their usage.
+**Kamaji** offers a set of [CRD](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/) to provide a declarative approach of managing tenant control planes:
 
-### Add-ons
+- `TenantControlPlane`, or `tcp` in short
+- `DataStore`
 
-**Kamaji** provides optional installations into the deployed tenant control plane through add-ons. Is it possible to enable/disable them through the `tcp` definition.
-
-### Core DNS
-
-```yaml
-addons:
-    coreDNS: {}
-```
-
-### Kube-Proxy
-
-```yaml
-addons:
-    kubeProxy: {}
-```
-
-### Konnectivity
-
-```yaml
-addons:
-  konnectivity:
-    proxyPort: 31132 # mandatory
-    version: v0.0.32
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
-        cpu: 100m
-        memory: 128Mi
-    serverImage: registry.k8s.io/kas-network-proxy/proxy-server
-    agentImage: registry.k8s.io/kas-network-proxy/proxy-agent
-```
+For details, see [apireference](apireference.md).

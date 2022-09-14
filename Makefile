@@ -91,6 +91,10 @@ KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call install-kustomize,$(KUSTOMIZE),3.8.7)
 
+APIDOCS_GEN = $(shell pwd)/bin/crdoc
+apidocs-gen: ## Download crdoc locally if necessary.
+	$(call go-install-tool,$(APIDOCS_GEN),fybrik.io/crdoc@latest)
+
 ##@ Development
 
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
@@ -245,3 +249,8 @@ env:
 e2e: env load helm ginkgo ## Create a KinD cluster, install Kamaji on it and run the test suite.
 	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.pullPolicy=Never"
 	$(GINKGO) -v ./e2e
+
+##@ Document
+
+apidoc: apidocs-gen
+	$(APIDOCS_GEN) crdoc --resources config/crd/bases --output docs/apireference.md --template docs/templates/reference-cr.tmpl

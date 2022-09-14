@@ -15,6 +15,7 @@ mariadb-certificates:
 	chmod 644 $(ROOT_DIR)/certs/*
 
 mariadb-secret:
+	@kubectl create namespace kamaji-system --dry-run=client -o yaml | kubectl apply -f -
 	@kubectl -n kamaji-system create secret generic mysql-config \
 		--from-file=$(ROOT_DIR)/certs/ca.crt --from-file=$(ROOT_DIR)/certs/ca.key \
 		--from-file=$(ROOT_DIR)/certs/server.key --from-file=$(ROOT_DIR)/certs/server.crt \

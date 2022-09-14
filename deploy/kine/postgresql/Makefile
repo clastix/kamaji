@@ -7,6 +7,7 @@ cnpg-setup:
 
 cnpg-deploy:
 	@kubectl -n cnpg-system rollout status deployment/cnpg-controller-manager
+	@kubectl create namespace kamaji-system --dry-run=client -o yaml | kubectl apply -f -
 	@kubectl -n kamaji-system apply -f postgresql.yaml
 	@while ! kubectl -n kamaji-system get secret postgresql-superuser > /dev/null 2>&1; do sleep 1; done
 

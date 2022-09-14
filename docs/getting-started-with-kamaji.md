@@ -1,6 +1,6 @@
 # Setup a minimal Kamaji for development
 
-This document explains how to deploy a minimal Kamaji setup on [KinD](https://kind.sigs.k8s.io/) for development scopes. Please refer to the [Kamaji documentation](../README.md) for understanding all the terms used in this guide, as for example: `admin cluster` and `tenant control plane`.
+This document explains how to deploy a minimal Kamaji setup on [KinD](https://kind.sigs.k8s.io/) for development scopes. Please refer to the [Kamaji documentation](../concepts.md) for understanding all the terms used in this guide, as for example: `admin cluster`, `tenant cluster`, and `tenant control plane`.
 
 ## Pre-requisites
 
@@ -8,15 +8,12 @@ We assume you have installed on your workstation:
 
 - [Docker](https://docs.docker.com/engine/install/)
 - [KinD](https://kind.sigs.k8s.io/)
-- [kubectl@v1.25.0](https://kubernetes.io/docs/tasks/tools/)
-- [kubeadm@v1.25.0](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/)
 - [jq](https://stedolan.github.io/jq/)
 - [openssl](https://www.openssl.org/)
 - [cfssl](https://github.com/cloudflare/cfssl)
 - [cfssljson](https://github.com/cloudflare/cfssl)
-
-> Starting from Kamaji v0.0.2, `kubectl` and `kubeadm` need to meet at least minimum version to `v1.25.0`:
-> this is required due to the latest changes addressed from the release Kubernetes 1.25 release regarding the `kubelet-config` ConfigMap required for the node join.
 
 ## Setup Kamaji on KinD
 
@@ -24,9 +21,9 @@ The instance of Kamaji is made of a single node hosting:
 
 - admin control-plane
 - admin worker
-- multi-tenant etcd cluster
+- multi-tenant datastore
 
-### Standard
+### Standard installation
 
 You can install your KinD cluster, ETCD multi-tenant cluster and Kamaji operator with a **single command**:
 
@@ -38,35 +35,63 @@ Now you can [create your first `TenantControlPlane`](#deploy-tenant-control-plan
 
 ### Data store-specific
 
-#### ETCD
+Kamaji offers the possibility of using a different storage system than `ETCD` for the tenants, like `MySQL` or `PostgreSQL` compatible databases.
 
-The multi-tenant etcd cluster is deployed as statefulset into the Kamaji node.
-
-Run `make reqs` to setup Kamaji's requisites on KinD:
+First, setup a KinD cluster:
 
 ```bash
-$ make -C deploy/kind reqs
+$ make -C deploy/kind kind
 ```
 
-At this moment you will have your KinD up and running and ETCD cluster in multitenant mode.
+#### ETCD
+
+Deploy a multi-tenant `ETCD` cluster into the Kamaji node:
+
+```bash
+$ make -C deploy/kind etcd-cluster
+```
 
 Now you're ready to [install Kamaji operator](#install-kamaji).
 
-#### Kine
+#### MySQL
 
-> The MySQL-compatible cluster provisioning is omitted here.
+Deploy a MySQL/MariaDB backend into the Kamaji node:
 
-Kamaji offers the possibility of using a different storage system than `ETCD` for the tenants, like MySQL or PostgreSQL compatible databases.
+```bash
+$ make -C deploy/kine/mysql mariadb
+```
 
-Read it more in the provided [guide](../deploy/kine/README.md).
+Adjust the [Kamaji install manifest](../config/install.yaml) according to the example of a [MySQL DataStore](../config/samples/kamaji_v1alpha1_datastore_mysql.yaml) and make sure Kamaji uses the proper datastore name:
 
-Assuming you adjusted the [Kamaji manifest](../config/install.yaml) to connect to Kine and compatible database using the proper driver, you can now install it.
+```
+--datastore={.metadata.name}
+```
+
+Now you're ready to [install Kamaji operator](#install-kamaji).
+
+#### PostgreSQL
+
+Deploy a PostgreSQL backend into the Kamaji node:
+
+```bash
+$ make -C deploy/kine/postgresql postgresql
+```
+
+Adjust the [Kamaji install manifest](../config/install.yaml) according to the example of a [PostgreSQL DataStore](../config/samples/kamaji_v1alpha1_datastore_postgresql.yaml) and make sure Kamaji uses the proper datastore name:
+
+```
+--datastore={.metadata.name}
+```
+
+Now you're ready to [install Kamaji operator](#install-kamaji).
 
 ### Install Kamaji
 
 ```bash
 $ kubectl apply -f config/install.yaml
 ```
+
+> If you experience some errors during the apply of the manifest as `resource mapping not found ... ensure CRDs are installed first`, just apply it again.
 
 ### Deploy Tenant Control Plane
 
@@ -150,7 +175,7 @@ $ kubectl create -f https://raw.githubusercontent.com/aojea/kindnet/master/insta
 ### Join worker nodes
 
 ```bash
-$ make kamaji-kind-worker-join
+$ make -C deploy/kind kamaji-kind-worker-join
 ```
 
 > To add more worker nodes, run again the command above.
@@ -163,12 +188,12 @@ NAME           STATUS   ROLES    AGE   VERSION
 d2d4b468c9de   Ready    <none>   44s   v1.23.4
 ```
 
-> For more complex scenarios (exposing port, different version and so on), run `join-node.bash`
+> For more complex scenarios (exposing port, different version and so on), run `join-node.bash`.
 
 Tenant control plane provision has been finished in a minimal Kamaji setup based on KinD. Therefore, you could develop, test and make your own experiments with Kamaji.
 
 ## Cleanup
 
 ```bash
-$ make destroy
+$ make -C deploy/kind destroy
 ```
