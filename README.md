@@ -74,7 +74,6 @@ Here are a few:
 - [ ] Custom Prometheus metrics for monitoring and alerting
 - [x] `kine` integration for MySQL as datastore
 - [x] `kine` integration for PostgreSQL as datastore
-- [ ] Deeper `kubeadm` integration
 - [x] Pool of multiple datastores
 - [ ] Automatic assigning of Tenant Control Plane to a datastore
 - [ ] Autoscaling of Tenant Control Plane pods
