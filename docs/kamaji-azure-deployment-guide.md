@@ -293,6 +293,7 @@ az vmss create \
    --subnet $TENANT_SUBNET_NAME \
    --computer-name-prefix $TENANT_NAME- \
    --custom-data ./tenant-cloudinit.yaml \
+   --load-balancer "" \
    --instance-count 0
 
 az vmss update \
