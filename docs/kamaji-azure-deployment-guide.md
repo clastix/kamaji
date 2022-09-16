@@ -1,9 +1,15 @@
 # Setup Kamaji on Azure
-This guide will lead you through the process of creating a working Kamaji setup on on MS Azure. It requires:
+This guide will lead you through the process of creating a working Kamaji setup on on MS Azure.
+
+The material here is relatively dense. We strongly encourage you to dedicate time to walk through these instructions, with a mind to learning. We do NOT provide any "one-click" deployment here. However, once you've understood the components involved it is encouraged that you build suitable, auditable GitOps deployment processes around your final infrastructure.
+
+The guide requires:
 
 - one bootstrap workstation
 - an AKS Kubernetes cluster to run the Admin and Tenant Control Planes
 - an arbitrary number of Azure virtual machines to host `Tenant`s' workloads
+
+## Summary
 
   * [Prepare the bootstrap workspace](#prepare-the-bootstrap-workspace)
   * [Access Admin cluster](#access-admin-cluster)
@@ -48,20 +54,37 @@ az group create \
   --name $KAMAJI_RG \
   --location $KAMAJI_REGION
 
+az network vnet create \
+  --resource-group $KAMAJI_RG \
+  --name $KAMAJI_VNET_NAME \
+  --location $KAMAJI_REGION \
+  --address-prefix $KAMAJI_VNET_ADDRESS
+
+az network vnet subnet create \
+  --resource-group $KAMAJI_RG \
+  --name $KAMAJI_SUBNET_NAME \
+  --vnet-name $KAMAJI_VNET_NAME \
+  --address-prefixes $KAMAJI_SUBNET_ADDRESS
+
+KAMAJI_SUBNET_ID=$(az network vnet subnet show \
+  --resource-group ${KAMAJI_RG} \
+  --vnet-name ${KAMAJI_VNET_NAME} \
+  --name ${KAMAJI_SUBNET_NAME} \
+  --query id --output tsv)
+
 az aks create \
   --resource-group $KAMAJI_RG \
   --name $KAMAJI_CLUSTER \
   --location $KAMAJI_REGION \
+  --vnet-subnet-id $KAMAJI_SUBNET_ID \
   --zones 1 2 3 \
   --node-count 3 \
-  --nodepool-name $KAMAJI_CLUSTER \
-  --ssh-key-value @~/.ssh/id_rsa.pub \
-  --no-wait
+  --nodepool-name $KAMAJI_CLUSTER
 ```
 
 Once the cluster formation succedes, get credentials to access the cluster as admin
 
-```
+```bash
 az aks get-credentials  \
   --resource-group $KAMAJI_RG \
   --name $KAMAJI_CLUSTER
@@ -69,7 +92,7 @@ az aks get-credentials  \
 
 And check you can access:
 
-```
+```bash
 kubectl cluster-info
 ```
 
@@ -89,16 +112,20 @@ Optionally, Kamaji offers the possibility of using a different storage system fo
 ## Install Kamaji Controller
 There are multiple ways to deploy Kamaji, including a [single YAML file](../config/install.yaml) and the [Helm Chart](../charts/kamaji).
 
-Install with `helm` using a managed `etcd` as datastore:
+Install with `helm` using an unmanaged `etcd` as datastore:
 
 ```bash
-helm install kamaji clastix/kamaji -n kamaji-system --set etcd.deploy=false  
+helm repo add clastix https://clastix.github.io/charts
+helm repo update
+helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
 ```
 
-Alternatively, if you opted for an unmanaged `etcd` datastore:
+Alternatively, if you opted for a managed `etcd` datastore:
 
-```bash
-helm install kamaji clastix/kamaji -n kamaji-system --create-namespace --set etcd.deploy=true  
+```
+helm repo add clastix https://clastix.github.io/charts
+helm repo update
+helm install kamaji clastix/kamaji -n kamaji-system --create-namespace --set etcd.deploy=false    
 ```
 
 Congratulations! You just turned your Azure Kubernetes AKS cluster into a Kamaji cluster capable to run multiple Tenant Control Planes.
@@ -197,8 +224,7 @@ spec:
   type: LoadBalancer
 EOF
 
-kubectl create namespace ${TENANT_NAMESPACE}
-kubectl apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
+kubectl -n ${TENANT_NAMESPACE} apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
 ```
 
 Make sure:
@@ -211,14 +237,14 @@ Make sure:
 
 Check the access to the Tenant Control Plane:
 
-```
+```bash
 curl -k https://${TENANT_NAME}.${KAMAJI_REGION}.cloudapp.azure.com/healthz
 curl -k https://${TENANT_NAME}.${KAMAJI_REGION}.cloudapp.azure.com/version
 ```
 
 Let's retrieve the `kubeconfig` in order to work with it:
 
-```
+```bash
 kubectl get secrets -n ${TENANT_NAMESPACE} ${TENANT_NAME}-admin-kubeconfig -o json \
   | jq -r '.data["admin.conf"]' \
   | base64 --decode \
@@ -247,94 +273,35 @@ NAME         ENDPOINTS           AGE
 kubernetes   10.240.0.100:6443   57m
 ```
 
-### Prepare the Infrastructure for the Tenant
-Kamaji provides Control Plane as a Service, so the tenant user can join his own virtual machines as worker nodes. Each tenant can place his virtual machines in a dedicated Azure virtual network.
+### Preparing Worker Nodes to join
+Currently Kamaji does not provide any helper for creation of tenant worker nodes. You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`. In the future, we'll provide integration with Cluster APIs and other tools, as for example, Terrform.
 
-Prepare the Tenant infrastructure:
-
-```
-az group create \
-    --name $TENANT_RG \
-    --location $KAMAJI_REGION
-
-az network nsg create \
-    --resource-group $TENANT_RG \
-    --name $TENANT_NSG
-
-az network nsg rule create \
-    --resource-group $TENANT_RG \
-    --nsg-name $TENANT_NSG \
-    --name $TENANT_NSG-ssh \
-    --protocol tcp \
-    --priority 1000 \
-    --destination-port-range 22 \
-    --access allow
-
-az network vnet create \
-    --resource-group $TENANT_RG \
-    --name $TENANT_VNET_NAME \
-    --address-prefix $TENANT_VNET_ADDRESS \
-    --subnet-name $TENANT_SUBNET_NAME \
-    --subnet-prefix $TENANT_SUBNET_ADDRESS
-
-az network vnet subnet create \
-   --resource-group $TENANT_RG \
-   --vnet-name $TENANT_VNET_NAME \
-   --name $TENANT_SUBNET_NAME \
-   --address-prefixes $TENANT_SUBNET_ADDRESS \
-   --network-security-group $TENANT_NSG
-```
-
-Connection between the Tenant virtual network and the Kamaji AKS virtual network uses the [Azure Network Peering](https://docs.microsoft.com/en-us/azure/virtual-network/virtual-network-peering-overview).
-
-Enable the network peering between the Tenant Virtual Network and the Kamaji AKS Virtual Network:
+Create an Azure VM Stateful Set to host worker nodes
 
 ```bash
-KAMAJI_VNET_NAME=`az network vnet list -g $KAMAJI_NODE_RG --query [].name --out tsv`
-KAMAJI_VNET_ID=`az network vnet list -g $KAMAJI_NODE_RG --query [].id --out tsv`
-TENANT_VNET_ID=`az network vnet list -g $TENANT_RG --query [].id --out tsv`
-
-az network vnet peering create \
-   --resource-group $TENANT_RG \
-   --name $TENANT_NAME-$KAMAJI_CLUSTER \
-   --vnet-name $TENANT_VNET_NAME \
-   --remote-vnet $KAMAJI_VNET_ID \
-   --allow-vnet-access
-
-az network vnet peering create \
-   --resource-group $KAMAJI_NODE_RG \
-   --name $KAMAJI_CLUSTER-$TENANT_NAME \
+az network vnet subnet create \
+   --resource-group $KAMAJI_RG \
+   --name $TENANT_SUBNET_NAME \
    --vnet-name $KAMAJI_VNET_NAME \
-   --remote-vnet $TENANT_VNET_ID \
-   --allow-vnet-access
-```
+   --address-prefixes $TENANT_SUBNET_ADDRESS
 
-[Azure Network Security Groups](https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview) can be used to control the traffic between the Tenant virtual network and the Kamaji AKS virtual network for a stronger isolation. See the required [ports and protocols](https://kubernetes.io/docs/reference/ports-and-protocols/) between Kubernetes control plane and worker nodes. 
-
-### Create the tenant virtual machines
-Create an Azure VM Stateful Set to host virtual machines
-
-```
 az vmss create \
    --name $TENANT_VMSS \
-   --resource-group $TENANT_RG \
+   --resource-group $KAMAJI_RG \
    --image $TENANT_VM_IMAGE \
-   --public-ip-per-vm \
-   --vnet-name $TENANT_VNET_NAME \
+   --vnet-name $KAMAJI_VNET_NAME \
    --subnet $TENANT_SUBNET_NAME \
-   --ssh-key-value @~/.ssh/id_rsa.pub \
    --computer-name-prefix $TENANT_NAME- \
-   --nsg $TENANT_NSG \
    --custom-data ./tenant-cloudinit.yaml \
-   --instance-count 0 
+   --instance-count 0
 
 az vmss update \
-   --resource-group $TENANT_RG \
+   --resource-group $KAMAJI_RG \
    --name $TENANT_VMSS \
    --set virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].enableIPForwarding=true
 
 az vmss scale \
-   --resource-group $TENANT_RG \
+   --resource-group $KAMAJI_RG \
    --name $TENANT_VMSS \
    --new-capacity 3
 ```
@@ -351,16 +318,20 @@ JOIN_CMD=$(echo "sudo kubeadm join ${TENANT_ADDR}:6443 ")$(kubeadm --kubeconfig=
 A bash loop will be used to join all the available nodes.
 
 ```bash
-HOSTS=($(az vmss list-instance-public-ips \
-    --resource-group $TENANT_RG \
-    --name $TENANT_VMSS \
-    --query "[].ipAddress" \
-    --output tsv))
+VMIDS=($(az vmss list-instances \
+   --resource-group $KAMAJI_RG \
+   --name $TENANT_VMSS \
+   --query [].instanceId \
+   --output tsv))
 
-for i in ${!HOSTS[@]}; do
-  HOST=${HOSTS[$i]}
-  echo $HOST
-  ssh ${USER}@${HOST} -t ${JOIN_CMD};
+for i in ${!VMIDS[@]}; do
+  VMID=${VMIDS[$i]}
+  az vmss run-command create \
+	  --name join-tenant-control-plane \
+	  --vmss-name  $TENANT_VMSS \
+	  --resource-group $KAMAJI_RG \
+	  --instance-id ${VMID} \
+	  --script "${JOIN_CMD}"
 done
 ```
 
@@ -407,12 +378,6 @@ tenant-00-000003   Ready    <none>   2m57s   v1.25.0
 ```
 
 ## Cleanup
-To get rid of the Tenant infrastructure, remove the RESOURCE_GROUP:
-
-```
-az group delete --name $TENANT_RG --yes --no-wait
-```
-
 To get rid of the Kamaji infrastructure, remove the RESOURCE_GROUP:
 
 ```
