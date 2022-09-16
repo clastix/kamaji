@@ -1,9 +1,15 @@
 # Setup Kamaji on a generic infrastructure
-This guide will lead you through the process of creating a working Kamaji setup on a generic infrastructure, both virtual or bare metal. It requires:
+This guide will lead you through the process of creating a working Kamaji setup on a generic infrastructure, both virtual or bare metal.
+
+The material here is relatively dense. We strongly encourage you to dedicate time to walk through these instructions, with a mind to learning. We do NOT provide any "one-click" deployment here. However, once you've understood the components involved it is encouraged that you build suitable, auditable GitOps deployment processes around your final infrastructure.
+
+The guide requires:
 
 - one bootstrap workstation
 - a Kubernetes cluster to run the Admin and Tenant Control Planes
 - an arbitrary number of machines to host `Tenant`s' workloads
+
+## Summary
 
   * [Prepare the bootstrap workspace](#prepare-the-bootstrap-workspace)
   * [Access Admin cluster](#access-admin-cluster)
@@ -61,16 +67,20 @@ Optionally, Kamaji offers the possibility of using a different storage system fo
 ## Install Kamaji Controller
 There are multiple ways to deploy Kamaji, including a [single YAML file](../config/install.yaml) and the [Helm Chart](../charts/kamaji).
 
-Install with `helm` using a managed `etcd` as datastore:
+Install with `helm` using an unmanaged `etcd` as datastore:
 
 ```bash
-helm install kamaji clastix/kamaji -n kamaji-system --set etcd.deploy=false  
+helm repo add clastix https://clastix.github.io/charts
+helm repo update
+helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
 ```
 
-Alternatively, if you opted for an unmanaged `etcd` datastore:
+Alternatively, if you opted for a managed `etcd` datastore:
 
 ```bash
-helm install kamaji clastix/kamaji -n kamaji-system --create-namespace --set etcd.deploy=true  
+helm repo add clastix https://clastix.github.io/charts
+helm repo update
+helm install kamaji clastix/kamaji -n kamaji-system --create-namespace --set etcd.deploy=false    
 ```
 
 Congratulations! You just turned your Kubernetes cluster into a Kamaji cluster capable to run multiple Tenant Control Planes.
@@ -147,8 +157,7 @@ spec:
         limits: {}
 EOF
 
-kubectl create namespace ${TENANT_NAMESPACE}
-kubectl apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
+kubectl -n ${TENANT_NAMESPACE} apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
 ```
 
 After a few minutes, check the created resources in the tenants namespace and when ready it will look similar to the following:
