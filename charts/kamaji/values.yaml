@@ -9,8 +9,8 @@ image:
   # -- The container image of the Kamaji controller.
   repository: clastix/kamaji
   pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: latest
+  # -- Overrides the image tag whose default is the chart appVersion.
+  tag:
 
 # -- A list of extra arguments to add to the kamaji controller default ones
 extraArgs: []
