@@ -1706,7 +1706,7 @@ spec:
         - --datastore=kamaji-etcd
         command:
         - /manager
-        image: clastix/kamaji:latest
+        image: clastix/kamaji:v0.1.0
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
