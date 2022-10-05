@@ -30,17 +30,15 @@ Kamaji turns any Kubernetes cluster into an _“admin cluster”_ to orchestrate
   <img src="assets/kamaji-dark.png#gh-dark-mode-only" />
 </p>
 
-All the tenant clusters built with Kamaji are fully compliant CNCF Kubernetes clusters and are compatible with the standard Kubernetes toolchains everybody knows and loves.
+All the tenant clusters built with Kamaji are fully compliant [CNCF Certified Kubernetes](https://www.cncf.io/certification/software-conformance/) and are compatible with the standard toolchains everybody knows and loves.
 
-<p align="center">
-  <img src="assets/screenshot.png" />
+<p align="left" style="padding: 6px 6px">
+  <img src="https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/certified-kubernetes/versionless/color/certified-kubernetes-color.png" width="100" />
 </p>
 
 ## Getting started
 
 Please refer to the [Getting Started guide](./docs/getting-started-with-kamaji.md) to deploy a minimal setup of Kamaji on KinD.
-
-> This project is still in the early development stage which means it's not ready for production as APIs, commands, flags, etc. are subject to change, but also that your feedback can still help to shape it. Please try it out and let us know what you like, dislike, what works, what doesn't, etc.
 
 ## Use cases
 Kamaji project has been initially started as a solution for actual and common problems such as minimizing the Total Cost of Ownership while running Kubernetes at large scale. However, it can open a wider range of use cases.
