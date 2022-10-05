@@ -1,6 +1,6 @@
 # kamaji
 
-![Version: 0.9.2](https://img.shields.io/badge/Version-0.9.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.9.3](https://img.shields.io/badge/Version-0.9.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 Kamaji is a tool aimed to build and operate a Managed Kubernetes Service with a fraction of the operational burden. With Kamaji, you can deploy and operate hundreds of Kubernetes clusters as a hyper-scaler.
 
@@ -8,10 +8,10 @@ Kamaji is a tool aimed to build and operate a Managed Kubernetes Service with a 
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| Gonzalo Gabriel Jiménez Fuentes | <iam@mendrugory.com> |  |
 | Dario Tranchitella | <dario@tranchitella.eu> |  |
 | Massimiliano Giovagnoli | <me@maxgio.it> |  |
 | Adriano Pezzuto | <me@bsctl.io> |  |
+| Gonzalo Gabriel Jiménez Fuentes | <iam@mendrugory.com> |  |
 
 ## Source Code
 
@@ -19,7 +19,7 @@ Kamaji is a tool aimed to build and operate a Managed Kubernetes Service with a 
 
 ## Requirements
 
-Kubernetes: `>=1.18`
+Kubernetes: `[1.21 - 1.25]`
 
 [Kamaji](https://github.com/clastix/kamaji) requires a [multi-tenant `etcd`](https://github.com/clastix/kamaji-internal/blob/master/deploy/getting-started-with-kamaji.md#setup-internal-multi-tenant-etcd) cluster.
 This Helm Chart starting from v0.1.1 provides the installation of an internal `etcd` in order to streamline the local test. If you'd like to use an externally managed etcd instance, you can specify the overrides and by setting the value `etcd.deploy=false`.
