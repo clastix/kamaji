@@ -1,4 +1,5 @@
-# Versioning and support
+# Versioning
+
 In Kamaji, there are different components that might require independent versioning and support level:
 
 |Kamaji|Admin Cluster|Tenant Cluster (min)|Tenant Cluster (max)|Konnectivity|Tenant etcd |

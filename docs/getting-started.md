@@ -1,4 +1,4 @@
-# Setup a minimal Kamaji for development
+# Getting started
 
 This document explains how to deploy a minimal Kamaji setup on [KinD](https://kind.sigs.k8s.io/) for development scopes. Please refer to the [Kamaji documentation](../concepts.md) for understanding all the terms used in this guide, as for example: `admin cluster`, `tenant cluster`, and `tenant control plane`.
 

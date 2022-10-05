@@ -1,1 +1,1 @@
-# Kamaji architecture
+# Architecture

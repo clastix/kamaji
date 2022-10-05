@@ -1,4 +1,4 @@
-# Core Concepts
+# Concepts
 
 Kamaji is a Kubernetes Operator. It turns any Kubernetes cluster into an _“admin cluster”_ to orchestrate other Kubernetes clusters called _“tenant clusters”_. 
 
