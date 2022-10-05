@@ -32,7 +32,7 @@ Kamaji turns any Kubernetes cluster into an _“admin cluster”_ to orchestrate
 
 All the tenant clusters built with Kamaji are fully compliant [CNCF Certified Kubernetes](https://www.cncf.io/certification/software-conformance/) and are compatible with the standard toolchains everybody knows and loves.
 
-<p align="left" style="padding: 6px 6px">
+<p align="center" style="padding: 6px 6px">
   <img src="https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/certified-kubernetes/versionless/color/certified-kubernetes-color.png" width="100" />
 </p>
 
