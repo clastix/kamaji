@@ -38,7 +38,7 @@ All the tenant clusters built with Kamaji are fully compliant [CNCF Certified Ku
 
 ## Getting started
 
-Please refer to the [Getting Started guide](./docs/getting-started-with-kamaji.md) to deploy a minimal setup of Kamaji on KinD.
+Please refer to the [Getting Started guide](./docs/getting-started.md) to deploy a minimal setup of Kamaji on KinD.
 
 ## Use cases
 Kamaji project has been initially started as a solution for actual and common problems such as minimizing the Total Cost of Ownership while running Kubernetes at large scale. However, it can open a wider range of use cases.
