@@ -1,37 +1,26 @@
 apiVersion: v2
-name: kamaji
-description: Kamaji is a tool aimed to build and operate a Managed Kubernetes Service with a fraction of the operational burden. With Kamaji, you can deploy and operate hundreds of Kubernetes clusters as a hyper-scaler.
-
-# A chart can be either an 'application' or a 'library' chart.
-#
-# Application charts are a collection of templates that can be packaged into versioned archives
-# to be deployed.
-#
-# Library charts provide useful utilities or functions for the chart developer. They're included as
-# a dependency of application charts to inject those utilities and functions into the rendering
-# pipeline. Library charts do not define any templates and therefore cannot be deployed.
-type: application
-
-# This is the chart version. This version number should be incremented each time you make changes
-# to the chart and its templates, including the app version.
-# Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.9.2
-
-# This is the version number of the application being deployed. This version number should be
-# incremented each time you make changes to the application. Versions are not expected to
-# follow Semantic Versioning. They should reflect the version the application is using.
-# It is recommended to use it with quotes.
 appVersion: v0.1.0
-
+description: Kamaji is a tool aimed to build and operate a Managed Kubernetes Service
+  with a fraction of the operational burden. With Kamaji, you can deploy and operate
+  hundreds of Kubernetes clusters as a hyper-scaler.
 home: https://github.com/clastix/kamaji
-sources: ["https://github.com/clastix/kamaji"]
-kubeVersion: ">=1.18"
+icon: https://github.com/clastix/kamaji/raw/master/assets/kamaji-logo.png
+kubeVersion: "[1.21 - 1.25]"
 maintainers:
-- email: iam@mendrugory.com
-  name: Gonzalo Gabriel Jiménez Fuentes
 - email: dario@tranchitella.eu
   name: Dario Tranchitella
 - email: me@maxgio.it
   name: Massimiliano Giovagnoli
 - email: me@bsctl.io
   name: Adriano Pezzuto
+- email: iam@mendrugory.com
+  name: Gonzalo Gabriel Jiménez Fuentes
+name: kamaji
+sources:
+- https://github.com/clastix/kamaji
+type: application
+version: 0.9.3
+annotations:
+  catalog.cattle.io/certified: partner
+  catalog.cattle.io/release-name: kamaji
+  catalog.cattle.io/display-name: Kamaji - Managed Kubernetes Service
