@@ -238,7 +238,7 @@ And make sure it is `${TENANT_ADDR}:${TENANT_PORT}`.
 
 Currently Kamaji does not provide any helper for creation of tenant worker nodes. You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`. In the future, we'll provide integration with Cluster APIs and other tools, as for example, Terrform.
 
-Use a simple bash script `nodes-prerequisites.sh`, as provided into this repo, in order to install the dependencies on all the worker nodes:
+You can use the provided helper script [`nodes-prerequisites.sh`](../deploy/nodes-prerequisites.sh), in order to install the dependencies on all the worker nodes:
 
 - Install `containerd` as container runtime
 - Install `crictl`, the command line for working with `containerd`
