@@ -36,7 +36,7 @@ We assume you have installed on your workstation:
 ## Access Admin cluster
 In Kamaji, an Admin Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The admin cluster acts as management cluster for all the Tenant clusters and implements Monitoring, Logging, and Governance of all the Kamaji setup, including all Tenant clusters. 
 
-Throughout the following instructions, shell variables are used to indicate values that you should adjust to your environment:
+Throughout the following instructions, shell variables are used to indicate values that you should adjust to your environment, as of [`kamaji.env`](../deploy/kamaji.env):
 
 ```bash
 source kamaji.env
