@@ -5,7 +5,7 @@ description: Kamaji is a tool aimed to build and operate a Managed Kubernetes Se
   hundreds of Kubernetes clusters as a hyper-scaler.
 home: https://github.com/clastix/kamaji
 icon: https://github.com/clastix/kamaji/raw/master/assets/kamaji-logo.png
-kubeVersion: "[1.21 - 1.25]"
+kubeVersion: 1.21 - 1.25
 maintainers:
 - email: dario@tranchitella.eu
   name: Dario Tranchitella
@@ -19,7 +19,7 @@ name: kamaji
 sources:
 - https://github.com/clastix/kamaji
 type: application
-version: 0.9.3
+version: 0.9.4
 annotations:
   catalog.cattle.io/certified: partner
   catalog.cattle.io/release-name: kamaji
