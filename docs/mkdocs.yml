@@ -37,7 +37,7 @@ theme:
 
 # Generate navigation bar
 nav:
-- 'Kamaji': home.md
+- 'Kamaji': index.md
 - 'Getting started': getting-started.md
 - 'Concepts': concepts.md
 - 'Guides':
@@ -58,3 +58,4 @@ nav:
   - contribute/index.md
   - contribute/guidelines.md
   - contribute/governance.md
+
