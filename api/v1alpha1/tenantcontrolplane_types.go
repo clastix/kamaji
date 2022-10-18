@@ -85,6 +85,16 @@ type ControlPlaneComponentsResources struct {
 type DeploymentSpec struct {
 	// +kubebuilder:default=2
 	Replicas int32 `json:"replicas,omitempty"`
+	// NodeSelector is a selector which must be true for the pod to fit on a node.
+	// Selector which must match a node's labels for the pod to be scheduled on that node.
+	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// If specified, the Tenant Control Plane pod's tolerations.
+	// More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// If specified, the Tenant Control Plane pod's scheduling constraints.
+	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 	// TopologySpreadConstraints describes how the Tenant Control Plane pods ought to spread across topology
 	// domains. Scheduler will schedule pods in a way which abides by the constraints.
 	// In case of nil underlying LabelSelector, the Kamaji one for the given Tenant Control Plane will be used.
