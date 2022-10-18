@@ -1,0 +1,4447 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://kamaji.clastix.io/reference/api/">
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.6">
+    
+    
+      
+        <title>API Reference - Kamaji</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.20d9efc8.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
+        
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="" data-md-color-accent="">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#api-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Kamaji" class="md-header__button md-logo" aria-label="Kamaji" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Kamaji
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              API Reference
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      <form class="md-header__option" data-md-component="palette">
+        
+          
+          
+          <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="" data-md-color-primary="" data-md-color-accent=""  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+          
+            <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_3" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9h-1.9M20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69m-9.15 3.96h2.3L12 9l-1.15 3.65Z"/></svg>
+            </label>
+          
+        
+          
+          
+          <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent=""  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_2">
+          
+            <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9v1Z"/></svg>
+            </label>
+          
+        
+          
+          
+          <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="" data-md-color-accent=""  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_3">
+          
+            <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_2" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5Z"/></svg>
+            </label>
+          
+        
+      </form>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/clastix/kamaji" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    clastix/kamaji
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../home/" class="md-tabs__link">
+      Home
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../getting-started/" class="md-tabs__link">
+      Getting started
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../concepts/" class="md-tabs__link">
+      Concepts
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../guides/" class="md-tabs__link">
+        Guides
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../use-cases/" class="md-tabs__link">
+      Use Cases
+    </a>
+  </li>
+
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../" class="md-tabs__link md-tabs__link--active">
+        Reference
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../contribute/" class="md-tabs__link">
+      Contribute
+    </a>
+  </li>
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Kamaji" class="md-nav__button md-logo" aria-label="Kamaji" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Kamaji
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/clastix/kamaji" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    clastix/kamaji
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../home/" class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        Getting started
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4">
+          Guides
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Guides" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Guides
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/" class="md-nav__link">
+        How to Guides
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/kamaji-deployment-guide/" class="md-nav__link">
+        Setup Kamaji on a generic infrastructure
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/kamaji-azure-deployment-guide/" class="md-nav__link">
+        Setup Kamaji on Azure
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/postgresql-datastore/" class="md-nav__link">
+        PostgreSQL as Kubernetes Storage
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/mysql-datastore/" class="md-nav__link">
+        MySQL as Kubernetes Storage
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/upgrade/" class="md-nav__link">
+        Tenant Cluster Upgrade
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use-cases/" class="md-nav__link">
+        Use Cases
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6">
+          Reference
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Reference" data-md-level="1">
+        <label class="md-nav__title" for="__nav_6">
+          <span class="md-nav__icon md-icon"></span>
+          Reference
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        References
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        Configuration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../conformance/" class="md-nav__link">
+        Conformance
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../versioning/" class="md-nav__link">
+        Versioning
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        API Reference
+      </a>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contribute/" class="md-nav__link">
+        Contribute
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  <a href="https://github.com/clastix/kamaji/edit/master/docs/reference/api.md" title="Edit this page" class="md-content__button md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+<h1 id="api-reference">API Reference</h1>
+<p>Packages:</p>
+<ul>
+<li><a href="#kamajiclastixiov1alpha1">kamaji.clastix.io/v1alpha1</a></li>
+</ul>
+<h1 id="kamajiclastixiov1alpha1">kamaji.clastix.io/v1alpha1</h1>
+<p>Resource Types:</p>
+<ul>
+<li>
+<p><a href="#datastore">DataStore</a></p>
+</li>
+<li>
+<p><a href="#tenantcontrolplane">TenantControlPlane</a></p>
+</li>
+</ul>
+<h2 id="datastore">DataStore</h2>
+<p>DataStore is the Schema for the datastores API.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+      <td><b>apiVersion</b></td>
+      <td>string</td>
+      <td>kamaji.clastix.io/v1alpha1</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b>kind</b></td>
+      <td>string</td>
+      <td>DataStore</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td>object</td>
+      <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
+      <td>true</td>
+      </tr><tr>
+        <td><b><a href="#datastorespec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          DataStoreSpec defines the desired state of DataStore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#datastorestatus">status</a></b></td>
+        <td>object</td>
+        <td>
+          DataStoreStatus defines the observed state of DataStore.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespec">DataStore.spec</h3>
+<p>DataStoreSpec defines the desired state of DataStore.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>driver</b></td>
+        <td>string</td>
+        <td>
+          The driver to use to connect to the shared datastore.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>endpoints</b></td>
+        <td>[]string</td>
+        <td>
+          List of the endpoints to connect to the shared datastore. No need for protocol, just bare IP/FQDN and port.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#datastorespectlsconfig">tlsConfig</a></b></td>
+        <td>object</td>
+        <td>
+          Defines the TLS/SSL configuration required to connect to the data store in a secure way.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#datastorespecbasicauth">basicAuth</a></b></td>
+        <td>object</td>
+        <td>
+          In case of authentication enabled for the given data store, specifies the username and password pair. This value is optional.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespectlsconfig">DataStore.spec.tlsConfig</h3>
+<p>Defines the TLS/SSL configuration required to connect to the data store in a secure way.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#datastorespectlsconfigcertificateauthority">certificateAuthority</a></b></td>
+        <td>object</td>
+        <td>
+          Retrieve the Certificate Authority certificate and private key, such as bare content of the file, or a SecretReference. The key reference is required since etcd authentication is based on certificates, and Kamaji is responsible in creating this.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#datastorespectlsconfigclientcertificate">clientCertificate</a></b></td>
+        <td>object</td>
+        <td>
+          Specifies the SSL/TLS key and private key pair used to connect to the data store.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespectlsconfigcertificateauthority">DataStore.spec.tlsConfig.certificateAuthority</h3>
+<p>Retrieve the Certificate Authority certificate and private key, such as bare content of the file, or a SecretReference. The key reference is required since etcd authentication is based on certificates, and Kamaji is responsible in creating this.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#datastorespectlsconfigcertificateauthoritycertificate">certificate</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#datastorespectlsconfigcertificateauthorityprivatekey">privateKey</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespectlsconfigcertificateauthoritycertificate">DataStore.spec.tlsConfig.certificateAuthority.certificate</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>content</b></td>
+        <td>string</td>
+        <td>
+          Bare content of the file, base64 encoded. It has precedence over the SecretReference value.<br/>
+          <br/>
+            <i>Format</i>: byte<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#datastorespectlsconfigcertificateauthoritycertificatesecretreference">secretReference</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespectlsconfigcertificateauthoritycertificatesecretreference">DataStore.spec.tlsConfig.certificateAuthority.certificate.secretReference</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keyPath</b></td>
+        <td>string</td>
+        <td>
+          Name of the key for the given Secret reference where the content is stored. This value is mandatory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is unique within a namespace to reference a secret resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          namespace defines the space within which the secret name must be unique.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespectlsconfigcertificateauthorityprivatekey">DataStore.spec.tlsConfig.certificateAuthority.privateKey</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>content</b></td>
+        <td>string</td>
+        <td>
+          Bare content of the file, base64 encoded. It has precedence over the SecretReference value.<br/>
+          <br/>
+            <i>Format</i>: byte<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#datastorespectlsconfigcertificateauthorityprivatekeysecretreference">secretReference</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespectlsconfigcertificateauthorityprivatekeysecretreference">DataStore.spec.tlsConfig.certificateAuthority.privateKey.secretReference</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keyPath</b></td>
+        <td>string</td>
+        <td>
+          Name of the key for the given Secret reference where the content is stored. This value is mandatory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is unique within a namespace to reference a secret resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          namespace defines the space within which the secret name must be unique.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespectlsconfigclientcertificate">DataStore.spec.tlsConfig.clientCertificate</h3>
+<p>Specifies the SSL/TLS key and private key pair used to connect to the data store.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#datastorespectlsconfigclientcertificatecertificate">certificate</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#datastorespectlsconfigclientcertificateprivatekey">privateKey</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespectlsconfigclientcertificatecertificate">DataStore.spec.tlsConfig.clientCertificate.certificate</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>content</b></td>
+        <td>string</td>
+        <td>
+          Bare content of the file, base64 encoded. It has precedence over the SecretReference value.<br/>
+          <br/>
+            <i>Format</i>: byte<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#datastorespectlsconfigclientcertificatecertificatesecretreference">secretReference</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespectlsconfigclientcertificatecertificatesecretreference">DataStore.spec.tlsConfig.clientCertificate.certificate.secretReference</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keyPath</b></td>
+        <td>string</td>
+        <td>
+          Name of the key for the given Secret reference where the content is stored. This value is mandatory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is unique within a namespace to reference a secret resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          namespace defines the space within which the secret name must be unique.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespectlsconfigclientcertificateprivatekey">DataStore.spec.tlsConfig.clientCertificate.privateKey</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>content</b></td>
+        <td>string</td>
+        <td>
+          Bare content of the file, base64 encoded. It has precedence over the SecretReference value.<br/>
+          <br/>
+            <i>Format</i>: byte<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#datastorespectlsconfigclientcertificateprivatekeysecretreference">secretReference</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespectlsconfigclientcertificateprivatekeysecretreference">DataStore.spec.tlsConfig.clientCertificate.privateKey.secretReference</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keyPath</b></td>
+        <td>string</td>
+        <td>
+          Name of the key for the given Secret reference where the content is stored. This value is mandatory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is unique within a namespace to reference a secret resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          namespace defines the space within which the secret name must be unique.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespecbasicauth">DataStore.spec.basicAuth</h3>
+<p>In case of authentication enabled for the given data store, specifies the username and password pair. This value is optional.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#datastorespecbasicauthpassword">password</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#datastorespecbasicauthusername">username</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespecbasicauthpassword">DataStore.spec.basicAuth.password</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>content</b></td>
+        <td>string</td>
+        <td>
+          Bare content of the file, base64 encoded. It has precedence over the SecretReference value.<br/>
+          <br/>
+            <i>Format</i>: byte<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#datastorespecbasicauthpasswordsecretreference">secretReference</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespecbasicauthpasswordsecretreference">DataStore.spec.basicAuth.password.secretReference</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keyPath</b></td>
+        <td>string</td>
+        <td>
+          Name of the key for the given Secret reference where the content is stored. This value is mandatory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is unique within a namespace to reference a secret resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          namespace defines the space within which the secret name must be unique.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespecbasicauthusername">DataStore.spec.basicAuth.username</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>content</b></td>
+        <td>string</td>
+        <td>
+          Bare content of the file, base64 encoded. It has precedence over the SecretReference value.<br/>
+          <br/>
+            <i>Format</i>: byte<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#datastorespecbasicauthusernamesecretreference">secretReference</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorespecbasicauthusernamesecretreference">DataStore.spec.basicAuth.username.secretReference</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keyPath</b></td>
+        <td>string</td>
+        <td>
+          Name of the key for the given Secret reference where the content is stored. This value is mandatory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is unique within a namespace to reference a secret resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          namespace defines the space within which the secret name must be unique.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="datastorestatus">DataStore.status</h3>
+<p>DataStoreStatus defines the observed state of DataStore.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>usedBy</b></td>
+        <td>[]string</td>
+        <td>
+          List of the Tenant Control Planes, namespaced named, using this data store.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h2 id="tenantcontrolplane">TenantControlPlane</h2>
+<p>TenantControlPlane is the Schema for the tenantcontrolplanes API.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+      <td><b>apiVersion</b></td>
+      <td>string</td>
+      <td>kamaji.clastix.io/v1alpha1</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b>kind</b></td>
+      <td>string</td>
+      <td>TenantControlPlane</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td>object</td>
+      <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
+      <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          TenantControlPlaneSpec defines the desired state of TenantControlPlane.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatus">status</a></b></td>
+        <td>object</td>
+        <td>
+          TenantControlPlaneStatus defines the observed state of TenantControlPlane.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespec">TenantControlPlane.spec</h3>
+<p>TenantControlPlaneSpec defines the desired state of TenantControlPlane.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplane">controlPlane</a></b></td>
+        <td>object</td>
+        <td>
+          ControlPlane defines how the Tenant Control Plane Kubernetes resources must be created in the Admin Cluster, such as the number of Pod replicas, the Service resource, or the Ingress.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeckubernetes">kubernetes</a></b></td>
+        <td>object</td>
+        <td>
+          Kubernetes specification for tenant control plane<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddons">addons</a></b></td>
+        <td>object</td>
+        <td>
+          Addons contain which addons are enabled<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>dataStore</b></td>
+        <td>string</td>
+        <td>
+          DataStore allows to specify a DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane. This parameter is optional and acts as an override over the default one which is used by the Kamaji Operator. Migration from a different DataStore to another one is not yet supported and the reconciliation will be blocked.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecnetworkprofile">networkProfile</a></b></td>
+        <td>object</td>
+        <td>
+          NetworkProfile specifies how the network is<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplane">TenantControlPlane.spec.controlPlane</h3>
+<p>ControlPlane defines how the Tenant Control Plane Kubernetes resources must be created in the Admin Cluster, such as the number of Pod replicas, the Service resource, or the Ingress.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplaneservice">service</a></b></td>
+        <td>object</td>
+        <td>
+          Defining the options for the Tenant Control Plane Service resource.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeployment">deployment</a></b></td>
+        <td>object</td>
+        <td>
+          Defining the options for the deployed Tenant Control Plane as Deployment resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplaneingress">ingress</a></b></td>
+        <td>object</td>
+        <td>
+          Defining the options for an Optional Ingress which will expose API Server of the Tenant Control Plane<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplaneservice">TenantControlPlane.spec.controlPlane.service</h3>
+<p>Defining the options for the Tenant Control Plane Service resource.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>serviceType</b></td>
+        <td>enum</td>
+        <td>
+          ServiceType allows specifying how to expose the Tenant Control Plane.<br/>
+          <br/>
+            <i>Enum</i>: ClusterIP, NodePort, LoadBalancer<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplaneserviceadditionalmetadata">additionalMetadata</a></b></td>
+        <td>object</td>
+        <td>
+          AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplaneserviceadditionalmetadata">TenantControlPlane.spec.controlPlane.service.additionalMetadata</h3>
+<p>AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>labels</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplanedeployment">TenantControlPlane.spec.controlPlane.deployment</h3>
+<p>Defining the options for the deployed Tenant Control Plane as Deployment resource.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalmetadata">additionalMetadata</a></b></td>
+        <td>object</td>
+        <td>
+          AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentextraargs">extraArgs</a></b></td>
+        <td>object</td>
+        <td>
+          ExtraArgs allows adding additional arguments to the Control Plane components, such as kube-apiserver, controller-manager, and scheduler.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Default</i>: 2<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          Resources defines the amount of memory and CPU to allocate to each component of the Control Plane (kube-apiserver, controller-manager, and scheduler).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymenttopologyspreadconstraintsindex">topologySpreadConstraints</a></b></td>
+        <td>[]object</td>
+        <td>
+          TopologySpreadConstraints describes how the Tenant Control Plane pods ought to spread across topology domains. Scheduler will schedule pods in a way which abides by the constraints. In case of nil underlying LabelSelector, the Kamaji one for the given Tenant Control Plane will be used. All topologySpreadConstraints are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplanedeploymentadditionalmetadata">TenantControlPlane.spec.controlPlane.deployment.additionalMetadata</h3>
+<p>AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>labels</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplanedeploymentextraargs">TenantControlPlane.spec.controlPlane.deployment.extraArgs</h3>
+<p>ExtraArgs allows adding additional arguments to the Control Plane components, such as kube-apiserver, controller-manager, and scheduler.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>apiServer</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>controllerManager</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>kine</b></td>
+        <td>[]string</td>
+        <td>
+          Available only if Kamaji is running using Kine as backing storage.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheduler</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplanedeploymentresources">TenantControlPlane.spec.controlPlane.deployment.resources</h3>
+<p>Resources defines the amount of memory and CPU to allocate to each component of the Control Plane (kube-apiserver, controller-manager, and scheduler).</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourcesapiserver">apiServer</a></b></td>
+        <td>object</td>
+        <td>
+          ResourceRequirements describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourcescontrollermanager">controllerManager</a></b></td>
+        <td>object</td>
+        <td>
+          ResourceRequirements describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourcesscheduler">scheduler</a></b></td>
+        <td>object</td>
+        <td>
+          ResourceRequirements describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplanedeploymentresourcesapiserver">TenantControlPlane.spec.controlPlane.deployment.resources.apiServer</h3>
+<p>ResourceRequirements describes the compute resource requirements.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplanedeploymentresourcescontrollermanager">TenantControlPlane.spec.controlPlane.deployment.resources.controllerManager</h3>
+<p>ResourceRequirements describes the compute resource requirements.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplanedeploymentresourcesscheduler">TenantControlPlane.spec.controlPlane.deployment.resources.scheduler</h3>
+<p>ResourceRequirements describes the compute resource requirements.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplanedeploymenttopologyspreadconstraintsindex">TenantControlPlane.spec.controlPlane.deployment.topologySpreadConstraints[index]</h3>
+<p>TopologySpreadConstraint specifies how to spread matching pods among the given topology.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>maxSkew</b></td>
+        <td>integer</td>
+        <td>
+          MaxSkew describes the degree to which pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference between the number of matching pods in the target topology and the global minimum. The global minimum is the minimum number of matching pods in an eligible domain or zero if the number of eligible domains is less than MinDomains. For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same labelSelector spread as 2/2/1: In this case, the global minimum is 1. | zone1 | zone2 | zone3 | |  P P  |  P P  |   P   | - if MaxSkew is 1, incoming pod can only be scheduled to zone3 to become 2/2/2; scheduling it onto zone1(zone2) would make the ActualSkew(3-1) on zone1(zone2) violate MaxSkew(1). - if MaxSkew is 2, incoming pod can be scheduled onto any zone. When `whenUnsatisfiable=ScheduleAnyway`, it is used to give higher precedence to topologies that satisfy it. It's a required field. Default value is 1 and 0 is not allowed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>topologyKey</b></td>
+        <td>string</td>
+        <td>
+          TopologyKey is the key of node labels. Nodes that have a label with this key and identical values are considered to be in the same topology. We consider each <key, value> as a "bucket", and try to put balanced number of pods into each bucket. We define a domain as a particular instance of a topology. Also, we define an eligible domain as a domain whose nodes meet the requirements of nodeAffinityPolicy and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname", each Node is a domain of that topology. And, if TopologyKey is "topology.kubernetes.io/zone", each zone is a domain of that topology. It's a required field.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>whenUnsatisfiable</b></td>
+        <td>string</td>
+        <td>
+          WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy the spread constraint. - DoNotSchedule (default) tells the scheduler not to schedule it. - ScheduleAnyway tells the scheduler to schedule the pod in any location, but giving higher precedence to topologies that would help reduce the skew. A constraint is considered "Unsatisfiable" for an incoming pod if and only if every possible node assignment for that pod would violate "MaxSkew" on some topology. For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same labelSelector spread as 3/1/1: | zone1 | zone2 | zone3 | | P P P |   P   |   P   | If WhenUnsatisfiable is set to DoNotSchedule, incoming pod can only be scheduled to zone2(zone3) to become 3/2/1(3/1/2) as ActualSkew(2-1) on zone2(zone3) satisfies MaxSkew(1). In other words, the cluster can still be imbalanced, but scheduler won't make it *more* imbalanced. It's a required field.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymenttopologyspreadconstraintsindexlabelselector">labelSelector</a></b></td>
+        <td>object</td>
+        <td>
+          LabelSelector is used to find matching pods. Pods that match this label selector are counted to determine the number of pods in their corresponding topology domain.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select the pods over which spreading will be calculated. The keys are used to lookup values from the incoming pod labels, those key-value labels are ANDed with labelSelector to select the group of existing pods over which spreading will be calculated for the incoming pod. Keys that don't exist in the incoming pod labels will be ignored. A null or empty list means only match against labelSelector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minDomains</b></td>
+        <td>integer</td>
+        <td>
+          MinDomains indicates a minimum number of eligible domains. When the number of eligible domains with matching topology keys is less than minDomains, Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed. And when the number of eligible domains with matching topology keys equals or greater than minDomains, this value has no effect on scheduling. As a result, when the number of eligible domains is less than minDomains, scheduler won't schedule more than maxSkew Pods to those domains. If value is nil, the constraint behaves as if MinDomains is equal to 1. Valid values are integers greater than 0. When value is not nil, WhenUnsatisfiable must be DoNotSchedule. 
+ For example, in a 3-zone cluster, MaxSkew is set to 2, MinDomains is set to 5 and pods with the same labelSelector spread as 2/2/2: | zone1 | zone2 | zone3 | |  P P  |  P P  |  P P  | The number of domains is less than 5(MinDomains), so "global minimum" is treated as 0. In this situation, new pod with the same labelSelector cannot be scheduled, because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones, it will violate MaxSkew. 
+ This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>nodeAffinityPolicy</b></td>
+        <td>string</td>
+        <td>
+          NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector when calculating pod topology spread skew. Options are: - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations. - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations. 
+ If this value is nil, the behavior is equivalent to the Honor policy. This is a alpha-level feature enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>nodeTaintsPolicy</b></td>
+        <td>string</td>
+        <td>
+          NodeTaintsPolicy indicates how we will treat node taints when calculating pod topology spread skew. Options are: - Honor: nodes without taints, along with tainted nodes for which the incoming pod has a toleration, are included. - Ignore: node taints are ignored. All nodes are included. 
+ If this value is nil, the behavior is equivalent to the Ignore policy. This is a alpha-level feature enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplanedeploymenttopologyspreadconstraintsindexlabelselector">TenantControlPlane.spec.controlPlane.deployment.topologySpreadConstraints[index].labelSelector</h3>
+<p>LabelSelector is used to find matching pods. Pods that match this label selector are counted to determine the number of pods in their corresponding topology domain.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymenttopologyspreadconstraintsindexlabelselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplanedeploymenttopologyspreadconstraintsindexlabelselectormatchexpressionsindex">TenantControlPlane.spec.controlPlane.deployment.topologySpreadConstraints[index].labelSelector.matchExpressions[index]</h3>
+<p>A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplaneingress">TenantControlPlane.spec.controlPlane.ingress</h3>
+<p>Defining the options for an Optional Ingress which will expose API Server of the Tenant Control Plane</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplaneingressadditionalmetadata">additionalMetadata</a></b></td>
+        <td>object</td>
+        <td>
+          AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>hostname</b></td>
+        <td>string</td>
+        <td>
+          Hostname is an optional field which will be used as Ingress's Host. If it is not defined, Ingress's host will be "<tenant>.<namespace>.<domain>", where domain is specified under NetworkProfileSpec<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ingressClassName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeccontrolplaneingressadditionalmetadata">TenantControlPlane.spec.controlPlane.ingress.additionalMetadata</h3>
+<p>AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>labels</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeckubernetes">TenantControlPlane.spec.kubernetes</h3>
+<p>Kubernetes specification for tenant control plane</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeckuberneteskubelet">kubelet</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>version</b></td>
+        <td>string</td>
+        <td>
+          Kubernetes Version for the tenant control plane<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>admissionControllers</b></td>
+        <td>[]enum</td>
+        <td>
+          List of enabled Admission Controllers for the Tenant cluster. Full reference available here: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers<br/>
+          <br/>
+            <i>Default</i>: [CertificateApproval CertificateSigning CertificateSubjectRestriction DefaultIngressClass DefaultStorageClass DefaultTolerationSeconds LimitRanger MutatingAdmissionWebhook NamespaceLifecycle PersistentVolumeClaimResize Priority ResourceQuota RuntimeClass ServiceAccount StorageObjectInUseProtection TaintNodesByCondition ValidatingAdmissionWebhook]<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespeckuberneteskubelet">TenantControlPlane.spec.kubernetes.kubelet</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>cgroupfs</b></td>
+        <td>enum</td>
+        <td>
+          CGroupFS defines the  cgroup driver for Kubelet https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/<br/>
+          <br/>
+            <i>Enum</i>: systemd, cgroupfs<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespecaddons">TenantControlPlane.spec.addons</h3>
+<p>Addons contain which addons are enabled</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonscoredns">coreDNS</a></b></td>
+        <td>object</td>
+        <td>
+          Enables the DNS addon in the Tenant Cluster. The registry and the tag are configurable, the image is hard-coded to `coredns`.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivity">konnectivity</a></b></td>
+        <td>object</td>
+        <td>
+          Enables the Konnectivity addon in the Tenant Cluster, required if the worker nodes are in a different network.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskubeproxy">kubeProxy</a></b></td>
+        <td>object</td>
+        <td>
+          Enables the kube-proxy addon in the Tenant Cluster. The registry and the tag are configurable, the image is hard-coded to `kube-proxy`.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespecaddonscoredns">TenantControlPlane.spec.addons.coreDNS</h3>
+<p>Enables the DNS addon in the Tenant Cluster. The registry and the tag are configurable, the image is hard-coded to <code>coredns</code>.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>imageRepository</b></td>
+        <td>string</td>
+        <td>
+          ImageRepository sets the container registry to pull images from. if not set, the default ImageRepository will be used instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>imageTag</b></td>
+        <td>string</td>
+        <td>
+          ImageTag allows to specify a tag for the image. In case this value is set, kubeadm does not change automatically the version of the above components during upgrades.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespecaddonskonnectivity">TenantControlPlane.spec.addons.konnectivity</h3>
+<p>Enables the Konnectivity addon in the Tenant Cluster, required if the worker nodes are in a different network.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>proxyPort</b></td>
+        <td>integer</td>
+        <td>
+          Port of Konnectivity proxy server.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>agentImage</b></td>
+        <td>string</td>
+        <td>
+          AgentImage defines the container image for Konnectivity's agent.<br/>
+          <br/>
+            <i>Default</i>: registry.k8s.io/kas-network-proxy/proxy-agent<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          Resources define the amount of CPU and memory to allocate to the Konnectivity server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serverImage</b></td>
+        <td>string</td>
+        <td>
+          ServerImage defines the container image for Konnectivity's server.<br/>
+          <br/>
+            <i>Default</i>: registry.k8s.io/kas-network-proxy/proxy-server<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>version</b></td>
+        <td>string</td>
+        <td>
+          Version for Konnectivity server and agent.<br/>
+          <br/>
+            <i>Default</i>: v0.0.32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespecaddonskonnectivityresources">TenantControlPlane.spec.addons.konnectivity.resources</h3>
+<p>Resources define the amount of CPU and memory to allocate to the Konnectivity server.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespecaddonskubeproxy">TenantControlPlane.spec.addons.kubeProxy</h3>
+<p>Enables the kube-proxy addon in the Tenant Cluster. The registry and the tag are configurable, the image is hard-coded to <code>kube-proxy</code>.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>imageRepository</b></td>
+        <td>string</td>
+        <td>
+          ImageRepository sets the container registry to pull images from. if not set, the default ImageRepository will be used instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>imageTag</b></td>
+        <td>string</td>
+        <td>
+          ImageTag allows to specify a tag for the image. In case this value is set, kubeadm does not change automatically the version of the above components during upgrades.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanespecnetworkprofile">TenantControlPlane.spec.networkProfile</h3>
+<p>NetworkProfile specifies how the network is</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>address</b></td>
+        <td>string</td>
+        <td>
+          Address where API server of will be exposed. In case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>allowAddressAsExternalIP</b></td>
+        <td>boolean</td>
+        <td>
+          AllowAddressAsExternalIP will include tenantControlPlane.Spec.NetworkProfile.Address in the section of ExternalIPs of the Kubernetes Service (only ClusterIP or NodePort)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>certSANs</b></td>
+        <td>[]string</td>
+        <td>
+          CertSANs sets extra Subject Alternative Names (SANs) for the API Server signing certificate. Use this field to add additional hostnames when exposing the Tenant Control Plane with third solutions.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>dnsServiceIPs</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Default</i>: [10.96.0.10]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>podCidr</b></td>
+        <td>string</td>
+        <td>
+          CIDR for Kubernetes Pods<br/>
+          <br/>
+            <i>Default</i>: 10.244.0.0/16<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port where API server of will be exposed<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Default</i>: 6443<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serviceCidr</b></td>
+        <td>string</td>
+        <td>
+          Kubernetes Service<br/>
+          <br/>
+            <i>Default</i>: 10.96.0.0/16<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatus">TenantControlPlane.status</h3>
+<p>TenantControlPlaneStatus defines the observed state of TenantControlPlane.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddons">addons</a></b></td>
+        <td>object</td>
+        <td>
+          Addons contains the status of the different Addons<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuscertificates">certificates</a></b></td>
+        <td>object</td>
+        <td>
+          Certificates contains information about the different certificates that are necessary to run a kubernetes control plane<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>controlPlaneEndpoint</b></td>
+        <td>string</td>
+        <td>
+          ControlPlaneEndpoint contains the status of the kubernetes control plane<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubeadmphase">kubeadmPhase</a></b></td>
+        <td>object</td>
+        <td>
+          KubeadmPhase contains the status of the kubeadm phases action<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubeadmconfig">kubeadmconfig</a></b></td>
+        <td>object</td>
+        <td>
+          KubeadmConfig contains the status of the configuration required by kubeadm<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubeconfig">kubeconfig</a></b></td>
+        <td>object</td>
+        <td>
+          KubeConfig contains information about the kubenconfigs that control plane pieces need<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubernetesresources">kubernetesResources</a></b></td>
+        <td>object</td>
+        <td>
+          Kubernetes contains information about the reconciliation of the required Kubernetes resources deployed in the admin cluster<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusstorage">storage</a></b></td>
+        <td>object</td>
+        <td>
+          Storage Status contains information about Kubernetes storage system<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddons">TenantControlPlane.status.addons</h3>
+<p>Addons contains the status of the different Addons</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonscoredns">coreDNS</a></b></td>
+        <td>object</td>
+        <td>
+          AddonStatus defines the observed state of an Addon.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivity">konnectivity</a></b></td>
+        <td>object</td>
+        <td>
+          KonnectivityStatus defines the status of Konnectivity as Addon.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskubeproxy">kubeProxy</a></b></td>
+        <td>object</td>
+        <td>
+          AddonStatus defines the observed state of an Addon.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonscoredns">TenantControlPlane.status.addons.coreDNS</h3>
+<p>AddonStatus defines the observed state of an Addon.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonskonnectivity">TenantControlPlane.status.addons.konnectivity</h3>
+<p>KonnectivityStatus defines the status of Konnectivity as Addon.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivityagent">agent</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitycertificate">certificate</a></b></td>
+        <td>object</td>
+        <td>
+          CertificatePrivateKeyPairStatus defines the status.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivityclusterrolebinding">clusterrolebinding</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivityconfigmap">configMap</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitykubeconfig">kubeconfig</a></b></td>
+        <td>object</td>
+        <td>
+          KubeconfigStatus contains information about the generated kubeconfig.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitysa">sa</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivityservice">service</a></b></td>
+        <td>object</td>
+        <td>
+          KubernetesServiceStatus defines the status for the Tenant Control Plane Service in the management cluster.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonskonnectivityagent">TenantControlPlane.status.addons.konnectivity.agent</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          Last time when k8s object was updated<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonskonnectivitycertificate">TenantControlPlane.status.addons.konnectivity.certificate</h3>
+<p>CertificatePrivateKeyPairStatus defines the status.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonskonnectivityclusterrolebinding">TenantControlPlane.status.addons.konnectivity.clusterrolebinding</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          Last time when k8s object was updated<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonskonnectivityconfigmap">TenantControlPlane.status.addons.konnectivity.configMap</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonskonnectivitykubeconfig">TenantControlPlane.status.addons.konnectivity.kubeconfig</h3>
+<p>KubeconfigStatus contains information about the generated kubeconfig.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonskonnectivitysa">TenantControlPlane.status.addons.konnectivity.sa</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          Last time when k8s object was updated<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonskonnectivityservice">TenantControlPlane.status.addons.konnectivity.service</h3>
+<p>KubernetesServiceStatus defines the status for the Tenant Control Plane Service in the management cluster.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the Service for the given cluster.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          The namespace which the Service for the given cluster is deployed.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          The port where the service is running<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivityserviceconditionsindex">conditions</a></b></td>
+        <td>[]object</td>
+        <td>
+          Current service state<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivityserviceloadbalancer">loadBalancer</a></b></td>
+        <td>object</td>
+        <td>
+          LoadBalancer contains the current status of the load-balancer, if one is present.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonskonnectivityserviceconditionsindex">TenantControlPlane.status.addons.konnectivity.service.conditions[index]</h3>
+<p>Condition contains details for one aspect of the current state of this API Resource. --- This struct is intended for direct use as an array at the field path .status.conditions.  For example, 
+ type FooStatus struct{ // Represents the observations of a foo's current state. // Known .status.conditions.type are: "Available", "Progressing", and "Degraded" // +patchMergeKey=type // +patchStrategy=merge // +listType=map // +listMapKey=type Conditions []metav1.Condition <code>json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"</code> 
+ // other fields }</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>lastTransitionTime</b></td>
+        <td>string</td>
+        <td>
+          lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>message</b></td>
+        <td>string</td>
+        <td>
+          message is a human readable message indicating details about the transition. This may be an empty string.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>reason</b></td>
+        <td>string</td>
+        <td>
+          reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>status</b></td>
+        <td>enum</td>
+        <td>
+          status of the condition, one of True, False, Unknown.<br/>
+          <br/>
+            <i>Enum</i>: True, False, Unknown<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>observedGeneration</b></td>
+        <td>integer</td>
+        <td>
+          observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonskonnectivityserviceloadbalancer">TenantControlPlane.status.addons.konnectivity.service.loadBalancer</h3>
+<p>LoadBalancer contains the current status of the load-balancer, if one is present.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivityserviceloadbalanceringressindex">ingress</a></b></td>
+        <td>[]object</td>
+        <td>
+          Ingress is a list containing ingress points for the load-balancer. Traffic intended for the service should be sent to these ingress points.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonskonnectivityserviceloadbalanceringressindex">TenantControlPlane.status.addons.konnectivity.service.loadBalancer.ingress[index]</h3>
+<p>LoadBalancerIngress represents the status of a load-balancer ingress point: traffic intended for the service should be sent to an ingress point.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>hostname</b></td>
+        <td>string</td>
+        <td>
+          Hostname is set for load-balancer ingress points that are DNS based (typically AWS load-balancers)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ip</b></td>
+        <td>string</td>
+        <td>
+          IP is set for load-balancer ingress points that are IP based (typically GCE or OpenStack load-balancers)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivityserviceloadbalanceringressindexportsindex">ports</a></b></td>
+        <td>[]object</td>
+        <td>
+          Ports is a list of records of service ports If used, every port defined in the service should have an entry in it<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonskonnectivityserviceloadbalanceringressindexportsindex">TenantControlPlane.status.addons.konnectivity.service.loadBalancer.ingress[index].ports[index]</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port is the port number of the service port of which status is recorded here<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol is the protocol of the service port of which status is recorded here The supported values are: "TCP", "UDP", "SCTP"<br/>
+          <br/>
+            <i>Default</i>: TCP<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>error</b></td>
+        <td>string</td>
+        <td>
+          Error is to record the problem with the service port The format of the error shall comply with the following rules: - built-in error values shall be specified in this file and those shall use CamelCase names - cloud provider specific error values must have names that comply with the format foo.example.com/CamelCase. --- The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusaddonskubeproxy">TenantControlPlane.status.addons.kubeProxy</h3>
+<p>AddonStatus defines the observed state of an Addon.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuscertificates">TenantControlPlane.status.certificates</h3>
+<p>Certificates contains information about the different certificates that are necessary to run a kubernetes control plane</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatuscertificatesapiserver">apiServer</a></b></td>
+        <td>object</td>
+        <td>
+          CertificatePrivateKeyPairStatus defines the status.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuscertificatesapiserverkubeletclient">apiServerKubeletClient</a></b></td>
+        <td>object</td>
+        <td>
+          CertificatePrivateKeyPairStatus defines the status.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuscertificatesca">ca</a></b></td>
+        <td>object</td>
+        <td>
+          CertificatePrivateKeyPairStatus defines the status.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuscertificatesetcd">etcd</a></b></td>
+        <td>object</td>
+        <td>
+          ETCDCertificatesStatus defines the observed state of ETCD Certificate for API server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuscertificatesfrontproxyca">frontProxyCA</a></b></td>
+        <td>object</td>
+        <td>
+          CertificatePrivateKeyPairStatus defines the status.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuscertificatesfrontproxyclient">frontProxyClient</a></b></td>
+        <td>object</td>
+        <td>
+          CertificatePrivateKeyPairStatus defines the status.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuscertificatessa">sa</a></b></td>
+        <td>object</td>
+        <td>
+          PublicKeyPrivateKeyPairStatus defines the status.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuscertificatesapiserver">TenantControlPlane.status.certificates.apiServer</h3>
+<p>CertificatePrivateKeyPairStatus defines the status.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuscertificatesapiserverkubeletclient">TenantControlPlane.status.certificates.apiServerKubeletClient</h3>
+<p>CertificatePrivateKeyPairStatus defines the status.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuscertificatesca">TenantControlPlane.status.certificates.ca</h3>
+<p>CertificatePrivateKeyPairStatus defines the status.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuscertificatesetcd">TenantControlPlane.status.certificates.etcd</h3>
+<p>ETCDCertificatesStatus defines the observed state of ETCD Certificate for API server.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatuscertificatesetcdapiserver">apiServer</a></b></td>
+        <td>object</td>
+        <td>
+          APIServerCertificatesStatus defines the observed state of ETCD Certificate for API server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuscertificatesetcdca">ca</a></b></td>
+        <td>object</td>
+        <td>
+          ETCDCertificateStatus defines the observed state of ETCD Certificate for API server.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuscertificatesetcdapiserver">TenantControlPlane.status.certificates.etcd.apiServer</h3>
+<p>APIServerCertificatesStatus defines the observed state of ETCD Certificate for API server.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuscertificatesetcdca">TenantControlPlane.status.certificates.etcd.ca</h3>
+<p>ETCDCertificateStatus defines the observed state of ETCD Certificate for API server.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuscertificatesfrontproxyca">TenantControlPlane.status.certificates.frontProxyCA</h3>
+<p>CertificatePrivateKeyPairStatus defines the status.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuscertificatesfrontproxyclient">TenantControlPlane.status.certificates.frontProxyClient</h3>
+<p>CertificatePrivateKeyPairStatus defines the status.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuscertificatessa">TenantControlPlane.status.certificates.sa</h3>
+<p>PublicKeyPrivateKeyPairStatus defines the status.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubeadmphase">TenantControlPlane.status.kubeadmPhase</h3>
+<p>KubeadmPhase contains the status of the kubeadm phases action</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubeadmphasebootstraptoken">bootstrapToken</a></b></td>
+        <td>object</td>
+        <td>
+          KubeadmPhaseStatus contains the status of a kubeadm phase action.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubeadmphaseuploadconfigkubeadm">uploadConfigKubeadm</a></b></td>
+        <td>object</td>
+        <td>
+          KubeadmPhaseStatus contains the status of a kubeadm phase action.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubeadmphaseuploadconfigkubelet">uploadConfigKubelet</a></b></td>
+        <td>object</td>
+        <td>
+          KubeadmPhaseStatus contains the status of a kubeadm phase action.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubeadmphasebootstraptoken">TenantControlPlane.status.kubeadmPhase.bootstrapToken</h3>
+<p>KubeadmPhaseStatus contains the status of a kubeadm phase action.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubeadmphaseuploadconfigkubeadm">TenantControlPlane.status.kubeadmPhase.uploadConfigKubeadm</h3>
+<p>KubeadmPhaseStatus contains the status of a kubeadm phase action.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubeadmphaseuploadconfigkubelet">TenantControlPlane.status.kubeadmPhase.uploadConfigKubelet</h3>
+<p>KubeadmPhaseStatus contains the status of a kubeadm phase action.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubeadmconfig">TenantControlPlane.status.kubeadmconfig</h3>
+<p>KubeadmConfig contains the status of the configuration required by kubeadm</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          Checksum of the kubeadm configuration to detect changes<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>configmapName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubeconfig">TenantControlPlane.status.kubeconfig</h3>
+<p>KubeConfig contains information about the kubenconfigs that control plane pieces need</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubeconfigadmin">admin</a></b></td>
+        <td>object</td>
+        <td>
+          KubeconfigStatus contains information about the generated kubeconfig.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubeconfigcontrollermanager">controllerManager</a></b></td>
+        <td>object</td>
+        <td>
+          KubeconfigStatus contains information about the generated kubeconfig.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubeconfigscheduler">scheduler</a></b></td>
+        <td>object</td>
+        <td>
+          KubeconfigStatus contains information about the generated kubeconfig.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubeconfigadmin">TenantControlPlane.status.kubeconfig.admin</h3>
+<p>KubeconfigStatus contains information about the generated kubeconfig.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubeconfigcontrollermanager">TenantControlPlane.status.kubeconfig.controllerManager</h3>
+<p>KubeconfigStatus contains information about the generated kubeconfig.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubeconfigscheduler">TenantControlPlane.status.kubeconfig.scheduler</h3>
+<p>KubeconfigStatus contains information about the generated kubeconfig.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubernetesresources">TenantControlPlane.status.kubernetesResources</h3>
+<p>Kubernetes contains information about the reconciliation of the required Kubernetes resources deployed in the admin cluster</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesdeployment">deployment</a></b></td>
+        <td>object</td>
+        <td>
+          KubernetesDeploymentStatus defines the status for the Tenant Control Plane Deployment in the management cluster.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesingress">ingress</a></b></td>
+        <td>object</td>
+        <td>
+          KubernetesIngressStatus defines the status for the Tenant Control Plane Ingress in the management cluster.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesservice">service</a></b></td>
+        <td>object</td>
+        <td>
+          KubernetesServiceStatus defines the status for the Tenant Control Plane Service in the management cluster.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesversion">version</a></b></td>
+        <td>object</td>
+        <td>
+          KubernetesVersion contains the information regarding the running Kubernetes version, and its upgrade status.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubernetesresourcesdeployment">TenantControlPlane.status.kubernetesResources.deployment</h3>
+<p>KubernetesDeploymentStatus defines the status for the Tenant Control Plane Deployment in the management cluster.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the Deployment for the given cluster.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          The namespace which the Deployment for the given cluster is deployed.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>selector</b></td>
+        <td>string</td>
+        <td>
+          Selector is the label selector used to group the Tenant Control Plane Pods used by the scale subresource.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>availableReplicas</b></td>
+        <td>integer</td>
+        <td>
+          Total number of available pods (ready for at least minReadySeconds) targeted by this deployment.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>collisionCount</b></td>
+        <td>integer</td>
+        <td>
+          Count of hash collisions for the Deployment. The Deployment controller uses this field as a collision avoidance mechanism when it needs to create the name for the newest ReplicaSet.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesdeploymentconditionsindex">conditions</a></b></td>
+        <td>[]object</td>
+        <td>
+          Represents the latest available observations of a deployment's current state.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          Last time when deployment was updated<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>observedGeneration</b></td>
+        <td>integer</td>
+        <td>
+          The generation observed by the deployment controller.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>readyReplicas</b></td>
+        <td>integer</td>
+        <td>
+          readyReplicas is the number of pods targeted by this Deployment with a Ready Condition.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          Total number of non-terminated pods targeted by this deployment (their labels match the selector).<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>unavailableReplicas</b></td>
+        <td>integer</td>
+        <td>
+          Total number of unavailable pods targeted by this deployment. This is the total number of pods that are still required for the deployment to have 100% available capacity. They may either be pods that are running but not yet available or pods that still have not been created.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>updatedReplicas</b></td>
+        <td>integer</td>
+        <td>
+          Total number of non-terminated pods targeted by this deployment that have the desired template spec.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubernetesresourcesdeploymentconditionsindex">TenantControlPlane.status.kubernetesResources.deployment.conditions[index]</h3>
+<p>DeploymentCondition describes the state of a deployment at a certain point.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>status</b></td>
+        <td>string</td>
+        <td>
+          Status of the condition, one of True, False, Unknown.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type of deployment condition.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>lastTransitionTime</b></td>
+        <td>string</td>
+        <td>
+          Last time the condition transitioned from one status to another.<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdateTime</b></td>
+        <td>string</td>
+        <td>
+          The last time this condition was updated.<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>message</b></td>
+        <td>string</td>
+        <td>
+          A human readable message indicating details about the transition.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>reason</b></td>
+        <td>string</td>
+        <td>
+          The reason for the condition's last transition.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubernetesresourcesingress">TenantControlPlane.status.kubernetesResources.ingress</h3>
+<p>KubernetesIngressStatus defines the status for the Tenant Control Plane Ingress in the management cluster.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the Ingress for the given cluster.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          The namespace which the Ingress for the given cluster is deployed.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesingressloadbalancer">loadBalancer</a></b></td>
+        <td>object</td>
+        <td>
+          LoadBalancer contains the current status of the load-balancer.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubernetesresourcesingressloadbalancer">TenantControlPlane.status.kubernetesResources.ingress.loadBalancer</h3>
+<p>LoadBalancer contains the current status of the load-balancer.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesingressloadbalanceringressindex">ingress</a></b></td>
+        <td>[]object</td>
+        <td>
+          Ingress is a list containing ingress points for the load-balancer. Traffic intended for the service should be sent to these ingress points.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubernetesresourcesingressloadbalanceringressindex">TenantControlPlane.status.kubernetesResources.ingress.loadBalancer.ingress[index]</h3>
+<p>LoadBalancerIngress represents the status of a load-balancer ingress point: traffic intended for the service should be sent to an ingress point.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>hostname</b></td>
+        <td>string</td>
+        <td>
+          Hostname is set for load-balancer ingress points that are DNS based (typically AWS load-balancers)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ip</b></td>
+        <td>string</td>
+        <td>
+          IP is set for load-balancer ingress points that are IP based (typically GCE or OpenStack load-balancers)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesingressloadbalanceringressindexportsindex">ports</a></b></td>
+        <td>[]object</td>
+        <td>
+          Ports is a list of records of service ports If used, every port defined in the service should have an entry in it<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubernetesresourcesingressloadbalanceringressindexportsindex">TenantControlPlane.status.kubernetesResources.ingress.loadBalancer.ingress[index].ports[index]</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port is the port number of the service port of which status is recorded here<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol is the protocol of the service port of which status is recorded here The supported values are: "TCP", "UDP", "SCTP"<br/>
+          <br/>
+            <i>Default</i>: TCP<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>error</b></td>
+        <td>string</td>
+        <td>
+          Error is to record the problem with the service port The format of the error shall comply with the following rules: - built-in error values shall be specified in this file and those shall use CamelCase names - cloud provider specific error values must have names that comply with the format foo.example.com/CamelCase. --- The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubernetesresourcesservice">TenantControlPlane.status.kubernetesResources.service</h3>
+<p>KubernetesServiceStatus defines the status for the Tenant Control Plane Service in the management cluster.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the Service for the given cluster.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          The namespace which the Service for the given cluster is deployed.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          The port where the service is running<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesserviceconditionsindex">conditions</a></b></td>
+        <td>[]object</td>
+        <td>
+          Current service state<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesserviceloadbalancer">loadBalancer</a></b></td>
+        <td>object</td>
+        <td>
+          LoadBalancer contains the current status of the load-balancer, if one is present.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubernetesresourcesserviceconditionsindex">TenantControlPlane.status.kubernetesResources.service.conditions[index]</h3>
+<p>Condition contains details for one aspect of the current state of this API Resource. --- This struct is intended for direct use as an array at the field path .status.conditions.  For example, 
+ type FooStatus struct{ // Represents the observations of a foo's current state. // Known .status.conditions.type are: "Available", "Progressing", and "Degraded" // +patchMergeKey=type // +patchStrategy=merge // +listType=map // +listMapKey=type Conditions []metav1.Condition <code>json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"</code> 
+ // other fields }</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>lastTransitionTime</b></td>
+        <td>string</td>
+        <td>
+          lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>message</b></td>
+        <td>string</td>
+        <td>
+          message is a human readable message indicating details about the transition. This may be an empty string.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>reason</b></td>
+        <td>string</td>
+        <td>
+          reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>status</b></td>
+        <td>enum</td>
+        <td>
+          status of the condition, one of True, False, Unknown.<br/>
+          <br/>
+            <i>Enum</i>: True, False, Unknown<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>observedGeneration</b></td>
+        <td>integer</td>
+        <td>
+          observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubernetesresourcesserviceloadbalancer">TenantControlPlane.status.kubernetesResources.service.loadBalancer</h3>
+<p>LoadBalancer contains the current status of the load-balancer, if one is present.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesserviceloadbalanceringressindex">ingress</a></b></td>
+        <td>[]object</td>
+        <td>
+          Ingress is a list containing ingress points for the load-balancer. Traffic intended for the service should be sent to these ingress points.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubernetesresourcesserviceloadbalanceringressindex">TenantControlPlane.status.kubernetesResources.service.loadBalancer.ingress[index]</h3>
+<p>LoadBalancerIngress represents the status of a load-balancer ingress point: traffic intended for the service should be sent to an ingress point.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>hostname</b></td>
+        <td>string</td>
+        <td>
+          Hostname is set for load-balancer ingress points that are DNS based (typically AWS load-balancers)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ip</b></td>
+        <td>string</td>
+        <td>
+          IP is set for load-balancer ingress points that are IP based (typically GCE or OpenStack load-balancers)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesserviceloadbalanceringressindexportsindex">ports</a></b></td>
+        <td>[]object</td>
+        <td>
+          Ports is a list of records of service ports If used, every port defined in the service should have an entry in it<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubernetesresourcesserviceloadbalanceringressindexportsindex">TenantControlPlane.status.kubernetesResources.service.loadBalancer.ingress[index].ports[index]</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port is the port number of the service port of which status is recorded here<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol is the protocol of the service port of which status is recorded here The supported values are: "TCP", "UDP", "SCTP"<br/>
+          <br/>
+            <i>Default</i>: TCP<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>error</b></td>
+        <td>string</td>
+        <td>
+          Error is to record the problem with the service port The format of the error shall comply with the following rules: - built-in error values shall be specified in this file and those shall use CamelCase names - cloud provider specific error values must have names that comply with the format foo.example.com/CamelCase. --- The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatuskubernetesresourcesversion">TenantControlPlane.status.kubernetesResources.version</h3>
+<p>KubernetesVersion contains the information regarding the running Kubernetes version, and its upgrade status.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>status</b></td>
+        <td>enum</td>
+        <td>
+          Status returns the current status of the Kubernetes version, such as its provisioning state, or completed upgrade.<br/>
+          <br/>
+            <i>Enum</i>: Provisioning, Upgrading, Ready, NotReady<br/>
+            <i>Default</i>: Provisioning<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>version</b></td>
+        <td>string</td>
+        <td>
+          Version is the running Kubernetes version of the Tenant Control Plane.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusstorage">TenantControlPlane.status.storage</h3>
+<p>Storage Status contains information about Kubernetes storage system</p>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatusstoragecertificate">certificate</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusstorageconfig">config</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>dataStoreName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>driver</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusstoragesetup">setup</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusstoragecertificate">TenantControlPlane.status.storage.certificate</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusstorageconfig">TenantControlPlane.status.storage.config</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+<h3 id="tenantcontrolplanestatusstoragesetup">TenantControlPlane.status.storage.setup</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>checksum</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>schema</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+        
+        <a href="../versioning/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Versioning" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Versioning
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../../contribute/" class="md-footer__link md-footer__link--next" aria-label="Next: Contribute" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Contribute
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.instant", "navigation.sections"], "search": "../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.078830c0.min.js"></script>
+      
+    
+  </body>
+</html>

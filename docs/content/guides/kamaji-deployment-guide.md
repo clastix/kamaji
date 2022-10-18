@@ -1,0 +1,333 @@
+# Setup Kamaji on a generic infrastructure
+This guide will lead you through the process of creating a working Kamaji setup on a generic infrastructure, either virtual or bare metal.
+
+The material here is relatively dense. We strongly encourage you to dedicate time to walk through these instructions, with a mind to learning. We do NOT provide any "one-click" deployment here. However, once you've understood the components involved it is encouraged that you build suitable, auditable GitOps deployment processes around your final infrastructure.
+
+The guide requires:
+
+- one bootstrap workstation
+- a Kubernetes cluster to run the Admin and Tenant Control Planes
+- an arbitrary number of machines to host `Tenant`s' workloads
+
+## Summary
+
+  * [Prepare the bootstrap workspace](#prepare-the-bootstrap-workspace)
+  * [Access Admin cluster](#access-admin-cluster)
+  * [Install DataStore](#install-datastore)
+  * [Install Kamaji controller](#install-kamaji-controller)
+  * [Create Tenant Cluster](#create-tenant-cluster)
+  * [Cleanup](#cleanup)
+
+## Prepare the bootstrap workspace
+This guide is supposed to be run from a remote or local bootstrap machine. First, clone the repo and prepare the workspace directory:
+
+```bash
+git clone https://github.com/clastix/kamaji
+cd kamaji/deploy
+```
+
+We assume you have installed on your workstation:
+
+- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+- [kubeadm](https://kubernetes.io/docs/tasks/tools/#kubeadm)
+- [helm](https://helm.sh/docs/intro/install/)
+- [jq](https://stedolan.github.io/jq/)
+
+## Access Admin cluster
+In Kamaji, an Admin Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The admin cluster acts as management cluster for all the Tenant clusters and implements Monitoring, Logging, and Governance of all the Kamaji setup, including all Tenant clusters. 
+
+Throughout the following instructions, shell variables are used to indicate values that you should adjust to your environment:
+
+```bash
+source kamaji.env
+```
+
+Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji setup. To work properly, the admin cluster should provide at least:
+
+- CNI module installed, eg. [Calico](https://github.com/projectcalico/calico), [Cilium](https://github.com/cilium/cilium).
+- CSI module installed with a Storage Class for the Tenants' `etcd`. Local Persistent Volumes are an option.
+- Support for LoadBalancer Service Type, or alternatively, an Ingress Controller, eg. [ingress-nginx](https://github.com/kubernetes/ingress-nginx), [haproxy](https://github.com/haproxytech/kubernetes-ingress).
+- Monitoring Stack, eg. [Prometheus](https://github.com/prometheus-community).
+
+Make sure you have a `kubeconfig` file with admin permissions on the cluster you want to turn into Kamaji Admin Cluster.
+
+## Install datastore
+The Kamaji controller needs to access a multi-tenant datastore in order to save data of the tenants' clusters. The Kamaji Helm Chart provides the installation of an unamanaged `etcd`. However, a managed `etcd` is highly recommended in production.
+
+As alternative, the [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides a viable option to setup a manged multi-tenant `etcd` as 3 replicas StatefulSet with data persistence:
+
+```bash
+helm repo add clastix https://clastix.github.io/charts
+helm repo update
+helm install etcd clastix/kamaji-etcd -n kamaji-system --create-namespace
+```
+
+Optionally, Kamaji offers the possibility of using a different storage system for the tenants' clusters, as MySQL or PostgreSQL compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
+
+## Install Kamaji Controller
+Install Kamaji with `helm` using an unmanaged `etcd` as datastore:
+
+```bash
+helm repo add clastix https://clastix.github.io/charts
+helm repo update
+helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
+```
+
+Alternatively, if you opted for a managed `etcd` datastore:
+
+```bash
+helm repo add clastix https://clastix.github.io/charts
+helm repo update
+helm install kamaji clastix/kamaji -n kamaji-system --create-namespace --set etcd.deploy=false    
+```
+
+Congratulations! You just turned your Kubernetes cluster into a Kamaji cluster capable to run multiple Tenant Control Planes.
+
+## Create Tenant Cluster
+
+### Tenant Control Plane
+
+A tenant control plane of example looks like:
+
+```yaml
+cat > ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml <<EOF
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: ${TENANT_NAME}
+  namespace: ${TENANT_NAMESPACE}
+spec:
+  controlPlane:
+    deployment:
+      replicas: 3
+      additionalMetadata:
+        labels:
+          tenant.clastix.io: ${TENANT_NAME}
+      extraArgs:
+        apiServer: []
+        controllerManager: []
+        scheduler: []
+      resources:
+        apiServer:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits: {}
+        controllerManager:
+          requests:
+            cpu: 125m
+            memory: 256Mi
+          limits: {}
+        scheduler:
+          requests:
+            cpu: 125m
+            memory: 256Mi
+          limits: {}
+    service:
+      additionalMetadata:
+        labels:
+          tenant.clastix.io: ${TENANT_NAME}
+      serviceType: LoadBalancer
+  kubernetes:
+    version: ${TENANT_VERSION}
+    kubelet:
+      cgroupfs: systemd
+    admissionControllers:
+      - ResourceQuota
+      - LimitRanger
+  networkProfile:
+    port: ${TENANT_PORT}
+    certSANs:
+    - ${TENANT_NAME}.${TENANT_DOMAIN}
+    serviceCidr: ${TENANT_SVC_CIDR}
+    podCidr: ${TENANT_POD_CIDR}
+    dnsServiceIPs:
+    - ${TENANT_DNS_SERVICE}
+  addons:
+    coreDNS: {}
+    kubeProxy: {}
+    konnectivity:
+      proxyPort: ${TENANT_PROXY_PORT}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits: {}
+EOF
+
+kubectl -n ${TENANT_NAMESPACE} apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
+```
+
+After a few minutes, check the created resources in the tenants namespace and when ready it will look similar to the following:
+
+```command
+kubectl -n tenants get tcp,deploy,pods,svc
+NAME                                             VERSION   STATUS   CONTROL-PLANE-ENDPOINT   KUBECONFIG                   AGE
+tenantcontrolplane.kamaji.clastix.io/tenant-00   v1.23.1   Ready    192.168.32.240:6443      tenant-00-admin-kubeconfig   2m20s
+
+NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/tenant-00   3/3     3            3           118s
+
+NAME                             READY   STATUS    RESTARTS   AGE
+pod/tenant-00-58847c8cdd-7hc4n   4/4     Running   0          82s
+pod/tenant-00-58847c8cdd-ft5xt   4/4     Running   0          82s
+pod/tenant-00-58847c8cdd-shc7t   4/4     Running   0          82s
+
+NAME                TYPE           CLUSTER-IP      EXTERNAL-IP      PORT(S)                         AGE
+service/tenant-00   LoadBalancer   10.32.132.241   192.168.32.240   6443:32152/TCP,8132:32713/TCP   2m20s
+```
+
+The regular Tenant Control Plane containers: `kube-apiserver`, `kube-controller-manager`, `kube-scheduler` are running unchanged in the `tcp` pods instead of dedicated machines and they are exposed through a service on the port `6443` of worker nodes in the Admin cluster.
+
+The `LoadBalancer` service type is used to expose the Tenant Control Plane. However, `NodePort` and `ClusterIP` with an Ingress Controller are still viable options, depending on the case. High Availability and rolling updates of the Tenant Control Plane are provided by the `tcp` Deployment and all the resources reconcilied by the Kamaji controller.
+
+### Working with Tenant Control Plane
+
+Collect the external IP address of the `tcp` service:
+
+```bash
+TENANT_ADDR=$(kubectl -n ${TENANT_NAMESPACE} get svc ${TENANT_NAME} -o json | jq -r ."spec.loadBalancerIP")
+```
+
+and check it out:
+
+```bash
+curl -k https://${TENANT_ADDR}:${TENANT_PORT}/healthz
+curl -k https://${TENANT_ADDR}:${TENANT_PORT}/version
+```
+
+The `kubeconfig` required to access the Tenant Control Plane is stored in a secret:
+
+```bash
+kubectl get secrets -n ${TENANT_NAMESPACE} ${TENANT_NAME}-admin-kubeconfig -o json \
+  | jq -r '.data["admin.conf"]' \
+  | base64 --decode \
+  > ${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig
+```
+
+and let's check it out:
+
+```bash
+kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig cluster-info
+
+Kubernetes control plane is running at https://192.168.32.240:6443
+CoreDNS is running at https://192.168.32.240:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+```
+
+Check out how the Tenant control Plane advertises itself to workloads:
+
+```bash
+kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get svc
+
+NAMESPACE     NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+default       kubernetes   ClusterIP   10.32.0.1    <none>        443/TCP   6m
+```
+
+```bash
+kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get ep
+
+NAME         ENDPOINTS             AGE
+kubernetes   192.168.32.240:6443   18m
+```
+
+And make sure it is `${TENANT_ADDR}:${TENANT_PORT}`.
+
+### Prepare worker nodes to join
+
+Currently Kamaji does not provide any helper for creation of tenant worker nodes. You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`. In the future, we'll provide integration with Cluster APIs and other tools, as for example, Terraform.
+
+You can use the provided helper script `/deploy/nodes-prerequisites.sh`, in order to install the dependencies on all the worker nodes:
+
+- Install `containerd` as container runtime
+- Install `crictl`, the command line for working with `containerd`
+- Install `kubectl`, `kubelet`, and `kubeadm` in the desired version
+
+> Warning: the script assumes all worker nodes are running `Ubuntu 20.04`. Make sure to adapt the script if you're using a different distribution.
+
+Run the script:
+
+```bash
+HOSTS=(${WORKER0} ${WORKER1} ${WORKER2})
+./nodes-prerequisites.sh ${TENANT_VERSION:1} ${HOSTS[@]}
+```
+
+### Join worker nodes
+The current approach for joining nodes is to use `kubeadm` and therefore, we will create a bootstrap token to perform the action. In order to facilitate the step, we will store the entire command of joining in a variable:
+
+```bash
+JOIN_CMD=$(echo "sudo ")$(kubeadm --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig token create --print-join-command)
+```
+
+A bash loop will be used to join all the available nodes.
+
+```bash
+HOSTS=(${WORKER0} ${WORKER1} ${WORKER2})
+for i in "${!HOSTS[@]}"; do
+  HOST=${HOSTS[$i]}
+  ssh ${USER}@${HOST} -t ${JOIN_CMD};
+done
+```
+
+Checking the nodes:
+
+```bash
+kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get nodes 
+
+NAME                  STATUS     ROLES    AGE   VERSION
+tenant-00-worker-00   NotReady   <none>   25s   v1.25.0
+tenant-00-worker-01   NotReady   <none>   17s   v1.25.0
+tenant-00-worker-02   NotReady   <none>   9s    v1.25.0
+```
+
+The cluster needs a [CNI](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/) plugin to get the nodes ready. In this guide, we are going to install [calico](https://projectcalico.docs.tigera.io/about/about-calico), but feel free to use one of your taste.
+
+Download the latest stable Calico manifest:
+
+```bash
+curl https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/calico.yaml -O
+```
+
+Before to apply the Calico manifest, you can customize it as necessary according to your preferences.
+
+Apply to the tenant cluster:
+
+```bash
+kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig apply -f calico.yaml
+```
+
+And after a while, nodes will be ready
+
+```bash
+kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get nodes 
+NAME                  STATUS   ROLES    AGE     VERSION
+tenant-00-worker-00   Ready    <none>   2m48s   v1.25.0
+tenant-00-worker-01   Ready    <none>   2m40s   v1.25.0
+tenant-00-worker-02   Ready    <none>   2m32s   v1.25.0
+```
+
+## Cleanup
+Remove the worker nodes joined the tenant control plane
+
+```bash
+kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig delete nodes --all 
+```
+
+For each worker node, login and clean it
+
+```bash
+HOSTS=(${WORKER0} ${WORKER1} ${WORKER2})
+for i in "${!HOSTS[@]}"; do
+  HOST=${HOSTS[$i]}
+  ssh ${USER}@${HOST} -t 'sudo kubeadm reset -f';
+  ssh ${USER}@${HOST} -t 'sudo rm -rf /etc/cni/net.d';
+  ssh ${USER}@${HOST} -t 'sudo systemctl reboot';
+done
+```
+
+Delete the tenant control plane from kamaji
+
+```bash
+kubectl delete -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
+```
+
+That's all folks!
