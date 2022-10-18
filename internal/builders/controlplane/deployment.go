@@ -818,3 +818,15 @@ func (d *Deployment) ResetKubeAPIServerFlags(resource *appsv1.Deployment, tcp *k
 
 	resource.GetAnnotations()[apiServerFlagsAnnotation] = fmt.Sprintf("%d", len(tcp.Spec.ControlPlane.Deployment.ExtraArgs.APIServer))
 }
+
+func (d *Deployment) SetNodeSelector(spec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
+	spec.NodeSelector = tcp.Spec.ControlPlane.Deployment.NodeSelector
+}
+
+func (d *Deployment) SetToleration(spec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
+	spec.Tolerations = tcp.Spec.ControlPlane.Deployment.Tolerations
+}
+
+func (d *Deployment) SetAffinity(spec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
+	spec.Affinity = tcp.Spec.ControlPlane.Deployment.Affinity
+}
