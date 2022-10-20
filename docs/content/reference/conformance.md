@@ -1,4 +1,4 @@
-# CNCF Conformance
+# Conformance
 For organizations using Kubernetes, conformance enables interoperability, consistency, and confirmability between Kubernetes installations. The Cloud Computing Native Foundation - CNCF - provides the [Certified Kubernetes Conformance Program](https://www.cncf.io/certification/software-conformance/).
 
 The standard set of conformance tests is currently those defined by the `[Conformance]` tag in the

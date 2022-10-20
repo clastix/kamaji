@@ -97,9 +97,9 @@ kubectl cluster-info
 ```
 
 ## Install datastore
-The Kamaji controller needs to access a multi-tenant datastore in order to save data of the tenants' clusters. The [Helm Chart](../charts/kamaji/) provides the installation of an unamanaged `etcd`. However, a managed `etcd` is highly recommended in production.
+The Kamaji controller needs to access a multi-tenant datastore in order to save data of the tenants' clusters. The Kamaji Helm Chart provides the installation of an unamanaged `etcd`. However, a managed `etcd` is highly recommended in production.
 
-The [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides a viable option to setup a manged multi-tenant `etcd` as 3 replicas StatefulSet with data persistence:
+As alternative, the [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides a viable option to setup a manged multi-tenant `etcd` as 3 replicas StatefulSet with data persistence:
 
 ```bash
 helm repo add clastix https://clastix.github.io/charts
@@ -110,9 +110,7 @@ helm install etcd clastix/kamaji-etcd -n kamaji-system --create-namespace
 Optionally, Kamaji offers the possibility of using a different storage system for the tenants' clusters, as MySQL or PostgreSQL compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
 
 ## Install Kamaji Controller
-There are multiple ways to deploy Kamaji, including a [single YAML file](../config/install.yaml) and the [Helm Chart](../charts/kamaji).
-
-Install with `helm` using an unmanaged `etcd` as datastore:
+Install Kamaji with `helm` using an unmanaged `etcd` as datastore:
 
 ```bash
 helm repo add clastix https://clastix.github.io/charts
@@ -273,7 +271,7 @@ NAME         ENDPOINTS           AGE
 kubernetes   10.240.0.100:6443   57m
 ```
 
-### Preparing Worker Nodes to join
+### Prepare worker nodes to join
 Currently Kamaji does not provide any helper for creation of tenant worker nodes. You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`. In the future, we'll provide integration with Cluster APIs and other tools, as for example, Terrform.
 
 Create an Azure VM Stateful Set to host worker nodes
@@ -307,12 +305,11 @@ az vmss scale \
    --new-capacity 3
 ```
 
-### Join the tenant virtual machines to the tenant control plane
+### Join worker nodes
 The current approach for joining nodes is to use `kubeadm` and therefore, we will create a bootstrap token to perform the action. In order to facilitate the step, we will store the entire command of joining in a variable:
 
 ```bash
 TENANT_ADDR=$(kubectl -n ${TENANT_NAMESPACE} get svc ${TENANT_NAME} -o json | jq -r ."spec.loadBalancerIP")
-
 JOIN_CMD=$(echo "sudo kubeadm join ${TENANT_ADDR}:6443 ")$(kubeadm --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig token create --print-join-command |cut -d" " -f4-)
 ```
 

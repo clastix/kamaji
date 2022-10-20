@@ -1,0 +1,61 @@
+site_name: Kamaji
+repo_name: clastix/kamaji
+repo_url: https://github.com/clastix/kamaji
+site_url: https://kamaji.clastix.io/
+docs_dir: content
+site_dir: site
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.instant
+    - navigation.sections
+  include_sidebar: true
+  palette:
+
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default 
+      toggle:
+        icon: material/lightbulb
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to system preference
+
+# Generate navigation bar
+nav:
+- 'Kamaji': index.md
+- 'Getting started': getting-started.md
+- 'Concepts': concepts.md
+- 'Guides':
+  - guides/index.md
+  - guides/kamaji-deployment-guide.md
+  - guides/kamaji-azure-deployment-guide.md
+  - guides/postgresql-datastore.md
+  - guides/mysql-datastore.md
+  - guides/upgrade.md
+- 'Use Cases': use-cases.md
+- 'Reference':
+  - reference/index.md
+  - reference/configuration.md
+  - reference/conformance.md
+  - reference/versioning.md
+  - reference/api.md
+- 'Contribute':
+  - contribute/index.md
+  - contribute/guidelines.md
+  - contribute/governance.md
+

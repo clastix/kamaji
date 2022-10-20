@@ -1,1 +1,0 @@
-# Kamaji architecture

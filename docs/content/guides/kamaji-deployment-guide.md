@@ -1,5 +1,5 @@
 # Setup Kamaji on a generic infrastructure
-This guide will lead you through the process of creating a working Kamaji setup on a generic infrastructure, both virtual or bare metal.
+This guide will lead you through the process of creating a working Kamaji setup on a generic infrastructure, either virtual or bare metal.
 
 The material here is relatively dense. We strongly encourage you to dedicate time to walk through these instructions, with a mind to learning. We do NOT provide any "one-click" deployment here. However, once you've understood the components involved it is encouraged that you build suitable, auditable GitOps deployment processes around your final infrastructure.
 
@@ -36,7 +36,7 @@ We assume you have installed on your workstation:
 ## Access Admin cluster
 In Kamaji, an Admin Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The admin cluster acts as management cluster for all the Tenant clusters and implements Monitoring, Logging, and Governance of all the Kamaji setup, including all Tenant clusters. 
 
-Throughout the following instructions, shell variables are used to indicate values that you should adjust to your environment, as of [`kamaji.env`](../deploy/kamaji.env):
+Throughout the following instructions, shell variables are used to indicate values that you should adjust to your environment:
 
 ```bash
 source kamaji.env
@@ -52,9 +52,9 @@ Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji
 Make sure you have a `kubeconfig` file with admin permissions on the cluster you want to turn into Kamaji Admin Cluster.
 
 ## Install datastore
-The Kamaji controller needs to access a multi-tenant datastore in order to save data of the tenants' clusters. The [Helm Chart](../charts/kamaji/) provides the installation of an unamanaged `etcd`. However, a managed `etcd` is highly recommended in production.
+The Kamaji controller needs to access a multi-tenant datastore in order to save data of the tenants' clusters. The Kamaji Helm Chart provides the installation of an unamanaged `etcd`. However, a managed `etcd` is highly recommended in production.
 
-The [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides a viable option to setup a manged multi-tenant `etcd` as 3 replicas StatefulSet with data persistence:
+As alternative, the [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides a viable option to setup a manged multi-tenant `etcd` as 3 replicas StatefulSet with data persistence:
 
 ```bash
 helm repo add clastix https://clastix.github.io/charts
@@ -65,9 +65,7 @@ helm install etcd clastix/kamaji-etcd -n kamaji-system --create-namespace
 Optionally, Kamaji offers the possibility of using a different storage system for the tenants' clusters, as MySQL or PostgreSQL compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
 
 ## Install Kamaji Controller
-There are multiple ways to deploy Kamaji, including a [single YAML file](../config/install.yaml) and the [Helm Chart](../charts/kamaji).
-
-Install with `helm` using an unmanaged `etcd` as datastore:
+Install Kamaji with `helm` using an unmanaged `etcd` as datastore:
 
 ```bash
 helm repo add clastix https://clastix.github.io/charts
@@ -234,11 +232,11 @@ kubernetes   192.168.32.240:6443   18m
 
 And make sure it is `${TENANT_ADDR}:${TENANT_PORT}`.
 
-### Preparing Worker Nodes to join
+### Prepare worker nodes to join
 
-Currently Kamaji does not provide any helper for creation of tenant worker nodes. You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`. In the future, we'll provide integration with Cluster APIs and other tools, as for example, Terrform.
+Currently Kamaji does not provide any helper for creation of tenant worker nodes. You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`. In the future, we'll provide integration with Cluster APIs and other tools, as for example, Terraform.
 
-You can use the provided helper script [`nodes-prerequisites.sh`](../deploy/nodes-prerequisites.sh), in order to install the dependencies on all the worker nodes:
+You can use the provided helper script `/deploy/nodes-prerequisites.sh`, in order to install the dependencies on all the worker nodes:
 
 - Install `containerd` as container runtime
 - Install `crictl`, the command line for working with `containerd`
@@ -253,15 +251,12 @@ HOSTS=(${WORKER0} ${WORKER1} ${WORKER2})
 ./nodes-prerequisites.sh ${TENANT_VERSION:1} ${HOSTS[@]}
 ```
 
-### Join Command
-
+### Join worker nodes
 The current approach for joining nodes is to use `kubeadm` and therefore, we will create a bootstrap token to perform the action. In order to facilitate the step, we will store the entire command of joining in a variable:
 
 ```bash
 JOIN_CMD=$(echo "sudo ")$(kubeadm --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig token create --print-join-command)
 ```
-
-### Adding Worker Nodes
 
 A bash loop will be used to join all the available nodes.
 

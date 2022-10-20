@@ -253,4 +253,4 @@ e2e: env load helm ginkgo ## Create a KinD cluster, install Kamaji on it and run
 ##@ Document
 
 apidoc: apidocs-gen
-	$(APIDOCS_GEN) crdoc --resources config/crd/bases --output docs/apireference.md --template docs/templates/reference-cr.tmpl
+	$(APIDOCS_GEN) crdoc --resources config/crd/bases --output docs/content/reference/api.md --template docs/templates/reference-cr.tmpl

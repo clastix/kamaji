@@ -1,19 +1,18 @@
-# Setup a minimal Kamaji for development
+# Getting started
 
-This document explains how to deploy a minimal Kamaji setup on [KinD](https://kind.sigs.k8s.io/) for development scopes. Please refer to the [Kamaji documentation](../concepts.md) for understanding all the terms used in this guide, as for example: `admin cluster`, `tenant cluster`, and `tenant control plane`.
+This document explains how to deploy a minimal Kamaji setup on [KinD](https://kind.sigs.k8s.io/) for development scopes. Please refer to the [Kamaji documentation](concepts.md) for understanding all the terms used in this guide, as for example: `admin cluster`, `tenant cluster`, and `tenant control plane`.
 
 ## Pre-requisites
 
 We assume you have installed on your workstation:
 
-- [Docker](https://docs.docker.com/engine/install/)
+- [Docker](https://docker.com)
 - [KinD](https://kind.sigs.k8s.io/)
-- [kubectl@v1.25.0](https://kubernetes.io/docs/tasks/tools/)
-- [kubeadm@v1.25.0](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/)
+- [kubectl@v1.25.0](https://kubernetes.io/docs/tasks/tools/#kubectl)
+- [kubeadm@v1.25.0](https://kubernetes.io/docs/tasks/tools/#kubeadm)
 - [jq](https://stedolan.github.io/jq/)
 - [openssl](https://www.openssl.org/)
-- [cfssl](https://github.com/cloudflare/cfssl)
-- [cfssljson](https://github.com/cloudflare/cfssl)
+- [cfssl/cfssljson](https://github.com/cloudflare/cfssl)
 
 
 > Starting from Kamaji v0.0.2, `kubectl` and `kubeadm` need to meet at least minimum version to `v1.25.0`:
@@ -65,7 +64,7 @@ Deploy a MySQL/MariaDB backend into the Kamaji node:
 $ make -C deploy/kine/mysql mariadb
 ```
 
-Adjust the [Kamaji install manifest](../config/install.yaml) according to the example of a [MySQL DataStore](../config/samples/kamaji_v1alpha1_datastore_mysql.yaml) and make sure Kamaji uses the proper datastore name:
+Adjust the Kamaji install manifest `config/install.yaml` according to the example of a MySQL DataStore `config/samples/kamaji_v1alpha1_datastore_mysql.yaml` and make sure Kamaji uses the proper datastore name:
 
 ```
 --datastore={.metadata.name}
@@ -81,7 +80,7 @@ Deploy a PostgreSQL backend into the Kamaji node:
 $ make -C deploy/kine/postgresql postgresql
 ```
 
-Adjust the [Kamaji install manifest](../config/install.yaml) according to the example of a [PostgreSQL DataStore](../config/samples/kamaji_v1alpha1_datastore_postgresql.yaml) and make sure Kamaji uses the proper datastore name:
+Adjust the Kamaji install manifest `config/install.yaml` according to the example of a PostgreSQL DataStore `config/samples/kamaji_v1alpha1_datastore_postgresql.yaml` and make sure Kamaji uses the proper datastore name:
 
 ```
 --datastore={.metadata.name}
