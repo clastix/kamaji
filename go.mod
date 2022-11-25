@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/json-iterator/go v1.1.12
 	github.com/onsi/ginkgo v1.16.5
+	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/onsi/gomega v1.19.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.5
@@ -21,6 +22,7 @@ require (
 	k8s.io/apiserver v0.25.0
 	k8s.io/client-go v0.25.0
 	k8s.io/cluster-bootstrap v0.0.0
+	k8s.io/klog/v2 v2.70.1
 	k8s.io/kubelet v0.0.0
 	k8s.io/kubernetes v1.25.0
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
@@ -153,7 +155,6 @@ require (
 	k8s.io/apiextensions-apiserver v0.25.0 // indirect
 	k8s.io/cli-runtime v0.25.0 // indirect
 	k8s.io/component-base v0.25.0 // indirect
-	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	k8s.io/kube-proxy v0.0.0 // indirect
 	k8s.io/system-validators v1.7.0 // indirect
