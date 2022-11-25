@@ -3,10 +3,21 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: kamaji-system/kamaji-serving-cert
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: tenantcontrolplanes.kamaji.clastix.io
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: kamaji-webhook-service
+          namespace: kamaji-system
+          path: /convert
+      conversionReviewVersions:
+        - v1
   group: kamaji.clastix.io
   names:
     kind: TenantControlPlane

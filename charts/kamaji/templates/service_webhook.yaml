@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    {{- include "kamaji.labels" . | nindent 4 }}
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/instance: webhook-service
+  name: {{ include "kamaji.webhookServiceName" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: webhook-server
+  selector:
+    {{- include "kamaji.selectorLabels" . | nindent 4 }}
