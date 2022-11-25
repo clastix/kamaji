@@ -100,6 +100,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&kamajiv1alpha1.TenantControlPlane{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "TenantControlPlane")
+		os.Exit(1)
+	}
+	if err = (&kamajiv1alpha1.DataStore{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "DataStore")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
