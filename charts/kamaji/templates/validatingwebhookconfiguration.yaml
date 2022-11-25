@@ -1,0 +1,50 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "kamaji.certificateName" . }}
+  labels:
+    {{- include "kamaji.labels" . | nindent 4 }}
+    app.kubernetes.io/instance: validating-webhook-configuration
+  name: kamaji-validating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: {{ include "kamaji.webhookServiceName" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-kamaji-clastix-io-v1alpha1-datastore
+    failurePolicy: Fail
+    name: vdatastore.kb.io
+    rules:
+      - apiGroups:
+          - kamaji.clastix.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - datastores
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: {{ include "kamaji.webhookServiceName" . }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-kamaji-clastix-io-v1alpha1-tenantcontrolplane
+    failurePolicy: Fail
+    name: vtenantcontrolplane.kb.io
+    rules:
+      - apiGroups:
+          - kamaji.clastix.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - tenantcontrolplanes
+    sideEffects: None

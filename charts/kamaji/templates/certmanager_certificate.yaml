@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    {{- include "kamaji.labels" . | nindent 4 }}
+    app.kubernetes.io/component: certificate
+  name: {{ include "kamaji.certificateName" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  dnsNames:
+    - {{ include "kamaji.webhookServiceName" . }}.{{ .Release.Namespace }}.svc
+    - {{ include "kamaji.webhookServiceName" . }}.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: kamaji-selfsigned-issuer
+  secretName: {{ include "kamaji.webhookSecretName" . }}

@@ -61,3 +61,24 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Create the name of the Service to user for webhooks
+*/}}
+{{- define "kamaji.webhookServiceName" -}}
+{{- printf "%s-webhook-service" (include "kamaji.fullname" .) }}
+{{- end }}
+
+{{/*
+Create the name of the cert-manager secret
+*/}}
+{{- define "kamaji.webhookSecretName" -}}
+{{- printf "%s-webhook-server-cert" (include "kamaji.fullname" .) }}
+{{- end }}
+
+{{/*
+Create the name of the cert-manager Certificate
+*/}}
+{{- define "kamaji.certificateName" -}}
+{{- printf "%s-serving-cert" (include "kamaji.fullname" .) }}
+{{- end }}
