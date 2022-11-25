@@ -11,7 +11,10 @@ prometheus-stack:
 	helm repo update
 	helm install prometheus-stack --create-namespace -n monitoring prometheus-community/kube-prometheus-stack
 
-reqs: kind ingress-nginx etcd-cluster
+reqs: kind ingress-nginx etcd-cluster cert-manager
+
+cert-manager:
+	@kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.10.1/cert-manager.yaml
 
 kamaji: reqs
 	@kubectl apply -f $(kind_path)/../../config/install.yaml
