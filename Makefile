@@ -145,6 +145,15 @@ docker-push: ## Push docker image with the manager.
 
 ##@ Deployment
 
+metallb:
+	kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+	kubectl apply -f https://kind.sigs.k8s.io/examples/loadbalancer/metallb-config.yaml
+	echo ""
+	docker network inspect -f '{{.IPAM.Config}}' kind
+
+cert-manager:
+	kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.10.1/cert-manager.yaml
+
 dev: generate manifests uninstall install rbac ## Full installation for development purposes
 	go fmt ./...
 
