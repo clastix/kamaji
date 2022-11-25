@@ -1,0 +1,94 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-kamaji-clastix-io-v1alpha1-datastore
+  failurePolicy: Fail
+  name: mdatastore.kb.io
+  rules:
+  - apiGroups:
+    - kamaji.clastix.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - datastores
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-kamaji-clastix-io-v1alpha1-tenantcontrolplane
+  failurePolicy: Fail
+  name: mtenantcontrolplane.kb.io
+  rules:
+  - apiGroups:
+    - kamaji.clastix.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - tenantcontrolplanes
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-kamaji-clastix-io-v1alpha1-datastore
+  failurePolicy: Fail
+  name: vdatastore.kb.io
+  rules:
+  - apiGroups:
+    - kamaji.clastix.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - datastores
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-kamaji-clastix-io-v1alpha1-tenantcontrolplane
+  failurePolicy: Fail
+  name: vtenantcontrolplane.kb.io
+  rules:
+  - apiGroups:
+    - kamaji.clastix.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - tenantcontrolplanes
+  sideEffects: None

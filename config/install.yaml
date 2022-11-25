@@ -9,8 +9,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: kamaji-system/kamaji-serving-cert
     controller-gen.kubebuilder.io/version: v0.9.2
-  creationTimestamp: null
   name: datastores.kamaji.clastix.io
 spec:
   group: kamaji.clastix.io
@@ -237,10 +237,20 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: kamaji-system/kamaji-serving-cert
     controller-gen.kubebuilder.io/version: v0.9.2
-  creationTimestamp: null
   name: tenantcontrolplanes.kamaji.clastix.io
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: kamaji-webhook-service
+          namespace: kamaji-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
   group: kamaji.clastix.io
   names:
     kind: TenantControlPlane
@@ -2170,6 +2180,26 @@ spec:
   selector:
     control-plane: controller-manager
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: operator
+    app.kubernetes.io/instance: webhook-service
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: service
+    app.kubernetes.io/part-of: operator
+  name: kamaji-webhook-service
+  namespace: kamaji-system
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -2215,6 +2245,10 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
@@ -2230,10 +2264,55 @@ spec:
             memory: 20Mi
         securityContext:
           allowPrivilegeEscalation: false
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
       securityContext:
         runAsNonRoot: true
       serviceAccountName: kamaji-controller-manager
       terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: operator
+    app.kubernetes.io/instance: serving-cert
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: certificate
+    app.kubernetes.io/part-of: operator
+  name: kamaji-serving-cert
+  namespace: kamaji-system
+spec:
+  dnsNames:
+  - kamaji-webhook-service.kamaji-system.svc
+  - kamaji-webhook-service.kamaji-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: kamaji-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: operator
+    app.kubernetes.io/instance: selfsigned-issuer
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: issuer
+    app.kubernetes.io/part-of: operator
+  name: kamaji-selfsigned-issuer
+  namespace: kamaji-system
+spec:
+  selfSigned: {}
 ---
 apiVersion: kamaji.clastix.io/v1alpha1
 kind: DataStore
@@ -2270,3 +2349,113 @@ spec:
           keyPath: tls.key
           name: root-client-certs
           namespace: kamaji-system
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: kamaji-system/kamaji-serving-cert
+  labels:
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: operator
+    app.kubernetes.io/instance: mutating-webhook-configuration
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mutatingwebhookconfiguration
+    app.kubernetes.io/part-of: operator
+  name: kamaji-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: kamaji-webhook-service
+      namespace: kamaji-system
+      path: /mutate-kamaji-clastix-io-v1alpha1-datastore
+  failurePolicy: Fail
+  name: mdatastore.kb.io
+  rules:
+  - apiGroups:
+    - kamaji.clastix.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - datastores
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: kamaji-webhook-service
+      namespace: kamaji-system
+      path: /mutate-kamaji-clastix-io-v1alpha1-tenantcontrolplane
+  failurePolicy: Fail
+  name: mtenantcontrolplane.kb.io
+  rules:
+  - apiGroups:
+    - kamaji.clastix.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - tenantcontrolplanes
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: kamaji-system/kamaji-serving-cert
+  labels:
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: operator
+    app.kubernetes.io/instance: validating-webhook-configuration
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: validatingwebhookconfiguration
+    app.kubernetes.io/part-of: operator
+  name: kamaji-validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: kamaji-webhook-service
+      namespace: kamaji-system
+      path: /validate-kamaji-clastix-io-v1alpha1-datastore
+  failurePolicy: Fail
+  name: vdatastore.kb.io
+  rules:
+  - apiGroups:
+    - kamaji.clastix.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - datastores
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: kamaji-webhook-service
+      namespace: kamaji-system
+      path: /validate-kamaji-clastix-io-v1alpha1-tenantcontrolplane
+  failurePolicy: Fail
+  name: vtenantcontrolplane.kb.io
+  rules:
+  - apiGroups:
+    - kamaji.clastix.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - tenantcontrolplanes
+  sideEffects: None
