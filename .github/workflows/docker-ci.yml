@@ -13,6 +13,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Generate build-args
+        id: build-args
+        run: |
+          # Declare vars for internal use
+          VERSION=$(git describe --abbrev=0 --tags)
+          GIT_HEAD_COMMIT=$(git rev-parse --short HEAD)
+          GIT_TAG_COMMIT=$(git rev-parse --short $VERSION)
+          GIT_MODIFIED_1=$(git diff $GIT_HEAD_COMMIT $GIT_TAG_COMMIT --quiet && echo "" || echo ".dev")
+          GIT_MODIFIED_2=$(git diff --quiet && echo "" || echo ".dirty")
+          # Export to GH_ENV
+          echo "GIT_LAST_TAG=$VERSION" >> $GITHUB_ENV
+          echo "GIT_HEAD_COMMIT=$GIT_HEAD_COMMIT" >> $GITHUB_ENV
+          echo "GIT_TAG_COMMIT=$GIT_TAG_COMMIT" >> $GITHUB_ENV
+          echo "GIT_MODIFIED=$(echo "$GIT_MODIFIED_1""$GIT_MODIFIED_2")" >> $GITHUB_ENV
+          echo "GIT_REPO=$(git config --get remote.origin.url)" >> $GITHUB_ENV
+          echo "BUILD_DATE=$(git log -1 --format="%at" | xargs -I{} date -d @{} +%Y-%m-%dT%H:%M:%S)" >> $GITHUB_ENV
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
