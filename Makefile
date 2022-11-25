@@ -103,8 +103,6 @@ apidocs-gen: ## Download crdoc locally if necessary.
 
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	cp config/crd/bases/kamaji.clastix.io_tenantcontrolplanes.yaml charts/kamaji/crds/tenantcontrolplane.yaml
-	cp config/crd/bases/kamaji.clastix.io_datastores.yaml charts/kamaji/crds/datastore.yaml
 
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
