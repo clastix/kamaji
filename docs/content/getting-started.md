@@ -90,11 +90,16 @@ Now you're ready to [install Kamaji operator](#install-kamaji).
 
 ### Install Kamaji
 
+Kamaji takes advantage of the [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/), such as validating and mutating webhook configurations.
+These webhooks are secured by a TLS communication, and the certificates are managed by [`cert-manager`](https://cert-manager.io/), making it a prerequisite that must be [installed](https://cert-manager.io/docs/installation/).
+
 ```bash
 $ kubectl apply -f config/install.yaml
 ```
 
-> If you experience some errors during the apply of the manifest as `resource mapping not found ... ensure CRDs are installed first`, just apply it again.
+> Please note that this single YAML manifest is missing some required automations.
+> The preferred way to install Kamaji is using its Helm Chart.
+> Please, refer to the section [**Setup Kamaji on a generic infrastructure**.](/guides/kamaji-deployment-guide#install-kamaji-controller)
 
 ### Deploy Tenant Control Plane
 
