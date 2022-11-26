@@ -27,6 +27,10 @@ const (
 	defaultDataStore    = "etcd"
 )
 
+func Config() *viper.Viper {
+	return config
+}
+
 func InitConfig() (*viper.Viper, error) {
 	config = viper.New()
 
