@@ -1,6 +1,0 @@
-metrics-bind-address: :8080
-health-probe-bind-address: :8081
-leader-elect: false
-tmp-directory: /tmp/kamaji
-datastore: default
-kine-image: rancher/kine:v0.9.2-amd64

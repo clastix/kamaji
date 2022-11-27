@@ -14,14 +14,18 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/clastix/kamaji/internal/config"
 	"github.com/clastix/kamaji/internal/upgrade"
 )
 
 // log is for logging in this package.
-var tenantcontrolplanelog = logf.Log.WithName("tenantcontrolplane-resource")
+var (
+	tenantcontrolplanelog = logf.Log.WithName("tenantcontrolplane-resource")
+	defaultDatastore      string
+)
 
-func (in *TenantControlPlane) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (in *TenantControlPlane) SetupWebhookWithManager(mgr ctrl.Manager, datastore string) error {
+	defaultDatastore = datastore
+
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(in).
 		Complete()
@@ -34,7 +38,7 @@ var _ webhook.Defaulter = &TenantControlPlane{}
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *TenantControlPlane) Default() {
 	if len(in.Spec.DataStore) == 0 {
-		in.Spec.DataStore = config.Config().GetString("datastore")
+		in.Spec.DataStore = defaultDatastore
 	}
 }
 
