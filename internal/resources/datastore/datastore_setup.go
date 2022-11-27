@@ -5,6 +5,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -15,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/controllers/finalizers"
 	"github.com/clastix/kamaji/internal/datastore"
 	"github.com/clastix/kamaji/internal/resources/utils"
 )
@@ -26,7 +28,7 @@ type SetupResource struct {
 }
 
 type Setup struct {
-	resource   SetupResource
+	resource   *SetupResource
 	Client     client.Client
 	Connection datastore.Connection
 	DataStore  kamajiv1alpha1.DataStore
@@ -59,7 +61,7 @@ func (r *Setup) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		return err
 	}
 
-	r.resource = SetupResource{
+	r.resource = &SetupResource{
 		schema:   string(secret.Data["DB_SCHEMA"]),
 		user:     string(secret.Data["DB_USER"]),
 		password: string(secret.Data["DB_PASSWORD"]),
@@ -72,47 +74,58 @@ func (r *Setup) GetClient() client.Client {
 	return r.Client
 }
 
-func (r *Setup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+func (r *Setup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (reconciliationResult controllerutil.OperationResult, err error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
+
+	defer func() {
+		if err == nil && !controllerutil.ContainsFinalizer(tenantControlPlane, finalizers.TenantControlPlaneFinalizer) {
+			controllerutil.AddFinalizer(tenantControlPlane, finalizers.TenantControlPlaneFinalizer)
+
+			patch := []byte(fmt.Sprintf(`{"metadata":{"finalizers":[%q]}}`, finalizers.TenantControlPlaneFinalizer))
+
+			if patchErr := r.Client.Patch(ctx, tenantControlPlane, client.RawPatch(types.MergePatchType, patch)); patchErr != nil {
+				logger.Error(err, "unable to patch TenantControlPlane for finalizer addition")
+			}
+		}
+	}()
 
 	if tenantControlPlane.Status.Storage.Setup.Checksum != "" &&
 		tenantControlPlane.Status.Storage.Setup.Checksum != tenantControlPlane.Status.Storage.Config.Checksum {
-		if err := r.Delete(ctx, tenantControlPlane); err != nil {
+		if err = r.Delete(ctx, tenantControlPlane); err != nil {
 			return controllerutil.OperationResultNone, err
 		}
 
 		return controllerutil.OperationResultUpdated, nil
 	}
 
-	reconcilationResult := controllerutil.OperationResultNone
+	reconciliationResult = controllerutil.OperationResultNone
 	var operationResult controllerutil.OperationResult
-	var err error
 
 	operationResult, err = r.createDB(ctx, tenantControlPlane)
 	if err != nil {
 		logger.Error(err, "unable to create the DataStore data")
 
-		return reconcilationResult, err
+		return reconciliationResult, err
 	}
-	reconcilationResult = utils.UpdateOperationResult(reconcilationResult, operationResult)
+	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 
 	operationResult, err = r.createUser(ctx, tenantControlPlane)
 	if err != nil {
 		logger.Error(err, "unable to create the DataStore user")
 
-		return reconcilationResult, err
+		return reconciliationResult, err
 	}
-	reconcilationResult = utils.UpdateOperationResult(reconcilationResult, operationResult)
+	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 
 	operationResult, err = r.createGrantPrivileges(ctx, tenantControlPlane)
 	if err != nil {
 		logger.Error(err, "unable to create the DataStore user privileges")
 
-		return reconcilationResult, err
+		return reconciliationResult, err
 	}
-	reconcilationResult = utils.UpdateOperationResult(reconcilationResult, operationResult)
+	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 
-	return reconcilationResult, nil
+	return reconciliationResult, nil
 }
 
 func (r *Setup) GetName() string {
@@ -138,6 +151,12 @@ func (r *Setup) Delete(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		logger.Error(err, "unable to delete user")
 
 		return err
+	}
+
+	patch := []byte(`{"metadata":{"finalizers":null}}`)
+
+	if patchErr := r.Client.Patch(ctx, tenantControlPlane, client.RawPatch(types.MergePatchType, patch)); patchErr != nil {
+		logger.Error(patchErr, "unable to patch TenantControlPlane for finalizer removal")
 	}
 
 	return nil

@@ -10,8 +10,10 @@ import (
 	"github.com/google/uuid"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/controllers/finalizers"
 	"github.com/clastix/kamaji/internal/datastore"
 	"github.com/clastix/kamaji/internal/resources"
 	ds "github.com/clastix/kamaji/internal/resources/datastore"
@@ -27,7 +29,7 @@ type GroupResourceBuilderConfiguration struct {
 	DataStore           kamajiv1alpha1.DataStore
 }
 
-type GroupDeleteableResourceBuilderConfiguration struct {
+type GroupDeletableResourceBuilderConfiguration struct {
 	client              client.Client
 	log                 logr.Logger
 	tcpReconcilerConfig TenantControlPlaneReconcilerConfig
@@ -44,9 +46,18 @@ func GetResources(config GroupResourceBuilderConfiguration) []resources.Resource
 
 // GetDeletableResources returns a list of resources that have to be deleted when tenant control planes are deleted
 // Currently there is only a default approach
-// TODO: the idea of this function is to become a factory to return the group of deleteable resources according to the given configuration.
-func GetDeletableResources(config GroupDeleteableResourceBuilderConfiguration) []resources.DeleteableResource {
-	return getDefaultDeleteableResources(config)
+// TODO: the idea of this function is to become a factory to return the group of deletable resources according to the given configuration.
+func GetDeletableResources(tcp *kamajiv1alpha1.TenantControlPlane, config GroupDeletableResourceBuilderConfiguration) []resources.DeletableResource {
+	var res []resources.DeletableResource
+
+	if controllerutil.ContainsFinalizer(tcp, finalizers.TenantControlPlaneFinalizer) {
+		res = append(res, &ds.Setup{
+			Client:     config.client,
+			Connection: config.connection,
+		})
+	}
+
+	return res
 }
 
 func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.Resource {
@@ -63,15 +74,6 @@ func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.R
 	resources = append(resources, getExternalKonnectivityResources(config.client)...)
 
 	return resources
-}
-
-func getDefaultDeleteableResources(config GroupDeleteableResourceBuilderConfiguration) []resources.DeleteableResource {
-	return []resources.DeleteableResource{
-		&ds.Setup{
-			Client:     config.client,
-			Connection: config.connection,
-		},
-	}
 }
 
 func getUpgradeResources(c client.Client) []resources.Resource {
