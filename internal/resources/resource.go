@@ -26,7 +26,7 @@ type Resource interface {
 	UpdateTenantControlPlaneStatus(context.Context, *kamajiv1alpha1.TenantControlPlane) error
 }
 
-type DeleteableResource interface {
+type DeletableResource interface {
 	GetName() string
 	Define(context.Context, *kamajiv1alpha1.TenantControlPlane) error
 	Delete(context.Context, *kamajiv1alpha1.TenantControlPlane) error
@@ -74,7 +74,7 @@ func Handle(ctx context.Context, resource Resource, tenantControlPlane *kamajiv1
 }
 
 // HandleDeletion handles the deletion of the given resource.
-func HandleDeletion(ctx context.Context, resource DeleteableResource, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func HandleDeletion(ctx context.Context, resource DeletableResource, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if err := resource.Define(ctx, tenantControlPlane); err != nil {
 		return err
 	}

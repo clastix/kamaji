@@ -25,12 +25,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/controllers/finalizers"
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
 	"github.com/clastix/kamaji/internal/resources"
-)
-
-const (
-	tenantControlPlaneFinalizer = "finalizer.kamaji.clastix.io"
 )
 
 // TenantControlPlaneReconciler reconciles a TenantControlPlane object.
@@ -72,9 +69,8 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	markedToBeDeleted := tenantControlPlane.GetDeletionTimestamp() != nil
-	hasFinalizer := controllerutil.ContainsFinalizer(tenantControlPlane, tenantControlPlaneFinalizer)
 
-	if markedToBeDeleted && !hasFinalizer {
+	if markedToBeDeleted && len(tenantControlPlane.Finalizers) == 0 {
 		return ctrl.Result{}, nil
 	}
 	// Retrieving the DataStore to use for the current reconciliation
@@ -96,16 +92,15 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if markedToBeDeleted {
 		log.Info("marked for deletion, performing clean-up")
 
-		groupDeleteableResourceBuilderConfiguration := GroupDeleteableResourceBuilderConfiguration{
+		groupDeletableResourceBuilderConfiguration := GroupDeletableResourceBuilderConfiguration{
 			client:              r.Client,
 			log:                 log,
 			tcpReconcilerConfig: r.Config,
 			tenantControlPlane:  *tenantControlPlane,
 			connection:          dsConnection,
 		}
-		registeredDeletableResources := GetDeletableResources(groupDeleteableResourceBuilderConfiguration)
 
-		for _, resource := range registeredDeletableResources {
+		for _, resource := range GetDeletableResources(tenantControlPlane, groupDeletableResourceBuilderConfiguration) {
 			if err = resources.HandleDeletion(ctx, resource, tenantControlPlane); err != nil {
 				log.Error(err, "resource deletion failed", "resource", resource.GetName())
 
@@ -113,23 +108,9 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			}
 		}
 
-		if hasFinalizer {
-			log.Info("removing finalizer")
-
-			if err = r.RemoveFinalizer(ctx, tenantControlPlane); err != nil {
-				log.Error(err, "cannot remove the finalizer for the given resource")
-
-				return ctrl.Result{}, err
-			}
-		}
-
-		log.Info("resource deletion has been completed")
+		log.Info("resource deletions have been completed")
 
 		return ctrl.Result{}, nil
-	}
-
-	if !hasFinalizer {
-		return ctrl.Result{}, r.AddFinalizer(ctx, tenantControlPlane)
 	}
 
 	groupResourceBuilderConfiguration := GroupResourceBuilderConfiguration{
@@ -236,7 +217,7 @@ func (r *TenantControlPlaneReconciler) updateStatus(ctx context.Context, namespa
 }
 
 func (r *TenantControlPlaneReconciler) RemoveFinalizer(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	controllerutil.RemoveFinalizer(tenantControlPlane, tenantControlPlaneFinalizer)
+	controllerutil.RemoveFinalizer(tenantControlPlane, finalizers.TenantControlPlaneFinalizer)
 
 	return r.Update(ctx, tenantControlPlane)
 }
