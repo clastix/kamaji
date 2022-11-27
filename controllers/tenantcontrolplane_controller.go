@@ -14,6 +14,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -209,30 +210,29 @@ func (r *TenantControlPlaneReconciler) getTenantControlPlane(ctx context.Context
 
 func (r *TenantControlPlaneReconciler) updateStatus(ctx context.Context, namespacedName k8stypes.NamespacedName, resource resources.Resource) error {
 	tenantControlPlane := &kamajiv1alpha1.TenantControlPlane{}
-	isTenantControlPlane, err := r.getTenantControlPlane(ctx, namespacedName, tenantControlPlane)
-	if err != nil {
-		return err
-	}
 
-	if !isTenantControlPlane {
-		return fmt.Errorf("error updating tenantControlPlane %s: not found", namespacedName.Name)
-	}
+	updateErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		isTenantControlPlane, err := r.getTenantControlPlane(ctx, namespacedName, tenantControlPlane)
+		if err != nil {
+			return err
+		}
 
-	if err := resource.UpdateTenantControlPlaneStatus(ctx, tenantControlPlane); err != nil {
-		return err
-	}
+		if !isTenantControlPlane {
+			return fmt.Errorf("error updating tenantControlPlane %s: not found", namespacedName.Name)
+		}
 
-	if err := r.Status().Update(ctx, tenantControlPlane); err != nil {
-		return fmt.Errorf("error updating tenantControlPlane status: %w", err)
-	}
+		if err = resource.UpdateTenantControlPlaneStatus(ctx, tenantControlPlane); err != nil {
+			return fmt.Errorf("error applying TenantcontrolPlane status: %w", err)
+		}
 
-	return nil
-}
+		if err = r.Status().Update(ctx, tenantControlPlane); err != nil {
+			return fmt.Errorf("error updating tenantControlPlane status: %w", err)
+		}
 
-func (r *TenantControlPlaneReconciler) AddFinalizer(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	controllerutil.AddFinalizer(tenantControlPlane, tenantControlPlaneFinalizer)
+		return nil
+	})
 
-	return r.Update(ctx, tenantControlPlane)
+	return updateErr
 }
 
 func (r *TenantControlPlaneReconciler) RemoveFinalizer(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
