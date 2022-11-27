@@ -28,21 +28,7 @@ spec:
       serviceAccountName: {{ include "kamaji.serviceAccountName" . }}
       containers:
       - args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:8080/
-        - --logtostderr=true
-        - --v=10
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 9443
-          name: webhook-server
-          protocol: TCP
-        - containerPort: 8443
-          name: https
-          protocol: TCP
-      - args:
-        - --config-file={{ .Values.configPath }}
+        - manager
         - --health-probe-bind-address={{ .Values.healthProbeBindAddress }}
         - --leader-elect
         - --metrics-bind-address={{ .Values.metricsBindAddress }}
@@ -55,7 +41,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
         command:
-        - /manager
+        - /kamaji
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         {{- with .Values.livenessProbe }}
