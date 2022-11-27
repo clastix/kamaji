@@ -2223,23 +2223,10 @@ spec:
     spec:
       containers:
       - args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:8080/
-        - --logtostderr=true
-        - --v=10
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
-          protocol: TCP
-      - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=127.0.0.1:8080
+        - manager
         - --leader-elect
-        - --datastore=kamaji-etcd
         command:
-        - /manager
+        - /kamaji
         image: clastix/kamaji:v0.1.1
         imagePullPolicy: Always
         livenessProbe:
