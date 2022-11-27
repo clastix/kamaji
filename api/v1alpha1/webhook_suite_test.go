@@ -87,7 +87,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&TenantControlPlane{}).SetupWebhookWithManager(mgr)
+	err = (&TenantControlPlane{}).SetupWebhookWithManager(mgr, "")
 	Expect(err).NotTo(HaveOccurred())
 
 	err = (&DataStore{}).SetupWebhookWithManager(mgr)
