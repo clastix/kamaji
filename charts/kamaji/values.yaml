@@ -15,9 +15,6 @@ image:
 # -- A list of extra arguments to add to the kamaji controller default ones
 extraArgs: []
 
-# -- Configuration file path alternative. (default "./kamaji.yaml")
-configPath: "./kamaji.yaml"
-
 etcd:
   # -- Install an etcd with enabled multi-tenancy along with Kamaji
   deploy: true
