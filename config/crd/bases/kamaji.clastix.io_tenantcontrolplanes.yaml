@@ -22,17 +22,21 @@ spec:
       jsonPath: .spec.kubernetes.version
       name: Version
       type: string
-    - description: Kubernetes version
+    - description: Status
       jsonPath: .status.kubernetesResources.version.status
       name: Status
       type: string
     - description: Tenant Control Plane Endpoint (API server)
       jsonPath: .status.controlPlaneEndpoint
-      name: Control-Plane-Endpoint
+      name: Control-Plane endpoint
       type: string
     - description: Secret which contains admin kubeconfig
       jsonPath: .status.kubeconfig.admin.secretName
       name: Kubeconfig
+      type: string
+    - description: DataStore actually used
+      jsonPath: .status.storage.dataStoreName
+      name: Datastore
       type: string
     - description: Age
       jsonPath: .metadata.creationTimestamp
