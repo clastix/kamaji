@@ -9,7 +9,7 @@ spec:
     service:
       serviceType: LoadBalancer
   kubernetes:
-    version: "v1.23.1"
+    version: "v1.25.4"
     kubelet:
       cgroupfs: cgroupfs
     admissionControllers:
