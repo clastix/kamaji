@@ -17,9 +17,9 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - description: Kamaji data store driver
-      jsonPath: .spec.driver
-      name: Driver
+    - description: DataStore actually used
+      jsonPath: .status.storage.dataStoreName
+      name: Datastore
       type: string
     - description: Age
       jsonPath: .metadata.creationTimestamp
