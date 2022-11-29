@@ -128,9 +128,8 @@ func (e *EtcdClient) DeleteUser(ctx context.Context, user string) error {
 }
 
 func (e *EtcdClient) DeleteDB(ctx context.Context, dbName string) error {
-	withRange := etcdclient.WithRange(rangeEnd)
 	prefix := e.buildKey(dbName)
-	if _, err := e.Client.Delete(ctx, prefix, withRange); err != nil {
+	if _, err := e.Client.Delete(ctx, prefix, etcdclient.WithPrefix()); err != nil {
 		return errors.NewCannotDeleteDatabaseError(err)
 	}
 
