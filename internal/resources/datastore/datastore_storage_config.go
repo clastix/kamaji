@@ -5,6 +5,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
@@ -88,8 +89,8 @@ func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.Te
 
 		r.resource.Data = map[string][]byte{
 			"DB_CONNECTION_STRING": []byte(r.ConnString),
-			"DB_SCHEMA":            []byte(tenantControlPlane.GetName()),
-			"DB_USER":              []byte(tenantControlPlane.GetName()),
+			"DB_SCHEMA":            []byte(fmt.Sprintf("%s_%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName())),
+			"DB_USER":              []byte(fmt.Sprintf("%s_%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName())),
 			"DB_PASSWORD":          password,
 		}
 

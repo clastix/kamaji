@@ -170,6 +170,6 @@ func (e *EtcdClient) Driver() string {
 	return string(kamajiv1alpha1.EtcdDriver)
 }
 
-func (e *EtcdClient) buildKey(roleName string) string {
-	return fmt.Sprintf("/%s/", roleName)
+func (e *EtcdClient) buildKey(key string) string {
+	return fmt.Sprintf("/%s/", key)
 }

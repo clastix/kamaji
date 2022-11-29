@@ -110,7 +110,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 				return err
 			}
 
-			crt, key, err = crypto.GenerateCertificatePrivateKeyPair(crypto.NewCertificateTemplate(tenantControlPlane.GetName()), ca, privateKey)
+			crt, key, err = crypto.GenerateCertificatePrivateKeyPair(crypto.NewCertificateTemplate(fmt.Sprintf("%s_%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName())), ca, privateKey)
 			if err != nil {
 				logger.Error(err, "unable to generate certificate and private key")
 
