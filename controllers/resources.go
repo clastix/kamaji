@@ -21,12 +21,14 @@ import (
 )
 
 type GroupResourceBuilderConfiguration struct {
-	client              client.Client
-	log                 logr.Logger
-	tcpReconcilerConfig TenantControlPlaneReconcilerConfig
-	tenantControlPlane  kamajiv1alpha1.TenantControlPlane
-	Connection          datastore.Connection
-	DataStore           kamajiv1alpha1.DataStore
+	client               client.Client
+	log                  logr.Logger
+	tcpReconcilerConfig  TenantControlPlaneReconcilerConfig
+	tenantControlPlane   kamajiv1alpha1.TenantControlPlane
+	Connection           datastore.Connection
+	DataStore            kamajiv1alpha1.DataStore
+	KamajiNamespace      string
+	KamajiServiceAccount string
 }
 
 type GroupDeletableResourceBuilderConfiguration struct {
@@ -61,19 +63,42 @@ func GetDeletableResources(tcp *kamajiv1alpha1.TenantControlPlane, config GroupD
 }
 
 func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.Resource {
-	resources := append(getUpgradeResources(config.client), getKubernetesServiceResources(config.client)...)
+	resources := getDataStoreMigratingResources(config.client, config.KamajiNamespace, config.KamajiServiceAccount)
+	resources = append(resources, getUpgradeResources(config.client)...)
+	resources = append(resources, getKubernetesServiceResources(config.client)...)
 	resources = append(resources, getKubeadmConfigResources(config.client, getTmpDirectory(config.tcpReconcilerConfig.TmpBaseDirectory, config.tenantControlPlane), config.DataStore)...)
 	resources = append(resources, getKubernetesCertificatesResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubeconfigResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubernetesStorageResources(config.client, config.Connection, config.DataStore)...)
 	resources = append(resources, getInternalKonnectivityResources(config.client)...)
 	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.DataStore)...)
+	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
 	resources = append(resources, getKubernetesIngressResources(config.client)...)
 	resources = append(resources, getKubeadmPhaseResources(config.client)...)
 	resources = append(resources, getKubeadmAddonResources(config.client)...)
 	resources = append(resources, getExternalKonnectivityResources(config.client)...)
 
 	return resources
+}
+
+func getDataStoreMigratingCleanup(c client.Client, kamajiNamespace string) []resources.Resource {
+	return []resources.Resource{
+		&resources.DatastoreMigrate{
+			Client:          c,
+			KamajiNamespace: kamajiNamespace,
+			ShouldCleanUp:   true,
+		},
+	}
+}
+
+func getDataStoreMigratingResources(c client.Client, kamajiNamespace, kamajiServiceAccount string) []resources.Resource {
+	return []resources.Resource{
+		&resources.DatastoreMigrate{
+			Client:               c,
+			KamajiNamespace:      kamajiNamespace,
+			KamajiServiceAccount: kamajiServiceAccount,
+		},
+	}
 }
 
 func getUpgradeResources(c client.Client) []resources.Resource {
