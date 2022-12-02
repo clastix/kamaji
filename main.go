@@ -10,13 +10,15 @@ import (
 
 	"github.com/clastix/kamaji/cmd"
 	"github.com/clastix/kamaji/cmd/manager"
+	"github.com/clastix/kamaji/cmd/migrate"
 )
 
 func main() {
 	scheme := runtime.NewScheme()
 
-	root, mgr := cmd.NewCmd(scheme), manager.NewCmd(scheme)
+	root, mgr, migrator := cmd.NewCmd(scheme), manager.NewCmd(scheme), migrate.NewCmd(scheme)
 	root.AddCommand(mgr)
+	root.AddCommand(migrator)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)

@@ -143,6 +143,7 @@ func (r *KubernetesDeploymentResource) deploymentTemplateLabels(ctx context.Cont
 		"component.kamaji.clastix.io/front-proxy-client-certificate":        hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.FrontProxyClient.SecretName),
 		"component.kamaji.clastix.io/service-account":                       hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.SA.SecretName),
 		"component.kamaji.clastix.io/scheduler-kubeconfig":                  hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.KubeConfig.Scheduler.SecretName),
+		"component.kamaji.clastix.io/datastore":                             tenantControlPlane.Spec.DataStore,
 	}
 
 	return labels

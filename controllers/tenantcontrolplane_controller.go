@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,11 +18,14 @@ import (
 	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -33,11 +37,13 @@ import (
 
 // TenantControlPlaneReconciler reconciles a TenantControlPlane object.
 type TenantControlPlaneReconciler struct {
-	Client      client.Client
-	APIReader   client.Reader
-	Scheme      *runtime.Scheme
-	Config      TenantControlPlaneReconcilerConfig
-	TriggerChan TenantControlPlaneChannel
+	Client               client.Client
+	APIReader            client.Reader
+	Scheme               *runtime.Scheme
+	Config               TenantControlPlaneReconcilerConfig
+	TriggerChan          TenantControlPlaneChannel
+	KamajiNamespace      string
+	KamajiServiceAccount string
 }
 
 // TenantControlPlaneReconcilerConfig gives the necessary configuration for TenantControlPlaneReconciler.
@@ -55,6 +61,7 @@ type TenantControlPlaneReconcilerConfig struct {
 //+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;delete
 
 func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
@@ -116,12 +123,14 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	groupResourceBuilderConfiguration := GroupResourceBuilderConfiguration{
-		client:              r.Client,
-		log:                 log,
-		tcpReconcilerConfig: r.Config,
-		tenantControlPlane:  *tenantControlPlane,
-		DataStore:           *ds,
-		Connection:          dsConnection,
+		client:               r.Client,
+		log:                  log,
+		tcpReconcilerConfig:  r.Config,
+		tenantControlPlane:   *tenantControlPlane,
+		DataStore:            *ds,
+		Connection:           dsConnection,
+		KamajiNamespace:      r.KamajiNamespace,
+		KamajiServiceAccount: r.KamajiServiceAccount,
 	}
 	registeredResources := GetResources(groupResourceBuilderConfiguration)
 
@@ -176,6 +185,34 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).
 		Owns(&networkingv1.Ingress{}).
+		Watches(&source.Kind{Type: &batchv1.Job{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+			labels := object.GetLabels()
+
+			name, namespace := labels["tcp.kamaji.clastix.io/name"], labels["tcp.kamaji.clastix.io/namespace"]
+
+			return []reconcile.Request{
+				{
+					NamespacedName: k8stypes.NamespacedName{
+						Namespace: namespace,
+						Name:      name,
+					},
+				},
+			}
+		}), builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
+			if object.GetNamespace() != r.KamajiNamespace {
+				return false
+			}
+
+			labels := object.GetLabels()
+
+			if labels == nil {
+				return false
+			}
+
+			v, ok := labels["kamaji.clastix.io/component"]
+
+			return ok && v == "migrate"
+		}))).
 		Complete(r)
 }
 
@@ -230,10 +267,6 @@ func (r *TenantControlPlaneReconciler) dataStore(ctx context.Context, tenantCont
 	dataStoreName := tenantControlPlane.Spec.DataStore
 	if len(dataStoreName) == 0 {
 		dataStoreName = r.Config.DefaultDataStoreName
-	}
-
-	if statusDataStore := tenantControlPlane.Status.Storage.DataStoreName; len(statusDataStore) > 0 && dataStoreName != statusDataStore {
-		return nil, fmt.Errorf("migration from a DataStore (current: %s) to another one (desired: %s) is not yet supported", statusDataStore, dataStoreName)
 	}
 
 	ds := &kamajiv1alpha1.DataStore{}

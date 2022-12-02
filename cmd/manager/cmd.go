@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	goRuntime "runtime"
 
 	"github.com/spf13/cobra"
@@ -32,17 +33,28 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		tmpDirectory           string
 		kineImage              string
 		datastore              string
+		managerNamespace       string
+		serviceAccountName     string
 	)
 
 	cmd := &cobra.Command{
 		Use:           "manager",
 		Short:         "Start the Kamaji Kubernetes Operator",
-		SilenceErrors: true,
+		SilenceErrors: false,
 		SilenceUsage:  true,
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Avoid to pollute Kamaji stdout with useless details by the underlying klog implementations
 			klog.SetOutput(io.Discard)
 			klog.LogToStderr(false)
+
+			for _, arg := range []string{"pod-namespace", "serviceaccount-name", "datastore", "kine-image", "tmp-directory"} {
+				v, _ := cmd.Flags().GetString(arg)
+				if len(v) == 0 {
+					return fmt.Errorf("expecting a value for --%s arg", arg)
+				}
+			}
+
+			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			setupLog := ctrl.Log.WithName("setup")
@@ -56,12 +68,13 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			setupLog.Info(fmt.Sprintf("Go OS/Arch: %s/%s", goRuntime.GOOS, goRuntime.GOARCH))
 
 			mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-				Scheme:                 scheme,
-				MetricsBindAddress:     metricsBindAddress,
-				Port:                   9443,
-				HealthProbeBindAddress: healthProbeBindAddress,
-				LeaderElection:         leaderElect,
-				LeaderElectionID:       "799b98bc.clastix.io",
+				Scheme:                  scheme,
+				MetricsBindAddress:      metricsBindAddress,
+				Port:                    9443,
+				HealthProbeBindAddress:  healthProbeBindAddress,
+				LeaderElection:          leaderElect,
+				LeaderElectionNamespace: managerNamespace,
+				LeaderElectionID:        "799b98bc.clastix.io",
 			})
 			if err != nil {
 				setupLog.Error(err, "unable to start manager")
@@ -78,14 +91,17 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			}
 
 			reconciler := &controllers.TenantControlPlaneReconciler{
-				Client: mgr.GetClient(),
-				Scheme: mgr.GetScheme(),
+				Client:    mgr.GetClient(),
+				APIReader: mgr.GetAPIReader(),
+				Scheme:    mgr.GetScheme(),
 				Config: controllers.TenantControlPlaneReconcilerConfig{
 					DefaultDataStoreName: datastore,
 					KineContainerImage:   kineImage,
 					TmpBaseDirectory:     tmpDirectory,
 				},
-				TriggerChan: tcpChannel,
+				TriggerChan:          tcpChannel,
+				KamajiNamespace:      managerNamespace,
+				KamajiServiceAccount: serviceAccountName,
 			}
 
 			if err = reconciler.SetupWithManager(mgr); err != nil {
@@ -145,8 +161,10 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	cmd.Flags().StringVar(&healthProbeBindAddress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	cmd.Flags().BoolVar(&leaderElect, "leader-elect", true, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	cmd.Flags().StringVar(&tmpDirectory, "tmp-directory", "/tmp/kamaji", "Directory which will be used to work with temporary files.")
-	cmd.Flags().StringVar(&kineImage, "kine-image", "rancher/kine:v0.9.2-amd64", "Container image along with tag to use for the Kine sidecar container (used only if etcd-storage-type is set to one of kine strategies)")
-	cmd.Flags().StringVar(&datastore, "datastore", "etcd", "The default DataStore that should be used by Kamaji to setup the required storage")
+	cmd.Flags().StringVar(&kineImage, "kine-image", "rancher/kine:v0.9.2-amd64", "Container image along with tag to use for the Kine sidecar container (used only if etcd-storage-type is set to one of kine strategies).")
+	cmd.Flags().StringVar(&datastore, "datastore", "etcd", "The default DataStore that should be used by Kamaji to setup the required storage.")
+	cmd.Flags().StringVar(&managerNamespace, "pod-namespace", os.Getenv("POD_NAMESPACE"), "The Kubernetes Namespace on which the Operator is running in, required for the TenantControlPlane migration jobs.")
+	cmd.Flags().StringVar(&serviceAccountName, "serviceaccount-name", os.Getenv("SERVICE_ACCOUNT"), "The Kubernetes Namespace on which the Operator is running in, required for the TenantControlPlane migration jobs.")
 
 	cobra.OnInitialize(func() {
 		viper.AutomaticEnv()
