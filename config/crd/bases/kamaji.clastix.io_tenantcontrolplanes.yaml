@@ -2458,6 +2458,7 @@ spec:
                         enum:
                         - Provisioning
                         - Upgrading
+                        - Migrating
                         - Ready
                         - NotReady
                         type: string
