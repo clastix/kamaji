@@ -26,6 +26,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers/finalizers"
+	"github.com/clastix/kamaji/internal/datastore"
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
 	"github.com/clastix/kamaji/internal/resources"
 )
@@ -81,7 +82,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	dsConnection, err := r.getStorageConnection(ctx, *ds)
+	dsConnection, err := datastore.NewStorageConnection(ctx, r.Client, *ds)
 	if err != nil {
 		log.Error(err, "cannot generate the DataStore connection for the given instance")
 
