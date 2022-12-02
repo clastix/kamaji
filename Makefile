@@ -117,7 +117,7 @@ test:
 
 # Get information about git current status
 GIT_HEAD_COMMIT ?= $$(git rev-parse --short HEAD)
-GIT_TAG_COMMIT  ?= $$(git rev-parse --short $(VERSION))
+GIT_TAG_COMMIT  ?= $$(git rev-parse --short v$(VERSION))
 GIT_MODIFIED_1  ?= $$(git diff $(GIT_HEAD_COMMIT) $(GIT_TAG_COMMIT) --quiet && echo "" || echo ".dev")
 GIT_MODIFIED_2  ?= $$(git diff --quiet && echo "" || echo ".dirty")
 GIT_MODIFIED    ?= $$(echo "$(GIT_MODIFIED_1)$(GIT_MODIFIED_2)")
