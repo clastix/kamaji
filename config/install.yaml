@@ -1868,6 +1868,7 @@ spec:
                         enum:
                         - Provisioning
                         - Upgrading
+                        - Migrating
                         - Ready
                         - NotReady
                         type: string
@@ -1985,6 +1986,16 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
   - watch
 - apiGroups:
   - ""
@@ -2227,6 +2238,15 @@ spec:
         - --leader-elect
         command:
         - /kamaji
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: SERVICE_ACCOUNT
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
         image: clastix/kamaji:v0.1.1
         imagePullPolicy: Always
         livenessProbe:
