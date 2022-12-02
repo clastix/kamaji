@@ -1,14 +1,18 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: mariadb
-  namespace:
+  name: $NAME
+  labels:
+    db: mysql
+    instance: $NAME
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mariadb
-  namespace:
+  name: $NAME
+  labels:
+    db: mysql
+    instance: $NAME
 spec:
   type: ClusterIP
   ports:
@@ -17,34 +21,37 @@ spec:
       protocol: TCP
       targetPort: 3306
   selector:
-    app: mariadb
+    db: mysql
+    instance: $NAME
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mariadb
+  name: mysql-$NAME
   labels:
-    app: mariadb
+    db: mysql
+    instance: $NAME
   namespace:
 spec:
   selector:
     matchLabels:
-      app: mariadb
+      db: mysql
+      instance: $NAME
   replicas: 1
   template:
     metadata:
-      name: mariadb
       labels:
-        app: mariadb
+        db: mysql
+        instance: $NAME
     spec:
-      serviceAccountName: mariadb
+      serviceAccountName: $NAME
       volumes:
       - name: certs
         secret:
-          secretName: mysql-config
+          secretName: mysql-$NAME-config
       - name: data
         persistentVolumeClaim:
-          claimName: pvc-mariadb
+          claimName: mysql-$NAME-pvc
       containers:
         - name: mariadb
           image: mariadb:10.7.4
@@ -60,14 +67,16 @@ spec:
           - name: MYSQL_ROOT_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: mysql-config
+                name: mysql-$NAME-config
                 key: MYSQL_ROOT_PASSWORD                
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pvc-mariadb
-  namespace:
+  name: mysql-$NAME-pvc
+  labels:
+    db: mysql
+    instance: $NAME
 spec:
   accessModes:
   - ReadWriteOnce
