@@ -173,3 +173,24 @@ func (e *EtcdClient) Driver() string {
 func (e *EtcdClient) buildKey(key string) string {
 	return fmt.Sprintf("/%s/", key)
 }
+
+func (e *EtcdClient) Migrate(ctx context.Context, tcp kamajiv1alpha1.TenantControlPlane, target Connection) error {
+	targetClient := target.(*EtcdClient) //nolint:forcetypeassert
+
+	if err := target.Check(ctx); err != nil {
+		return err
+	}
+
+	response, err := e.Client.Get(ctx, e.buildKey(fmt.Sprintf("%s_%s", tcp.GetNamespace(), tcp.GetName())), etcdclient.WithRange(rangeEnd))
+	if err != nil {
+		return err
+	}
+
+	for _, kv := range response.Kvs {
+		if _, err = targetClient.Client.Put(ctx, string(kv.Key), string(kv.Value)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
