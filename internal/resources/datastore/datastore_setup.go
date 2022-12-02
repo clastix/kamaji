@@ -35,8 +35,10 @@ type Setup struct {
 }
 
 func (r *Setup) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Storage.Driver != string(r.DataStore.Spec.Driver) &&
-		tenantControlPlane.Status.Storage.Setup.Checksum != tenantControlPlane.Status.Storage.Config.Checksum
+	return tenantControlPlane.Status.Storage.Driver != string(r.DataStore.Spec.Driver) ||
+		tenantControlPlane.Status.Storage.Setup.Checksum != tenantControlPlane.Status.Storage.Config.Checksum ||
+		tenantControlPlane.Status.Storage.Setup.User != r.resource.user ||
+		tenantControlPlane.Status.Storage.Setup.Schema != r.resource.schema
 }
 
 func (r *Setup) ShouldCleanup(_ *kamajiv1alpha1.TenantControlPlane) bool {
