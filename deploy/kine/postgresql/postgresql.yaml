@@ -1,7 +1,7 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: postgresql
+  name: postgres-$NAME
 spec:
   description: PostgreSQL cluster used by Kamaji along with kine
   instances: 3
