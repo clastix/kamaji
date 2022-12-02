@@ -33,7 +33,8 @@ import (
 
 // TenantControlPlaneReconciler reconciles a TenantControlPlane object.
 type TenantControlPlaneReconciler struct {
-	client.Client
+	Client      client.Client
+	APIReader   client.Reader
 	Scheme      *runtime.Scheme
 	Config      TenantControlPlaneReconcilerConfig
 	TriggerChan TenantControlPlaneChannel
@@ -179,7 +180,7 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 }
 
 func (r *TenantControlPlaneReconciler) getTenantControlPlane(ctx context.Context, namespacedName k8stypes.NamespacedName, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
-	if err := r.Client.Get(ctx, namespacedName, tenantControlPlane); err != nil {
+	if err := r.APIReader.Get(ctx, namespacedName, tenantControlPlane); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return false, err
 		}
@@ -207,7 +208,7 @@ func (r *TenantControlPlaneReconciler) updateStatus(ctx context.Context, namespa
 			return fmt.Errorf("error applying TenantcontrolPlane status: %w", err)
 		}
 
-		if err = r.Status().Update(ctx, tenantControlPlane); err != nil {
+		if err = r.Client.Status().Update(ctx, tenantControlPlane); err != nil {
 			return fmt.Errorf("error updating tenantControlPlane status: %w", err)
 		}
 
@@ -220,7 +221,7 @@ func (r *TenantControlPlaneReconciler) updateStatus(ctx context.Context, namespa
 func (r *TenantControlPlaneReconciler) RemoveFinalizer(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	controllerutil.RemoveFinalizer(tenantControlPlane, finalizers.TenantControlPlaneFinalizer)
 
-	return r.Update(ctx, tenantControlPlane)
+	return r.Client.Update(ctx, tenantControlPlane)
 }
 
 // dataStore retrieves the override DataStore for the given Tenant Control Plane if specified,
