@@ -52,4 +52,5 @@ type Connection interface {
 	Close() error
 	Check(ctx context.Context) error
 	Driver() string
+	Migrate(ctx context.Context, tcp kamajiv1alpha1.TenantControlPlane, target Connection) error
 }

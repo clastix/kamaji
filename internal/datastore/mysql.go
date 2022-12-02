@@ -8,7 +8,10 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"os"
+	"time"
 
+	"github.com/JamesStewy/go-mysqldump"
 	"github.com/go-sql-driver/mysql"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -22,7 +25,7 @@ const (
 
 const (
 	mysqlFetchUserStatement        = "SELECT User FROM mysql.user WHERE User= ? LIMIT 1"
-	mysqlFetchDBStatement          = "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME= ? LIMIT 1"
+	mysqlFetchDBStatement          = "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME=? LIMIT 1"
 	mysqlShowGrantsStatement       = "SHOW GRANTS FOR `%s`@`%%`"
 	mysqlCreateDBStatement         = "CREATE DATABASE IF NOT EXISTS %s"
 	mysqlCreateUserStatement       = "CREATE USER `%s`@`%%` IDENTIFIED BY '%s'"
@@ -35,6 +38,57 @@ const (
 type MySQLConnection struct {
 	db        *sql.DB
 	connector ConnectionEndpoint
+}
+
+func (c *MySQLConnection) Migrate(ctx context.Context, tcp kamajiv1alpha1.TenantControlPlane, target Connection) error {
+	// Ensuring the connection is working as expected
+	if err := target.Check(ctx); err != nil {
+		return err
+	}
+	// Creating the target schema if it doesn't exist
+	if ok, _ := target.DBExists(ctx, tcp.Status.Storage.Setup.Schema); !ok {
+		if err := target.CreateDB(ctx, tcp.Status.Storage.Setup.Schema); err != nil {
+			return err
+		}
+	}
+	// Dumping the old datastore in a local file
+	dir, err := os.MkdirTemp("", string(tcp.GetUID()))
+	if err != nil {
+		return fmt.Errorf("unable to create temp directory for MySQL migration: %w", err)
+	}
+	defer os.RemoveAll(dir)
+
+	if _, err = c.db.ExecContext(ctx, fmt.Sprintf("USE %s_%s", tcp.GetNamespace(), tcp.GetName())); err != nil {
+		return fmt.Errorf("unable to switch DB for MySQL migration: %w", err)
+	}
+
+	dumper, err := mysqldump.Register(c.db, dir, fmt.Sprintf("%d", time.Now().Unix()))
+	if err != nil {
+		return fmt.Errorf("unable to create MySQL dumper: %w", err)
+	}
+	defer dumper.Close()
+
+	dumpFile, err := dumper.Dump()
+	if err != nil {
+		return fmt.Errorf("unable to dump from MySQL: %w", err)
+	}
+
+	statements, err := os.ReadFile(dumpFile)
+	if err != nil {
+		return fmt.Errorf("cannot read dump file for MySQL: %w", err)
+	}
+	// Executing the import to the target datastore
+	targetClient := target.(*MySQLConnection) //nolint:forcetypeassert
+
+	if _, err = targetClient.db.ExecContext(ctx, fmt.Sprintf("USE %s_%s", tcp.GetNamespace(), tcp.GetName())); err != nil {
+		return fmt.Errorf("unable to switch DB for MySQL migration: %w", err)
+	}
+
+	if _, err = targetClient.db.ExecContext(ctx, string(statements)); err != nil {
+		return fmt.Errorf("cannot execute dump statements for MySQL: %w", err)
+	}
+
+	return nil
 }
 
 func (c *MySQLConnection) Driver() string {

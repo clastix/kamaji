@@ -4,6 +4,7 @@
 package datastore
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
@@ -15,20 +16,82 @@ import (
 )
 
 const (
-	postgresqlFetchDBStatement          = "SELECT FROM pg_database WHERE datname = ?"
-	postgresqlCreateDBStatement         = "CREATE DATABASE %s"
-	postgresqlUserExists                = "SELECT 1 FROM pg_roles WHERE rolname = ?"
-	postgresqlCreateUserStatement       = "CREATE ROLE %s LOGIN PASSWORD ?"
-	postgresqlShowGrantsStatement       = "SELECT has_database_privilege(rolname, ?, 'create') from pg_roles where rolcanlogin and rolname = ?"
-	postgresqlGrantPrivilegesStatement  = "GRANT ALL PRIVILEGES ON DATABASE %s TO %s"
-	postgresqlRevokePrivilegesStatement = "REVOKE ALL PRIVILEGES ON DATABASE %s FROM %s"
-	postgresqlDropRoleStatement         = "DROP ROLE %s"
-	postgresqlDropDBStatement           = "DROP DATABASE %s WITH (FORCE)"
+	postgresqlFetchDBStatement            = "SELECT FROM pg_database WHERE datname = ?"
+	postgresqlCreateDBStatement           = "CREATE DATABASE %s"
+	postgresqlUserExists                  = "SELECT 1 FROM pg_roles WHERE rolname = ?"
+	postgresqlCreateUserStatement         = "CREATE ROLE %s LOGIN PASSWORD ?"
+	postgresqlShowGrantsStatement         = "SELECT has_database_privilege(rolname, ?, 'create') from pg_roles where rolcanlogin and rolname = ?"
+	postgresqlShowOwnershipStatement      = "SELECT 't' FROM pg_catalog.pg_database AS d WHERE d.datname = ? AND pg_catalog.pg_get_userbyid(d.datdba) = ?"
+	postgresqlShowTableOwnershipStatement = "SELECT 't' from pg_tables where tableowner = ? AND tablename = ?"
+	postgresqlGrantPrivilegesStatement    = "GRANT ALL PRIVILEGES ON DATABASE %s TO %s"
+	postgresqlChangeOwnerStatement        = "ALTER DATABASE %s OWNER TO %s"
+	postgresqlRevokePrivilegesStatement   = "REVOKE ALL PRIVILEGES ON DATABASE %s FROM %s"
+	postgresqlDropRoleStatement           = "DROP ROLE %s"
+	postgresqlDropDBStatement             = "DROP DATABASE %s WITH (FORCE)"
 )
 
 type PostgreSQLConnection struct {
-	db         *pg.DB
-	connection ConnectionEndpoint
+	db               *pg.DB
+	connection       ConnectionEndpoint
+	switchDatabaseFn func(dbName string) *pg.DB
+}
+
+func (r *PostgreSQLConnection) Migrate(ctx context.Context, tcp kamajiv1alpha1.TenantControlPlane, target Connection) error {
+	// Ensuring the connection is working as expected
+	if err := target.Check(ctx); err != nil {
+		return fmt.Errorf("unable to check target datastore: %w", err)
+	}
+	// Creating the target schema if it doesn't exist
+	if ok, _ := target.DBExists(ctx, tcp.Status.Storage.Setup.Schema); !ok {
+		if err := target.CreateDB(ctx, tcp.Status.Storage.Setup.Schema); err != nil {
+			return err
+		}
+	}
+
+	targetConn := target.(*PostgreSQLConnection).switchDatabaseFn(tcp.Status.Storage.Setup.Schema) //nolint:forcetypeassert
+
+	err := targetConn.RunInTransaction(ctx, func(tx *pg.Tx) error {
+		for _, stm := range []string{
+			`CREATE TABLE IF NOT EXISTS kine (
+				id SERIAL PRIMARY KEY,
+				name VARCHAR(630),
+				created INTEGER,
+				deleted INTEGER,
+				create_revision INTEGER,
+				prev_revision INTEGER,
+				lease INTEGER,
+				value bytea,
+				old_value bytea
+			)`,
+			`TRUNCATE TABLE kine`,
+			`CREATE INDEX IF NOT EXISTS kine_name_index ON kine (name)`,
+			`CREATE INDEX IF NOT EXISTS kine_name_id_index ON kine (name,id)`,
+			`CREATE INDEX IF NOT EXISTS kine_id_deleted_index ON kine (id,deleted)`,
+			`CREATE INDEX IF NOT EXISTS kine_prev_revision_index ON kine (prev_revision)`,
+			`CREATE UNIQUE INDEX IF NOT EXISTS kine_name_prev_revision_uindex ON kine (name, prev_revision)`,
+		} {
+			if _, err := tx.ExecContext(ctx, stm); err != nil {
+				return fmt.Errorf("unable to perform schema creation: %w", err)
+			}
+		}
+		// Dumping the old datastore in a local buffer
+		var buf bytes.Buffer
+
+		if _, err := r.switchDatabaseFn(tcp.Status.Storage.Setup.Schema).WithContext(ctx).CopyTo(&buf, "COPY kine TO STDOUT"); err != nil { //nolint:contextcheck
+			return fmt.Errorf("unable to copy from the origin datastore: %w", err)
+		}
+
+		if _, err := tx.CopyFrom(&buf, "COPY kine FROM STDIN"); err != nil {
+			return fmt.Errorf("unable to copy to the target datastore: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("unable to perform migration transaction: %w", err)
+	}
+
+	return nil
 }
 
 func NewPostgreSQLConnection(config ConnectionConfig) (Connection, error) {
@@ -40,7 +103,18 @@ func NewPostgreSQLConnection(config ConnectionConfig) (Connection, error) {
 		TLSConfig: config.TLSConfig,
 	}
 
-	return &PostgreSQLConnection{db: pg.Connect(opt), connection: config.Endpoints[0]}, nil
+	fn := func(dbName string) *pg.DB {
+		o := opt
+		o.Database = dbName
+
+		return pg.Connect(o)
+	}
+
+	return &PostgreSQLConnection{
+		db:               pg.Connect(opt),
+		switchDatabaseFn: fn,
+		connection:       config.Endpoints[0],
+	}, nil
 }
 
 func (r *PostgreSQLConnection) Driver() string {
