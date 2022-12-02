@@ -91,15 +91,6 @@ func (r *Setup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 		}
 	}()
 
-	if tenantControlPlane.Status.Storage.Setup.Checksum != "" &&
-		tenantControlPlane.Status.Storage.Setup.Checksum != tenantControlPlane.Status.Storage.Config.Checksum {
-		if err = r.Delete(ctx, tenantControlPlane); err != nil {
-			return controllerutil.OperationResultNone, err
-		}
-
-		return controllerutil.OperationResultUpdated, nil
-	}
-
 	reconciliationResult = controllerutil.OperationResultNone
 	var operationResult controllerutil.OperationResult
 
