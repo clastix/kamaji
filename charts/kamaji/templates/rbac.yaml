@@ -67,6 +67,16 @@ rules:
   - update
   - watch
 - apiGroups:
+    - batch
+  resources:
+    - jobs
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - watch
+- apiGroups:
   - ""
   resources:
   - configmaps
