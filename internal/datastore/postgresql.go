@@ -23,6 +23,7 @@ const (
 	postgresqlShowGrantsStatement         = "SELECT has_database_privilege(rolname, ?, 'create') from pg_roles where rolcanlogin and rolname = ?"
 	postgresqlShowOwnershipStatement      = "SELECT 't' FROM pg_catalog.pg_database AS d WHERE d.datname = ? AND pg_catalog.pg_get_userbyid(d.datdba) = ?"
 	postgresqlShowTableOwnershipStatement = "SELECT 't' from pg_tables where tableowner = ? AND tablename = ?"
+	postgresqlKineTableExistsStatement    = "SELECT 't' FROM pg_tables WHERE schemaname = ? AND tablename  = ?"
 	postgresqlGrantPrivilegesStatement    = "GRANT ALL PRIVILEGES ON DATABASE %s TO %s"
 	postgresqlChangeOwnerStatement        = "ALTER DATABASE %s OWNER TO %s"
 	postgresqlRevokePrivilegesStatement   = "REVOKE ALL PRIVILEGES ON DATABASE %s FROM %s"
@@ -169,12 +170,54 @@ func (r *PostgreSQLConnection) GrantPrivilegesExists(ctx context.Context, user, 
 		return false, errors.NewCheckGrantExistsError(err)
 	}
 
-	return hasDatabasePrivilege == "t", nil
+	var isOwner string
+
+	if _, err = r.db.QueryContext(ctx, pg.Scan(&isOwner), postgresqlShowOwnershipStatement, dbName, user); err != nil {
+		return false, errors.NewCheckGrantExistsError(err)
+	}
+
+	var isTableOwner string
+
+	dbConn := r.switchDatabaseFn(dbName)
+	defer dbConn.Close()
+
+	tableExists, err := r.kineTableExists(ctx, dbConn)
+	if err != nil {
+		return false, errors.NewGrantPrivilegesError(err)
+	}
+
+	if tableExists {
+		if _, err = dbConn.QueryContext(ctx, pg.Scan(&isTableOwner), postgresqlShowTableOwnershipStatement, user, "kine"); err != nil {
+			return false, errors.NewCheckGrantExistsError(err)
+		}
+
+		return hasDatabasePrivilege == "t" && isOwner == "t" && isTableOwner == "t", nil
+	}
+
+	return hasDatabasePrivilege == "t" && isOwner == "t", nil
 }
 
 func (r *PostgreSQLConnection) GrantPrivileges(ctx context.Context, user, dbName string) error {
 	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlGrantPrivilegesStatement, dbName, user)); err != nil {
 		return errors.NewGrantPrivilegesError(err)
+	}
+
+	dbConn := r.switchDatabaseFn(dbName)
+	defer dbConn.Close()
+
+	if _, err := dbConn.ExecContext(ctx, fmt.Sprintf(postgresqlChangeOwnerStatement, dbName, user)); err != nil {
+		return errors.NewGrantPrivilegesError(err)
+	}
+
+	tableExists, err := r.kineTableExists(ctx, dbConn)
+	if err != nil {
+		return errors.NewGrantPrivilegesError(err)
+	}
+
+	if tableExists {
+		if _, err = dbConn.ExecContext(ctx, fmt.Sprintf("ALTER TABLE kine OWNER TO %s", user)); err != nil {
+			return errors.NewGrantPrivilegesError(err)
+		}
 	}
 
 	return nil
@@ -222,4 +265,14 @@ func (r *PostgreSQLConnection) Check(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (r *PostgreSQLConnection) kineTableExists(ctx context.Context, db *pg.DB) (bool, error) {
+	var tableExists string
+
+	if _, err := db.QueryContext(ctx, pg.Scan(&tableExists), postgresqlKineTableExistsStatement, "public", "kine"); err != nil {
+		return false, err
+	}
+
+	return tableExists == "t", nil
 }
