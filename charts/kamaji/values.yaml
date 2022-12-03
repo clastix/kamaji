@@ -124,10 +124,6 @@ securityContext:
   # runAsNonRoot: true
   # runAsUser: 1000
 
-service:
-  type: ClusterIP
-  port: 8443
-
 resources:
   limits:
     cpu: 200m
