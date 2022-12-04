@@ -4,13 +4,16 @@
 package v1alpha1
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -19,11 +22,13 @@ import (
 
 // log is for logging in this package.
 var (
+	ctrlClient            client.Client
 	tenantcontrolplanelog = logf.Log.WithName("tenantcontrolplane-resource")
 	defaultDatastore      string
 )
 
 func (in *TenantControlPlane) SetupWebhookWithManager(mgr ctrl.Manager, datastore string) error {
+	ctrlClient = mgr.GetClient()
 	defaultDatastore = datastore
 
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -75,13 +80,8 @@ func (in *TenantControlPlane) ValidateCreate() error {
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *TenantControlPlane) ValidateUpdate(old runtime.Object) error {
-	tenantcontrolplanelog.Info("validate update", "name", in.Name, "namespace", in.Namespace)
-
-	o := old.(*TenantControlPlane) //nolint:forcetypeassert
-
-	oldVer, oldErr := semver.Make(normalizeKubernetesVersion(o.Spec.Kubernetes.Version))
+func (in *TenantControlPlane) validateVersionUpdate(old *TenantControlPlane) error {
+	oldVer, oldErr := semver.Make(normalizeKubernetesVersion(old.Spec.Kubernetes.Version))
 	if oldErr != nil {
 		return errors.Wrap(oldErr, "unable to parse the previous Kubernetes version")
 	}
@@ -103,6 +103,44 @@ func (in *TenantControlPlane) ValidateUpdate(old runtime.Object) error {
 		return fmt.Errorf("unable to downgrade a TenantControlPlane from %s to %s", oldVer.String(), newVer.String())
 	case newVer.Minor-oldVer.Minor > 1:
 		return fmt.Errorf("unable to upgrade to a minor version in a non-sequential mode")
+	}
+
+	return nil
+}
+
+func (in *TenantControlPlane) validateDatastoreUpdate(old *TenantControlPlane) error {
+	if old.Spec.DataStore == in.Spec.DataStore {
+		return nil
+	}
+
+	previousDatastore, desiredDatastore := &DataStore{}, &DataStore{}
+
+	if err := ctrlClient.Get(context.Background(), types.NamespacedName{Name: old.Spec.DataStore}, previousDatastore); err != nil {
+		return fmt.Errorf("unable to retrieve old DataStore for validation: %w", err)
+	}
+
+	if err := ctrlClient.Get(context.Background(), types.NamespacedName{Name: in.Spec.DataStore}, desiredDatastore); err != nil {
+		return fmt.Errorf("unable to retrieve old DataStore for validation: %w", err)
+	}
+
+	if previousDatastore.Spec.Driver != desiredDatastore.Spec.Driver {
+		return fmt.Errorf("migration between different Datastore drivers is not supported")
+	}
+
+	return nil
+}
+
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
+func (in *TenantControlPlane) ValidateUpdate(old runtime.Object) error {
+	tenantcontrolplanelog.Info("validate update", "name", in.Name, "namespace", in.Namespace)
+
+	o := old.(*TenantControlPlane) //nolint:forcetypeassert
+
+	if err := in.validateVersionUpdate(o); err != nil {
+		return err
+	}
+	if err := in.validateDatastoreUpdate(o); err != nil {
+		return err
 	}
 
 	return nil
