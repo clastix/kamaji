@@ -60,6 +60,7 @@ spec:
                           keyPath:
                             description: Name of the key for the given Secret reference
                               where the content is stored. This value is mandatory.
+                            minLength: 1
                             type: string
                           name:
                             description: name is unique within a namespace to reference
@@ -86,6 +87,7 @@ spec:
                           keyPath:
                             description: Name of the key for the given Secret reference
                               where the content is stored. This value is mandatory.
+                            minLength: 1
                             type: string
                           name:
                             description: name is unique within a namespace to reference
@@ -106,12 +108,17 @@ spec:
                 type: object
               driver:
                 description: The driver to use to connect to the shared datastore.
+                enum:
+                - etcd
+                - MySQL
+                - PostgreSQL
                 type: string
               endpoints:
                 description: List of the endpoints to connect to the shared datastore.
                   No need for protocol, just bare IP/FQDN and port.
                 items:
                   type: string
+                minItems: 1
                 type: array
               tlsConfig:
                 description: Defines the TLS/SSL configuration required to connect
@@ -136,6 +143,7 @@ spec:
                                 description: Name of the key for the given Secret
                                   reference where the content is stored. This value
                                   is mandatory.
+                                minLength: 1
                                 type: string
                               name:
                                 description: name is unique within a namespace to
@@ -163,6 +171,7 @@ spec:
                                 description: Name of the key for the given Secret
                                   reference where the content is stored. This value
                                   is mandatory.
+                                minLength: 1
                                 type: string
                               name:
                                 description: name is unique within a namespace to
@@ -197,6 +206,7 @@ spec:
                                 description: Name of the key for the given Secret
                                   reference where the content is stored. This value
                                   is mandatory.
+                                minLength: 1
                                 type: string
                               name:
                                 description: name is unique within a namespace to
@@ -224,6 +234,7 @@ spec:
                                 description: Name of the key for the given Secret
                                   reference where the content is stored. This value
                                   is mandatory.
+                                minLength: 1
                                 type: string
                               name:
                                 description: name is unique within a namespace to
