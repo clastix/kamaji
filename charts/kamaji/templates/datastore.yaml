@@ -1,7 +1,7 @@
 apiVersion: kamaji.clastix.io/v1alpha1
 kind: DataStore
 metadata:
-  name: {{ include "datastore.fullname" . }}
+  name: {{ include "datastore.fullname" . }}g
   labels:
     {{- include "datastore.labels" . | nindent 4 }}
 spec:

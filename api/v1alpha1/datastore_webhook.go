@@ -4,59 +4,157 @@
 package v1alpha1
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// log is for logging in this package.
-var datastorelog = logf.Log.WithName("datastore-resource")
+//+kubebuilder:webhook:path=/mutate-kamaji-clastix-io-v1alpha1-datastore,mutating=true,failurePolicy=fail,sideEffects=None,groups=kamaji.clastix.io,resources=datastores,verbs=create;update,versions=v1alpha1,name=mdatastore.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-kamaji-clastix-io-v1alpha1-datastore,mutating=false,failurePolicy=fail,sideEffects=None,groups=kamaji.clastix.io,resources=datastores,verbs=create;update,versions=v1alpha1,name=vdatastore.kb.io,admissionReviewVersions=v1
 
-func (r *DataStore) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (in *DataStore) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	validator := &dataStoreValidator{
+		log:    mgr.GetLogger().WithName("datastore-webhook"),
+		client: mgr.GetClient(),
+	}
+
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(in).
+		WithValidator(validator).
+		WithDefaulter(validator).
 		Complete()
 }
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-//+kubebuilder:webhook:path=/mutate-kamaji-clastix-io-v1alpha1-datastore,mutating=true,failurePolicy=fail,sideEffects=None,groups=kamaji.clastix.io,resources=datastores,verbs=create;update,versions=v1alpha1,name=mdatastore.kb.io,admissionReviewVersions=v1
-
-var _ webhook.Defaulter = &DataStore{}
-
-// Default implements webhook.Defaulter so a webhook will be registered for the type.
-func (r *DataStore) Default() {
-	datastorelog.Info("default", "name", r.Name)
-
-	// TODO(user): fill in your defaulting logic.
+type dataStoreValidator struct {
+	log    logr.Logger
+	client client.Client
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-kamaji-clastix-io-v1alpha1-datastore,mutating=false,failurePolicy=fail,sideEffects=None,groups=kamaji.clastix.io,resources=datastores,verbs=create;update,versions=v1alpha1,name=vdatastore.kb.io,admissionReviewVersions=v1
+func (d *dataStoreValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	ds, ok := obj.(*DataStore)
+	if !ok {
+		return fmt.Errorf("expected *kamajiv1alpha1.DataStore")
+	}
 
-var _ webhook.Validator = &DataStore{}
+	if err := d.validate(ctx, ds); err != nil {
+		return err
+	}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (r *DataStore) ValidateCreate() error {
-	datastorelog.Info("validate create", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object creation.
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (r *DataStore) ValidateUpdate(old runtime.Object) error {
-	datastorelog.Info("validate update", "name", r.Name)
+func (d *dataStoreValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	old, ok := oldObj.(*DataStore)
+	if !ok {
+		return fmt.Errorf("expected *kamajiv1alpha1.DataStore")
+	}
 
-	// TODO(user): fill in your validation logic upon object update.
+	ds, ok := newObj.(*DataStore)
+	if !ok {
+		return fmt.Errorf("expected *kamajiv1alpha1.DataStore")
+	}
+
+	d.log.Info("validate update", "name", ds.GetName())
+
+	if ds.Spec.Driver != old.Spec.Driver {
+		return fmt.Errorf("driver of a DataStore cannot be changed")
+	}
+
+	if err := d.validate(ctx, ds); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (r *DataStore) ValidateDelete() error {
-	datastorelog.Info("validate delete", "name", r.Name)
+func (d *dataStoreValidator) ValidateDelete(context.Context, runtime.Object) error {
+	return nil
+}
 
-	// TODO(user): fill in your validation logic upon object deletion.
+func (d *dataStoreValidator) Default(context.Context, runtime.Object) error {
+	return nil
+}
+
+func (d *dataStoreValidator) validate(ctx context.Context, ds *DataStore) error {
+	if ds.Spec.BasicAuth != nil {
+		if err := d.validateBasicAuth(ctx, ds); err != nil {
+			return err
+		}
+	}
+
+	if err := d.validateTLSConfig(ctx, ds); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *dataStoreValidator) validateBasicAuth(ctx context.Context, ds *DataStore) error {
+	if err := d.validateContentReference(ctx, ds.Spec.BasicAuth.Password); err != nil {
+		return fmt.Errorf("basic-auth password is not valid, %w", err)
+	}
+
+	if err := d.validateContentReference(ctx, ds.Spec.BasicAuth.Username); err != nil {
+		return fmt.Errorf("basic-auth username is not valid, %w", err)
+	}
+
+	return nil
+}
+
+func (d *dataStoreValidator) validateTLSConfig(ctx context.Context, ds *DataStore) error {
+	if err := d.validateContentReference(ctx, ds.Spec.TLSConfig.CertificateAuthority.Certificate); err != nil {
+		return fmt.Errorf("CA certificate is not valid, %w", err)
+	}
+
+	if ds.Spec.Driver == EtcdDriver {
+		if ds.Spec.TLSConfig.CertificateAuthority.PrivateKey == nil {
+			return fmt.Errorf("CA private key is required when using the etcd driver")
+		}
+	}
+
+	if ds.Spec.TLSConfig.CertificateAuthority.PrivateKey != nil {
+		if err := d.validateContentReference(ctx, *ds.Spec.TLSConfig.CertificateAuthority.PrivateKey); err != nil {
+			return fmt.Errorf("CA private key is not valid, %w", err)
+		}
+	}
+
+	if err := d.validateContentReference(ctx, ds.Spec.TLSConfig.ClientCertificate.Certificate); err != nil {
+		return fmt.Errorf("client certificate is not valid, %w", err)
+	}
+
+	if err := d.validateContentReference(ctx, ds.Spec.TLSConfig.ClientCertificate.PrivateKey); err != nil {
+		return fmt.Errorf("client private key is not valid, %w", err)
+	}
+
+	return nil
+}
+
+func (d *dataStoreValidator) validateContentReference(ctx context.Context, ref ContentRef) error {
+	switch {
+	case len(ref.Content) > 0:
+		return nil
+	case ref.SecretRef == nil:
+		return fmt.Errorf("the Secret reference is mandatory when bare content is not specified")
+	case len(ref.SecretRef.SecretReference.Name) == 0:
+		return fmt.Errorf("the Secret reference name is mandatory")
+	case len(ref.SecretRef.SecretReference.Namespace) == 0:
+		return fmt.Errorf("the Secret reference namespace is mandatory")
+	}
+
+	if err := d.client.Get(ctx, types.NamespacedName{Name: ref.SecretRef.SecretReference.Name, Namespace: ref.SecretRef.SecretReference.Namespace}, &corev1.Secret{}); err != nil {
+		if errors.IsNotFound(err) {
+			return fmt.Errorf("secret %s/%s is not found", ref.SecretRef.SecretReference.Namespace, ref.SecretRef.SecretReference.Name)
+		}
+
+		return err
+	}
+
 	return nil
 }
