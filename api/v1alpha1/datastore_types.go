@@ -8,7 +8,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type Driver string //+kubebuilder:validation:Enum=etcd;MySQL;PostgreSQL
+// +kubebuilder:validation:Enum=etcd;MySQL;PostgreSQL
+
+type Driver string
 
 var (
 	EtcdDriver           Driver = "etcd"
@@ -16,13 +18,17 @@ var (
 	KinePostgreSQLDriver Driver = "PostgreSQL"
 )
 
+// +kubebuilder:validation:MinItems=1
+
+type Endpoints []string
+
 // DataStoreSpec defines the desired state of DataStore.
 type DataStoreSpec struct {
 	// The driver to use to connect to the shared datastore.
 	Driver Driver `json:"driver"`
 	// List of the endpoints to connect to the shared datastore.
 	// No need for protocol, just bare IP/FQDN and port.
-	Endpoints []string `json:"endpoints"` //+kubebuilder:validation:MinLength=1
+	Endpoints Endpoints `json:"endpoints"`
 	// In case of authentication enabled for the given data store, specifies the username and password pair.
 	// This value is optional.
 	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
@@ -62,11 +68,14 @@ type ContentRef struct {
 	SecretRef *SecretReference `json:"secretReference,omitempty"`
 }
 
+// +kubebuilder:validation:MinLength=1
+type secretReferKeyPath string
+
 type SecretReference struct {
 	corev1.SecretReference `json:",inline"`
 	// Name of the key for the given Secret reference where the content is stored.
 	// This value is mandatory.
-	KeyPath string `json:"keyPath"`
+	KeyPath secretReferKeyPath `json:"keyPath"`
 }
 
 // DataStoreStatus defines the observed state of DataStore.

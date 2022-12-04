@@ -30,7 +30,7 @@ func (in *ContentRef) GetContent(ctx context.Context, client client.Client) ([]b
 		return nil, err
 	}
 
-	v, ok := secret.Data[secretRef.KeyPath]
+	v, ok := secret.Data[string(secretRef.KeyPath)]
 	if !ok {
 		return nil, fmt.Errorf("secret %s does not have key %s", namespacedName.String(), secretRef.KeyPath)
 	}
