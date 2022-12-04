@@ -1,7 +1,9 @@
 apiVersion: kamaji.clastix.io/v1alpha1
 kind: DataStore
 metadata:
-  name: {{ include "datastore.fullname" . }}g
+  name: {{ include "datastore.fullname" . }}
+  annotations:
+    "helm.sh/hook": post-install
   labels:
     {{- include "datastore.labels" . | nindent 4 }}
 spec:
