@@ -9,66 +9,66 @@ import (
 	"strings"
 
 	"github.com/blang/semver"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/clastix/kamaji/internal/upgrade"
 )
 
-// log is for logging in this package.
-var (
-	ctrlClient            client.Client
-	tenantcontrolplanelog = logf.Log.WithName("tenantcontrolplane-resource")
-	defaultDatastore      string
-)
+//+kubebuilder:webhook:path=/mutate-kamaji-clastix-io-v1alpha1-tenantcontrolplane,mutating=true,failurePolicy=fail,sideEffects=None,groups=kamaji.clastix.io,resources=tenantcontrolplanes,verbs=create;update,versions=v1alpha1,name=mtenantcontrolplane.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-kamaji-clastix-io-v1alpha1-tenantcontrolplane,mutating=false,failurePolicy=fail,sideEffects=None,groups=kamaji.clastix.io,resources=tenantcontrolplanes,verbs=create;update,versions=v1alpha1,name=vtenantcontrolplane.kb.io,admissionReviewVersions=v1
 
 func (in *TenantControlPlane) SetupWebhookWithManager(mgr ctrl.Manager, datastore string) error {
-	ctrlClient = mgr.GetClient()
-	defaultDatastore = datastore
+	validator := &tenantControlPlaneValidator{
+		client:           mgr.GetClient(),
+		defaultDatastore: datastore,
+		log:              mgr.GetLogger().WithName("tenantcontrolplane-webhook"),
+	}
 
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(in).
+		WithValidator(validator).
+		WithDefaulter(validator).
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-kamaji-clastix-io-v1alpha1-tenantcontrolplane,mutating=true,failurePolicy=fail,sideEffects=None,groups=kamaji.clastix.io,resources=tenantcontrolplanes,verbs=create;update,versions=v1alpha1,name=mtenantcontrolplane.kb.io,admissionReviewVersions=v1
-
-var _ webhook.Defaulter = &TenantControlPlane{}
-
-// Default implements webhook.Defaulter so a webhook will be registered for the type.
-func (in *TenantControlPlane) Default() {
-	if len(in.Spec.DataStore) == 0 {
-		in.Spec.DataStore = defaultDatastore
-	}
+type tenantControlPlaneValidator struct {
+	client           client.Client
+	defaultDatastore string
+	log              logr.Logger
 }
 
-//+kubebuilder:webhook:path=/validate-kamaji-clastix-io-v1alpha1-tenantcontrolplane,mutating=false,failurePolicy=fail,sideEffects=None,groups=kamaji.clastix.io,resources=tenantcontrolplanes,verbs=create;update,versions=v1alpha1,name=vtenantcontrolplane.kb.io,admissionReviewVersions=v1
-
-var _ webhook.Validator = &TenantControlPlane{}
-
-func normalizeKubernetesVersion(input string) string {
-	if strings.HasPrefix(input, "v") {
-		return strings.Replace(input, "v", "", 1)
+func (t *tenantControlPlaneValidator) Default(_ context.Context, obj runtime.Object) error {
+	tcp, ok := obj.(*TenantControlPlane)
+	if !ok {
+		return fmt.Errorf("expected *kamajiv1alpha1.TenantControlPlane")
 	}
 
-	return input
+	if len(tcp.Spec.DataStore) == 0 {
+		tcp.Spec.DataStore = t.defaultDatastore
+	}
+
+	return nil
 }
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (in *TenantControlPlane) ValidateCreate() error {
-	tenantcontrolplanelog.Info("validate create", "name", in.Name, "namespace", in.Namespace)
+func (t *tenantControlPlaneValidator) ValidateCreate(_ context.Context, obj runtime.Object) error {
+	tcp, ok := obj.(*TenantControlPlane)
+	if !ok {
+		return fmt.Errorf("expected *kamajiv1alpha1.TenantControlPlane")
+	}
 
-	ver, err := semver.New(normalizeKubernetesVersion(in.Spec.Kubernetes.Version))
+	t.log.Info("validate create", "name", tcp.Name, "namespace", tcp.Namespace)
+
+	ver, err := semver.New(t.normalizeKubernetesVersion(tcp.Spec.Kubernetes.Version))
 	if err != nil {
 		return errors.Wrap(err, "unable to parse the desired Kubernetes version")
 	}
 
-	supportedVer, supportedErr := semver.Make(normalizeKubernetesVersion(upgrade.KubeadmVersion))
+	supportedVer, supportedErr := semver.Make(t.normalizeKubernetesVersion(upgrade.KubeadmVersion))
 	if supportedErr != nil {
 		return errors.Wrap(supportedErr, "unable to parse the Kamaji supported Kubernetes version")
 	}
@@ -80,18 +80,45 @@ func (in *TenantControlPlane) ValidateCreate() error {
 	return nil
 }
 
-func (in *TenantControlPlane) validateVersionUpdate(old *TenantControlPlane) error {
-	oldVer, oldErr := semver.Make(normalizeKubernetesVersion(old.Spec.Kubernetes.Version))
+func (t *tenantControlPlaneValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	old, ok := oldObj.(*TenantControlPlane)
+	if !ok {
+		return fmt.Errorf("expected *kamajiv1alpha1.TenantControlPlane")
+	}
+
+	tcp, ok := newObj.(*TenantControlPlane)
+	if !ok {
+		return fmt.Errorf("expected *kamajiv1alpha1.TenantControlPlane")
+	}
+
+	t.log.Info("validate update", "name", tcp.Name, "namespace", tcp.Namespace)
+
+	if err := t.validateVersionUpdate(old, tcp); err != nil {
+		return err
+	}
+	if err := t.validateDataStore(ctx, old, tcp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (t *tenantControlPlaneValidator) ValidateDelete(context.Context, runtime.Object) error {
+	return nil
+}
+
+func (t *tenantControlPlaneValidator) validateVersionUpdate(oldObj, newObj *TenantControlPlane) error {
+	oldVer, oldErr := semver.Make(t.normalizeKubernetesVersion(oldObj.Spec.Kubernetes.Version))
 	if oldErr != nil {
 		return errors.Wrap(oldErr, "unable to parse the previous Kubernetes version")
 	}
 
-	newVer, newErr := semver.New(normalizeKubernetesVersion(in.Spec.Kubernetes.Version))
+	newVer, newErr := semver.New(t.normalizeKubernetesVersion(newObj.Spec.Kubernetes.Version))
 	if newErr != nil {
 		return errors.Wrap(newErr, "unable to parse the desired Kubernetes version")
 	}
 
-	supportedVer, supportedErr := semver.Make(normalizeKubernetesVersion(upgrade.KubeadmVersion))
+	supportedVer, supportedErr := semver.Make(t.normalizeKubernetesVersion(upgrade.KubeadmVersion))
 	if supportedErr != nil {
 		return errors.Wrap(supportedErr, "unable to parse the Kamaji supported Kubernetes version")
 	}
@@ -108,18 +135,18 @@ func (in *TenantControlPlane) validateVersionUpdate(old *TenantControlPlane) err
 	return nil
 }
 
-func (in *TenantControlPlane) validateDatastoreUpdate(old *TenantControlPlane) error {
-	if old.Spec.DataStore == in.Spec.DataStore {
+func (t *tenantControlPlaneValidator) validateDataStore(ctx context.Context, oldObj, tcp *TenantControlPlane) error {
+	if oldObj.Spec.DataStore == tcp.Spec.DataStore {
 		return nil
 	}
 
 	previousDatastore, desiredDatastore := &DataStore{}, &DataStore{}
 
-	if err := ctrlClient.Get(context.Background(), types.NamespacedName{Name: old.Spec.DataStore}, previousDatastore); err != nil {
+	if err := t.client.Get(ctx, types.NamespacedName{Name: oldObj.Spec.DataStore}, previousDatastore); err != nil {
 		return fmt.Errorf("unable to retrieve old DataStore for validation: %w", err)
 	}
 
-	if err := ctrlClient.Get(context.Background(), types.NamespacedName{Name: in.Spec.DataStore}, desiredDatastore); err != nil {
+	if err := t.client.Get(ctx, types.NamespacedName{Name: tcp.Spec.DataStore}, desiredDatastore); err != nil {
 		return fmt.Errorf("unable to retrieve old DataStore for validation: %w", err)
 	}
 
@@ -130,23 +157,10 @@ func (in *TenantControlPlane) validateDatastoreUpdate(old *TenantControlPlane) e
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *TenantControlPlane) ValidateUpdate(old runtime.Object) error {
-	tenantcontrolplanelog.Info("validate update", "name", in.Name, "namespace", in.Namespace)
-
-	o := old.(*TenantControlPlane) //nolint:forcetypeassert
-
-	if err := in.validateVersionUpdate(o); err != nil {
-		return err
-	}
-	if err := in.validateDatastoreUpdate(o); err != nil {
-		return err
+func (t *tenantControlPlaneValidator) normalizeKubernetesVersion(input string) string {
+	if strings.HasPrefix(input, "v") {
+		return strings.Replace(input, "v", "", 1)
 	}
 
-	return nil
-}
-
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (in *TenantControlPlane) ValidateDelete() error {
-	return nil
+	return input
 }
