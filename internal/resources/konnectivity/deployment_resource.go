@@ -134,8 +134,6 @@ func (r *KubernetesDeploymentResource) syncContainer(tenantControlPlane *kamajiv
 
 	args := utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.ExtraArgs)
 
-	args["-v"] = "8"
-	args["--logtostderr"] = "true"
 	args["--uds-name"] = fmt.Sprintf("%s/konnectivity-server.socket", konnectivityServerPath)
 	args["--cluster-cert"] = "/etc/kubernetes/pki/apiserver.crt"
 	args["--cluster-key"] = "/etc/kubernetes/pki/apiserver.key"
