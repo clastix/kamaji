@@ -131,23 +131,26 @@ func (r *KubernetesDeploymentResource) syncContainer(tenantControlPlane *kamajiv
 	r.resource.Spec.Template.Spec.Containers[index].Name = konnectivityServerName
 	r.resource.Spec.Template.Spec.Containers[index].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Image, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Version)
 	r.resource.Spec.Template.Spec.Containers[index].Command = []string{"/proxy-server"}
-	r.resource.Spec.Template.Spec.Containers[index].Args = []string{
-		"-v=8",
-		"--logtostderr=true",
-		fmt.Sprintf("--uds-name=%s/konnectivity-server.socket", konnectivityServerPath),
-		"--cluster-cert=/etc/kubernetes/pki/apiserver.crt",
-		"--cluster-key=/etc/kubernetes/pki/apiserver.key",
-		"--mode=grpc",
-		"--server-port=0",
-		fmt.Sprintf("--agent-port=%d", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port),
-		"--admin-port=8133",
-		"--health-port=8134",
-		"--agent-namespace=kube-system",
-		fmt.Sprintf("--agent-service-account=%s", AgentName),
-		"--kubeconfig=/etc/kubernetes/konnectivity-server.conf",
-		fmt.Sprintf("--authentication-audience=%s", CertCommonName),
-		fmt.Sprintf("--server-count=%d", tenantControlPlane.Spec.ControlPlane.Deployment.Replicas),
-	}
+
+	args := utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.ExtraArgs)
+
+	args["-v"] = "8"
+	args["--logtostderr"] = "true"
+	args["--uds-name"] = fmt.Sprintf("%s/konnectivity-server.socket", konnectivityServerPath)
+	args["--cluster-cert"] = "/etc/kubernetes/pki/apiserver.crt"
+	args["--cluster-key"] = "/etc/kubernetes/pki/apiserver.key"
+	args["--mode"] = "grpc"
+	args["--server-port"] = "0"
+	args["--agent-port"] = fmt.Sprintf("%d", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port)
+	args["--admin-port"] = "8133"
+	args["--health-port"] = "8134"
+	args["--agent-namespace"] = "kube-system"
+	args["--agent-service-account"] = AgentName
+	args["--kubeconfig"] = "/etc/kubernetes/konnectivity-server.conf"
+	args["--authentication-audience"] = CertCommonName
+	args["--server-count"] = fmt.Sprintf("%d", tenantControlPlane.Spec.ControlPlane.Deployment.Replicas)
+
+	r.resource.Spec.Template.Spec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
 	r.resource.Spec.Template.Spec.Containers[index].LivenessProbe = &corev1.Probe{
 		InitialDelaySeconds: 30,
 		TimeoutSeconds:      60,
@@ -203,7 +206,7 @@ func (r *KubernetesDeploymentResource) syncContainer(tenantControlPlane *kamajiv
 		Requests: nil,
 	}
 
-	if resources := tenantControlPlane.Spec.Addons.Konnectivity.Resources; resources != nil {
+	if resources := tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Resources; resources != nil {
 		r.resource.Spec.Template.Spec.Containers[index].Resources = *resources
 	}
 }

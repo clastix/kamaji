@@ -138,6 +138,9 @@ type ImageOverrideTrait struct {
 	ImageTag string `json:"imageTag,omitempty"`
 }
 
+// ExtraArgs allows adding additional arguments to said component.
+type ExtraArgs []string
+
 type KonnectivityServerSpec struct {
 	// The port which Konnectivity server is listening to.
 	Port int32 `json:"port"`
@@ -149,6 +152,7 @@ type KonnectivityServerSpec struct {
 	Image string `json:"image,omitempty"`
 	// Resources define the amount of CPU and memory to allocate to the Konnectivity server.
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	ExtraArgs ExtraArgs                    `json:"extraArgs,omitempty"`
 }
 
 type KonnectivityAgentSpec struct {
@@ -157,13 +161,14 @@ type KonnectivityAgentSpec struct {
 	AgentImage string `json:"agentImage,omitempty"`
 	// Version for Konnectivity agent.
 	// +kubebuilder:default=v0.0.32
-	Version string `json:"version,omitempty"`
+	Version   string    `json:"version,omitempty"`
+	ExtraArgs ExtraArgs `json:"extraArgs,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.
 type KonnectivitySpec struct {
-	KonnectivityServerSpec `json:"server,omitempty"`
-	KonnectivityAgentSpec  `json:"agent,omitempty"`
+	KonnectivityServerSpec KonnectivityServerSpec `json:"server,omitempty"`
+	KonnectivityAgentSpec  KonnectivityAgentSpec  `json:"agent,omitempty"`
 }
 
 // AddonsSpec defines the enabled addons and their features.
