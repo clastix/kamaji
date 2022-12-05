@@ -335,6 +335,11 @@ spec:
                             default: registry.k8s.io/kas-network-proxy/proxy-agent
                             description: AgentImage defines the container image for Konnectivity's agent.
                             type: string
+                          extraArgs:
+                            description: ExtraArgs allows adding additional arguments to said component.
+                            items:
+                              type: string
+                            type: array
                           version:
                             default: v0.0.32
                             description: Version for Konnectivity agent.
@@ -342,6 +347,11 @@ spec:
                         type: object
                       server:
                         properties:
+                          extraArgs:
+                            description: ExtraArgs allows adding additional arguments to said component.
+                            items:
+                              type: string
+                            type: array
                           image:
                             default: registry.k8s.io/kas-network-proxy/proxy-server
                             description: Container image used by the Konnectivity server.
