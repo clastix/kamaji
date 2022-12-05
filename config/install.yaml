@@ -329,46 +329,56 @@ spec:
                   konnectivity:
                     description: Enables the Konnectivity addon in the Tenant Cluster, required if the worker nodes are in a different network.
                     properties:
-                      agentImage:
-                        default: registry.k8s.io/kas-network-proxy/proxy-agent
-                        description: AgentImage defines the container image for Konnectivity's agent.
-                        type: string
-                      proxyPort:
-                        description: Port of Konnectivity proxy server.
-                        format: int32
-                        type: integer
-                      resources:
-                        description: Resources define the amount of CPU and memory to allocate to the Konnectivity server.
+                      agent:
                         properties:
-                          limits:
-                            additionalProperties:
-                              anyOf:
-                              - type: integer
-                              - type: string
-                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                              x-kubernetes-int-or-string: true
-                            description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-                            type: object
-                          requests:
-                            additionalProperties:
-                              anyOf:
-                              - type: integer
-                              - type: string
-                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                              x-kubernetes-int-or-string: true
-                            description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-                            type: object
+                          agentImage:
+                            default: registry.k8s.io/kas-network-proxy/proxy-agent
+                            description: AgentImage defines the container image for Konnectivity's agent.
+                            type: string
+                          version:
+                            default: v0.0.32
+                            description: Version for Konnectivity agent.
+                            type: string
                         type: object
-                      serverImage:
-                        default: registry.k8s.io/kas-network-proxy/proxy-server
-                        description: ServerImage defines the container image for Konnectivity's server.
-                        type: string
-                      version:
-                        default: v0.0.32
-                        description: Version for Konnectivity server and agent.
-                        type: string
-                    required:
-                    - proxyPort
+                      server:
+                        properties:
+                          image:
+                            default: registry.k8s.io/kas-network-proxy/proxy-server
+                            description: Container image used by the Konnectivity server.
+                            type: string
+                          port:
+                            description: The port which Konnectivity server is listening to.
+                            format: int32
+                            type: integer
+                          resources:
+                            description: Resources define the amount of CPU and memory to allocate to the Konnectivity server.
+                            properties:
+                              limits:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                type: object
+                              requests:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                type: object
+                            type: object
+                          version:
+                            default: v0.0.32
+                            description: Container image version of the Konnectivity server.
+                            type: string
+                        required:
+                        - port
+                        type: object
                     type: object
                   kubeProxy:
                     description: Enables the kube-proxy addon in the Tenant Cluster. The registry and the tag are configurable, the image is hard-coded to `kube-proxy`.
