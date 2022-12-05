@@ -164,7 +164,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			r.resource.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
 		}
 
-		r.resource.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.AgentImage, tenantControlPlane.Spec.Addons.Konnectivity.Version)
+		r.resource.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.AgentImage, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Version)
 		r.resource.Spec.Template.Spec.Containers[0].Name = AgentName
 		r.resource.Spec.Template.Spec.Containers[0].Command = []string{"/proxy-agent"}
 		r.resource.Spec.Template.Spec.Containers[0].Args = []string{
@@ -172,7 +172,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			"--logtostderr=true",
 			"--ca-cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
 			fmt.Sprintf("--proxy-server-host=%s", address),
-			fmt.Sprintf("--proxy-server-port=%d", tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort),
+			fmt.Sprintf("--proxy-server-port=%d", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port),
 			"--admin-server-port=8133",
 			"--health-server-port=8134",
 			"--service-account-token-path=/var/run/secrets/tokens/konnectivity-agent-token",

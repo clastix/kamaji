@@ -140,8 +140,8 @@ func (r *ServiceResource) mutate(_ context.Context, tenantControlPlane *kamajiv1
 
 		r.resource.Spec.Ports[1].Name = "konnectivity-server"
 		r.resource.Spec.Ports[1].Protocol = corev1.ProtocolTCP
-		r.resource.Spec.Ports[1].Port = tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort
-		r.resource.Spec.Ports[1].TargetPort = intstr.FromInt(int(tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort))
+		r.resource.Spec.Ports[1].Port = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port
+		r.resource.Spec.Ports[1].TargetPort = intstr.FromInt(int(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port))
 
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

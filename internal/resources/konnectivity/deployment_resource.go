@@ -129,7 +129,7 @@ func (r *KubernetesDeploymentResource) syncContainer(tenantControlPlane *kamajiv
 	}
 
 	r.resource.Spec.Template.Spec.Containers[index].Name = konnectivityServerName
-	r.resource.Spec.Template.Spec.Containers[index].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.ServerImage, tenantControlPlane.Spec.Addons.Konnectivity.Version)
+	r.resource.Spec.Template.Spec.Containers[index].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Image, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Version)
 	r.resource.Spec.Template.Spec.Containers[index].Command = []string{"/proxy-server"}
 	r.resource.Spec.Template.Spec.Containers[index].Args = []string{
 		"-v=8",
@@ -139,7 +139,7 @@ func (r *KubernetesDeploymentResource) syncContainer(tenantControlPlane *kamajiv
 		"--cluster-key=/etc/kubernetes/pki/apiserver.key",
 		"--mode=grpc",
 		"--server-port=0",
-		fmt.Sprintf("--agent-port=%d", tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort),
+		fmt.Sprintf("--agent-port=%d", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port),
 		"--admin-port=8133",
 		"--health-port=8134",
 		"--agent-namespace=kube-system",
@@ -165,7 +165,7 @@ func (r *KubernetesDeploymentResource) syncContainer(tenantControlPlane *kamajiv
 	r.resource.Spec.Template.Spec.Containers[index].Ports = []corev1.ContainerPort{
 		{
 			Name:          "agentport",
-			ContainerPort: tenantControlPlane.Spec.Addons.Konnectivity.ProxyPort,
+			ContainerPort: tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port,
 			Protocol:      corev1.ProtocolTCP,
 		},
 		{

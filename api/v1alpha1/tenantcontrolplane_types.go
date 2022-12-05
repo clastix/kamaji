@@ -138,21 +138,32 @@ type ImageOverrideTrait struct {
 	ImageTag string `json:"imageTag,omitempty"`
 }
 
-// KonnectivitySpec defines the spec for Konnectivity.
-type KonnectivitySpec struct {
-	// Port of Konnectivity proxy server.
-	ProxyPort int32 `json:"proxyPort"`
-	// Version for Konnectivity server and agent.
+type KonnectivityServerSpec struct {
+	// The port which Konnectivity server is listening to.
+	Port int32 `json:"port"`
+	// Container image version of the Konnectivity server.
 	// +kubebuilder:default=v0.0.32
 	Version string `json:"version,omitempty"`
-	// ServerImage defines the container image for Konnectivity's server.
+	// Container image used by the Konnectivity server.
 	// +kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-server
-	ServerImage string `json:"serverImage,omitempty"`
+	Image string `json:"image,omitempty"`
+	// Resources define the amount of CPU and memory to allocate to the Konnectivity server.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+type KonnectivityAgentSpec struct {
 	// AgentImage defines the container image for Konnectivity's agent.
 	// +kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-agent
 	AgentImage string `json:"agentImage,omitempty"`
-	// Resources define the amount of CPU and memory to allocate to the Konnectivity server.
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Version for Konnectivity agent.
+	// +kubebuilder:default=v0.0.32
+	Version string `json:"version,omitempty"`
+}
+
+// KonnectivitySpec defines the spec for Konnectivity.
+type KonnectivitySpec struct {
+	KonnectivityServerSpec `json:"server,omitempty"`
+	KonnectivityAgentSpec  `json:"agent,omitempty"`
 }
 
 // AddonsSpec defines the enabled addons and their features.
