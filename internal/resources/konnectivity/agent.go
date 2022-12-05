@@ -164,19 +164,22 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			r.resource.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
 		}
 
-		r.resource.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.AgentImage, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Version)
+		r.resource.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.AgentImage, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Version)
 		r.resource.Spec.Template.Spec.Containers[0].Name = AgentName
 		r.resource.Spec.Template.Spec.Containers[0].Command = []string{"/proxy-agent"}
-		r.resource.Spec.Template.Spec.Containers[0].Args = []string{
-			"-v=8",
-			"--logtostderr=true",
-			"--ca-cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
-			fmt.Sprintf("--proxy-server-host=%s", address),
-			fmt.Sprintf("--proxy-server-port=%d", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port),
-			"--admin-server-port=8133",
-			"--health-server-port=8134",
-			"--service-account-token-path=/var/run/secrets/tokens/konnectivity-agent-token",
-		}
+
+		args := utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.ExtraArgs)
+
+		args["-v"] = "8"
+		args["--logtostderr"] = "true"
+		args["--ca-cert="] = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+		args["--proxy-server-host"] = address
+		args["--proxy-server-port"] = fmt.Sprintf("%d", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port)
+		args["--admin-server-port"] = "8133"
+		args["--health-server-port"] = "8134"
+		args["--service-account-token-path"] = "/var/run/secrets/tokens/konnectivity-agent-token"
+
+		r.resource.Spec.Template.Spec.Containers[0].Args = utilities.ArgsFromMapToSlice(args)
 		r.resource.Spec.Template.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
 			{
 				MountPath: "/var/run/secrets/tokens",
