@@ -35,7 +35,7 @@ func ArgsFromMapToSlice(args map[string]string) (slice []string) {
 		if len(value) == 0 {
 			slice = append(slice, flag)
 
-			break
+			continue
 		}
 
 		slice = append(slice, fmt.Sprintf("%s=%s", flag, value))
