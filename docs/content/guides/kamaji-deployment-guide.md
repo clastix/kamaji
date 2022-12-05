@@ -147,12 +147,13 @@ spec:
     coreDNS: {}
     kubeProxy: {}
     konnectivity:
-      proxyPort: ${TENANT_PROXY_PORT}
-      resources:
-        requests:
-          cpu: 100m
-          memory: 128Mi
-        limits: {}
+      server:
+        port: ${TENANT_PROXY_PORT}
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits: {}
 EOF
 
 kubectl -n ${TENANT_NAMESPACE} apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml

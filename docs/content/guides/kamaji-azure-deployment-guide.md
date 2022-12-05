@@ -198,12 +198,13 @@ spec:
     coreDNS: {}
     kubeProxy: {}
     konnectivity:
-      proxyPort: ${TENANT_PROXY_PORT}
-      resources:
-        requests:
-          cpu: 100m
-          memory: 128Mi
-        limits: {}
+      server:
+        port: ${TENANT_PROXY_PORT}
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits: {}
 ---
 apiVersion: v1
 kind: Service
