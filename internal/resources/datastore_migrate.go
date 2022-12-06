@@ -6,6 +6,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"time"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -112,6 +113,16 @@ func (d *DatastoreMigrate) CreateOrUpdate(ctx context.Context, tenantControlPlan
 			"migrate",
 			fmt.Sprintf("--tenant-control-plane=%s/%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName()),
 			fmt.Sprintf("--target-datastore=%s", tenantControlPlane.Spec.DataStore),
+		}
+		// Allowing custom migrate timeout by reading TCP annotation
+		annotations := tenantControlPlane.GetAnnotations()
+		if v, ok := annotations["migrate.kamaji.clastix.io/timeout"]; ok {
+			timeout, parseErr := time.ParseDuration(v)
+			if parseErr != nil {
+				log.FromContext(ctx).Error(parseErr, "cannot override default migrate timeout")
+			} else {
+				d.job.Spec.Template.Spec.Containers[0].Args = append(d.job.Spec.Template.Spec.Containers[0].Args, fmt.Sprintf("--timeout=%s", timeout))
+			}
 		}
 
 		return nil
