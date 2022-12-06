@@ -7,11 +7,13 @@ import (
 	"context"
 	"fmt"
 
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -24,11 +26,14 @@ type Migrate struct {
 	Client               client.Client
 	KamajiNamespace      string
 	KamajiServiceAccount string
+	KamajiServiceName    string
+	CABundle             []byte
 	ShouldCleanUp        bool
 
 	actualDatastore  *kamajiv1alpha1.DataStore
 	desiredDatastore *kamajiv1alpha1.DataStore
 	job              *batchv1.Job
+	webhook          *admissionregistrationv1.ValidatingWebhookConfiguration
 
 	inProgress bool
 }
@@ -42,6 +47,13 @@ func (d *Migrate) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("migrate-%s-%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName()),
 			Namespace: d.KamajiNamespace,
+		},
+	}
+
+	d.webhook = &admissionregistrationv1.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kamaji-freeze",
+			Namespace: "kube-system",
 		},
 	}
 
@@ -72,14 +84,31 @@ func (d *Migrate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return d.ShouldCleanUp
 }
 
-func (d *Migrate) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
-	if err := d.Client.Get(ctx, types.NamespacedName{Name: d.job.GetName(), Namespace: d.job.GetNamespace()}, d.job); err != nil && errors.IsNotFound(err) {
-		return false, nil
+func (d *Migrate) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+	// Deleting migrate Job in the admin cluster
+	var jobErr, webhookErr error
+
+	if err := d.Client.Get(ctx, types.NamespacedName{Name: d.job.GetName(), Namespace: d.job.GetNamespace()}, d.job); err == nil {
+		jobErr = d.Client.Delete(ctx, d.job)
+	}
+	// Deleting webhook deployed in the Tenant cluster
+	tcpClient, err := utilities.GetTenantClient(ctx, d.Client, tcp)
+	if err != nil {
+		return false, fmt.Errorf("unable to create TenantControlPlane client: %w", err)
 	}
 
-	err := d.Client.Delete(ctx, d.job)
+	if err = tcpClient.Get(ctx, types.NamespacedName{Name: d.webhook.GetName(), Namespace: d.webhook.GetNamespace()}, d.webhook); err == nil {
+		jobErr = tcpClient.Delete(ctx, d.webhook)
+	}
 
-	return err == nil, err
+	switch {
+	case jobErr != nil:
+		return false, jobErr
+	case webhookErr != nil:
+		return false, webhookErr
+	default:
+		return false, nil
+	}
 }
 
 func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
@@ -91,7 +120,12 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 		return controllerutil.OperationResultNone, nil
 	}
 
-	res, err := utilities.CreateOrUpdateWithConflict(ctx, d.Client, d.job, func() error {
+	tcpClient, err := utilities.GetTenantClient(ctx, d.Client, tenantControlPlane)
+	if err != nil {
+		return controllerutil.OperationResultNone, fmt.Errorf("unable to create TenantControlPlane client: %w", err)
+	}
+
+	jobRessult, err := utilities.CreateOrUpdateWithConflict(ctx, d.Client, d.job, func() error {
 		d.job.SetLabels(map[string]string{
 			"tcp.kamaji.clastix.io/name":      tenantControlPlane.GetName(),
 			"tcp.kamaji.clastix.io/namespace": tenantControlPlane.GetNamespace(),
@@ -116,10 +150,62 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 		return nil
 	})
 	if err != nil {
-		return res, err
+		return jobRessult, fmt.Errorf("unable to launch migrate job: %w", err)
 	}
 
-	switch res {
+	webhookResult, err := utilities.CreateOrUpdateWithConflict(ctx, tcpClient, d.webhook, func() error {
+		d.webhook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
+			{
+				Name: "migrate.kamaji.clastix.io",
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					URL:      pointer.String(fmt.Sprintf("https://%s.%s.svc:443/migrate", d.KamajiServiceName, d.KamajiNamespace)),
+					CABundle: d.CABundle,
+				},
+				Rules: []admissionregistrationv1.RuleWithOperations{
+					{
+						Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.OperationAll},
+						Rule: admissionregistrationv1.Rule{
+							APIGroups:   []string{"*"},
+							APIVersions: []string{"*"},
+							Resources:   []string{"*"},
+							Scope: func(v admissionregistrationv1.ScopeType) *admissionregistrationv1.ScopeType {
+								return &v
+							}(admissionregistrationv1.AllScopes),
+						},
+					},
+				},
+				FailurePolicy: func(v admissionregistrationv1.FailurePolicyType) *admissionregistrationv1.FailurePolicyType {
+					return &v
+				}(admissionregistrationv1.Fail),
+				MatchPolicy: func(v admissionregistrationv1.MatchPolicyType) *admissionregistrationv1.MatchPolicyType {
+					return &v
+				}(admissionregistrationv1.Equivalent),
+				NamespaceSelector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "kubernetes.io/metadata.name",
+							Operator: metav1.LabelSelectorOpNotIn,
+							Values: []string{
+								"kube-system",
+							},
+						},
+					},
+				},
+				SideEffects: func(v admissionregistrationv1.SideEffectClass) *admissionregistrationv1.SideEffectClass {
+					return &v
+				}(admissionregistrationv1.SideEffectClassNoneOnDryRun),
+				TimeoutSeconds:          nil,
+				AdmissionReviewVersions: []string{"v1"},
+			},
+		}
+
+		return nil
+	})
+	if err != nil {
+		return webhookResult, fmt.Errorf("unable to create webhook on TenantControlPlane: %w", err)
+	}
+
+	switch jobRessult {
 	case controllerutil.OperationResultNone:
 		if len(d.job.Status.Conditions) == 0 {
 			break
@@ -134,7 +220,7 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 	case controllerutil.OperationResultCreated:
 		break
 	default:
-		return "", fmt.Errorf("unexpected status %s from the migration job", res)
+		return "", fmt.Errorf("unexpected status %s from the migration job", jobRessult)
 	}
 
 	d.inProgress = true

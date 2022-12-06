@@ -44,6 +44,8 @@ type TenantControlPlaneReconciler struct {
 	TriggerChan          TenantControlPlaneChannel
 	KamajiNamespace      string
 	KamajiServiceAccount string
+	WebhookCABundle      []byte
+	KamajiService        string
 }
 
 // TenantControlPlaneReconcilerConfig gives the necessary configuration for TenantControlPlaneReconciler.
@@ -127,10 +129,12 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		log:                  log,
 		tcpReconcilerConfig:  r.Config,
 		tenantControlPlane:   *tenantControlPlane,
-		DataStore:            *ds,
 		Connection:           dsConnection,
+		DataStore:            *ds,
 		KamajiNamespace:      r.KamajiNamespace,
 		KamajiServiceAccount: r.KamajiServiceAccount,
+		KamajiService:        r.KamajiService,
+		CABundle:             r.WebhookCABundle,
 	}
 	registeredResources := GetResources(groupResourceBuilderConfiguration)
 
