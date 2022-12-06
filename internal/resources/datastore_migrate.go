@@ -95,9 +95,12 @@ func (d *DatastoreMigrate) CreateOrUpdate(ctx context.Context, tenantControlPlan
 
 	res, err := utilities.CreateOrUpdateWithConflict(ctx, d.Client, d.job, func() error {
 		d.job.SetLabels(map[string]string{
-			"tcp.kamaji.clastix.io/name":      tenantControlPlane.GetName(),
-			"tcp.kamaji.clastix.io/namespace": tenantControlPlane.GetNamespace(),
-			"kamaji.clastix.io/component":     "migrate",
+			"tcp.kamaji.clastix.io/name":       tenantControlPlane.GetName(),
+			"tcp.kamaji.clastix.io/namespace":  tenantControlPlane.GetNamespace(),
+			"kamaji.clastix.io/component":      "migrate",
+			"migrate.kamaji.clastix.io/driver": tenantControlPlane.Status.Storage.Driver,
+			"migrate.kamaji.clastix.io/from":   tenantControlPlane.Status.Storage.DataStoreName,
+			"migrate.kamaji.clastix.io/to":     tenantControlPlane.Spec.DataStore,
 		})
 
 		d.job.Spec.Template.ObjectMeta.Labels = utilities.MergeMaps(d.job.Spec.Template.ObjectMeta.Labels, d.job.Spec.Template.ObjectMeta.Labels)
