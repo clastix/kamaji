@@ -1,7 +1,7 @@
 // Copyright 2022 Clastix Labs
 // SPDX-License-Identifier: Apache-2.0
 
-package resources
+package datastore
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
-type DatastoreMigrate struct {
+type Migrate struct {
 	Client               client.Client
 	KamajiNamespace      string
 	KamajiServiceAccount string
@@ -33,7 +33,7 @@ type DatastoreMigrate struct {
 	inProgress bool
 }
 
-func (d *DatastoreMigrate) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (d *Migrate) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if len(tenantControlPlane.Status.Storage.DataStoreName) == 0 {
 		return nil
 	}
@@ -68,11 +68,11 @@ func (d *DatastoreMigrate) Define(ctx context.Context, tenantControlPlane *kamaj
 	return nil
 }
 
-func (d *DatastoreMigrate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
+func (d *Migrate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return d.ShouldCleanUp
 }
 
-func (d *DatastoreMigrate) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (d *Migrate) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	if err := d.Client.Get(ctx, types.NamespacedName{Name: d.job.GetName(), Namespace: d.job.GetNamespace()}, d.job); err != nil && errors.IsNotFound(err) {
 		return false, nil
 	}
@@ -82,7 +82,7 @@ func (d *DatastoreMigrate) CleanUp(ctx context.Context, _ *kamajiv1alpha1.Tenant
 	return err == nil, err
 }
 
-func (d *DatastoreMigrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	if d.desiredDatastore == nil {
 		return controllerutil.OperationResultNone, nil
 	}
@@ -142,15 +142,15 @@ func (d *DatastoreMigrate) CreateOrUpdate(ctx context.Context, tenantControlPlan
 	return controllerutil.OperationResultNone, nil
 }
 
-func (d *DatastoreMigrate) GetName() string {
+func (d *Migrate) GetName() string {
 	return "migrate"
 }
 
-func (d *DatastoreMigrate) ShouldStatusBeUpdated(context.Context, *kamajiv1alpha1.TenantControlPlane) bool {
+func (d *Migrate) ShouldStatusBeUpdated(context.Context, *kamajiv1alpha1.TenantControlPlane) bool {
 	return d.inProgress
 }
 
-func (d *DatastoreMigrate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (d *Migrate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if d.inProgress {
 		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionMigrating
 	}

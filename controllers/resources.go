@@ -83,7 +83,7 @@ func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.R
 
 func getDataStoreMigratingCleanup(c client.Client, kamajiNamespace string) []resources.Resource {
 	return []resources.Resource{
-		&resources.DatastoreMigrate{
+		&ds.Migrate{
 			Client:          c,
 			KamajiNamespace: kamajiNamespace,
 			ShouldCleanUp:   true,
@@ -93,7 +93,7 @@ func getDataStoreMigratingCleanup(c client.Client, kamajiNamespace string) []res
 
 func getDataStoreMigratingResources(c client.Client, kamajiNamespace, kamajiServiceAccount string) []resources.Resource {
 	return []resources.Resource{
-		&resources.DatastoreMigrate{
+		&ds.Migrate{
 			Client:               c,
 			KamajiNamespace:      kamajiNamespace,
 			KamajiServiceAccount: kamajiServiceAccount,
