@@ -29,6 +29,8 @@ type GroupResourceBuilderConfiguration struct {
 	DataStore            kamajiv1alpha1.DataStore
 	KamajiNamespace      string
 	KamajiServiceAccount string
+	KamajiService        string
+	CABundle             []byte
 }
 
 type GroupDeletableResourceBuilderConfiguration struct {
@@ -63,7 +65,7 @@ func GetDeletableResources(tcp *kamajiv1alpha1.TenantControlPlane, config GroupD
 }
 
 func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.Resource {
-	resources := getDataStoreMigratingResources(config.client, config.KamajiNamespace, config.KamajiServiceAccount)
+	resources := getDataStoreMigratingResources(config.client, config.KamajiNamespace, config.KamajiServiceAccount, config.KamajiService, config.CABundle)
 	resources = append(resources, getUpgradeResources(config.client)...)
 	resources = append(resources, getKubernetesServiceResources(config.client)...)
 	resources = append(resources, getKubeadmConfigResources(config.client, getTmpDirectory(config.tcpReconcilerConfig.TmpBaseDirectory, config.tenantControlPlane), config.DataStore)...)
@@ -91,12 +93,14 @@ func getDataStoreMigratingCleanup(c client.Client, kamajiNamespace string) []res
 	}
 }
 
-func getDataStoreMigratingResources(c client.Client, kamajiNamespace, kamajiServiceAccount string) []resources.Resource {
+func getDataStoreMigratingResources(c client.Client, kamajiNamespace, kamajiServiceAccount, kamajiService string, caBundle []byte) []resources.Resource {
 	return []resources.Resource{
 		&ds.Migrate{
 			Client:               c,
 			KamajiNamespace:      kamajiNamespace,
 			KamajiServiceAccount: kamajiServiceAccount,
+			KamajiServiceName:    kamajiService,
+			CABundle:             caBundle,
 		},
 	}
 }
