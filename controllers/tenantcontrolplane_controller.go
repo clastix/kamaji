@@ -46,6 +46,7 @@ type TenantControlPlaneReconciler struct {
 	KamajiServiceAccount string
 	WebhookCABundle      []byte
 	KamajiService        string
+	KamajiMigrateImage   string
 }
 
 // TenantControlPlaneReconcilerConfig gives the necessary configuration for TenantControlPlaneReconciler.
@@ -135,6 +136,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		KamajiServiceAccount: r.KamajiServiceAccount,
 		KamajiService:        r.KamajiService,
 		CABundle:             r.WebhookCABundle,
+		KamajiMigrateImage:   r.KamajiMigrateImage,
 	}
 	registeredResources := GetResources(groupResourceBuilderConfiguration)
 

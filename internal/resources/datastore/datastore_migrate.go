@@ -29,6 +29,7 @@ type Migrate struct {
 	KamajiServiceName    string
 	CABundle             []byte
 	ShouldCleanUp        bool
+	MigrateImage         string
 
 	actualDatastore  *kamajiv1alpha1.DataStore
 	desiredDatastore *kamajiv1alpha1.DataStore
@@ -139,7 +140,7 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 			d.job.Spec.Template.Spec.Containers = append(d.job.Spec.Template.Spec.Containers, corev1.Container{})
 		}
 		d.job.Spec.Template.Spec.Containers[0].Name = "migrate"
-		d.job.Spec.Template.Spec.Containers[0].Image = "clastix/kamaji:v0.1.1"
+		d.job.Spec.Template.Spec.Containers[0].Image = d.MigrateImage
 		d.job.Spec.Template.Spec.Containers[0].Command = []string{"/kamaji"}
 		d.job.Spec.Template.Spec.Containers[0].Args = []string{
 			"migrate",
