@@ -19,9 +19,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/clastix/kamaji/controllers/soot/helpers"
-
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/controllers/soot/controllers"
+	"github.com/clastix/kamaji/controllers/soot/helpers"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -35,6 +35,10 @@ type sootMap map[string]sootItem
 type Manager struct {
 	client  client.Client
 	sootMap sootMap
+
+	MigrateCABundle         []byte
+	MigrateServiceName      string
+	MigrateServiceNamespace string
 }
 
 // retrieveTenantControlPlane is the function used to let an underlying controller of the soot manager
@@ -143,6 +147,18 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	}
 
 	ch = make(chan event.GenericEvent)
+	//
+	// Register all the controllers of the soot here:
+	//
+	if err = (&controllers.Migrate{
+		WebhookNamespace:          m.MigrateServiceName,
+		WebhookServiceName:        m.MigrateServiceNamespace,
+		WebhookCABundle:           m.MigrateCABundle,
+		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		TriggerChannel:            ch,
+	}).SetupWithManager(mgr); err != nil {
+		return reconcile.Result{}, err
+	}
 	// Starting the manager
 	go func() {
 		if err = mgr.Start(tcpCtx); err != nil {

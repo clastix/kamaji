@@ -113,7 +113,6 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				TriggerChan:          tcpChannel,
 				KamajiNamespace:      managerNamespace,
 				KamajiServiceAccount: managerServiceAccountName,
-				WebhookCABundle:      webhookCABundle,
 				KamajiService:        managerServiceName,
 				KamajiMigrateImage:   migrateJobImage,
 			}
@@ -147,7 +146,11 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
-			if err = (&soot.Manager{}).SetupWithManager(mgr); err != nil {
+			if err = (&soot.Manager{
+				MigrateCABundle:         webhookCABundle,
+				MigrateServiceName:      managerServiceName,
+				MigrateServiceNamespace: managerServiceName,
+			}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to set up soot manager")
 
 				return err
