@@ -44,7 +44,6 @@ type TenantControlPlaneReconciler struct {
 	TriggerChan          TenantControlPlaneChannel
 	KamajiNamespace      string
 	KamajiServiceAccount string
-	WebhookCABundle      []byte
 	KamajiService        string
 	KamajiMigrateImage   string
 }
@@ -135,7 +134,6 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		KamajiNamespace:      r.KamajiNamespace,
 		KamajiServiceAccount: r.KamajiServiceAccount,
 		KamajiService:        r.KamajiService,
-		CABundle:             r.WebhookCABundle,
 		KamajiMigrateImage:   r.KamajiMigrateImage,
 	}
 	registeredResources := GetResources(groupResourceBuilderConfiguration)
