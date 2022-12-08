@@ -21,7 +21,7 @@ import (
 
 func GetTenantClient(ctx context.Context, c client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (client.Client, error) {
 	options := client.Options{}
-	config, err := getRESTClientConfig(ctx, c, tenantControlPlane)
+	config, err := GetRESTClientConfig(ctx, c, tenantControlPlane)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func GetTenantClient(ctx context.Context, c client.Client, tenantControlPlane *k
 }
 
 func GetTenantClientSet(ctx context.Context, client client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*clientset.Clientset, error) {
-	config, err := getRESTClientConfig(ctx, client, tenantControlPlane)
+	config, err := GetRESTClientConfig(ctx, client, tenantControlPlane)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func GetTenantKubeconfig(ctx context.Context, client client.Client, tenantContro
 	return kubeconfig, nil
 }
 
-func getRESTClientConfig(ctx context.Context, client client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*restclient.Config, error) {
+func GetRESTClientConfig(ctx context.Context, client client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*restclient.Config, error) {
 	kubeconfig, err := GetTenantKubeconfig(ctx, client, tenantControlPlane)
 	if err != nil {
 		return nil, err
