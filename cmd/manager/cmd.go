@@ -20,6 +20,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers"
+	"github.com/clastix/kamaji/controllers/soot"
 	"github.com/clastix/kamaji/indexers"
 	"github.com/clastix/kamaji/internal"
 	"github.com/clastix/kamaji/internal/webhook"
@@ -142,6 +143,12 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			}
 			if err = (&kamajiv1alpha1.DataStore{}).SetupWebhookWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "DataStore")
+
+				return err
+			}
+
+			if err = (&soot.Manager{}).SetupWithManager(mgr); err != nil {
+				setupLog.Error(err, "unable to set up soot manager")
 
 				return err
 			}
