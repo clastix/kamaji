@@ -566,7 +566,7 @@ func (d *Deployment) buildKubeAPIServerCommand(tenantControlPlane *kamajiv1alpha
 		}
 
 		desiredArgs["--etcd-compaction-interval"] = "0"
-		desiredArgs["--etcd-prefix"] = tenantControlPlane.Status.Storage.Setup.Schema
+		desiredArgs["--etcd-prefix"] = fmt.Sprintf("/%s", tenantControlPlane.Status.Storage.Setup.Schema)
 		desiredArgs["--etcd-servers"] = strings.Join(httpsEndpoints, ",")
 		desiredArgs["--etcd-cafile"] = "/etc/kubernetes/pki/etcd/ca.crt"
 		desiredArgs["--etcd-certfile"] = "/etc/kubernetes/pki/etcd/server.crt"
