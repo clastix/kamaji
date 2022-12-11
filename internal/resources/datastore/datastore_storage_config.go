@@ -86,11 +86,23 @@ func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.Te
 		default:
 			password = []byte(uuid.New().String())
 		}
+		// the coalesce function prioritizes the return value stored in the TenantControlPlane status,
+		// although this is going to be populated by the UpdateTenantControlPlaneStatus handler of the resource datastore-setup:
+		// the default value will be used for fresh new configurations, and preserving a previous one:
+		// this will keep us safe from naming changes cases as occurred with the following commit:
+		// https://github.com/clastix/kamaji/pull/203/commits/09ce38f489cccca72ab728a259bc8fb2cf6e4770
+		coalesceFn := func(fromStatus string) []byte {
+			if len(fromStatus) > 0 {
+				return []byte(fromStatus)
+			}
+
+			return []byte(fmt.Sprintf("%s_%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName()))
+		}
 
 		r.resource.Data = map[string][]byte{
 			"DB_CONNECTION_STRING": []byte(r.ConnString),
-			"DB_SCHEMA":            []byte(fmt.Sprintf("%s_%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName())),
-			"DB_USER":              []byte(fmt.Sprintf("%s_%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName())),
+			"DB_SCHEMA":            coalesceFn(tenantControlPlane.Status.Storage.Setup.Schema),
+			"DB_USER":              coalesceFn(tenantControlPlane.Status.Storage.Setup.User),
 			"DB_PASSWORD":          password,
 		}
 
