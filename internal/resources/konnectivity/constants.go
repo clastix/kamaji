@@ -3,9 +3,14 @@
 
 package konnectivity
 
+import (
+	"k8s.io/kubernetes/pkg/apis/core"
+)
+
 const (
 	AgentName      = "konnectivity-agent"
 	CertCommonName = "system:konnectivity-server"
+	AgentNamespace = core.NamespaceSystem
 
 	agentTokenName                  = "konnectivity-agent-token"
 	apiServerAPIVersion             = "apiserver.k8s.io/v1beta1"

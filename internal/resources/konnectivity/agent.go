@@ -18,12 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/utilities"
-)
-
-const (
-	agentNamespace = "kube-system"
 )
 
 type Agent struct {
@@ -32,21 +27,25 @@ type Agent struct {
 	tenantClient client.Client
 }
 
-func (r *Agent) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Addons.Konnectivity.Agent.Checksum != r.resource.GetAnnotations()[constants.Checksum]
+func (r *Agent) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil && len(tenantControlPlane.Status.Addons.Konnectivity.Agent.Namespace) == 0
 }
 
 func (r *Agent) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity == nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil && len(tenantControlPlane.Status.Addons.Konnectivity.Agent.Name) > 0
 }
 
-func (r *Agent) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *Agent) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+	logger := log.FromContext(ctx, "resource", r.GetName())
+
 	if err := r.tenantClient.Delete(ctx, r.resource); err != nil {
-		if !k8serrors.IsNotFound(err) {
+		if k8serrors.IsNotFound(err) {
 			return false, err
 		}
 
-		return false, nil
+		logger.Error(err, "cannot delete the requested resource")
+
+		return false, err
 	}
 
 	return true, nil
@@ -58,7 +57,7 @@ func (r *Agent) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 	r.resource = &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      AgentName,
-			Namespace: agentNamespace,
+			Namespace: AgentNamespace,
 		},
 	}
 
@@ -72,19 +71,22 @@ func (r *Agent) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 }
 
 func (r *Agent) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(ctx, tenantControlPlane))
+	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
+		return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(ctx, tenantControlPlane))
+	}
+
+	return controllerutil.OperationResultNone, nil
 }
 
 func (r *Agent) GetName() string {
 	return "konnectivity-agent"
 }
 
-func (r *Agent) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *Agent) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Agent = kamajiv1alpha1.ExternalKubernetesObjectStatus{
 			Name:       r.resource.GetName(),
 			Namespace:  r.resource.GetNamespace(),
-			Checksum:   r.resource.GetAnnotations()[constants.Checksum],
 			LastUpdate: metav1.Now(),
 		}
 
@@ -154,7 +156,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 								},
 							},
 						},
-						DefaultMode: pointer.Int32Ptr(420),
+						DefaultMode: pointer.Int32(420),
 					},
 				},
 			},
@@ -164,7 +166,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			r.resource.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
 		}
 
-		r.resource.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.AgentImage, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Version)
+		r.resource.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Image, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Version)
 		r.resource.Spec.Template.Spec.Containers[0].Name = AgentName
 		r.resource.Spec.Template.Spec.Containers[0].Command = []string{"/proxy-agent"}
 
@@ -200,18 +202,6 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			SuccessThreshold:    1,
 			FailureThreshold:    3,
 		}
-		// Creating a copy to remove the metadata that would be changed at every reconciliation
-		c := r.resource.DeepCopy()
-		c.SetAnnotations(nil)
-		c.SetResourceVersion("")
-
-		yaml, _ := utilities.EncodeToYaml(c)
-		annotations := r.resource.GetAnnotations()
-		if annotations == nil {
-			annotations = map[string]string{}
-		}
-		annotations[constants.Checksum] = utilities.MD5Checksum(yaml)
-		r.resource.SetAnnotations(annotations)
 
 		return nil
 	}

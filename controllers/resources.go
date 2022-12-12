@@ -72,13 +72,13 @@ func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.R
 	resources = append(resources, getKubernetesCertificatesResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubeconfigResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubernetesStorageResources(config.client, config.Connection, config.DataStore)...)
-	resources = append(resources, getInternalKonnectivityResources(config.client)...)
+	resources = append(resources, getKonnectivityServerRequirementsResources(config.client)...)
 	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.DataStore)...)
+	resources = append(resources, getKonnectivityServerPatchResources(config.client)...)
 	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
 	resources = append(resources, getKubernetesIngressResources(config.client)...)
 	resources = append(resources, getKubeadmPhaseResources(config.client)...)
 	resources = append(resources, getKubeadmAddonResources(config.client)...)
-	resources = append(resources, getExternalKonnectivityResources(config.client)...)
 
 	return resources
 }
@@ -264,21 +264,26 @@ func getKubeadmAddonResources(c client.Client) []resources.Resource {
 	}
 }
 
-func getExternalKonnectivityResources(c client.Client) []resources.Resource {
+func GetExternalKonnectivityResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
+		&konnectivity.Agent{Client: c},
 		&konnectivity.ServiceAccountResource{Client: c},
 		&konnectivity.ClusterRoleBindingResource{Client: c},
-		&konnectivity.KubernetesDeploymentResource{Client: c},
-		&konnectivity.ServiceResource{Client: c},
-		&konnectivity.Agent{Client: c},
 	}
 }
 
-func getInternalKonnectivityResources(c client.Client) []resources.Resource {
+func getKonnectivityServerRequirementsResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
 		&konnectivity.EgressSelectorConfigurationResource{Client: c},
 		&konnectivity.CertificateResource{Client: c},
 		&konnectivity.KubeconfigResource{Client: c},
+	}
+}
+
+func getKonnectivityServerPatchResources(c client.Client) []resources.Resource {
+	return []resources.Resource{
+		&konnectivity.KubernetesDeploymentResource{Client: c},
+		&konnectivity.ServiceResource{Client: c},
 	}
 }
 

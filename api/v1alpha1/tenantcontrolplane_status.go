@@ -120,7 +120,6 @@ type KubeadmPhasesStatus struct {
 type ExternalKubernetesObjectStatus struct {
 	Name      string `json:"name,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
-	Checksum  string `json:"checksum,omitempty"`
 	// Last time when k8s object was updated
 	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 }

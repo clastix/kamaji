@@ -14,36 +14,35 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type ClusterRoleBindingResource struct {
+	Client client.Client
+
 	resource     *rbacv1.ClusterRoleBinding
-	Client       client.Client
 	tenantClient client.Client
 }
 
 func (r *ClusterRoleBindingResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Name != r.resource.GetName() ||
-		tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Checksum != r.resource.ObjectMeta.GetAnnotations()[constants.Checksum]
+	return tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Name != r.resource.GetName()
 }
 
 func (r *ClusterRoleBindingResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity == nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil && len(tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Name) > 0
 }
 
 func (r *ClusterRoleBindingResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
 	if err := r.tenantClient.Delete(ctx, r.resource); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			logger.Error(err, "cannot delete the requeste resource")
-
-			return false, err
+		if k8serrors.IsNotFound(err) {
+			return false, nil
 		}
 
-		return false, nil
+		logger.Error(err, "cannot delete the requested resource")
+
+		return false, err
 	}
 
 	return true, nil
@@ -67,8 +66,12 @@ func (r *ClusterRoleBindingResource) Define(ctx context.Context, tenantControlPl
 	return nil
 }
 
-func (r *ClusterRoleBindingResource) CreateOrUpdate(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate())
+func (r *ClusterRoleBindingResource) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	if tcp.Spec.Addons.Konnectivity != nil {
+		return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate())
+	}
+
+	return controllerutil.OperationResultNone, nil
 }
 
 func (r *ClusterRoleBindingResource) GetName() string {
@@ -79,8 +82,7 @@ func (r *ClusterRoleBindingResource) UpdateTenantControlPlaneStatus(_ context.Co
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Enabled = true
 		tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding = kamajiv1alpha1.ExternalKubernetesObjectStatus{
-			Name:     r.resource.GetName(),
-			Checksum: r.resource.GetAnnotations()[constants.Checksum],
+			Name: r.resource.GetName(),
 		}
 
 		return nil
@@ -114,14 +116,6 @@ func (r *ClusterRoleBindingResource) mutate() controllerutil.MutateFn {
 				Name:     CertCommonName,
 			},
 		}
-
-		annotations := r.resource.GetAnnotations()
-		if annotations == nil {
-			annotations = map[string]string{}
-		}
-
-		yaml, _ := utilities.EncodeToYaml(r.resource)
-		annotations[constants.Checksum] = utilities.MD5Checksum(yaml)
 
 		return nil
 	}

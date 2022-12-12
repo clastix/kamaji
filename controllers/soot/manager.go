@@ -21,12 +21,12 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers/soot/controllers"
-	"github.com/clastix/kamaji/controllers/soot/helpers"
+	"github.com/clastix/kamaji/controllers/utils"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type sootItem struct {
-	trigger  chan event.GenericEvent
+	triggers []chan event.GenericEvent
 	cancelFn context.CancelFunc
 }
 
@@ -39,11 +39,12 @@ type Manager struct {
 	MigrateCABundle         []byte
 	MigrateServiceName      string
 	MigrateServiceNamespace string
+	AdminClient             client.Client
 }
 
 // retrieveTenantControlPlane is the function used to let an underlying controller of the soot manager
 // to retrieve its parent TenantControlPlane definition, required to understand which actions must be performed.
-func (m *Manager) retrieveTenantControlPlane(ctx context.Context, request reconcile.Request) helpers.TenantControlPlaneRetrievalFn {
+func (m *Manager) retrieveTenantControlPlane(ctx context.Context, request reconcile.Request) utils.TenantControlPlaneRetrievalFn {
 	return func() (*kamajiv1alpha1.TenantControlPlane, error) {
 		tcp := &kamajiv1alpha1.TenantControlPlane{}
 
@@ -83,14 +84,6 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 
 		return reconcile.Result{}, err
 	}
-	// Deferring the trigger execution to propagate change from the TCP to the underlying manager controller:
-	// if a value is assigned, propagating it, otherwise ignoring it.
-	var ch chan event.GenericEvent
-	defer func() {
-		if ch != nil {
-			ch <- event.GenericEvent{Object: tcp}
-		}
-	}()
 
 	tcpStatus := *tcp.Status.Kubernetes.Version.Status
 	// Triggering the reconciliation of the underlying controllers of
@@ -106,7 +99,9 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			return reconcile.Result{}, nil
 		}
 
-		ch = v.trigger
+		for _, trigger := range v.triggers {
+			trigger <- event.GenericEvent{Object: tcp}
+		}
 
 		return reconcile.Result{}, nil
 	}
@@ -146,17 +141,26 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		return reconcile.Result{}, err
 	}
 
-	ch = make(chan event.GenericEvent)
 	//
 	// Register all the controllers of the soot here:
 	//
-	if err = (&controllers.Migrate{
+	migrate := &controllers.Migrate{
 		WebhookNamespace:          m.MigrateServiceName,
 		WebhookServiceName:        m.MigrateServiceNamespace,
 		WebhookCABundle:           m.MigrateCABundle,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
-		TriggerChannel:            ch,
-	}).SetupWithManager(mgr); err != nil {
+		TriggerChannel:            make(chan event.GenericEvent),
+	}
+	if err = migrate.SetupWithManager(mgr); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	konnectivityAgent := &controllers.KonnectivityAgent{
+		AdminClient:               m.AdminClient,
+		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		TriggerChannel:            make(chan event.GenericEvent),
+	}
+	if err = konnectivityAgent.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
 	}
 	// Starting the manager
@@ -167,11 +171,14 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	}()
 
 	m.sootMap[request.NamespacedName.String()] = sootItem{
-		trigger:  ch,
+		triggers: []chan event.GenericEvent{
+			migrate.TriggerChannel,
+			konnectivityAgent.TriggerChannel,
+		},
 		cancelFn: tcpCancelFn,
 	}
 
-	return reconcile.Result{}, nil
+	return reconcile.Result{Requeue: true}, nil
 }
 
 func (m *Manager) SetupWithManager(mgr manager.Manager) error {
