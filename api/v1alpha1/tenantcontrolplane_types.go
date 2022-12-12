@@ -158,7 +158,7 @@ type KonnectivityServerSpec struct {
 type KonnectivityAgentSpec struct {
 	// AgentImage defines the container image for Konnectivity's agent.
 	// +kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-agent
-	AgentImage string `json:"agentImage,omitempty"`
+	Image string `json:"image,omitempty"`
 	// Version for Konnectivity agent.
 	// +kubebuilder:default=v0.0.32
 	Version   string    `json:"version,omitempty"`
@@ -167,8 +167,10 @@ type KonnectivityAgentSpec struct {
 
 // KonnectivitySpec defines the spec for Konnectivity.
 type KonnectivitySpec struct {
+	// +kubebuilder:default={version:"v0.0.32",image:"registry.k8s.io/kas-network-proxy/proxy-server",port:8132}
 	KonnectivityServerSpec KonnectivityServerSpec `json:"server,omitempty"`
-	KonnectivityAgentSpec  KonnectivityAgentSpec  `json:"agent,omitempty"`
+	// +kubebuilder:default={version:"v0.0.32",image:"registry.k8s.io/kas-network-proxy/proxy-agent"}
+	KonnectivityAgentSpec KonnectivityAgentSpec `json:"agent,omitempty"`
 }
 
 // AddonsSpec defines the enabled addons and their features.
