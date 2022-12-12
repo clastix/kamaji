@@ -150,6 +150,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				MigrateCABundle:         webhookCABundle,
 				MigrateServiceName:      managerServiceName,
 				MigrateServiceNamespace: managerServiceName,
+				AdminClient:             mgr.GetClient(),
 			}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to set up soot manager")
 

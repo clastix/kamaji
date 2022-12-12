@@ -129,7 +129,7 @@ func (r *KubernetesDeploymentResource) syncContainer(tenantControlPlane *kamajiv
 	}
 
 	r.resource.Spec.Template.Spec.Containers[index].Name = konnectivityServerName
-	r.resource.Spec.Template.Spec.Containers[index].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Image, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Version)
+	r.resource.Spec.Template.Spec.Containers[index].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Image, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Version)
 	r.resource.Spec.Template.Spec.Containers[index].Command = []string{"/proxy-server"}
 
 	args := utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.ExtraArgs)

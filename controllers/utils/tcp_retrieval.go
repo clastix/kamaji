@@ -1,7 +1,7 @@
 // Copyright 2022 Clastix Labs
 // SPDX-License-Identifier: Apache-2.0
 
-package helpers
+package utils
 
 import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"

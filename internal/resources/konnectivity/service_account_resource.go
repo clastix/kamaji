@@ -14,35 +14,35 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type ServiceAccountResource struct {
+	Client client.Client
+
 	resource     *corev1.ServiceAccount
-	Client       client.Client
 	tenantClient client.Client
 }
 
 func (r *ServiceAccountResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount.Checksum != r.resource.GetAnnotations()[constants.Checksum]
+	return len(tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount.Name) == 0 && len(tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount.Namespace) == 0
 }
 
 func (r *ServiceAccountResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity == nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil && len(tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount.Name) > 0
 }
 
 func (r *ServiceAccountResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
 	if err := r.tenantClient.Delete(ctx, r.resource); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			logger.Error(err, "cannot delete the requested resource")
-
-			return false, err
+		if k8serrors.IsNotFound(err) {
+			return false, nil
 		}
 
-		return false, nil
+		logger.Error(err, "cannot delete the requested resource")
+
+		return false, err
 	}
 
 	return true, nil
@@ -54,7 +54,7 @@ func (r *ServiceAccountResource) Define(ctx context.Context, tenantControlPlane 
 	r.resource = &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      AgentName,
-			Namespace: agentNamespace,
+			Namespace: AgentNamespace,
 		},
 	}
 
@@ -67,8 +67,12 @@ func (r *ServiceAccountResource) Define(ctx context.Context, tenantControlPlane 
 	return nil
 }
 
-func (r *ServiceAccountResource) CreateOrUpdate(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate())
+func (r *ServiceAccountResource) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	if tcp.Spec.Addons.Konnectivity != nil {
+		return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate())
+	}
+
+	return controllerutil.OperationResultNone, nil
 }
 
 func (r *ServiceAccountResource) GetName() string {
@@ -80,7 +84,6 @@ func (r *ServiceAccountResource) UpdateTenantControlPlaneStatus(_ context.Contex
 		tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount = kamajiv1alpha1.ExternalKubernetesObjectStatus{
 			Name:      r.resource.GetName(),
 			Namespace: r.resource.GetNamespace(),
-			Checksum:  r.resource.GetAnnotations()[constants.Checksum],
 		}
 
 		return nil
@@ -100,19 +103,6 @@ func (r *ServiceAccountResource) mutate() controllerutil.MutateFn {
 				"addonmanager.kubernetes.io/mode": "Reconcile",
 			},
 		))
-
-		c := r.resource.DeepCopy()
-		c.SetAnnotations(nil)
-		c.SetResourceVersion("")
-
-		yaml, _ := utilities.EncodeToYaml(c)
-
-		annotations := r.resource.GetAnnotations()
-		if annotations == nil {
-			annotations = map[string]string{}
-		}
-		annotations[constants.Checksum] = utilities.MD5Checksum(yaml)
-		r.resource.SetAnnotations(annotations)
 
 		return nil
 	}

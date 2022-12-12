@@ -12,10 +12,9 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	errors2 "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8stypes "k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -30,6 +29,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers/finalizers"
+	"github.com/clastix/kamaji/controllers/utils"
 	"github.com/clastix/kamaji/internal/datastore"
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
 	"github.com/clastix/kamaji/internal/resources"
@@ -68,15 +68,17 @@ type TenantControlPlaneReconcilerConfig struct {
 func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
-	tenantControlPlane := &kamajiv1alpha1.TenantControlPlane{}
-	isTenantControlPlane, err := r.getTenantControlPlane(ctx, req.NamespacedName, tenantControlPlane)
+	tenantControlPlane, err := r.getTenantControlPlane(ctx, req.NamespacedName)()
 	if err != nil {
+		if errors2.IsNotFound(err) {
+			log.Info("resource may have been deleted, skipping")
+
+			return ctrl.Result{}, nil
+		}
+
 		log.Error(err, "cannot retrieve the required instance")
 
 		return ctrl.Result{}, err
-	}
-	if !isTenantControlPlane {
-		return ctrl.Result{}, nil
 	}
 
 	markedToBeDeleted := tenantControlPlane.GetDeletionTimestamp() != nil
@@ -156,7 +158,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			continue
 		}
 
-		if err := r.updateStatus(ctx, req.NamespacedName, resource); err != nil {
+		if err = utils.UpdateStatus(ctx, r.Client, r.getTenantControlPlane(ctx, req.NamespacedName), resource); err != nil {
 			log.Error(err, "update of the resource failed", "resource", resource.GetName())
 
 			return ctrl.Result{}, err
@@ -220,43 +222,15 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 		Complete(r)
 }
 
-func (r *TenantControlPlaneReconciler) getTenantControlPlane(ctx context.Context, namespacedName k8stypes.NamespacedName, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
-	if err := r.APIReader.Get(ctx, namespacedName, tenantControlPlane); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return false, err
+func (r *TenantControlPlaneReconciler) getTenantControlPlane(ctx context.Context, namespacedName k8stypes.NamespacedName) utils.TenantControlPlaneRetrievalFn {
+	return func() (*kamajiv1alpha1.TenantControlPlane, error) {
+		tcp := &kamajiv1alpha1.TenantControlPlane{}
+		if err := r.APIReader.Get(ctx, namespacedName, tcp); err != nil {
+			return nil, err
 		}
 
-		return false, nil
+		return tcp, nil
 	}
-
-	return true, nil
-}
-
-func (r *TenantControlPlaneReconciler) updateStatus(ctx context.Context, namespacedName k8stypes.NamespacedName, resource resources.Resource) error {
-	tenantControlPlane := &kamajiv1alpha1.TenantControlPlane{}
-
-	updateErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		isTenantControlPlane, err := r.getTenantControlPlane(ctx, namespacedName, tenantControlPlane)
-		if err != nil {
-			return err
-		}
-
-		if !isTenantControlPlane {
-			return fmt.Errorf("error updating tenantControlPlane %s: not found", namespacedName.Name)
-		}
-
-		if err = resource.UpdateTenantControlPlaneStatus(ctx, tenantControlPlane); err != nil {
-			return fmt.Errorf("error applying TenantcontrolPlane status: %w", err)
-		}
-
-		if err = r.Client.Status().Update(ctx, tenantControlPlane); err != nil {
-			return fmt.Errorf("error updating tenantControlPlane status: %w", err)
-		}
-
-		return nil
-	})
-
-	return updateErr
 }
 
 func (r *TenantControlPlaneReconciler) RemoveFinalizer(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {

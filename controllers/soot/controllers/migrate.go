@@ -23,14 +23,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/controllers/soot/helpers"
+	"github.com/clastix/kamaji/controllers/utils"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type Migrate struct {
 	client client.Client
 
-	GetTenantControlPlaneFunc helpers.TenantControlPlaneRetrievalFn
+	GetTenantControlPlaneFunc utils.TenantControlPlaneRetrievalFn
 	WebhookNamespace          string
 	WebhookServiceName        string
 	WebhookCABundle           []byte
