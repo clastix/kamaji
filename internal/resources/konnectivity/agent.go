@@ -32,7 +32,7 @@ func (r *Agent) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kam
 }
 
 func (r *Agent) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity == nil && len(tenantControlPlane.Status.Addons.Konnectivity.Agent.Name) > 0
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil
 }
 
 func (r *Agent) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -40,7 +40,7 @@ func (r *Agent) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlan
 
 	if err := r.tenantClient.Delete(ctx, r.resource); err != nil {
 		if k8serrors.IsNotFound(err) {
-			return false, err
+			return false, nil
 		}
 
 		logger.Error(err, "cannot delete the requested resource")
