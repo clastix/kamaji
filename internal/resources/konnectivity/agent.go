@@ -174,7 +174,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 
 		args["-v"] = "8"
 		args["--logtostderr"] = "true"
-		args["--ca-cert="] = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+		args["--ca-cert"] = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 		args["--proxy-server-host"] = address
 		args["--proxy-server-port"] = fmt.Sprintf("%d", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port)
 		args["--admin-server-port"] = "8133"
