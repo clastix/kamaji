@@ -89,6 +89,12 @@ type DeploymentSpec struct {
 	// Selector which must match a node's labels for the pod to be scheduled on that node.
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used
+	// to run the Tenant Control Plane pod. If no RuntimeClass resource matches the named class, the pod will not be run.
+	// If unset or empty, the "legacy" RuntimeClass will be used, which is an implicit class with an
+	// empty definition that uses the default runtime handler.
+	// More info: https://git.k8s.io/enhancements/keps/sig-node/585-runtime-class
+	RuntimeClassName string `json:"runtimeClassName,omitempty"`
 	// If specified, the Tenant Control Plane pod's tolerations.
 	// More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`

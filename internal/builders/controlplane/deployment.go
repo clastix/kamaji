@@ -762,6 +762,16 @@ func (d *Deployment) SetReplicas(deploymentSpec *appsv1.DeploymentSpec, tcp *kam
 	deploymentSpec.Replicas = pointer.Int32(tcp.Spec.ControlPlane.Deployment.Replicas)
 }
 
+func (d *Deployment) SetRuntimeClass(spec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
+	if len(tcp.Spec.ControlPlane.Deployment.RuntimeClassName) > 0 {
+		spec.RuntimeClassName = pointer.String(tcp.Spec.ControlPlane.Deployment.RuntimeClassName)
+
+		return
+	}
+
+	spec.RuntimeClassName = nil
+}
+
 func (d *Deployment) SetTemplateLabels(template *corev1.PodTemplateSpec, labels map[string]string) {
 	template.SetLabels(labels)
 }
