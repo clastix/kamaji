@@ -50,6 +50,7 @@ Please refer to the [Getting Started guide](https://kamaji.clastix.io/getting-st
 - [x] `kine` integration for MySQL as datastore
 - [x] `kine` integration for PostgreSQL as datastore
 - [x] Pool of multiple datastores
+- [x] Seamless migration between datastore with the same driver
 - [ ] Automatic assigning of Tenant Control Plane to a datastore
 - [ ] Autoscaling of Tenant Control Plane pods
 
