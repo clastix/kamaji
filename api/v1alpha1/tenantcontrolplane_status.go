@@ -144,7 +144,6 @@ type KonnectivityConfigMap struct {
 // AddonStatus defines the observed state of an Addon.
 type AddonStatus struct {
 	Enabled    bool        `json:"enabled"`
-	Checksum   string      `json:"checksum,omitempty"`
 	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 }
 
