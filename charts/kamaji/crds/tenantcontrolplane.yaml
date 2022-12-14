@@ -1024,8 +1024,6 @@ spec:
                     coreDNS:
                       description: AddonStatus defines the observed state of an Addon.
                       properties:
-                        checksum:
-                          type: string
                         enabled:
                           type: boolean
                         lastUpdate:
@@ -1212,8 +1210,6 @@ spec:
                     kubeProxy:
                       description: AddonStatus defines the observed state of an Addon.
                       properties:
-                        checksum:
-                          type: string
                         enabled:
                           type: boolean
                         lastUpdate:
