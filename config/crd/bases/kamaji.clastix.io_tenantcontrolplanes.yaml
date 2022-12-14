@@ -2047,30 +2047,8 @@ spec:
                         format: date-time
                         type: string
                     type: object
-                  uploadConfigKubeadm:
-                    description: KubeadmPhaseStatus contains the status of a kubeadm
-                      phase action.
-                    properties:
-                      checksum:
-                        type: string
-                      lastUpdate:
-                        format: date-time
-                        type: string
-                    type: object
-                  uploadConfigKubelet:
-                    description: KubeadmPhaseStatus contains the status of a kubeadm
-                      phase action.
-                    properties:
-                      checksum:
-                        type: string
-                      lastUpdate:
-                        format: date-time
-                        type: string
-                    type: object
                 required:
                 - bootstrapToken
-                - uploadConfigKubeadm
-                - uploadConfigKubelet
                 type: object
               kubeadmconfig:
                 description: KubeadmConfig contains the status of the configuration
