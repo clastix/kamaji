@@ -112,9 +112,7 @@ type KubeadmPhaseStatus struct {
 
 // KubeadmPhasesStatus contains the status of the different kubeadm phases action.
 type KubeadmPhasesStatus struct {
-	UploadConfigKubeadm KubeadmPhaseStatus `json:"uploadConfigKubeadm"`
-	UploadConfigKubelet KubeadmPhaseStatus `json:"uploadConfigKubelet"`
-	BootstrapToken      KubeadmPhaseStatus `json:"bootstrapToken"`
+	BootstrapToken KubeadmPhaseStatus `json:"bootstrapToken"`
 }
 
 type ExternalKubernetesObjectStatus struct {

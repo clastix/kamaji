@@ -115,7 +115,7 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr
 		TenantControlPlaneCGroupDriver: tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(),
 	}
 
-	checksum := config.Checksum()
+	var checksum string
 
 	status, err := r.GetStatus(tenantControlPlane)
 	if err != nil {
@@ -123,11 +123,16 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr
 
 		return controllerutil.OperationResultNone, err
 	}
+	// if the status is nil it means the kubeadm phase is idempotent:
+	// we can skip the checksum check to avoid endless reconciliations.
+	if status != nil {
+		checksum = config.Checksum()
 
-	if checksum == status.GetChecksum() {
-		r.SetKubeadmConfigChecksum(checksum)
+		if checksum == status.GetChecksum() {
+			r.SetKubeadmConfigChecksum(checksum)
 
-		return controllerutil.OperationResultNone, nil
+			return controllerutil.OperationResultNone, nil
+		}
 	}
 
 	client, err := utilities.GetTenantClientSet(ctx, r.GetClient(), tenantControlPlane)
@@ -147,6 +152,10 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr
 		logger.Error(err, "kubeadm function failed")
 
 		return controllerutil.OperationResultNone, err
+	}
+
+	if status == nil {
+		return controllerutil.OperationResultNone, nil
 	}
 
 	r.SetKubeadmConfigChecksum(checksum)
