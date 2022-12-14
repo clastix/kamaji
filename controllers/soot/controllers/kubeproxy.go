@@ -73,6 +73,7 @@ func (k *KubeProxy) Reconcile(ctx context.Context, _ reconcile.Request) (reconci
 
 func (k *KubeProxy) SetupWithManager(mgr manager.Manager) error {
 	k.logger = mgr.GetLogger().WithName("kube_proxy")
+	k.TriggerChannel = make(chan event.GenericEvent)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
 		For(&rbacv1.ClusterRoleBinding{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {

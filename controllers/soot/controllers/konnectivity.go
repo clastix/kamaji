@@ -74,6 +74,7 @@ func (k *KonnectivityAgent) Reconcile(ctx context.Context, _ reconcile.Request) 
 
 func (k *KonnectivityAgent) SetupWithManager(mgr manager.Manager) error {
 	k.logger = mgr.GetLogger().WithName("konnectivity_agent")
+	k.TriggerChannel = make(chan event.GenericEvent)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
 		For(&appsv1.DaemonSet{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {

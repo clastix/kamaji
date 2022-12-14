@@ -134,6 +134,7 @@ func (m *Migrate) createOrUpdate(ctx context.Context) error {
 func (m *Migrate) SetupWithManager(mgr manager.Manager) error {
 	m.client = mgr.GetClient()
 	m.logger = mgr.GetLogger().WithName("migrate")
+	m.TriggerChannel = make(chan event.GenericEvent)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
 		For(&admissionregistrationv1.ValidatingWebhookConfiguration{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
