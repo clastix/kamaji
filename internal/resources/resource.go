@@ -33,7 +33,6 @@ type DeletableResource interface {
 }
 
 type KubeadmResource interface {
-	Resource
 	GetClient() client.Client
 	GetTmpDirectory() string
 }
@@ -41,7 +40,7 @@ type KubeadmResource interface {
 type KubeadmPhaseResource interface {
 	KubeadmResource
 	GetClient() client.Client
-	GetKubeadmFunction() (func(clientset.Interface, *kubeadm.Configuration) error, error)
+	GetKubeadmFunction() (func(clientset.Interface, *kubeadm.Configuration) ([]byte, error), error)
 	GetStatus(*kamajiv1alpha1.TenantControlPlane) (kamajiv1alpha1.KubeadmConfigChecksumDependant, error)
 	SetKubeadmConfigChecksum(string)
 }
@@ -95,10 +94,10 @@ func createOrUpdate(ctx context.Context, resource Resource, tenantControlPlane *
 	return result, nil
 }
 
-func getStoredKubeadmConfiguration(ctx context.Context, r KubeadmResource, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*kubeadm.Configuration, error) {
+func getStoredKubeadmConfiguration(ctx context.Context, client client.Client, tmpDirectory string, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*kubeadm.Configuration, error) {
 	var configmap corev1.ConfigMap
 	namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.KubeadmConfig.ConfigmapName}
-	if err := r.GetClient().Get(ctx, namespacedName, &configmap); err != nil {
+	if err := client.Get(ctx, namespacedName, &configmap); err != nil {
 		return nil, err
 	}
 
@@ -107,8 +106,7 @@ func getStoredKubeadmConfiguration(ctx context.Context, r KubeadmResource, tenan
 		return nil, err
 	}
 
-	tmpDirectory := r.GetTmpDirectory()
-	if tmpDirectory != "" {
+	if len(tmpDirectory) > 0 {
 		config.InitConfiguration.ClusterConfiguration.CertificatesDir = tmpDirectory
 	}
 

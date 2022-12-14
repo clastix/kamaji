@@ -7,6 +7,9 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
+	clientset "k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -14,8 +17,72 @@ import (
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
+func GetKubeadmManifestDeps(ctx context.Context, client client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*clientset.Clientset, *kubeadm.Configuration, error) {
+	config, err := getStoredKubeadmConfiguration(ctx, client, "", tenantControlPlane)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "cannot retrieve kubeadm configuration")
+	}
+
+	kubeconfig, err := utilities.GetTenantKubeconfig(ctx, client, tenantControlPlane)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "cannot retrieve kubeconfig configuration")
+	}
+
+	address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "cannot retrieve Tenant Control Plane address")
+	}
+
+	config.Kubeconfig = *kubeconfig
+	config.Parameters = kubeadm.Parameters{
+		TenantControlPlaneName:         tenantControlPlane.GetName(),
+		TenantDNSServiceIPs:            tenantControlPlane.Spec.NetworkProfile.DNSServiceIPs,
+		TenantControlPlaneVersion:      tenantControlPlane.Spec.Kubernetes.Version,
+		TenantControlPlanePodCIDR:      tenantControlPlane.Spec.NetworkProfile.PodCIDR,
+		TenantControlPlaneAddress:      address,
+		TenantControlPlaneCertSANs:     tenantControlPlane.Spec.NetworkProfile.CertSANs,
+		TenantControlPlanePort:         tenantControlPlane.Spec.NetworkProfile.Port,
+		TenantControlPlaneCGroupDriver: tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(),
+	}
+	// If CoreDNS addon is enabled and with an override, adding these to the kubeadm init configuration
+	if coreDNS := tenantControlPlane.Spec.Addons.CoreDNS; coreDNS != nil {
+		config.Parameters.CoreDNSOptions = &kubeadm.AddonOptions{}
+
+		if len(coreDNS.ImageRepository) > 0 {
+			config.Parameters.CoreDNSOptions.Repository = coreDNS.ImageRepository
+		}
+
+		if len(coreDNS.ImageRepository) > 0 {
+			config.Parameters.CoreDNSOptions.Tag = coreDNS.ImageTag
+		}
+	}
+	// If the kube-proxy addon is enabled and with overrides, adding it to the kubeadm parameters
+	if kubeProxy := tenantControlPlane.Spec.Addons.KubeProxy; kubeProxy != nil {
+		config.Parameters.KubeProxyOptions = &kubeadm.AddonOptions{}
+
+		if len(kubeProxy.ImageRepository) > 0 {
+			config.Parameters.KubeProxyOptions.Repository = kubeProxy.ImageRepository
+		} else {
+			config.Parameters.KubeProxyOptions.Repository = "k8s.gcr.io"
+		}
+
+		if len(kubeProxy.ImageTag) > 0 {
+			config.Parameters.KubeProxyOptions.Tag = kubeProxy.ImageTag
+		} else {
+			config.Parameters.KubeProxyOptions.Tag = tenantControlPlane.Spec.Kubernetes.Version
+		}
+	}
+
+	tenantClient, err := utilities.GetTenantClientSet(ctx, client, tenantControlPlane)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "cannot generate tenant client")
+	}
+
+	return tenantClient, config, nil
+}
+
 func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr.Logger, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
+	config, err := getStoredKubeadmConfiguration(ctx, r.GetClient(), r.GetTmpDirectory(), tenantControlPlane)
 	if err != nil {
 		logger.Error(err, "cannot retrieve kubeadm configuration")
 
@@ -48,35 +115,6 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr
 		TenantControlPlaneCGroupDriver: tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(),
 	}
 
-	// If CoreDNS addon is enabled and with an override, adding these to the kubeadm init configuration
-	if coreDNS := tenantControlPlane.Spec.Addons.CoreDNS; coreDNS != nil {
-		config.Parameters.CoreDNSOptions = &kubeadm.AddonOptions{}
-
-		if len(coreDNS.ImageRepository) > 0 {
-			config.Parameters.CoreDNSOptions.Repository = coreDNS.ImageRepository
-		}
-
-		if len(coreDNS.ImageRepository) > 0 {
-			config.Parameters.CoreDNSOptions.Tag = coreDNS.ImageTag
-		}
-	}
-	// If the kube-proxy addon is enabled and with overrides, adding it to the kubeadm parameters
-	if kubeProxy := tenantControlPlane.Spec.Addons.KubeProxy; kubeProxy != nil {
-		config.Parameters.KubeProxyOptions = &kubeadm.AddonOptions{}
-
-		if len(kubeProxy.ImageRepository) > 0 {
-			config.Parameters.KubeProxyOptions.Repository = kubeProxy.ImageRepository
-		} else {
-			config.Parameters.KubeProxyOptions.Repository = "k8s.gcr.io"
-		}
-
-		if len(kubeProxy.ImageTag) > 0 {
-			config.Parameters.KubeProxyOptions.Tag = kubeProxy.ImageTag
-		} else {
-			config.Parameters.KubeProxyOptions.Tag = tenantControlPlane.Spec.Kubernetes.Version
-		}
-	}
-
 	checksum := config.Checksum()
 
 	status, err := r.GetStatus(tenantControlPlane)
@@ -105,7 +143,7 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr
 
 		return controllerutil.OperationResultNone, err
 	}
-	if err = fun(client, config); err != nil {
+	if _, err = fun(client, config); err != nil {
 		logger.Error(err, "kubeadm function failed")
 
 		return controllerutil.OperationResultNone, err

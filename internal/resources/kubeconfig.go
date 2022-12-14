@@ -122,7 +122,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
-		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
+		config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
 		if err != nil {
 			logger.Error(err, "cannot retrieve kubeadm configuration")
 

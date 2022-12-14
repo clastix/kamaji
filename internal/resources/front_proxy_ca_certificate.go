@@ -96,7 +96,7 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 			}
 		}
 
-		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
+		config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
 		if err != nil {
 			logger.Error(err, "cannot retrieve kubeadm configuration")
 

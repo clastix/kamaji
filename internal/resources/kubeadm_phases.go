@@ -71,17 +71,17 @@ func (r *KubeadmPhase) Define(context.Context, *kamajiv1alpha1.TenantControlPlan
 	return nil
 }
 
-func (r *KubeadmPhase) GetKubeadmFunction() (func(clientset.Interface, *kubeadm.Configuration) error, error) {
+func (r *KubeadmPhase) GetKubeadmFunction() (func(clientset.Interface, *kubeadm.Configuration) ([]byte, error), error) {
 	switch r.Phase {
 	case PhaseUploadConfigKubeadm:
 		return kubeadm.UploadKubeadmConfig, nil
 	case PhaseUploadConfigKubelet:
 		return kubeadm.UploadKubeletConfig, nil
 	case PhaseBootstrapToken:
-		return func(client clientset.Interface, config *kubeadm.Configuration) error {
+		return func(client clientset.Interface, config *kubeadm.Configuration) ([]byte, error) {
 			bootstrapTokensEnrichment(config.InitConfiguration.BootstrapTokens)
 
-			return kubeadm.BootstrapToken(client, config)
+			return nil, kubeadm.BootstrapToken(client, config)
 		}, nil
 	default:
 		return nil, fmt.Errorf("no available functionality for phase %s", r.Phase)
