@@ -15,10 +15,11 @@ import (
 const (
 	KubeSystemNamespace = "kube-system"
 
-	KubeProxyName               = constants.KubeProxy
-	KubeProxyServiceAccountName = proxy.KubeProxyServiceAccountName
-	KubeProxyConfigMapRoleName  = proxy.KubeProxyConfigMapRoleName
-	KubeProxyConfigMap          = constants.KubeProxyConfigMap
+	KubeProxyName                   = constants.KubeProxy
+	KubeProxyClusterRoleBindingName = constants.KubeProxyClusterRoleBindingName
+	KubeProxyServiceAccountName     = proxy.KubeProxyServiceAccountName
+	KubeProxyConfigMapRoleName      = proxy.KubeProxyConfigMapRoleName
+	KubeProxyConfigMap              = constants.KubeProxyConfigMap
 
 	CoreDNSName                   = constants.CoreDNSDeploymentName
 	CoreDNSServiceName            = "kube-dns"

@@ -163,6 +163,25 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	if err = konnectivityAgent.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
 	}
+
+	kubeProxy := &controllers.KubeProxy{
+		AdminClient:               m.AdminClient,
+		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		TriggerChannel:            make(chan event.GenericEvent),
+	}
+	if err = kubeProxy.SetupWithManager(mgr); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	coreDNS := &controllers.CoreDNS{
+		AdminClient:               m.AdminClient,
+		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		TriggerChannel:            make(chan event.GenericEvent),
+	}
+	if err = coreDNS.SetupWithManager(mgr); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	// Starting the manager
 	go func() {
 		if err = mgr.Start(tcpCtx); err != nil {
@@ -174,6 +193,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		triggers: []chan event.GenericEvent{
 			migrate.TriggerChannel,
 			konnectivityAgent.TriggerChannel,
+			kubeProxy.TriggerChannel,
+			coreDNS.TriggerChannel,
 		},
 		cancelFn: tcpCancelFn,
 	}
