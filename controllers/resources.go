@@ -78,7 +78,6 @@ func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.R
 	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
 	resources = append(resources, getKubernetesIngressResources(config.client)...)
 	resources = append(resources, getKubeadmPhaseResources(config.client)...)
-	resources = append(resources, getKubeadmAddonResources(config.client)...)
 
 	return resources
 }
@@ -245,21 +244,6 @@ func getKubeadmPhaseResources(c client.Client) []resources.Resource {
 			Name:   "bootstrap-token",
 			Client: c,
 			Phase:  resources.PhaseBootstrapToken,
-		},
-	}
-}
-
-func getKubeadmAddonResources(c client.Client) []resources.Resource {
-	return []resources.Resource{
-		&resources.KubeadmAddonResource{
-			Name:         "coredns",
-			Client:       c,
-			KubeadmAddon: resources.AddonCoreDNS,
-		},
-		&resources.KubeadmAddonResource{
-			Name:         "kubeproxy",
-			Client:       c,
-			KubeadmAddon: resources.AddonKubeProxy,
 		},
 	}
 }

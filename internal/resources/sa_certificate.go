@@ -95,7 +95,7 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			}
 		}
 
-		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
+		config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
 		if err != nil {
 			logger.Error(err, "cannot retrieve kubadm configuration")
 

@@ -19,11 +19,11 @@ import (
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
-func UploadKubeadmConfig(client kubernetes.Interface, config *Configuration) error {
-	return uploadconfig.UploadConfiguration(&config.InitConfiguration, client)
+func UploadKubeadmConfig(client kubernetes.Interface, config *Configuration) ([]byte, error) {
+	return nil, uploadconfig.UploadConfiguration(&config.InitConfiguration, client)
 }
 
-func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) error {
+func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) ([]byte, error) {
 	kubeletConfiguration := KubeletConfiguration{
 		TenantControlPlaneDomain:        config.InitConfiguration.Networking.DNSDomain,
 		TenantControlPlaneDNSServiceIPs: config.Parameters.TenantDNSServiceIPs,
@@ -31,7 +31,7 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) err
 	}
 	content, err := getKubeletConfigmapContent(kubeletConfiguration)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	configMapName := kubeadmconstants.KubeletBaseConfigurationConfigMap
@@ -46,15 +46,15 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) err
 		},
 	}
 
-	if err := apiclient.CreateOrUpdateConfigMap(client, configMap); err != nil {
-		return err
+	if err = apiclient.CreateOrUpdateConfigMap(client, configMap); err != nil {
+		return nil, err
 	}
 
-	if err := createConfigMapRBACRules(client); err != nil {
-		return errors.Wrap(err, "error creating kubelet configuration configmap RBAC rules")
+	if err = createConfigMapRBACRules(client); err != nil {
+		return nil, errors.Wrap(err, "error creating kubelet configuration configmap RBAC rules")
 	}
 
-	return nil
+	return nil, nil
 }
 
 func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration) ([]byte, error) {

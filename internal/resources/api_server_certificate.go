@@ -97,7 +97,7 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 			}
 		}
 
-		config, err := getStoredKubeadmConfiguration(ctx, r, tenantControlPlane)
+		config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
 		if err != nil {
 			logger.Error(err, "cannot retrieve kubeadm configuration")
 
