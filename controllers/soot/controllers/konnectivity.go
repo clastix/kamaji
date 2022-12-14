@@ -6,6 +6,7 @@ package controllers
 import (
 	"context"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/rbac/v1"
@@ -16,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -29,52 +29,53 @@ import (
 )
 
 type KonnectivityAgent struct {
+	logger logr.Logger
+
 	AdminClient               client.Client
 	GetTenantControlPlaneFunc utils.TenantControlPlaneRetrievalFn
 	TriggerChannel            chan event.GenericEvent
 }
 
 func (k *KonnectivityAgent) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
-	logger := log.FromContext(ctx, "controller", "konnectivity_agent")
-
 	tcp, err := k.GetTenantControlPlaneFunc()
 	if err != nil {
-		logger.Error(err, "cannot retrieve TenantControlPlane")
+		k.logger.Error(err, "cannot retrieve TenantControlPlane")
 
 		return reconcile.Result{}, err
 	}
 
 	for _, resource := range controllers.GetExternalKonnectivityResources(k.AdminClient) {
-		logger.Info("start processing konnectivity resource", "resource", resource.GetName())
+		k.logger.Info("start processing", "resource", resource.GetName())
 
 		result, handlingErr := resources.Handle(ctx, resource, tcp)
 		if handlingErr != nil {
-			logger.Error(handlingErr, "konnectivity resource process failed", "resource", resource.GetName())
+			k.logger.Error(handlingErr, "resource process failed", "resource", resource.GetName())
 
 			return reconcile.Result{}, handlingErr
 		}
 
 		if result == controllerutil.OperationResultNone {
-			logger.Info("konnectivity resource reconciled", "resource", resource.GetName())
+			k.logger.Info("resource processed", "resource", resource.GetName())
 
 			continue
 		}
 
 		if err = utils.UpdateStatus(ctx, k.AdminClient, k.GetTenantControlPlaneFunc, resource); err != nil {
-			logger.Error(err, "update of the resource failed", "resource", resource.GetName())
+			k.logger.Error(err, "update status failed", "resource", resource.GetName())
 
 			return reconcile.Result{}, err
 		}
 	}
 
-	logger.Info("reconciliation completed")
+	k.logger.Info("reconciliation completed")
 
 	return reconcile.Result{}, nil
 }
 
 func (k *KonnectivityAgent) SetupWithManager(mgr manager.Manager) error {
+	k.logger = mgr.GetLogger().WithName("konnectivity_agent")
+
 	return controllerruntime.NewControllerManagedBy(mgr).
-		WithLogger(mgr.GetLogger().WithName("konnectivity_agent")).
 		For(&appsv1.DaemonSet{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == konnectivity.AgentName && object.GetNamespace() == konnectivity.AgentNamespace
 		}))).

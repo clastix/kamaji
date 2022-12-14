@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -29,6 +29,7 @@ import (
 
 type Migrate struct {
 	client client.Client
+	logger logr.Logger
 
 	GetTenantControlPlaneFunc utils.TenantControlPlaneRetrievalFn
 	WebhookNamespace          string
@@ -55,7 +56,7 @@ func (m *Migrate) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile
 	}
 
 	if err != nil {
-		log.FromContext(ctx).Error(err, "migrate reconciliation failed")
+		m.logger.Error(err, "reconciliation failed")
 
 		return reconcile.Result{}, err
 	}
@@ -132,9 +133,9 @@ func (m *Migrate) createOrUpdate(ctx context.Context) error {
 
 func (m *Migrate) SetupWithManager(mgr manager.Manager) error {
 	m.client = mgr.GetClient()
+	m.logger = mgr.GetLogger().WithName("migrate")
 
 	return controllerruntime.NewControllerManagedBy(mgr).
-		WithLogger(mgr.GetLogger().WithName("migrate")).
 		For(&admissionregistrationv1.ValidatingWebhookConfiguration{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			vwc := m.object()
 

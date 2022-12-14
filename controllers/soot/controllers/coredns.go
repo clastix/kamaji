@@ -6,6 +6,7 @@ package controllers
 import (
 	"context"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -15,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -28,52 +28,53 @@ import (
 )
 
 type CoreDNS struct {
+	logger logr.Logger
+
 	AdminClient               client.Client
 	GetTenantControlPlaneFunc utils.TenantControlPlaneRetrievalFn
 	TriggerChannel            chan event.GenericEvent
 }
 
 func (c *CoreDNS) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	logger := log.FromContext(ctx, "controller", "coredns")
-
 	tcp, err := c.GetTenantControlPlaneFunc()
 	if err != nil {
-		logger.Error(err, "cannot retrieve TenantControlPlane")
+		c.logger.Error(err, "cannot retrieve TenantControlPlane")
 
 		return reconcile.Result{}, err
 	}
 
-	logger.Info("start processing")
+	c.logger.Info("start processing")
 
 	resource := &addons.CoreDNS{Client: c.AdminClient}
 
 	result, handlingErr := resources.Handle(ctx, resource, tcp)
 	if handlingErr != nil {
-		logger.Error(handlingErr, "resource process failed", "resource", resource.GetName())
+		c.logger.Error(handlingErr, "resource process failed", "resource", resource.GetName())
 
 		return reconcile.Result{}, handlingErr
 	}
 
 	if result == controllerutil.OperationResultNone {
-		logger.Info("already reconciled")
+		c.logger.Info("reconciliation completed")
 
 		return reconcile.Result{}, nil
 	}
 
 	if err = utils.UpdateStatus(ctx, c.AdminClient, c.GetTenantControlPlaneFunc, resource); err != nil {
-		logger.Error(err, "update of the resource failed", "resource", resource.GetName())
+		c.logger.Error(err, "update status failed", "resource", resource.GetName())
 
 		return reconcile.Result{}, err
 	}
 
-	logger.Info("reconciliation completed")
+	c.logger.Info("reconciliation processed")
 
 	return reconcile.Result{}, nil
 }
 
 func (c *CoreDNS) SetupWithManager(mgr manager.Manager) error {
+	c.logger = mgr.GetLogger().WithName("coredns")
+
 	return controllerruntime.NewControllerManagedBy(mgr).
-		WithLogger(mgr.GetLogger().WithName("coredns")).
 		For(&rbacv1.ClusterRoleBinding{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == kubeadm.CoreDNSClusterRoleBindingName
 		}))).
