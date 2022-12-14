@@ -63,6 +63,7 @@ func (k *KubeadmPhase) Reconcile(ctx context.Context, _ reconcile.Request) (reco
 
 func (k *KubeadmPhase) SetupWithManager(mgr manager.Manager) error {
 	k.logger = mgr.GetLogger().WithName(k.Phase.GetName())
+	k.TriggerChannel = make(chan event.GenericEvent)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
 		For(k.Phase.GetWatchedObject(), builder.WithPredicates(predicate.NewPredicateFuncs(k.Phase.GetPredicateFunc()))).

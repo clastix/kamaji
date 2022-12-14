@@ -149,7 +149,6 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		WebhookServiceName:        m.MigrateServiceNamespace,
 		WebhookCABundle:           m.MigrateCABundle,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
-		TriggerChannel:            make(chan event.GenericEvent),
 	}
 	if err = migrate.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -158,7 +157,6 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	konnectivityAgent := &controllers.KonnectivityAgent{
 		AdminClient:               m.AdminClient,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
-		TriggerChannel:            make(chan event.GenericEvent),
 	}
 	if err = konnectivityAgent.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -167,7 +165,6 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	kubeProxy := &controllers.KubeProxy{
 		AdminClient:               m.AdminClient,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
-		TriggerChannel:            make(chan event.GenericEvent),
 	}
 	if err = kubeProxy.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -176,7 +173,6 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	coreDNS := &controllers.CoreDNS{
 		AdminClient:               m.AdminClient,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
-		TriggerChannel:            make(chan event.GenericEvent),
 	}
 	if err = coreDNS.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -184,7 +180,6 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 
 	uploadKubeadmConfig := &controllers.KubeadmPhase{
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
-		TriggerChannel:            make(chan event.GenericEvent),
 		Phase: &resources.KubeadmPhase{
 			Client: m.AdminClient,
 			Phase:  resources.PhaseUploadConfigKubeadm,
@@ -207,7 +202,6 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 
 	bootstrapToken := &controllers.KubeadmPhase{
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
-		TriggerChannel:            make(chan event.GenericEvent),
 		Phase: &resources.KubeadmPhase{
 			Client: m.AdminClient,
 			Phase:  resources.PhaseBootstrapToken,

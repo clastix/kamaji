@@ -73,6 +73,7 @@ func (c *CoreDNS) Reconcile(ctx context.Context, request reconcile.Request) (rec
 
 func (c *CoreDNS) SetupWithManager(mgr manager.Manager) error {
 	c.logger = mgr.GetLogger().WithName("coredns")
+	c.TriggerChannel = make(chan event.GenericEvent)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
 		For(&rbacv1.ClusterRoleBinding{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
