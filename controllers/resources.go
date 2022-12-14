@@ -77,7 +77,6 @@ func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.R
 	resources = append(resources, getKonnectivityServerPatchResources(config.client)...)
 	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
 	resources = append(resources, getKubernetesIngressResources(config.client)...)
-	resources = append(resources, getKubeadmPhaseResources(config.client)...)
 
 	return resources
 }
@@ -224,26 +223,6 @@ func getKubernetesIngressResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubernetesIngressResource{
 			Client: c,
-		},
-	}
-}
-
-func getKubeadmPhaseResources(c client.Client) []resources.Resource {
-	return []resources.Resource{
-		&resources.KubeadmPhase{
-			Name:   "upload-config-kubeadm",
-			Client: c,
-			Phase:  resources.PhaseUploadConfigKubeadm,
-		},
-		&resources.KubeadmPhase{
-			Name:   "upload-config-kubelet",
-			Client: c,
-			Phase:  resources.PhaseUploadConfigKubelet,
-		},
-		&resources.KubeadmPhase{
-			Name:   "bootstrap-token",
-			Client: c,
-			Phase:  resources.PhaseBootstrapToken,
 		},
 	}
 }

@@ -7,8 +7,11 @@ import (
 	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	bootstraptokenv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
+	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -32,9 +35,42 @@ func (d kubeadmPhase) String() string {
 
 type KubeadmPhase struct {
 	Client   client.Client
-	Name     string
 	Phase    kubeadmPhase
 	checksum string
+}
+
+func (r *KubeadmPhase) GetWatchedObject() client.Object {
+	switch r.Phase {
+	case PhaseUploadConfigKubeadm:
+		return &corev1.ConfigMap{}
+	case PhaseUploadConfigKubelet:
+		return &corev1.ConfigMap{}
+	case PhaseBootstrapToken:
+		return &corev1.Secret{}
+	default:
+		panic("shouldn't happen")
+	}
+}
+
+func (r *KubeadmPhase) GetPredicateFunc() func(obj client.Object) bool {
+	switch r.Phase {
+	case PhaseUploadConfigKubeadm:
+		return func(obj client.Object) bool {
+			return obj.GetName() == constants.KubeadmConfigConfigMap && obj.GetNamespace() == metav1.NamespaceSystem
+		}
+	case PhaseUploadConfigKubelet:
+		return func(obj client.Object) bool {
+			return obj.GetName() == constants.KubeletBaseConfigurationConfigMap && obj.GetNamespace() == metav1.NamespaceSystem
+		}
+	case PhaseBootstrapToken:
+		return func(obj client.Object) bool {
+			secret := obj.(*corev1.Secret) //nolint:forcetypeassert
+
+			return secret.Type == "bootstrap.kubernetes.io/token" && secret.GetNamespace() == metav1.NamespaceSystem
+		}
+	default:
+		panic("shouldn't happen")
+	}
 }
 
 func (r *KubeadmPhase) isStatusEqual(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -45,7 +81,7 @@ func (r *KubeadmPhase) isStatusEqual(tenantControlPlane *kamajiv1alpha1.TenantCo
 
 	status, ok := i.(*kamajiv1alpha1.KubeadmPhaseStatus)
 	if !ok {
-		return false
+		return true
 	}
 
 	return status.Checksum == r.checksum
@@ -117,7 +153,7 @@ func (r *KubeadmPhase) GetTmpDirectory() string {
 }
 
 func (r *KubeadmPhase) GetName() string {
-	return r.Name
+	return r.Phase.String()
 }
 
 func (r *KubeadmPhase) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
@@ -130,17 +166,17 @@ func (r *KubeadmPhase) UpdateTenantControlPlaneStatus(ctx context.Context, tenan
 		return err
 	}
 
-	status.SetChecksum(r.checksum)
+	if status != nil {
+		status.SetChecksum(r.checksum)
+	}
 
 	return nil
 }
 
 func (r *KubeadmPhase) GetStatus(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (kamajiv1alpha1.KubeadmConfigChecksumDependant, error) {
 	switch r.Phase {
-	case PhaseUploadConfigKubeadm:
-		return &tenantControlPlane.Status.KubeadmPhase.UploadConfigKubeadm, nil
-	case PhaseUploadConfigKubelet:
-		return &tenantControlPlane.Status.KubeadmPhase.UploadConfigKubelet, nil
+	case PhaseUploadConfigKubeadm, PhaseUploadConfigKubelet:
+		return nil, nil
 	case PhaseBootstrapToken:
 		return &tenantControlPlane.Status.KubeadmPhase.BootstrapToken, nil
 	default:

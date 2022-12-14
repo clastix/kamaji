@@ -22,6 +22,7 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers/soot/controllers"
 	"github.com/clastix/kamaji/controllers/utils"
+	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -140,7 +141,6 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-
 	//
 	// Register all the controllers of the soot here:
 	//
@@ -182,6 +182,40 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		return reconcile.Result{}, err
 	}
 
+	uploadKubeadmConfig := &controllers.KubeadmPhase{
+		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		TriggerChannel:            make(chan event.GenericEvent),
+		Phase: &resources.KubeadmPhase{
+			Client: m.AdminClient,
+			Phase:  resources.PhaseUploadConfigKubeadm,
+		},
+	}
+	if err = uploadKubeadmConfig.SetupWithManager(mgr); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	uploadKubeletConfig := &controllers.KubeadmPhase{
+		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		Phase: &resources.KubeadmPhase{
+			Client: m.AdminClient,
+			Phase:  resources.PhaseUploadConfigKubelet,
+		},
+	}
+	if err = uploadKubeletConfig.SetupWithManager(mgr); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	bootstrapToken := &controllers.KubeadmPhase{
+		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		TriggerChannel:            make(chan event.GenericEvent),
+		Phase: &resources.KubeadmPhase{
+			Client: m.AdminClient,
+			Phase:  resources.PhaseBootstrapToken,
+		},
+	}
+	if err = bootstrapToken.SetupWithManager(mgr); err != nil {
+		return reconcile.Result{}, err
+	}
 	// Starting the manager
 	go func() {
 		if err = mgr.Start(tcpCtx); err != nil {
@@ -195,6 +229,9 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			konnectivityAgent.TriggerChannel,
 			kubeProxy.TriggerChannel,
 			coreDNS.TriggerChannel,
+			uploadKubeadmConfig.TriggerChannel,
+			uploadKubeletConfig.TriggerChannel,
+			bootstrapToken.TriggerChannel,
 		},
 		cancelFn: tcpCancelFn,
 	}
