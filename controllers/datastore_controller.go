@@ -41,6 +41,7 @@ type DataStore struct {
 
 //+kubebuilder:rbac:groups=kamaji.clastix.io,resources=datastores,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=kamaji.clastix.io,resources=datastores/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=kamaji.clastix.io,resources=datastores/finalizers,verbs=update
 
 func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := log.FromContext(ctx)
