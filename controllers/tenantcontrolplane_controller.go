@@ -13,7 +13,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	errors2 "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -39,7 +38,6 @@ import (
 type TenantControlPlaneReconciler struct {
 	Client               client.Client
 	APIReader            client.Reader
-	Scheme               *runtime.Scheme
 	Config               TenantControlPlaneReconcilerConfig
 	TriggerChan          TenantControlPlaneChannel
 	KamajiNamespace      string

@@ -107,7 +107,6 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			reconciler := &controllers.TenantControlPlaneReconciler{
 				Client:    mgr.GetClient(),
 				APIReader: mgr.GetAPIReader(),
-				Scheme:    mgr.GetScheme(),
 				Config: controllers.TenantControlPlaneReconcilerConfig{
 					DefaultDataStoreName: datastore,
 					KineContainerImage:   kineImage,
