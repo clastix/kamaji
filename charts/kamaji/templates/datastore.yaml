@@ -3,7 +3,7 @@ kind: DataStore
 metadata:
   name: {{ include "datastore.fullname" . }}
   annotations:
-    "helm.sh/hook": post-install
+    "helm.sh/hook": pre-install
   labels:
     {{- include "datastore.labels" . | nindent 4 }}
 spec:
