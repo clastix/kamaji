@@ -19,10 +19,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	cmdutils "github.com/clastix/kamaji/cmd/utils"
 	"github.com/clastix/kamaji/controllers"
 	"github.com/clastix/kamaji/controllers/soot"
 	"github.com/clastix/kamaji/indexers"
 	"github.com/clastix/kamaji/internal"
+	datastoreutils "github.com/clastix/kamaji/internal/datastore/utils"
 	"github.com/clastix/kamaji/internal/webhook"
 )
 
@@ -44,6 +46,8 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		webhookCAPath string
 	)
 
+	ctx := ctrl.SetupSignalHandler()
+
 	cmd := &cobra.Command{
 		Use:           "manager",
 		Short:         "Start the Kamaji Kubernetes Operator",
@@ -54,23 +58,22 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			klog.SetOutput(io.Discard)
 			klog.LogToStderr(false)
 
-			for _, arg := range []string{"kine-image", "datastore", "migrate-image", "tmp-directory", "pod-namespace", "webhook-service-name", "serviceaccount-name", "webhook-ca-path"} {
-				v, _ := cmd.Flags().GetString(arg)
-				if len(v) == 0 {
-					return fmt.Errorf("expecting a value for --%s arg", arg)
-				}
+			if err = cmdutils.CheckFlags(cmd.Flags(), []string{"kine-image", "datastore", "migrate-image", "tmp-directory", "pod-namespace", "webhook-service-name", "serviceaccount-name", "webhook-ca-path"}...); err != nil {
+				return err
 			}
 
 			if webhookCABundle, err = os.ReadFile(webhookCAPath); err != nil {
 				return fmt.Errorf("unable to read webhook CA: %w", err)
 			}
 
+			if err = datastoreutils.CheckExists(ctx, scheme, datastore); err != nil {
+				return err
+			}
+
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			setupLog := ctrl.Log.WithName("setup")
-
-			ctx := ctrl.SetupSignalHandler()
 
 			setupLog.Info(fmt.Sprintf("Kamaji version %s %s%s", internal.GitTag, internal.GitCommit, internal.GitDirty))
 			setupLog.Info(fmt.Sprintf("Build from: %s", internal.GitRepo))
