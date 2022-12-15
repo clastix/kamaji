@@ -96,10 +96,10 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	// the soot manager if this is already registered.
 	v, ok := m.sootMap[request.String()]
 	if ok {
-		// The TenantControlPlane is in non-ready mode:
+		// The TenantControlPlane is in non-ready mode, or marked for deletion:
 		// we don't want to pollute with messages due to broken connection.
 		// Once the TCP will be ready again, the event will be intercepted and the manager started back.
-		if tcpStatus == kamajiv1alpha1.VersionNotReady {
+		if tcpStatus == kamajiv1alpha1.VersionNotReady || tcp.GetDeletionTimestamp() != nil {
 			return reconcile.Result{}, m.cleanup(request)
 		}
 
