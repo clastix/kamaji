@@ -14,10 +14,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers/soot/controllers"
@@ -36,6 +38,9 @@ type sootMap map[string]sootItem
 type Manager struct {
 	client  client.Client
 	sootMap sootMap
+	// sootManagerErrChan is the channel that is going to be used
+	// when the soot manager cannot start due to any kind of problem.
+	sootManagerErrChan chan event.GenericEvent
 
 	MigrateCABundle         []byte
 	MigrateServiceName      string
@@ -95,9 +100,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		// we don't want to pollute with messages due to broken connection.
 		// Once the TCP will be ready again, the event will be intercepted and the manager started back.
 		if tcpStatus == kamajiv1alpha1.VersionNotReady {
-			v.cancelFn()
-
-			return reconcile.Result{}, nil
+			return reconcile.Result{}, m.cleanup(request)
 		}
 
 		for _, trigger := range v.triggers {
@@ -214,6 +217,10 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	go func() {
 		if err = mgr.Start(tcpCtx); err != nil {
 			log.FromContext(ctx).Error(err, "unable to start soot manager")
+			// When the manager cannot start we're enqueuing back the request to take advantage of the backoff factor
+			// of the queue: this is a goroutine and cannot return an error since the manager is running on its own,
+			// using the sootManagerErrChan channel we can trigger a reconciliation although the TCP hadn't any change.
+			m.sootManagerErrChan <- event.GenericEvent{Object: tcp}
 		}
 	}()
 
@@ -235,9 +242,11 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 
 func (m *Manager) SetupWithManager(mgr manager.Manager) error {
 	m.client = mgr.GetClient()
+	m.sootManagerErrChan = make(chan event.GenericEvent)
 	m.sootMap = make(map[string]sootItem)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
+		Watches(&source.Channel{Source: m.sootManagerErrChan}, &handler.EnqueueRequestForObject{}).
 		For(&kamajiv1alpha1.TenantControlPlane{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			obj := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 			// status is required to understand if we have to start or stop the soot manager
