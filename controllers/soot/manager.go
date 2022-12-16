@@ -9,10 +9,12 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/retry"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -22,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/controllers/finalizers"
 	"github.com/clastix/kamaji/controllers/soot/controllers"
 	"github.com/clastix/kamaji/controllers/utils"
 	"github.com/clastix/kamaji/internal/resources"
@@ -64,7 +67,22 @@ func (m *Manager) retrieveTenantControlPlane(ctx context.Context, request reconc
 
 // If the TenantControlPlane is deleted we have to free up memory by stopping the soot manager:
 // this is made possible by retrieving the cancel function of the soot manager context to cancel it.
-func (m *Manager) cleanup(req reconcile.Request) error { //nolint:unparam
+func (m *Manager) cleanup(ctx context.Context, req reconcile.Request, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (err error) {
+	if tenantControlPlane != nil && controllerutil.ContainsFinalizer(tenantControlPlane, finalizers.SootFinalizer) {
+		defer func() {
+			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				tcp, tcpErr := m.retrieveTenantControlPlane(ctx, req)()
+				if tcpErr != nil {
+					return tcpErr
+				}
+
+				controllerutil.RemoveFinalizer(tcp, finalizers.SootFinalizer)
+
+				return m.AdminClient.Update(ctx, tcp)
+			})
+		}()
+	}
+
 	tcpName := req.NamespacedName.String()
 
 	v, ok := m.sootMap[tcpName]
@@ -85,10 +103,19 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	tcp := &kamajiv1alpha1.TenantControlPlane{}
 	if err = m.client.Get(ctx, request.NamespacedName, tcp); err != nil {
 		if errors.IsNotFound(err) {
-			return reconcile.Result{}, m.cleanup(request)
+			return reconcile.Result{}, m.cleanup(ctx, request, nil)
 		}
 
 		return reconcile.Result{}, err
+	}
+	// Handling finalizer if the TenantControlPlane is marked for deletion:
+	// the clean-up function is already taking care to stop the manager, if this exists.
+	if tcp.GetDeletionTimestamp() != nil {
+		if controllerutil.ContainsFinalizer(tcp, finalizers.SootFinalizer) {
+			return reconcile.Result{}, m.cleanup(ctx, request, tcp)
+		}
+
+		return reconcile.Result{}, nil
 	}
 
 	tcpStatus := *tcp.Status.Kubernetes.Version.Status
@@ -99,8 +126,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		// The TenantControlPlane is in non-ready mode, or marked for deletion:
 		// we don't want to pollute with messages due to broken connection.
 		// Once the TCP will be ready again, the event will be intercepted and the manager started back.
-		if tcpStatus == kamajiv1alpha1.VersionNotReady || tcp.GetDeletionTimestamp() != nil {
-			return reconcile.Result{}, m.cleanup(request)
+		if tcpStatus == kamajiv1alpha1.VersionNotReady {
+			return reconcile.Result{}, m.cleanup(ctx, request, tcp)
 		}
 
 		for _, trigger := range v.triggers {
@@ -115,6 +142,17 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		log.FromContext(ctx).Info("skipping start of the soot manager for a not ready instance")
 
 		return reconcile.Result{}, nil
+	}
+	// Setting the finalizer for the soot manager:
+	// upon deletion the soot manager will be shut down prior the Deployment, avoiding logs pollution.
+	if !controllerutil.ContainsFinalizer(tcp, finalizers.SootFinalizer) {
+		_, finalizerErr := utilities.CreateOrUpdateWithConflict(ctx, m.AdminClient, tcp, func() error {
+			controllerutil.AddFinalizer(tcp, finalizers.SootFinalizer)
+
+			return nil
+		})
+
+		return reconcile.Result{Requeue: true}, finalizerErr
 	}
 	// Generating the manager and starting it:
 	// in case of any error, reconciling the request to start it back from the beginning.
