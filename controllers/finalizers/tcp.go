@@ -4,9 +4,7 @@
 package finalizers
 
 const (
-	TenantControlPlaneFinalizer = "finalizer.kamaji.clastix.io"
-)
-
-const (
-	SootFinalizer = "finalizer.kamaji.clastix.io/soot"
+	// DatastoreFinalizer is using a wrong name, since it's related to the underlying datastore.
+	DatastoreFinalizer = "finalizer.kamaji.clastix.io"
+	SootFinalizer      = "finalizer.kamaji.clastix.io/soot"
 )

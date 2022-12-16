@@ -5,12 +5,12 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -80,14 +80,23 @@ func (r *Setup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
 	defer func() {
-		if err == nil && !controllerutil.ContainsFinalizer(tenantControlPlane, finalizers.TenantControlPlaneFinalizer) {
-			controllerutil.AddFinalizer(tenantControlPlane, finalizers.TenantControlPlaneFinalizer)
+		if err != nil || controllerutil.ContainsFinalizer(tenantControlPlane, finalizers.DatastoreFinalizer) {
+			return
+		}
+		// Adding the Datastore finalizer
+		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			tcp := &kamajiv1alpha1.TenantControlPlane{}
 
-			patch := []byte(fmt.Sprintf(`{"metadata":{"finalizers":[%q]}}`, finalizers.TenantControlPlaneFinalizer))
-
-			if patchErr := r.Client.Patch(ctx, tenantControlPlane, client.RawPatch(types.MergePatchType, patch)); patchErr != nil {
-				logger.Error(err, "unable to patch TenantControlPlane for finalizer addition")
+			if retryErr := r.Client.Get(ctx, types.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.GetName()}, tcp); retryErr != nil {
+				return retryErr
 			}
+
+			controllerutil.AddFinalizer(tenantControlPlane, finalizers.DatastoreFinalizer)
+
+			return r.Client.Update(ctx, tcp)
+		})
+		if err != nil {
+			logger.Error(err, "unable to patch TenantControlPlane for finalizer addition")
 		}
 	}()
 
@@ -146,10 +155,18 @@ func (r *Setup) Delete(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		return err
 	}
 
-	patch := []byte(`{"metadata":{"finalizers":null}}`)
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		tcp := &kamajiv1alpha1.TenantControlPlane{}
+		if err := r.Client.Get(ctx, types.NamespacedName{Name: tenantControlPlane.GetName(), Namespace: tenantControlPlane.GetNamespace()}, tcp); err != nil {
+			return err
+		}
 
-	if patchErr := r.Client.Patch(ctx, tenantControlPlane, client.RawPatch(types.MergePatchType, patch)); patchErr != nil {
-		logger.Error(patchErr, "unable to patch TenantControlPlane for finalizer removal")
+		controllerutil.RemoveFinalizer(tcp, finalizers.DatastoreFinalizer)
+
+		return r.Client.Update(ctx, tcp)
+	})
+	if err != nil {
+		logger.Error(err, "unable to patch TenantControlPlane for finalizer removal")
 	}
 
 	return nil
