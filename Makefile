@@ -77,7 +77,7 @@ helm: ## Download helm locally if necessary.
 
 GINKGO = $(shell pwd)/bin/ginkgo
 ginkgo: ## Download ginkgo locally if necessary.
-	$(call go-install-tool,$(GINKGO),github.com/onsi/ginkgo/ginkgo@v1.16.5)
+	$(call go-install-tool,$(GINKGO),github.com/onsi/ginkgo/v2/ginkgo@v2.6.0)
 
 KIND = $(shell pwd)/bin/kind
 kind: ## Download kind locally if necessary.
