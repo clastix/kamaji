@@ -54,7 +54,7 @@ func GetResources(config GroupResourceBuilderConfiguration) []resources.Resource
 func GetDeletableResources(tcp *kamajiv1alpha1.TenantControlPlane, config GroupDeletableResourceBuilderConfiguration) []resources.DeletableResource {
 	var res []resources.DeletableResource
 
-	if controllerutil.ContainsFinalizer(tcp, finalizers.TenantControlPlaneFinalizer) {
+	if controllerutil.ContainsFinalizer(tcp, finalizers.DatastoreFinalizer) {
 		res = append(res, &ds.Setup{
 			Client:     config.client,
 			Connection: config.connection,

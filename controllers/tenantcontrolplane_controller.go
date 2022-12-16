@@ -81,7 +81,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	markedToBeDeleted := tenantControlPlane.GetDeletionTimestamp() != nil
 
-	if markedToBeDeleted && len(tenantControlPlane.Finalizers) == 0 {
+	if markedToBeDeleted && !controllerutil.ContainsFinalizer(tenantControlPlane, finalizers.DatastoreFinalizer) {
 		return ctrl.Result{}, nil
 	}
 	// Retrieving the DataStore to use for the current reconciliation
@@ -100,7 +100,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 	defer dsConnection.Close()
 
-	if markedToBeDeleted {
+	if markedToBeDeleted && controllerutil.ContainsFinalizer(tenantControlPlane, finalizers.DatastoreFinalizer) {
 		log.Info("marked for deletion, performing clean-up")
 
 		groupDeletableResourceBuilderConfiguration := GroupDeletableResourceBuilderConfiguration{
@@ -232,7 +232,7 @@ func (r *TenantControlPlaneReconciler) getTenantControlPlane(ctx context.Context
 }
 
 func (r *TenantControlPlaneReconciler) RemoveFinalizer(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	controllerutil.RemoveFinalizer(tenantControlPlane, finalizers.TenantControlPlaneFinalizer)
+	controllerutil.RemoveFinalizer(tenantControlPlane, finalizers.DatastoreFinalizer)
 
 	return r.Client.Update(ctx, tenantControlPlane)
 }
