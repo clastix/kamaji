@@ -101,7 +101,7 @@ func (r *KubernetesIngressResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 		}
 
 		path.Path = "/"
-		path.PathType = (*networkingv1.PathType)(pointer.StringPtr(string(networkingv1.PathTypePrefix)))
+		path.PathType = (*networkingv1.PathType)(pointer.String(string(networkingv1.PathTypePrefix)))
 
 		if path.Backend.Service == nil {
 			path.Backend.Service = &networkingv1.IngressServiceBackend{}
