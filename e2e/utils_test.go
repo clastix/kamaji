@@ -10,7 +10,7 @@ import (
 	"io"
 	"os/exec"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,7 +47,7 @@ func PrintTenantControlPlaneInfo(tcp *kamajiv1alpha1.TenantControlPlane) {
 		}
 	}
 
-	if CurrentGinkgoTestDescription().Failed {
+	if CurrentSpecReport().Failed() {
 		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: Tenant Control Plane definition")
 		kubectlExec(
 			fmt.Sprintf("--namespace=%s", tcp.GetNamespace()),
@@ -71,7 +71,7 @@ func PrintTenantControlPlaneInfo(tcp *kamajiv1alpha1.TenantControlPlane) {
 }
 
 func PrintKamajiLogs() {
-	if CurrentGinkgoTestDescription().Failed {
+	if CurrentSpecReport().Failed() {
 		clientset, err := kubernetes.NewForConfig(cfg)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -84,7 +84,7 @@ func PrintKamajiLogs() {
 		request := clientset.CoreV1().Pods("kamaji-system").GetLogs(list.Items[0].GetName(), &corev1.PodLogOptions{
 			Container: "manager",
 			SinceSeconds: func() *int64 {
-				seconds := int64(CurrentGinkgoTestDescription().Duration.Seconds())
+				seconds := int64(CurrentSpecReport().RunTime)
 
 				return &seconds
 			}(),
