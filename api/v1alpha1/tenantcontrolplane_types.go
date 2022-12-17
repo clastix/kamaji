@@ -76,10 +76,22 @@ type IngressSpec struct {
 	Hostname string `json:"hostname,omitempty"`
 }
 
+// ComponentResourceRequirements describes the compute resource requirements.
+type ComponentResourceRequirements struct {
+	// Limits describes the maximum amount of compute resources allowed.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	Limits corev1.ResourceList `json:"limits,omitempty" protobuf:"bytes,1,rep,name=limits,casttype=ResourceList,castkey=ResourceName"`
+	// Requests describes the minimum amount of compute resources required.
+	// If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+	// otherwise to an implementation-defined value.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	Requests corev1.ResourceList `json:"requests,omitempty" protobuf:"bytes,2,rep,name=requests,casttype=ResourceList,castkey=ResourceName"`
+}
+
 type ControlPlaneComponentsResources struct {
-	APIServer         *corev1.ResourceRequirements `json:"apiServer,omitempty"`
-	ControllerManager *corev1.ResourceRequirements `json:"controllerManager,omitempty"`
-	Scheduler         *corev1.ResourceRequirements `json:"scheduler,omitempty"`
+	APIServer         *ComponentResourceRequirements `json:"apiServer,omitempty"`
+	ControllerManager *ComponentResourceRequirements `json:"controllerManager,omitempty"`
+	Scheduler         *ComponentResourceRequirements `json:"scheduler,omitempty"`
 }
 
 type DeploymentSpec struct {
@@ -157,8 +169,8 @@ type KonnectivityServerSpec struct {
 	// +kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-server
 	Image string `json:"image,omitempty"`
 	// Resources define the amount of CPU and memory to allocate to the Konnectivity server.
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-	ExtraArgs ExtraArgs                    `json:"extraArgs,omitempty"`
+	Resources *ComponentResourceRequirements `json:"resources,omitempty"`
+	ExtraArgs ExtraArgs                      `json:"extraArgs,omitempty"`
 }
 
 type KonnectivityAgentSpec struct {

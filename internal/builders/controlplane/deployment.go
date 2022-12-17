@@ -312,7 +312,8 @@ func (d *Deployment) BuildScheduler(podSpec *corev1.PodSpec, tenantControlPlane 
 
 	if componentsResources := tenantControlPlane.Spec.ControlPlane.Deployment.Resources; componentsResources != nil {
 		if resource := componentsResources.Scheduler; resource != nil {
-			podSpec.Containers[schedulerIndex].Resources = *resource
+			podSpec.Containers[schedulerIndex].Resources.Limits = resource.Limits
+			podSpec.Containers[schedulerIndex].Resources.Requests = resource.Requests
 		}
 	}
 }
@@ -422,7 +423,8 @@ func (d *Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContr
 
 	if componentsResources := tenantControlPlane.Spec.ControlPlane.Deployment.Resources; componentsResources != nil {
 		if resource := componentsResources.ControllerManager; resource != nil {
-			podSpec.Containers[controllerManagerIndex].Resources = *resource
+			podSpec.Containers[controllerManagerIndex].Resources.Limits = resource.Limits
+			podSpec.Containers[controllerManagerIndex].Resources.Requests = resource.Requests
 		}
 	}
 }
@@ -517,7 +519,8 @@ func (d *Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPl
 
 	if componentsResources := tenantControlPlane.Spec.ControlPlane.Deployment.Resources; componentsResources != nil {
 		if resource := componentsResources.APIServer; resource != nil {
-			podSpec.Containers[apiServerIndex].Resources = *resource
+			podSpec.Containers[apiServerIndex].Resources.Limits = resource.Limits
+			podSpec.Containers[apiServerIndex].Resources.Requests = resource.Requests
 		}
 	}
 }
