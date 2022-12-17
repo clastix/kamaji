@@ -687,7 +687,7 @@ spec:
                           description: Resources defines the amount of memory and CPU to allocate to each component of the Control Plane (kube-apiserver, controller-manager, and scheduler).
                           properties:
                             apiServer:
-                              description: ResourceRequirements describes the compute resource requirements.
+                              description: ComponentResourceRequirements describes the compute resource requirements.
                               properties:
                                 limits:
                                   additionalProperties:
@@ -709,7 +709,7 @@ spec:
                                   type: object
                               type: object
                             controllerManager:
-                              description: ResourceRequirements describes the compute resource requirements.
+                              description: ComponentResourceRequirements describes the compute resource requirements.
                               properties:
                                 limits:
                                   additionalProperties:
@@ -731,7 +731,7 @@ spec:
                                   type: object
                               type: object
                             scheduler:
-                              description: ResourceRequirements describes the compute resource requirements.
+                              description: ComponentResourceRequirements describes the compute resource requirements.
                               properties:
                                 limits:
                                   additionalProperties:
@@ -830,10 +830,10 @@ spec:
                                 format: int32
                                 type: integer
                               nodeAffinityPolicy:
-                                description: "NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector when calculating pod topology spread skew. Options are: - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations. - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations. \n If this value is nil, the behavior is equivalent to the Honor policy. This is a alpha-level feature enabled by the NodeInclusionPolicyInPodTopologySpread feature flag."
+                                description: "NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector when calculating pod topology spread skew. Options are: - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations. - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations. \n If this value is nil, the behavior is equivalent to the Honor policy. This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag."
                                 type: string
                               nodeTaintsPolicy:
-                                description: "NodeTaintsPolicy indicates how we will treat node taints when calculating pod topology spread skew. Options are: - Honor: nodes without taints, along with tainted nodes for which the incoming pod has a toleration, are included. - Ignore: node taints are ignored. All nodes are included. \n If this value is nil, the behavior is equivalent to the Ignore policy. This is a alpha-level feature enabled by the NodeInclusionPolicyInPodTopologySpread feature flag."
+                                description: "NodeTaintsPolicy indicates how we will treat node taints when calculating pod topology spread skew. Options are: - Honor: nodes without taints, along with tainted nodes for which the incoming pod has a toleration, are included. - Ignore: node taints are ignored. All nodes are included. \n If this value is nil, the behavior is equivalent to the Ignore policy. This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag."
                                 type: string
                               topologyKey:
                                 description: TopologyKey is the key of node labels. Nodes that have a label with this key and identical values are considered to be in the same topology. We consider each <key, value> as a "bucket", and try to put balanced number of pods into each bucket. We define a domain as a particular instance of a topology. Also, we define an eligible domain as a domain whose nodes meet the requirements of nodeAffinityPolicy and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname", each Node is a domain of that topology. And, if TopologyKey is "topology.kubernetes.io/zone", each zone is a domain of that topology. It's a required field.
@@ -1474,19 +1474,20 @@ spec:
                           description: LoadBalancer contains the current status of the load-balancer.
                           properties:
                             ingress:
-                              description: Ingress is a list containing ingress points for the load-balancer. Traffic intended for the service should be sent to these ingress points.
+                              description: Ingress is a list containing ingress points for the load-balancer.
                               items:
-                                description: 'LoadBalancerIngress represents the status of a load-balancer ingress point: traffic intended for the service should be sent to an ingress point.'
+                                description: IngressLoadBalancerIngress represents the status of a load-balancer ingress point.
                                 properties:
                                   hostname:
-                                    description: Hostname is set for load-balancer ingress points that are DNS based (typically AWS load-balancers)
+                                    description: Hostname is set for load-balancer ingress points that are DNS based.
                                     type: string
                                   ip:
-                                    description: IP is set for load-balancer ingress points that are IP based (typically GCE or OpenStack load-balancers)
+                                    description: IP is set for load-balancer ingress points that are IP based.
                                     type: string
                                   ports:
-                                    description: Ports is a list of records of service ports If used, every port defined in the service should have an entry in it
+                                    description: Ports provides information about the ports exposed by this LoadBalancer.
                                     items:
+                                      description: IngressPortStatus represents the error condition of a service port
                                       properties:
                                         error:
                                           description: 'Error is to record the problem with the service port The format of the error shall comply with the following rules: - built-in error values shall be specified in this file and those shall use CamelCase names - cloud provider specific error values must have names that comply with the format foo.example.com/CamelCase. --- The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)'
@@ -1494,12 +1495,12 @@ spec:
                                           pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                                           type: string
                                         port:
-                                          description: Port is the port number of the service port of which status is recorded here
+                                          description: Port is the port number of the ingress port.
                                           format: int32
                                           type: integer
                                         protocol:
                                           default: TCP
-                                          description: 'Protocol is the protocol of the service port of which status is recorded here The supported values are: "TCP", "UDP", "SCTP"'
+                                          description: 'Protocol is the protocol of the ingress port. The supported values are: "TCP", "UDP", "SCTP"'
                                           type: string
                                       required:
                                         - port
