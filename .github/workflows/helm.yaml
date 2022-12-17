@@ -10,7 +10,7 @@ on:
 jobs:
   diff:
     name: diff
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
         with:
@@ -19,7 +19,7 @@ jobs:
       - name: Checking if Helm docs is not aligned
         run: if [[ $(git diff | wc -l) -gt 0 ]]; then echo ">>> Untracked changes have not been committed" && git --no-pager diff && exit 1; fi
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - uses: azure/setup-helm@v1
@@ -29,7 +29,7 @@ jobs:
         run: helm lint ./charts/kamaji
   release:
     if: startsWith(github.ref, 'refs/tags/helm-v')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - name: Publish Helm chart
