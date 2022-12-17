@@ -205,7 +205,8 @@ func (r *KubernetesDeploymentResource) syncContainer(tenantControlPlane *kamajiv
 	}
 
 	if resources := tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Resources; resources != nil {
-		r.resource.Spec.Template.Spec.Containers[index].Resources = *resources
+		r.resource.Spec.Template.Spec.Containers[index].Resources.Limits = resources.Limits
+		r.resource.Spec.Template.Spec.Containers[index].Resources.Requests = resources.Requests
 	}
 }
 
