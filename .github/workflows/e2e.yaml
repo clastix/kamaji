@@ -29,7 +29,7 @@ on:
 jobs:
   kind:
     name: Kubernetes
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
         with:
