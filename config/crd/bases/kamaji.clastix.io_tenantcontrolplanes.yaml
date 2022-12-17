@@ -1151,8 +1151,8 @@ spec:
                           controller-manager, and scheduler).
                         properties:
                           apiServer:
-                            description: ResourceRequirements describes the compute
-                              resource requirements.
+                            description: ComponentResourceRequirements describes the
+                              compute resource requirements.
                             properties:
                               limits:
                                 additionalProperties:
@@ -1179,8 +1179,8 @@ spec:
                                 type: object
                             type: object
                           controllerManager:
-                            description: ResourceRequirements describes the compute
-                              resource requirements.
+                            description: ComponentResourceRequirements describes the
+                              compute resource requirements.
                             properties:
                               limits:
                                 additionalProperties:
@@ -1207,8 +1207,8 @@ spec:
                                 type: object
                             type: object
                           scheduler:
-                            description: ResourceRequirements describes the compute
-                              resource requirements.
+                            description: ComponentResourceRequirements describes the
+                              compute resource requirements.
                             properties:
                               limits:
                                 additionalProperties:
@@ -1420,8 +1420,8 @@ spec:
                                 in the calculations. - Ignore: nodeAffinity/nodeSelector
                                 are ignored. All nodes are included in the calculations.
                                 \n If this value is nil, the behavior is equivalent
-                                to the Honor policy. This is a alpha-level feature
-                                enabled by the NodeInclusionPolicyInPodTopologySpread
+                                to the Honor policy. This is a beta-level feature
+                                default enabled by the NodeInclusionPolicyInPodTopologySpread
                                 feature flag."
                               type: string
                             nodeTaintsPolicy:
@@ -1432,8 +1432,8 @@ spec:
                                 has a toleration, are included. - Ignore: node taints
                                 are ignored. All nodes are included. \n If this value
                                 is nil, the behavior is equivalent to the Ignore policy.
-                                This is a alpha-level feature enabled by the NodeInclusionPolicyInPodTopologySpread
-                                feature flag."
+                                This is a beta-level feature default enabled by the
+                                NodeInclusionPolicyInPodTopologySpread feature flag."
                               type: string
                             topologyKey:
                               description: TopologyKey is the key of node labels.
@@ -2225,27 +2225,25 @@ spec:
                         properties:
                           ingress:
                             description: Ingress is a list containing ingress points
-                              for the load-balancer. Traffic intended for the service
-                              should be sent to these ingress points.
+                              for the load-balancer.
                             items:
-                              description: 'LoadBalancerIngress represents the status
-                                of a load-balancer ingress point: traffic intended
-                                for the service should be sent to an ingress point.'
+                              description: IngressLoadBalancerIngress represents the
+                                status of a load-balancer ingress point.
                               properties:
                                 hostname:
                                   description: Hostname is set for load-balancer ingress
-                                    points that are DNS based (typically AWS load-balancers)
+                                    points that are DNS based.
                                   type: string
                                 ip:
                                   description: IP is set for load-balancer ingress
-                                    points that are IP based (typically GCE or OpenStack
-                                    load-balancers)
+                                    points that are IP based.
                                   type: string
                                 ports:
-                                  description: Ports is a list of records of service
-                                    ports If used, every port defined in the service
-                                    should have an entry in it
+                                  description: Ports provides information about the
+                                    ports exposed by this LoadBalancer.
                                   items:
+                                    description: IngressPortStatus represents the
+                                      error condition of a service port
                                     properties:
                                       error:
                                         description: 'Error is to record the problem
@@ -2262,16 +2260,14 @@ spec:
                                         type: string
                                       port:
                                         description: Port is the port number of the
-                                          service port of which status is recorded
-                                          here
+                                          ingress port.
                                         format: int32
                                         type: integer
                                       protocol:
                                         default: TCP
                                         description: 'Protocol is the protocol of
-                                          the service port of which status is recorded
-                                          here The supported values are: "TCP", "UDP",
-                                          "SCTP"'
+                                          the ingress port. The supported values are:
+                                          "TCP", "UDP", "SCTP"'
                                         type: string
                                     required:
                                     - port
