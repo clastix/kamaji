@@ -90,7 +90,7 @@ Here the values you can override:
 | datastore.tlsConfig.clientCertificate.privateKey.namespace | string | `nil` | Namespace of the Secret containing the client certificate private key required to establish the mandatory SSL/TLS connection to the datastore. |
 | etcd.compactionInterval | int | `0` | ETCD Compaction interval (e.g. "5m0s"). (default: "0" (disabled)) |
 | etcd.deploy | bool | `true` | Install an etcd with enabled multi-tenancy along with Kamaji |
-| etcd.image | object | `{"pullPolicy":"IfNotPresent","repository":"quay.io/coreos/etcd","tag":"v3.5.4"}` | Install specific etcd image |
+| etcd.image | object | `{"pullPolicy":"IfNotPresent","repository":"quay.io/coreos/etcd","tag":"v3.5.6"}` | Install specific etcd image |
 | etcd.livenessProbe | object | `{"failureThreshold":8,"httpGet":{"path":"/health?serializable=true","port":2381,"scheme":"HTTP"},"initialDelaySeconds":10,"periodSeconds":10,"timeoutSeconds":15}` | The livenessProbe for the etcd container |
 | etcd.overrides.caSecret.name | string | `"etcd-certs"` | Name of the secret which contains CA's certificate and private key. (default: "etcd-certs") |
 | etcd.overrides.caSecret.namespace | string | `"kamaji-system"` | Namespace of the secret which contains CA's certificate and private key. (default: "kamaji-system") |

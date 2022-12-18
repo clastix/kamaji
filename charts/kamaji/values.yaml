@@ -28,7 +28,7 @@ etcd:
   # -- Install specific etcd image
   image:
     repository: quay.io/coreos/etcd
-    tag: "v3.5.4"
+    tag: "v3.5.6"
     pullPolicy: IfNotPresent
 
   # -- The livenessProbe for the etcd container
