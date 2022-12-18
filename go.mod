@@ -17,8 +17,8 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.10.1
 	github.com/testcontainers/testcontainers-go v0.13.0
-	go.etcd.io/etcd/api/v3 v3.5.5
-	go.etcd.io/etcd/client/v3 v3.5.5
+	go.etcd.io/etcd/api/v3 v3.5.6
+	go.etcd.io/etcd/client/v3 v3.5.6
 	k8s.io/api v0.26.0
 	k8s.io/apimachinery v0.26.0
 	k8s.io/apiserver v0.26.0
@@ -119,7 +119,7 @@ require (
 	github.com/vmihailenco/tagparser v0.1.2 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
-	go.etcd.io/etcd/client/pkg/v3 v3.5.5 // indirect
+	go.etcd.io/etcd/client/pkg/v3 v3.5.6 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
