@@ -101,34 +101,33 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 
 		switch r.DataStore.Spec.Driver {
 		case kamajiv1alpha1.EtcdDriver:
+			var privateKey []byte
 			// When dealing with the etcd storage we cannot use the basic authentication, thus the generation of a
 			// certificate used for authentication is mandatory, along with the CA private key.
-			privateKey, err := r.DataStore.Spec.TLSConfig.CertificateAuthority.PrivateKey.GetContent(ctx, r.Client)
-			if err != nil {
+			if privateKey, err = r.DataStore.Spec.TLSConfig.CertificateAuthority.PrivateKey.GetContent(ctx, r.Client); err != nil {
 				logger.Error(err, "unable to retrieve CA private key content")
 
 				return err
 			}
 
-			crt, key, err = crypto.GenerateCertificatePrivateKeyPair(crypto.NewCertificateTemplate(fmt.Sprintf("%s_%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName())), ca, privateKey)
-			if err != nil {
+			if crt, key, err = crypto.GenerateCertificatePrivateKeyPair(crypto.NewCertificateTemplate(tenantControlPlane.Status.Storage.Setup.User), ca, privateKey); err != nil {
 				logger.Error(err, "unable to generate certificate and private key")
 
 				return err
 			}
 		case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver:
+			var crtBytes, keyBytes []byte
 			// For the SQL drivers we just need to copy the certificate, since the basic authentication is used
 			// to connect to the desired schema and database.
-			crtBytes, err := r.DataStore.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, r.Client)
-			if err != nil {
+			if crtBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, r.Client); err != nil {
 				logger.Error(err, "unable to retrieve certificate content")
 
 				return err
 			}
+
 			crt = bytes.NewBuffer(crtBytes)
 
-			keyBytes, err := r.DataStore.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, r.Client)
-			if err != nil {
+			if keyBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, r.Client); err != nil {
 				logger.Error(err, "unable to retrieve private key content")
 
 				return err
