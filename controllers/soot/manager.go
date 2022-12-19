@@ -186,8 +186,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	// Register all the controllers of the soot here:
 	//
 	migrate := &controllers.Migrate{
-		WebhookNamespace:          m.MigrateServiceName,
-		WebhookServiceName:        m.MigrateServiceNamespace,
+		WebhookNamespace:          m.MigrateServiceNamespace,
+		WebhookServiceName:        m.MigrateServiceName,
 		WebhookCABundle:           m.MigrateCABundle,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
 	}
