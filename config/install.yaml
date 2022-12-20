@@ -2060,12 +2060,6 @@ rules:
 - apiGroups:
   - kamaji.clastix.io
   resources:
-  - datastores/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - kamaji.clastix.io
-  resources:
   - datastores/status
   verbs:
   - get
@@ -2454,6 +2448,25 @@ webhooks:
     service:
       name: kamaji-webhook-service
       namespace: kamaji-system
+      path: /validate--v1-secret
+  failurePolicy: Ignore
+  name: vdatastoresecrets.kb.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - DELETE
+    resources:
+    - secrets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: kamaji-webhook-service
+      namespace: kamaji-system
       path: /validate-kamaji-clastix-io-v1alpha1-datastore
   failurePolicy: Fail
   name: vdatastore.kb.io
@@ -2465,6 +2478,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - datastores
   sideEffects: None
