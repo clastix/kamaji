@@ -14,6 +14,25 @@ webhooks:
       service:
         name: {{ include "kamaji.webhookServiceName" . }}
         namespace: {{ .Release.Namespace }}
+        path: /validate--v1-secret
+    failurePolicy: Ignore
+    name: vdatastoresecrets.kb.io
+    rules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - DELETE
+        resources:
+          - secrets
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: {{ include "kamaji.webhookServiceName" . }}
+        namespace: {{ .Release.Namespace }}
         path: /validate-kamaji-clastix-io-v1alpha1-datastore
     failurePolicy: Fail
     name: vdatastore.kb.io
@@ -25,6 +44,7 @@ webhooks:
         operations:
           - CREATE
           - UPDATE
+          - DELETE
         resources:
           - datastores
     sideEffects: None
