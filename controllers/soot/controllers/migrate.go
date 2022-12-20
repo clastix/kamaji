@@ -82,7 +82,51 @@ func (m *Migrate) createOrUpdate(ctx context.Context) error {
 	_, err := utilities.CreateOrUpdateWithConflict(ctx, m.client, obj, func() error {
 		obj.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 			{
-				Name: "migrate.kamaji.clastix.io",
+				Name: "leases.migrate.kamaji.clastix.io",
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					URL:      pointer.String(fmt.Sprintf("https://%s.%s.svc:443/migrate", m.WebhookServiceName, m.WebhookNamespace)),
+					CABundle: m.WebhookCABundle,
+				},
+				Rules: []admissionregistrationv1.RuleWithOperations{
+					{
+						Operations: []admissionregistrationv1.OperationType{
+							admissionregistrationv1.Create,
+							admissionregistrationv1.Delete,
+						},
+						Rule: admissionregistrationv1.Rule{
+							APIGroups:   []string{"*"},
+							APIVersions: []string{"*"},
+							Resources:   []string{"*"},
+							Scope: func(v admissionregistrationv1.ScopeType) *admissionregistrationv1.ScopeType {
+								return &v
+							}(admissionregistrationv1.NamespacedScope),
+						},
+					},
+				},
+				FailurePolicy: func(v admissionregistrationv1.FailurePolicyType) *admissionregistrationv1.FailurePolicyType {
+					return &v
+				}(admissionregistrationv1.Fail),
+				MatchPolicy: func(v admissionregistrationv1.MatchPolicyType) *admissionregistrationv1.MatchPolicyType {
+					return &v
+				}(admissionregistrationv1.Equivalent),
+				NamespaceSelector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "kubernetes.io/metadata.name",
+							Operator: metav1.LabelSelectorOpIn,
+							Values: []string{
+								"kube-node-lease",
+							},
+						},
+					},
+				},
+				SideEffects: func(v admissionregistrationv1.SideEffectClass) *admissionregistrationv1.SideEffectClass {
+					return &v
+				}(admissionregistrationv1.SideEffectClassNoneOnDryRun),
+				AdmissionReviewVersions: []string{"v1"},
+			},
+			{
+				Name: "catchall.migrate.kamaji.clastix.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					URL:      pointer.String(fmt.Sprintf("https://%s.%s.svc:443/migrate", m.WebhookServiceName, m.WebhookNamespace)),
 					CABundle: m.WebhookCABundle,
@@ -113,6 +157,7 @@ func (m *Migrate) createOrUpdate(ctx context.Context) error {
 							Operator: metav1.LabelSelectorOpNotIn,
 							Values: []string{
 								"kube-system",
+								"kube-node-lease",
 							},
 						},
 					},
