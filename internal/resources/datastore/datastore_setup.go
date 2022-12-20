@@ -91,7 +91,7 @@ func (r *Setup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 				return retryErr
 			}
 
-			controllerutil.AddFinalizer(tenantControlPlane, finalizers.DatastoreFinalizer)
+			controllerutil.AddFinalizer(tcp, finalizers.DatastoreFinalizer)
 
 			return r.Client.Update(ctx, tcp)
 		})
