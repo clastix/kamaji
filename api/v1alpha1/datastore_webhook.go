@@ -10,6 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -17,18 +18,27 @@ import (
 )
 
 //+kubebuilder:webhook:path=/mutate-kamaji-clastix-io-v1alpha1-datastore,mutating=true,failurePolicy=fail,sideEffects=None,groups=kamaji.clastix.io,resources=datastores,verbs=create;update,versions=v1alpha1,name=mdatastore.kb.io,admissionReviewVersions=v1
-//+kubebuilder:webhook:path=/validate-kamaji-clastix-io-v1alpha1-datastore,mutating=false,failurePolicy=fail,sideEffects=None,groups=kamaji.clastix.io,resources=datastores,verbs=create;update,versions=v1alpha1,name=vdatastore.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-kamaji-clastix-io-v1alpha1-datastore,mutating=false,failurePolicy=fail,sideEffects=None,groups=kamaji.clastix.io,resources=datastores,verbs=create;update;delete,versions=v1alpha1,name=vdatastore.kb.io,admissionReviewVersions=v1
 
 func (in *DataStore) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	validator := &dataStoreValidator{
+	secretValidator := &dataStoreSecretValidator{
+		log:    mgr.GetLogger().WithName("datastore-secret-webhook"),
+		client: mgr.GetClient(),
+	}
+
+	if err := ctrl.NewWebhookManagedBy(mgr).For(&corev1.Secret{}).WithValidator(secretValidator).Complete(); err != nil {
+		return err
+	}
+
+	dsValidator := &dataStoreValidator{
 		log:    mgr.GetLogger().WithName("datastore-webhook"),
 		client: mgr.GetClient(),
 	}
 
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(in).
-		WithValidator(validator).
-		WithDefaulter(validator).
+		WithValidator(dsValidator).
+		WithDefaulter(dsValidator).
 		Complete()
 }
 
@@ -74,7 +84,22 @@ func (d *dataStoreValidator) ValidateUpdate(ctx context.Context, oldObj, newObj 
 	return nil
 }
 
-func (d *dataStoreValidator) ValidateDelete(context.Context, runtime.Object) error {
+func (d *dataStoreValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	ds, ok := obj.(*DataStore)
+	if !ok {
+		return fmt.Errorf("expected *kamajiv1alpha1.DataStore")
+	}
+
+	tcpList := &TenantControlPlaneList{}
+
+	if err := d.client.List(ctx, tcpList, client.MatchingFieldsSelector{Selector: fields.OneTermEqualSelector(TenantControlPlaneUsedDataStoreKey, ds.GetName())}); err != nil {
+		return err
+	}
+
+	if len(tcpList.Items) > 0 {
+		return fmt.Errorf("the DataStore is used by multiple TenantControlPlanes and cannot be removed")
+	}
+
 	return nil
 }
 

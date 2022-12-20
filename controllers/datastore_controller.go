@@ -5,7 +5,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
@@ -15,7 +14,6 @@ import (
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -24,11 +22,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/indexers"
-)
-
-const (
-	dataStoreFinalizer = "finalizer.kamaji.clastix.io/datastore"
 )
 
 type DataStore struct {
@@ -41,7 +34,6 @@ type DataStore struct {
 
 //+kubebuilder:rbac:groups=kamaji.clastix.io,resources=datastores,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=kamaji.clastix.io,resources=datastores/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=kamaji.clastix.io,resources=datastores/finalizers,verbs=update
 
 func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := log.FromContext(ctx)
@@ -56,66 +48,11 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 
 		return reconcile.Result{}, err
 	}
-	// Managing the finalizer, required to don't drop a DataSource if this is still used by a Tenant Control Plane.
-	switch {
-	case ds.DeletionTimestamp != nil && controllerutil.ContainsFinalizer(ds, dataStoreFinalizer):
-		log.Info("marked for deletion, checking conditions")
-
-		if len(ds.Status.UsedBy) == 0 {
-			log.Info("resource is no more used by any Tenant Control Plane")
-
-			controllerutil.RemoveFinalizer(ds, dataStoreFinalizer)
-
-			return reconcile.Result{}, r.client.Update(ctx, ds)
-		}
-
-		log.Info("DataStore is still used by some Tenant Control Planes, cannot be removed")
-	case ds.DeletionTimestamp == nil && !controllerutil.ContainsFinalizer(ds, dataStoreFinalizer):
-		log.Info("the resource is missing the required finalizer, adding it")
-
-		controllerutil.AddFinalizer(ds, dataStoreFinalizer)
-
-		return reconcile.Result{}, r.client.Update(ctx, ds)
-	}
-	// A Data Source can trigger several Tenant Control Planes and requires a minimum validation:
-	// we have to ensure the data provided by the Data Source is valid and referencing an existing Secret object.
-	if _, err := ds.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, r.client); err != nil {
-		log.Error(err, "invalid Certificate Authority data")
-
-		return reconcile.Result{}, err
-	}
-
-	if ds.Spec.Driver == kamajiv1alpha1.EtcdDriver {
-		if ds.Spec.TLSConfig.CertificateAuthority.PrivateKey == nil {
-			err := fmt.Errorf("a valid private key is required for the etcd driver")
-
-			log.Error(err, "missing Certificate Authority private key data")
-
-			return reconcile.Result{}, err
-		}
-		if _, err := ds.Spec.TLSConfig.CertificateAuthority.PrivateKey.GetContent(ctx, r.client); err != nil {
-			log.Error(err, "invalid Certificate Authority private key data")
-
-			return reconcile.Result{}, err
-		}
-	}
-
-	if _, err := ds.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, r.client); err != nil {
-		log.Error(err, "invalid Client Certificate data")
-
-		return reconcile.Result{}, err
-	}
-
-	if _, err := ds.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, r.client); err != nil {
-		log.Error(err, "invalid Client Certificate private key data")
-
-		return reconcile.Result{}, err
-	}
 
 	tcpList := kamajiv1alpha1.TenantControlPlaneList{}
 
 	if err := r.client.List(ctx, &tcpList, client.MatchingFieldsSelector{
-		Selector: fields.OneTermEqualSelector(indexers.TenantControlPlaneUsedDataStoreKey, ds.GetName()),
+		Selector: fields.OneTermEqualSelector(kamajiv1alpha1.TenantControlPlaneUsedDataStoreKey, ds.GetName()),
 	}); err != nil {
 		log.Error(err, "cannot retrieve list of the Tenant Control Plane using the following instance")
 
