@@ -78,12 +78,6 @@ rules:
 - apiGroups:
   - kamaji.clastix.io
   resources:
-  - datastores/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - kamaji.clastix.io
-  resources:
   - datastores/status
   verbs:
   - get
