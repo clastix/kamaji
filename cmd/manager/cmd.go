@@ -22,7 +22,6 @@ import (
 	cmdutils "github.com/clastix/kamaji/cmd/utils"
 	"github.com/clastix/kamaji/controllers"
 	"github.com/clastix/kamaji/controllers/soot"
-	"github.com/clastix/kamaji/indexers"
 	"github.com/clastix/kamaji/internal"
 	datastoreutils "github.com/clastix/kamaji/internal/datastore/utils"
 	"github.com/clastix/kamaji/internal/webhook"
@@ -131,7 +130,13 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
-			if err = (&indexers.TenantControlPlaneStatusDataStore{}).SetupWithManager(ctx, mgr); err != nil {
+			if err = (&kamajiv1alpha1.DatastoreUsedSecret{}).SetupWithManager(ctx, mgr); err != nil {
+				setupLog.Error(err, "unable to create indexer", "indexer", "DatastoreUsedSecret")
+
+				return err
+			}
+
+			if err = (&kamajiv1alpha1.TenantControlPlaneStatusDataStore{}).SetupWithManager(ctx, mgr); err != nil {
 				setupLog.Error(err, "unable to create indexer", "indexer", "TenantControlPlaneStatusDataStore")
 
 				return err

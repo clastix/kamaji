@@ -1,15 +1,13 @@
 // Copyright 2022 Clastix Labs
 // SPDX-License-Identifier: Apache-2.0
 
-package indexers
+package v1alpha1
 
 import (
 	"context"
 
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
 const (
@@ -19,7 +17,7 @@ const (
 type TenantControlPlaneStatusDataStore struct{}
 
 func (t *TenantControlPlaneStatusDataStore) Object() client.Object {
-	return &kamajiv1alpha1.TenantControlPlane{}
+	return &TenantControlPlane{}
 }
 
 func (t *TenantControlPlaneStatusDataStore) Field() string {
@@ -28,8 +26,7 @@ func (t *TenantControlPlaneStatusDataStore) Field() string {
 
 func (t *TenantControlPlaneStatusDataStore) ExtractValue() client.IndexerFunc {
 	return func(object client.Object) []string {
-		//nolint:forcetypeassert
-		tcp := object.(*kamajiv1alpha1.TenantControlPlane)
+		tcp := object.(*TenantControlPlane) //nolint:forcetypeassert
 
 		return []string{tcp.Status.Storage.DataStoreName}
 	}
