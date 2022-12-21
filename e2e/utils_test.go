@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -27,7 +28,16 @@ func GetKindIPAddress() string {
 	return ep.Subsets[0].Addresses[0].IP
 }
 
-func PrintTenantControlPlaneInfo(tcp *kamajiv1alpha1.TenantControlPlane) {
+func PrintTenantControlPlaneInfo() {
+	tcpList := &kamajiv1alpha1.TenantControlPlaneList{}
+	Expect(k8sClient.List(context.Background(), tcpList)).ToNot(HaveOccurred())
+
+	if len(tcpList.Items) == 0 {
+		return
+	}
+
+	tcp := tcpList.Items[0]
+
 	kubectlExec := func(args ...string) {
 		cmd := exec.Command("kubectl")
 
@@ -107,4 +117,22 @@ func PrintKamajiLogs() {
 
 		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: end of Kamaji Pod logs")
 	}
+}
+
+func StatusMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, status kamajiv1alpha1.KubernetesVersionStatus) {
+	Eventually(func() kamajiv1alpha1.KubernetesVersionStatus {
+		err := k8sClient.Get(context.Background(), types.NamespacedName{
+			Name:      tcp.GetName(),
+			Namespace: tcp.GetNamespace(),
+		}, tcp)
+		if err != nil {
+			return ""
+		}
+		// Check if Status field has been created on TenantControlPlane struct
+		if tcp.Status.Kubernetes.Version.Status == nil {
+			return ""
+		}
+
+		return *tcp.Status.Kubernetes.Version.Status
+	}, 5*time.Minute, time.Second).Should(Equal(status))
 }

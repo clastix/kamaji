@@ -70,8 +70,6 @@ var _ = Describe("validating kubeconfig", func() {
 	})
 
 	JustAfterEach(func() {
-		PrintKamajiLogs()
-		PrintTenantControlPlaneInfo(tcp)
 		Expect(k8sClient.Delete(ctx, tcp)).Should(Succeed())
 		Expect(os.Remove(kubeconfigFile.Name())).ToNot(HaveOccurred())
 	})
