@@ -34,6 +34,11 @@ func TestAPIs(t *testing.T) {
 	RunSpecs(t, "Controller Suite")
 }
 
+var _ = AfterEach(func() {
+	PrintTenantControlPlaneInfo()
+	PrintKamajiLogs()
+})
+
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
