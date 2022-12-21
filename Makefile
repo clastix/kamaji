@@ -113,6 +113,36 @@ golint: golangci-lint ## Linting the code according to the styling guide.
 test:
 	go test ./... -coverprofile cover.out
 
+_datastore-mysql:
+	$(MAKE) NAME=$(NAME) -C deploy/kine/mysql mariadb
+	kubectl apply -f $(shell pwd)/config/samples/kamaji_v1alpha1_datastore_mysql_$(NAME).yaml
+
+datastore-mysql:
+	$(MAKE) NAME=bronze _datastore-mysql
+	$(MAKE) NAME=silver _datastore-mysql
+	$(MAKE) NAME=gold _datastore-mysql
+
+_datastore-postgres:
+	$(MAKE) NAME=$(NAME) NAMESPACE=postgres-system -C deploy/kine/postgresql postgresql
+	kubectl apply -f $(shell pwd)/config/samples/kamaji_v1alpha1_datastore_postgresql_$(NAME).yaml
+
+datastore-postgres:
+	$(MAKE) NAME=bronze _datastore-postgres
+	$(MAKE) NAME=silver _datastore-postgres
+	$(MAKE) NAME=gold _datastore-postgres
+
+_datastore-etcd:
+	$(HELM) upgrade --install etcd-$(NAME) clastix/kamaji-etcd --create-namespace -n etcd-system --set datastore.enabled=true
+
+datastore-etcd: helm
+	$(HELM) repo add clastix https://clastix.github.io/charts
+	$(HELM) repo update
+	$(MAKE) NAME=bronze _datastore-etcd
+	$(MAKE) NAME=silver _datastore-etcd
+	$(MAKE) NAME=gold _datastore-etcd
+
+datastores: datastore-mysql datastore-etcd datastore-postgres ## Install all Kamaji DataStores with multiple drivers, and different tiers.
+
 ##@ Build
 
 # Get information about git current status
@@ -262,6 +292,7 @@ env:
 .PHONY: e2e
 e2e: env load helm ginkgo cert-manager ## Create a KinD cluster, install Kamaji on it and run the test suite.
 	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.pullPolicy=Never"
+	$(MAKE) datastores
 	$(GINKGO) -v ./e2e
 
 ##@ Document
