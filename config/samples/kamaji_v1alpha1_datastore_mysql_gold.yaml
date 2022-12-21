@@ -1,0 +1,34 @@
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: DataStore
+metadata:
+  name: mysql-gold
+spec:
+  driver: MySQL
+  endpoints:
+    - gold.mysql-system.svc:3306
+  basicAuth:
+    username:
+      content: cm9vdA==
+    password:
+      secretReference:
+        name: mysql-gold-config
+        namespace: mysql-system
+        keyPath: MYSQL_ROOT_PASSWORD
+  tlsConfig:
+    certificateAuthority:
+      certificate:
+        secretReference:
+          name: mysql-gold-config
+          namespace: mysql-system
+          keyPath: "ca.crt"
+    clientCertificate:
+      certificate:
+        secretReference:
+          name: mysql-gold-config
+          namespace: mysql-system
+          keyPath: "server.crt"
+      privateKey:
+        secretReference:
+          name: mysql-gold-config
+          namespace: mysql-system
+          keyPath: "server.key"

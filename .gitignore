@@ -29,4 +29,5 @@ bin
 **/*.key
 **/*.pem
 **/*.csr
+**/server-csr.json
 .DS_Store
