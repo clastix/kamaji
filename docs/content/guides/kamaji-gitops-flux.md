@@ -38,6 +38,16 @@ Given that Flux it's installed in the *admin cluster* - guide [here](https://flu
 For example, it might be needed to ensure [cert-manager](https://cert-manager.io/) is installed into a *tenant1* cluster with Helm. It can be done by declaring an `HelmRelease` as follows:
 
 ```yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: jetstack
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: 	https://charts.jetstack.io
+---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
@@ -45,11 +55,15 @@ metadata:
   namespace: tenants
 spec:
   interval: 5m
+  kubeConfig:
+    secretRef:
+      name: tenant1-admin-kubeconfig
+      key: admin.conf
+  targetNamespace: default
   chart:
     spec:
-      kubeConfig: tenant1-admin-kubeconfig
-      chart: jetstack/cert-manager 
-      version: '4.0.x'
+      chart: cert-manager
+      version: v1.10.1
       sourceRef:
         kind: HelmRepository
         name: jetstack
@@ -60,6 +74,17 @@ spec:
 ```
 
 and applying it in the *admin cluster*, alongside the related *jetstack* `HelmRepository`, in the *tenants* `Namespace`.
+
+The result would be having Cert Manager installed in the *default* `Namespace` of the tenant *tenant1*'s cluster:
+
+```shell
+$ kubectl get secret -n tenants tenant1-admin-kubeconfig -o=jsonpath='{.data.admin\.conf}' | base64 -d > /tmp/tenant-1.kubeconfig
+$ kubectl --kubeconfig /tmp/tenant-1.kubeconfig get deploy -n default
+NAME                              READY   UP-TO-DATE   AVAILABLE   AGE
+tenant1-cert-manager              2/2     2            2           4m3s
+tenant1-cert-manager-cainjector   1/1     1            1           4m3s
+tenant1-cert-manager-webhook      1/1     1            1           4m3s
+```
 
 ## Conclusion
 
