@@ -85,9 +85,11 @@ DataStoreSpec defines the desired state of DataStore.
     </thead>
     <tbody><tr>
         <td><b>driver</b></td>
-        <td>string</td>
+        <td>enum</td>
         <td>
           The driver to use to connect to the shared datastore.<br/>
+          <br/>
+            <i>Enum</i>: etcd, MySQL, PostgreSQL<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -995,6 +997,13 @@ Defining the options for the deployed Tenant Control Plane as Deployment resourc
         <td>object</td>
         <td>
           Resources defines the amount of memory and CPU to allocate to each component of the Control Plane (kube-apiserver, controller-manager, and scheduler).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runtimeClassName</b></td>
+        <td>string</td>
+        <td>
+          RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run the Tenant Control Plane pod. If no RuntimeClass resource matches the named class, the pod will not be run. If unset or empty, the "legacy" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://git.k8s.io/enhancements/keps/sig-node/585-runtime-class<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2382,21 +2391,21 @@ Resources defines the amount of memory and CPU to allocate to each component of 
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourcesapiserver">apiServer</a></b></td>
         <td>object</td>
         <td>
-          ResourceRequirements describes the compute resource requirements.<br/>
+          ComponentResourceRequirements describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourcescontrollermanager">controllerManager</a></b></td>
         <td>object</td>
         <td>
-          ResourceRequirements describes the compute resource requirements.<br/>
+          ComponentResourceRequirements describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourcesscheduler">scheduler</a></b></td>
         <td>object</td>
         <td>
-          ResourceRequirements describes the compute resource requirements.<br/>
+          ComponentResourceRequirements describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2407,7 +2416,7 @@ Resources defines the amount of memory and CPU to allocate to each component of 
 
 
 
-ResourceRequirements describes the compute resource requirements.
+ComponentResourceRequirements describes the compute resource requirements.
 
 <table>
     <thead>
@@ -2440,7 +2449,7 @@ ResourceRequirements describes the compute resource requirements.
 
 
 
-ResourceRequirements describes the compute resource requirements.
+ComponentResourceRequirements describes the compute resource requirements.
 
 <table>
     <thead>
@@ -2473,7 +2482,7 @@ ResourceRequirements describes the compute resource requirements.
 
 
 
-ResourceRequirements describes the compute resource requirements.
+ComponentResourceRequirements describes the compute resource requirements.
 
 <table>
     <thead>
@@ -2626,7 +2635,7 @@ TopologySpreadConstraint specifies how to spread matching pods among the given t
         <td>string</td>
         <td>
           NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector when calculating pod topology spread skew. Options are: - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations. - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations. 
- If this value is nil, the behavior is equivalent to the Honor policy. This is a alpha-level feature enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
+ If this value is nil, the behavior is equivalent to the Honor policy. This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2634,7 +2643,7 @@ TopologySpreadConstraint specifies how to spread matching pods among the given t
         <td>string</td>
         <td>
           NodeTaintsPolicy indicates how we will treat node taints when calculating pod topology spread skew. Options are: - Honor: nodes without taints, along with tainted nodes for which the incoming pod has a toleration, are included. - Ignore: node taints are ignored. All nodes are included. 
- If this value is nil, the behavior is equivalent to the Ignore policy. This is a alpha-level feature enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
+ If this value is nil, the behavior is equivalent to the Ignore policy. This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2946,16 +2955,51 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>proxyPort</b></td>
-        <td>integer</td>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityagent">agent</a></b></td>
+        <td>object</td>
         <td>
-          Port of Konnectivity proxy server.<br/>
           <br/>
-            <i>Format</i>: int32<br/>
+          <br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent version:v0.0.32]<br/>
         </td>
-        <td>true</td>
+        <td>false</td>
       </tr><tr>
-        <td><b>agentImage</b></td>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityserver">server</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-server port:8132 version:v0.0.32]<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.addons.konnectivity.agent
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>extraArgs</b></td>
+        <td>[]string</td>
+        <td>
+          ExtraArgs allows adding additional arguments to said component.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>image</b></td>
         <td>string</td>
         <td>
           AgentImage defines the container image for Konnectivity's agent.<br/>
@@ -2964,26 +3008,10 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityresources">resources</a></b></td>
-        <td>object</td>
-        <td>
-          Resources define the amount of CPU and memory to allocate to the Konnectivity server.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>serverImage</b></td>
-        <td>string</td>
-        <td>
-          ServerImage defines the container image for Konnectivity's server.<br/>
-          <br/>
-            <i>Default</i>: registry.k8s.io/kas-network-proxy/proxy-server<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>version</b></td>
         <td>string</td>
         <td>
-          Version for Konnectivity server and agent.<br/>
+          Version for Konnectivity agent.<br/>
           <br/>
             <i>Default</i>: v0.0.32<br/>
         </td>
@@ -2992,7 +3020,67 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
 </table>
 
 
-### TenantControlPlane.spec.addons.konnectivity.resources
+### TenantControlPlane.spec.addons.konnectivity.server
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          The port which Konnectivity server is listening to.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>extraArgs</b></td>
+        <td>[]string</td>
+        <td>
+          ExtraArgs allows adding additional arguments to said component.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Container image used by the Konnectivity server.<br/>
+          <br/>
+            <i>Default</i>: registry.k8s.io/kas-network-proxy/proxy-server<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityserverresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          Resources define the amount of CPU and memory to allocate to the Konnectivity server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>version</b></td>
+        <td>string</td>
+        <td>
+          Container image version of the Konnectivity server.<br/>
+          <br/>
+            <i>Default</i>: v0.0.32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.addons.konnectivity.server.resources
 
 
 
@@ -3273,13 +3361,6 @@ AddonStatus defines the observed state of an Addon.
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>checksum</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>lastUpdate</b></td>
         <td>string</td>
         <td>
@@ -3383,13 +3464,6 @@ KonnectivityStatus defines the status of Konnectivity as Addon.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>checksum</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>lastUpdate</b></td>
         <td>string</td>
         <td>
@@ -3474,13 +3548,6 @@ CertificatePrivateKeyPairStatus defines the status.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>checksum</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>lastUpdate</b></td>
         <td>string</td>
         <td>
@@ -3598,13 +3665,6 @@ KubeconfigStatus contains information about the generated kubeconfig.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>checksum</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>lastUpdate</b></td>
         <td>string</td>
         <td>
@@ -3889,13 +3949,6 @@ AddonStatus defines the observed state of an Addon.
           <br/>
         </td>
         <td>true</td>
-      </tr><tr>
-        <td><b>checksum</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
       </tr><tr>
         <td><b>lastUpdate</b></td>
         <td>string</td>
@@ -4368,95 +4421,11 @@ KubeadmPhase contains the status of the kubeadm phases action
           KubeadmPhaseStatus contains the status of a kubeadm phase action.<br/>
         </td>
         <td>true</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanestatuskubeadmphaseuploadconfigkubeadm">uploadConfigKubeadm</a></b></td>
-        <td>object</td>
-        <td>
-          KubeadmPhaseStatus contains the status of a kubeadm phase action.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanestatuskubeadmphaseuploadconfigkubelet">uploadConfigKubelet</a></b></td>
-        <td>object</td>
-        <td>
-          KubeadmPhaseStatus contains the status of a kubeadm phase action.<br/>
-        </td>
-        <td>true</td>
       </tr></tbody>
 </table>
 
 
 ### TenantControlPlane.status.kubeadmPhase.bootstrapToken
-
-
-
-KubeadmPhaseStatus contains the status of a kubeadm phase action.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>checksum</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>lastUpdate</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-          <br/>
-            <i>Format</i>: date-time<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### TenantControlPlane.status.kubeadmPhase.uploadConfigKubeadm
-
-
-
-KubeadmPhaseStatus contains the status of a kubeadm phase action.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>checksum</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>lastUpdate</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-          <br/>
-            <i>Format</i>: date-time<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### TenantControlPlane.status.kubeadmPhase.uploadConfigKubelet
 
 
 
@@ -4989,7 +4958,7 @@ LoadBalancer contains the current status of the load-balancer.
         <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesingressloadbalanceringressindex">ingress</a></b></td>
         <td>[]object</td>
         <td>
-          Ingress is a list containing ingress points for the load-balancer. Traffic intended for the service should be sent to these ingress points.<br/>
+          Ingress is a list containing ingress points for the load-balancer.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5000,7 +4969,7 @@ LoadBalancer contains the current status of the load-balancer.
 
 
 
-LoadBalancerIngress represents the status of a load-balancer ingress point: traffic intended for the service should be sent to an ingress point.
+IngressLoadBalancerIngress represents the status of a load-balancer ingress point.
 
 <table>
     <thead>
@@ -5015,21 +4984,21 @@ LoadBalancerIngress represents the status of a load-balancer ingress point: traf
         <td><b>hostname</b></td>
         <td>string</td>
         <td>
-          Hostname is set for load-balancer ingress points that are DNS based (typically AWS load-balancers)<br/>
+          Hostname is set for load-balancer ingress points that are DNS based.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>ip</b></td>
         <td>string</td>
         <td>
-          IP is set for load-balancer ingress points that are IP based (typically GCE or OpenStack load-balancers)<br/>
+          IP is set for load-balancer ingress points that are IP based.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesingressloadbalanceringressindexportsindex">ports</a></b></td>
         <td>[]object</td>
         <td>
-          Ports is a list of records of service ports If used, every port defined in the service should have an entry in it<br/>
+          Ports provides information about the ports exposed by this LoadBalancer.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5040,7 +5009,7 @@ LoadBalancerIngress represents the status of a load-balancer ingress point: traf
 
 
 
-
+IngressPortStatus represents the error condition of a service port
 
 <table>
     <thead>
@@ -5055,7 +5024,7 @@ LoadBalancerIngress represents the status of a load-balancer ingress point: traf
         <td><b>port</b></td>
         <td>integer</td>
         <td>
-          Port is the port number of the service port of which status is recorded here<br/>
+          Port is the port number of the ingress port.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -5064,7 +5033,7 @@ LoadBalancerIngress represents the status of a load-balancer ingress point: traf
         <td><b>protocol</b></td>
         <td>string</td>
         <td>
-          Protocol is the protocol of the service port of which status is recorded here The supported values are: "TCP", "UDP", "SCTP"<br/>
+          Protocol is the protocol of the ingress port. The supported values are: "TCP", "UDP", "SCTP"<br/>
           <br/>
             <i>Default</i>: TCP<br/>
         </td>
@@ -5337,7 +5306,7 @@ KubernetesVersion contains the information regarding the running Kubernetes vers
         <td>
           Status returns the current status of the Kubernetes version, such as its provisioning state, or completed upgrade.<br/>
           <br/>
-            <i>Enum</i>: Provisioning, Upgrading, Ready, NotReady<br/>
+            <i>Enum</i>: Provisioning, Upgrading, Migrating, Ready, NotReady<br/>
             <i>Default</i>: Provisioning<br/>
         </td>
         <td>false</td>
