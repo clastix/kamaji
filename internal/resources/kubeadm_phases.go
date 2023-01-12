@@ -30,7 +30,7 @@ const (
 )
 
 func (d kubeadmPhase) String() string {
-	return [...]string{"PhaseUploadConfigKubeadm", "PhaseUploadConfigKubelet", "PhaseAddonCoreDNS", "PhaseAddonKubeProxy", "PhaseBootstrapToken"}[d]
+	return [...]string{"PhaseUploadConfigKubeadm", "PhaseUploadConfigKubelet", "PhaseBootstrapToken"}[d]
 }
 
 type KubeadmPhase struct {
