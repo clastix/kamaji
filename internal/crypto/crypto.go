@@ -135,6 +135,32 @@ func IsValidCertificateKeyPairBytes(certificateBytes []byte, privateKeyBytes []b
 	}
 }
 
+func VerifyCertificate(cert, ca []byte, usages ...x509.ExtKeyUsage) (bool, error) {
+	if len(usages) == 0 {
+		return false, fmt.Errorf("missing usages for certificate verification")
+	}
+
+	crt, err := ParseCertificateBytes(cert)
+	if err != nil {
+		return false, err
+	}
+
+	caCrt, err := ParseCertificateBytes(ca)
+	if err != nil {
+		return false, err
+	}
+
+	roots := x509.NewCertPool()
+	roots.AddCert(caCrt)
+
+	chains, err := crt.Verify(x509.VerifyOptions{
+		Roots:     roots,
+		KeyUsages: usages,
+	})
+
+	return len(chains) > 0, err
+}
+
 func generateCertificateKeyPairBytes(template *x509.Certificate, caCert *x509.Certificate, caKey *rsa.PrivateKey) (*bytes.Buffer, *bytes.Buffer, error) {
 	certPrivKey, err := rsa.GenerateKey(cryptorand.Reader, 2048)
 	if err != nil {

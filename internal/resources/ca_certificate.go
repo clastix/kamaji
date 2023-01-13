@@ -24,12 +24,14 @@ import (
 
 type CACertificate struct {
 	resource     *corev1.Secret
+	isRotatingCA bool
+
 	Client       client.Client
 	TmpDirectory string
 }
 
 func (r *CACertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Certificates.CA.SecretName != r.resource.GetName() ||
+	return r.isRotatingCA || tenantControlPlane.Status.Certificates.CA.SecretName != r.resource.GetName() ||
 		tenantControlPlane.Status.Certificates.CA.Checksum != r.resource.GetAnnotations()[constants.Checksum]
 }
 
@@ -76,6 +78,9 @@ func (r *CACertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenant
 	tenantControlPlane.Status.Certificates.CA.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.CA.SecretName = r.resource.GetName()
 	tenantControlPlane.Status.Certificates.CA.Checksum = r.resource.GetAnnotations()[constants.Checksum]
+	if r.isRotatingCA {
+		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionCARotating
+	}
 
 	return nil
 }
@@ -95,6 +100,10 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			if isValid {
 				return nil
 			}
+		}
+
+		if tenantControlPlane.Status.Kubernetes.Version.Status != nil && *tenantControlPlane.Status.Kubernetes.Version.Status != kamajiv1alpha1.VersionProvisioning {
+			r.isRotatingCA = true
 		}
 
 		config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
