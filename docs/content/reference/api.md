@@ -5306,7 +5306,7 @@ KubernetesVersion contains the information regarding the running Kubernetes vers
         <td>
           Status returns the current status of the Kubernetes version, such as its provisioning state, or completed upgrade.<br/>
           <br/>
-            <i>Enum</i>: Provisioning, Upgrading, Migrating, Ready, NotReady<br/>
+            <i>Enum</i>: Provisioning, CertificateAuthorityRotating, Upgrading, Migrating, Ready, NotReady<br/>
             <i>Default</i>: Provisioning<br/>
         </td>
         <td>false</td>
