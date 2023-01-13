@@ -2461,6 +2461,7 @@ spec:
                           version, such as its provisioning state, or completed upgrade.
                         enum:
                         - Provisioning
+                        - CertificateAuthorityRotating
                         - Upgrading
                         - Migrating
                         - Ready
