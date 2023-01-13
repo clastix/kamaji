@@ -5,6 +5,7 @@ package resources
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
@@ -83,8 +84,22 @@ func (r *APIServerKubeletClientCertificate) UpdateTenantControlPlaneStatus(_ con
 func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
+		// Retrieving the TenantControlPlane CA:
+		// this is required to trigger a new generation in case of Certificate Authority rotation.
+		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
+		secretCA := &corev1.Secret{}
+		if err := r.Client.Get(ctx, namespacedName, secretCA); err != nil {
+			logger.Error(err, "cannot retrieve CA secret")
+
+			return err
+		}
 
 		if checksum := tenantControlPlane.Status.Certificates.APIServerKubeletClient.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()[constants.Checksum] {
+			isCAValid, err := crypto.VerifyCertificate(r.resource.Data[kubeadmconstants.APIServerKubeletClientCertName], secretCA.Data[kubeadmconstants.CACertName], x509.ExtKeyUsageClientAuth)
+			if err != nil {
+				logger.Info(fmt.Sprintf("certificate-authority verify failed: %s", err.Error()))
+			}
+
 			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
 				r.resource.Data[kubeadmconstants.APIServerKubeletClientCertName],
 				r.resource.Data[kubeadmconstants.APIServerKubeletClientKeyName],
@@ -92,7 +107,8 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.APIServerKubeletClientCertAndKeyBaseName, err.Error()))
 			}
-			if isValid {
+
+			if isValid && isCAValid {
 				return nil
 			}
 		}
@@ -100,15 +116,6 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 		config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
 		if err != nil {
 			logger.Error(err, "cannot retrieve kubeadm configuration")
-
-			return err
-		}
-
-		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
-
-		secretCA := &corev1.Secret{}
-		if err = r.Client.Get(ctx, namespacedName, secretCA); err != nil {
-			logger.Error(err, "cannot retrieve CA secret")
 
 			return err
 		}

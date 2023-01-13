@@ -123,22 +123,27 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	// the soot manager if this is already registered.
 	v, ok := m.sootMap[request.String()]
 	if ok {
-		// The TenantControlPlane is in non-ready mode, or marked for deletion:
-		// we don't want to pollute with messages due to broken connection.
-		// Once the TCP will be ready again, the event will be intercepted and the manager started back.
-		if tcpStatus == kamajiv1alpha1.VersionNotReady {
+		switch {
+		case tcpStatus == kamajiv1alpha1.VersionCARotating:
+			// The TenantControlPlane CA has been rotated, it means the running manager
+			// must be restarted to avoid certificate signed by unknown authority errors.
 			return reconcile.Result{}, m.cleanup(ctx, request, tcp)
-		}
-
-		for _, trigger := range v.triggers {
-			trigger <- event.GenericEvent{Object: tcp}
+		case tcpStatus == kamajiv1alpha1.VersionNotReady:
+			// The TenantControlPlane is in non-ready mode, or marked for deletion:
+			// we don't want to pollute with messages due to broken connection.
+			// Once the TCP will be ready again, the event will be intercepted and the manager started back.
+			return reconcile.Result{}, m.cleanup(ctx, request, tcp)
+		default:
+			for _, trigger := range v.triggers {
+				trigger <- event.GenericEvent{Object: tcp}
+			}
 		}
 
 		return reconcile.Result{}, nil
 	}
 	// No need to start a soot manager if the TenantControlPlane is not ready:
 	// enqueuing back is not required since we're going to get that event once ready.
-	if tcpStatus == kamajiv1alpha1.VersionNotReady {
+	if tcpStatus == kamajiv1alpha1.VersionNotReady || tcpStatus == kamajiv1alpha1.VersionCARotating {
 		log.FromContext(ctx).Info("skipping start of the soot manager for a not ready instance")
 
 		return reconcile.Result{}, nil
