@@ -59,17 +59,40 @@ func (d *Deployment) SetContainers(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.
 	d.buildKine(podSpec, tcp)
 }
 
-func (d *Deployment) SetStrategy(deployment *appsv1.DeploymentSpec) {
-	maxSurge := intstr.FromString("100%")
-
-	maxUnavailable := intstr.FromInt(0)
-
+func (d *Deployment) SetStrategy(deployment *appsv1.DeploymentSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
 	deployment.Strategy = appsv1.DeploymentStrategy{
-		Type: appsv1.RollingUpdateDeploymentStrategyType,
-		RollingUpdate: &appsv1.RollingUpdateDeployment{
+		Type: tcp.Spec.ControlPlane.Deployment.Strategy.Type,
+	}
+	// If it's recreate strategy, we don't need any RollingUpdate params
+	if tcp.Spec.ControlPlane.Deployment.Strategy.Type == appsv1.RecreateDeploymentStrategyType {
+		tcp.Spec.ControlPlane.Deployment.Strategy.RollingUpdate = nil
+
+		return
+	}
+	// In case of no RollingUpdate options, Kamaji will perform a blue/green rollout:
+	// this will ensure to avoid round-robin between old and new version,
+	// useful especially during the Kubernetes version upgrade phase.
+	if tcp.Spec.ControlPlane.Deployment.Strategy.RollingUpdate == nil {
+		maxSurge := intstr.FromString("100%")
+
+		maxUnavailable := intstr.FromInt(0)
+
+		deployment.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
 			MaxUnavailable: &maxUnavailable,
 			MaxSurge:       &maxSurge,
-		},
+		}
+
+		return
+	}
+
+	deployment.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{}
+
+	if tcp.Spec.ControlPlane.Deployment.Strategy.RollingUpdate.MaxUnavailable != nil {
+		deployment.Strategy.RollingUpdate.MaxUnavailable = tcp.Spec.ControlPlane.Deployment.Strategy.RollingUpdate.MaxUnavailable
+	}
+
+	if tcp.Spec.ControlPlane.Deployment.Strategy.RollingUpdate.MaxSurge != nil {
+		deployment.Strategy.RollingUpdate.MaxSurge = tcp.Spec.ControlPlane.Deployment.Strategy.RollingUpdate.MaxSurge
 	}
 }
 

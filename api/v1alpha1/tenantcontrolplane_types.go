@@ -4,6 +4,7 @@
 package v1alpha1
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -107,6 +108,10 @@ type DeploymentSpec struct {
 	// empty definition that uses the default runtime handler.
 	// More info: https://git.k8s.io/enhancements/keps/sig-node/585-runtime-class
 	RuntimeClassName string `json:"runtimeClassName,omitempty"`
+	// Strategy describes how to replace existing pods with new ones for the given Tenant Control Plane.
+	// Default value is set to Rolling Update, with a blue/green strategy.
+	// +kubebuilder:default={type:"RollingUpdate",rollingUpdate:{maxUnavailable:0,maxSurge:"100%"}}
+	Strategy appsv1.DeploymentStrategy `json:"strategy,omitempty"`
 	// If specified, the Tenant Control Plane pod's tolerations.
 	// More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
