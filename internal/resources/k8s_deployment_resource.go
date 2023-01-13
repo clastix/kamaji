@@ -82,7 +82,7 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 		d.SetNodeSelector(&r.resource.Spec.Template.Spec, tenantControlPlane)
 		d.SetToleration(&r.resource.Spec.Template.Spec, tenantControlPlane)
 		d.SetAffinity(&r.resource.Spec.Template.Spec, tenantControlPlane)
-		d.SetStrategy(&r.resource.Spec)
+		d.SetStrategy(&r.resource.Spec, tenantControlPlane)
 		d.SetSelector(&r.resource.Spec, tenantControlPlane)
 		d.SetTopologySpreadConstraints(&r.resource.Spec, tenantControlPlane.Spec.ControlPlane.Deployment.TopologySpreadConstraints)
 		d.SetRuntimeClass(&r.resource.Spec.Template.Spec, tenantControlPlane)
