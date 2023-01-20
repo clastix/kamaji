@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -77,6 +78,10 @@ func (t *tenantControlPlaneValidator) ValidateCreate(_ context.Context, obj runt
 		return fmt.Errorf("unable to create a TenantControlPlane with a Kubernetes version greater than the supported one, actually %s", supportedVer.String())
 	}
 
+	if err = t.validatePreferredKubeletAddressTypes(tcp.Spec.Kubernetes.Kubelet.PreferredAddressTypes); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -99,11 +104,28 @@ func (t *tenantControlPlaneValidator) ValidateUpdate(ctx context.Context, oldObj
 	if err := t.validateDataStore(ctx, old, tcp); err != nil {
 		return err
 	}
+	if err := t.validatePreferredKubeletAddressTypes(tcp.Spec.Kubernetes.Kubelet.PreferredAddressTypes); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (t *tenantControlPlaneValidator) ValidateDelete(context.Context, runtime.Object) error {
+	return nil
+}
+
+func (t *tenantControlPlaneValidator) validatePreferredKubeletAddressTypes(addressTypes []KubeletPreferredAddressType) error {
+	s := sets.NewString()
+
+	for _, at := range addressTypes {
+		if s.Has(string(at)) {
+			return fmt.Errorf("preferred kubelet address types is stated multiple times: %s", at)
+		}
+
+		s.Insert(string(at))
+	}
+
 	return nil
 }
 

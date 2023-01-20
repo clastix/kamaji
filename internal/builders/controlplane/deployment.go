@@ -555,6 +555,12 @@ func (d *Deployment) buildKubeAPIServerCommand(tenantControlPlane *kamajiv1alpha
 		extraArgs = utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs.APIServer)
 	}
 
+	kubeletPreferredAddressTypes := make([]string, 0, len(tenantControlPlane.Spec.Kubernetes.Kubelet.PreferredAddressTypes))
+
+	for _, addressType := range tenantControlPlane.Spec.Kubernetes.Kubelet.PreferredAddressTypes {
+		kubeletPreferredAddressTypes = append(kubeletPreferredAddressTypes, string(addressType))
+	}
+
 	desiredArgs := map[string]string{
 		"--allow-privileged":                   "true",
 		"--authorization-mode":                 "Node,RBAC",
@@ -565,7 +571,7 @@ func (d *Deployment) buildKubeAPIServerCommand(tenantControlPlane *kamajiv1alpha
 		"--service-cluster-ip-range":           tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
 		"--kubelet-client-certificate":         path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientCertName),
 		"--kubelet-client-key":                 path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientKeyName),
-		"--kubelet-preferred-address-types":    "Hostname,InternalIP,ExternalIP",
+		"--kubelet-preferred-address-types":    strings.Join(kubeletPreferredAddressTypes, ","),
 		"--proxy-client-cert-file":             path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientCertName),
 		"--proxy-client-key-file":              path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientKeyName),
 		"--requestheader-allowed-names":        constants.FrontProxyClientCertCommonName,

@@ -33,7 +33,23 @@ type NetworkProfileSpec struct {
 	DNSServiceIPs []string `json:"dnsServiceIPs,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=Hostname;InternalIP;ExternalIP;InternalDNS;ExternalDNS
+type KubeletPreferredAddressType string
+
+const (
+	NodeHostName    KubeletPreferredAddressType = "Hostname"
+	NodeInternalIP  KubeletPreferredAddressType = "InternalIP"
+	NodeExternalIP  KubeletPreferredAddressType = "ExternalIP"
+	NodeInternalDNS KubeletPreferredAddressType = "InternalDNS"
+	NodeExternalDNS KubeletPreferredAddressType = "ExternalDNS"
+)
+
 type KubeletSpec struct {
+	// Ordered list of the preferred NodeAddressTypes to use for kubelet connections.
+	// Default to Hostname, InternalIP, ExternalIP.
+	// +kubebuilder:default={"Hostname","InternalIP","ExternalIP"}
+	// +kubebuilder:validation:MinItems=1
+	PreferredAddressTypes []KubeletPreferredAddressType `json:"preferredAddressTypes,omitempty"`
 	// CGroupFS defines the  cgroup driver for Kubelet
 	// https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
 	CGroupFS CGroupDriver `json:"cgroupfs,omitempty"`
