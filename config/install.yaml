@@ -1245,6 +1245,22 @@ spec:
                         - systemd
                         - cgroupfs
                         type: string
+                      preferredAddressTypes:
+                        default:
+                        - Hostname
+                        - InternalIP
+                        - ExternalIP
+                        description: Ordered list of the preferred NodeAddressTypes to use for kubelet connections. Default to Hostname, InternalIP, ExternalIP.
+                        items:
+                          enum:
+                          - Hostname
+                          - InternalIP
+                          - ExternalIP
+                          - InternalDNS
+                          - ExternalDNS
+                          type: string
+                        minItems: 1
+                        type: array
                     type: object
                   version:
                     description: Kubernetes Version for the tenant control plane
