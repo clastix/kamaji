@@ -2937,6 +2937,15 @@ Kubernetes specification for tenant control plane
             <i>Enum</i>: systemd, cgroupfs<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>preferredAddressTypes</b></td>
+        <td>[]enum</td>
+        <td>
+          Ordered list of the preferred NodeAddressTypes to use for kubelet connections. Default to Hostname, InternalIP, ExternalIP.<br/>
+          <br/>
+            <i>Default</i>: [Hostname InternalIP ExternalIP]<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
