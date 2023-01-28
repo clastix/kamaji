@@ -13,7 +13,6 @@ The guide requires:
 
   * [Prepare the bootstrap workspace](#prepare-the-bootstrap-workspace)
   * [Access Admin cluster](#access-admin-cluster)
-  * [Install DataStore](#install-datastore)
   * [Install Kamaji controller](#install-kamaji-controller)
   * [Create Tenant Cluster](#create-tenant-cluster)
   * [Cleanup](#cleanup)
@@ -42,30 +41,26 @@ Throughout the following instructions, shell variables are used to indicate valu
 source kamaji.env
 ```
 
-Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji setup. To work properly, the admin cluster should provide at least:
+Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji setup. To work properly, the admin cluster should provide:
 
 - CNI module installed, eg. [Calico](https://github.com/projectcalico/calico), [Cilium](https://github.com/cilium/cilium).
-- CSI module installed with a Storage Class for the Tenants' `etcd`. Local Persistent Volumes are an option.
-- Support for LoadBalancer Service Type, or alternatively, an Ingress Controller, eg. [ingress-nginx](https://github.com/kubernetes/ingress-nginx), [haproxy](https://github.com/haproxytech/kubernetes-ingress).
-- Monitoring Stack, eg. [Prometheus](https://github.com/prometheus-community).
+- CSI module installed with a Storage Class for the Tenant datastores. Local Persistent Volumes are an option.
+- Support for LoadBalancer service type, eg. [MetalLB](https://metallb.universe.tf/), or alternatively, an Ingress Controller, eg. [ingress-nginx](https://github.com/kubernetes/ingress-nginx), [haproxy](https://github.com/haproxytech/kubernetes-ingress).
+- Optionally, a Monitoring Stack installed, eg. [Prometheus](https://github.com/prometheus-community).
 
-Make sure you have a `kubeconfig` file with admin permissions on the cluster you want to turn into Kamaji Admin Cluster.
-
-## Install datastore
-The Kamaji controller needs to access a multi-tenant datastore in order to save data of the tenants' clusters. The Kamaji Helm Chart provides the installation of an unamanaged `etcd`. However, a managed `etcd` is highly recommended in production.
-
-As alternative, the [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides a viable option to setup a manged multi-tenant `etcd` as 3 replicas StatefulSet with data persistence:
+Make sure you have a `kubeconfig` file with admin permissions on the cluster you want to turn into Kamaji Admin Cluster and check you can access:
 
 ```bash
-helm repo add clastix https://clastix.github.io/charts
-helm repo update
-helm install etcd clastix/kamaji-etcd -n kamaji-system --create-namespace
+kubectl cluster-info
 ```
 
-Optionally, Kamaji offers the possibility of using a different storage system for the tenants' clusters, as MySQL or PostgreSQL compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
-
 ## Install Kamaji Controller
-Install Kamaji with `helm` using an unmanaged `etcd` as datastore:
+
+Kamaji takes advantage of the [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/), such as validating and mutating webhook configurations. These webhooks are secured by a TLS communication, and the certificates are managed by [`cert-manager`](https://cert-manager.io/), making it a prerequisite that must be [installed](https://cert-manager.io/docs/installation/).
+
+The Kamaji controller needs to access a default datastore in order to save data of the tenants' clusters. The Kamaji Helm Chart provides the installation of a basic unamanaged `etcd`, out of box. 
+
+Install Kamaji with `helm` using an unmanaged `etcd` as default datastore:
 
 ```bash
 helm repo add clastix https://clastix.github.io/charts
@@ -73,15 +68,7 @@ helm repo update
 helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
 ```
 
-Alternatively, if you opted for a managed `etcd` datastore:
-
-```bash
-helm repo add clastix https://clastix.github.io/charts
-helm repo update
-helm install kamaji clastix/kamaji -n kamaji-system --create-namespace --set etcd.deploy=false    
-```
-
-Congratulations! You just turned your Kubernetes cluster into a Kamaji cluster capable to run multiple Tenant Control Planes.
+A managed datastore is highly recommended in production. The [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides a viable option to setup a managed multi-tenant `etcd` running as StatefulSet made of three replicas. Optionally, Kamaji offers support for a different storage system, as `MySQL` or `PostgreSQL` compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
 
 ## Create Tenant Cluster
 
@@ -97,6 +84,7 @@ metadata:
   name: ${TENANT_NAME}
   namespace: ${TENANT_NAMESPACE}
 spec:
+  dataStore: default
   controlPlane:
     deployment:
       replicas: 3
@@ -159,12 +147,13 @@ EOF
 kubectl -n ${TENANT_NAMESPACE} apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
 ```
 
-After a few minutes, check the created resources in the tenants namespace and when ready it will look similar to the following:
+After a few seconds, check the created resources in the tenants namespace and when ready it will look similar to the following:
 
 ```command
 kubectl -n tenants get tcp,deploy,pods,svc
-NAME                                             VERSION   STATUS   CONTROL-PLANE-ENDPOINT   KUBECONFIG                   AGE
-tenantcontrolplane.kamaji.clastix.io/tenant-00   v1.23.1   Ready    192.168.32.240:6443      tenant-00-admin-kubeconfig   2m20s
+
+NAME                           VERSION   STATUS   CONTROL-PLANE ENDPOINT   KUBECONFIG                   DATASTORE   AGE
+tenantcontrolplane/tenant-00   v1.25.2   Ready    192.168.32.240:6443      tenant-00-admin-kubeconfig   default     2m20s
 
 NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
 deployment.apps/tenant-00   3/3     3            3           118s
@@ -178,9 +167,9 @@ NAME                TYPE           CLUSTER-IP      EXTERNAL-IP      PORT(S)     
 service/tenant-00   LoadBalancer   10.32.132.241   192.168.32.240   6443:32152/TCP,8132:32713/TCP   2m20s
 ```
 
-The regular Tenant Control Plane containers: `kube-apiserver`, `kube-controller-manager`, `kube-scheduler` are running unchanged in the `tcp` pods instead of dedicated machines and they are exposed through a service on the port `6443` of worker nodes in the Admin cluster.
+The regular Tenant Control Plane containers: `kube-apiserver`, `kube-controller-manager`, `kube-scheduler` are running unchanged in the `tcp` pods instead of dedicated machines and they are exposed through a service on the port `6443` of worker nodes in the admin cluster.
 
-The `LoadBalancer` service type is used to expose the Tenant Control Plane. However, `NodePort` and `ClusterIP` with an Ingress Controller are still viable options, depending on the case. High Availability and rolling updates of the Tenant Control Plane are provided by the `tcp` Deployment and all the resources reconcilied by the Kamaji controller.
+The `LoadBalancer` service type is used to expose the Tenant Control Plane on the assigned `loadBalancerIP` acting as `ControlPlaneEndpoint` for the worker nodes and other clients as, for example, `kubectl`. Service types `NodePort` and `ClusterIP` are still viable options to expose the Tenant Control Plane, depending on the case. High Availability and rolling updates of the Tenant Control Planes are provided by the `tcp` Deployment and all the resources reconcilied by the Kamaji controller.
 
 ### Working with Tenant Control Plane
 

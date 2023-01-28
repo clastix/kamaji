@@ -8,15 +8,15 @@ We assume you have installed on your workstation:
 
 - [Docker](https://docker.com)
 - [KinD](https://kind.sigs.k8s.io/)
-- [kubectl@v1.25.0](https://kubernetes.io/docs/tasks/tools/#kubectl)
-- [kubeadm@v1.25.0](https://kubernetes.io/docs/tasks/tools/#kubeadm)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+- [kubeadm](https://kubernetes.io/docs/tasks/tools/#kubeadm)
+- [Helm](https://helm.sh/docs/intro/install/)
 - [jq](https://stedolan.github.io/jq/)
 - [openssl](https://www.openssl.org/)
 - [cfssl/cfssljson](https://github.com/cloudflare/cfssl)
 
 
-> Starting from Kamaji v0.0.2, `kubectl` and `kubeadm` need to meet at least minimum version to `v1.25.0`:
-> this is required due to the latest changes addressed from the release Kubernetes 1.25 release regarding the `kubelet-config` ConfigMap required for the node join.
+> Starting from Kamaji v0.1.0, `kubectl` and `kubeadm` need to meet at least minimum version to `v1.25.0` due to the changes regarding the `kubelet-config` ConfigMap required for the node join.
 
 ## Setup Kamaji on KinD
 
@@ -26,80 +26,64 @@ The instance of Kamaji is made of a single node hosting:
 - admin worker
 - multi-tenant datastore
 
-### Standard installation
+### Standard Installation
 
-You can install your KinD cluster, ETCD multi-tenant cluster and Kamaji operator with a **single command**:
+You can install your KinD cluster, an `etcd` based multi-tenant datastore and the Kamaji operator with a **single command**:
 
 ```bash
 $ make -C deploy/kind
 ```
 
-Now you can [create your first `TenantControlPlane`](#deploy-tenant-control-plane).
+Now you can deploy a [`TenantControlPlane`](#deploy-tenant-control-plane).
 
-### Data store-specific
+### Installation with alternative datastore drivers
 
-Kamaji offers the possibility of using a different storage system than `ETCD` for the tenants, like `MySQL` or `PostgreSQL` compatible databases.
+Kamaji offers the possibility of using a different storage system than `etcd` for datastore, like `MySQL` or `PostgreSQL` compatible databases.
 
-First, setup a KinD cluster:
-
-```bash
-$ make -C deploy/kind kind
-```
-
-#### ETCD
-
-Deploy a multi-tenant `ETCD` cluster into the Kamaji node:
+First, setup a KinD cluster and the other requirements:
 
 ```bash
-$ make -C deploy/kind etcd-cluster
+$ make -C deploy/kind reqs
 ```
 
-Now you're ready to [install Kamaji operator](#install-kamaji).
+Install one of the alternative supported databases:
 
-#### MySQL
+- **MySQL** install it with command:
 
-Deploy a MySQL/MariaDB backend into the Kamaji node:
+    `$ make -C deploy/kine/mysql mariadb`
+
+- **PostgreSQL** install it with command:
+
+    `$ make -C deploy/kine/postgresql postgresql`
+
+Then use Helm to install the Kamaji Operator and make sure it uses a datastore with the proper driver `datastore.driver=<MySQL|PostgreSQL>`.
+
+For example, with a PostreSQL datastore:
 
 ```bash
-$ make -C deploy/kine/mysql mariadb
+helm install kamaji charts/kamaji -n kamaji-system --create-namespace \
+  --set etcd.deploy=false \
+  --set datastore.driver=PostgreSQL \
+  --set datastore.endpoints[0]=postgres-default-rw.kamaji-system.svc:5432 \
+  --set datastore.basicAuth.usernameSecret.name=postgres-default-superuser \
+  --set datastore.basicAuth.usernameSecret.namespace=kamaji-system \
+  --set datastore.basicAuth.usernameSecret.keyPath=username \
+  --set datastore.basicAuth.passwordSecret.name=postgres-default-superuser \
+  --set datastore.basicAuth.passwordSecret.namespace=kamaji-system \
+  --set datastore.basicAuth.passwordSecret.keyPath=password \
+  --set datastore.tlsConfig.certificateAuthority.certificate.name=postgres-default-ca \
+  --set datastore.tlsConfig.certificateAuthority.certificate.namespace=kamaji-system \
+  --set datastore.tlsConfig.certificateAuthority.certificate.keyPath=ca.crt \
+  --set datastore.tlsConfig.certificateAuthority.privateKey.name=postgres-default-ca \
+  --set datastore.tlsConfig.certificateAuthority.privateKey.namespace=kamaji-system \
+  --set datastore.tlsConfig.certificateAuthority.privateKey.keyPath=ca.key \
+  --set datastore.tlsConfig.clientCertificate.certificate.name=postgres-default-root-cert \
+  --set datastore.tlsConfig.clientCertificate.certificate.namespace=kamaji-system \
+  --set datastore.tlsConfig.clientCertificate.certificate.keyPath=tls.crt \
+  --set datastore.tlsConfig.clientCertificate.privateKey.name=postgres-default-root-cert \
+  --set datastore.tlsConfig.clientCertificate.privateKey.namespace=kamaji-system \
+  --set datastore.tlsConfig.clientCertificate.privateKey.keyPath=tls.key
 ```
-
-Adjust the Kamaji install manifest `config/install.yaml` according to the example of a MySQL DataStore `config/samples/kamaji_v1alpha1_datastore_mysql.yaml` and make sure Kamaji uses the proper datastore name:
-
-```
---datastore={.metadata.name}
-```
-
-Now you're ready to [install Kamaji operator](#install-kamaji).
-
-#### PostgreSQL
-
-Deploy a PostgreSQL backend into the Kamaji node:
-
-```bash
-$ make -C deploy/kine/postgresql postgresql
-```
-
-Adjust the Kamaji install manifest `config/install.yaml` according to the example of a PostgreSQL DataStore `config/samples/kamaji_v1alpha1_datastore_postgresql.yaml` and make sure Kamaji uses the proper datastore name:
-
-```
---datastore={.metadata.name}
-```
-
-Now you're ready to [install Kamaji operator](#install-kamaji).
-
-### Install Kamaji
-
-Kamaji takes advantage of the [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/), such as validating and mutating webhook configurations.
-These webhooks are secured by a TLS communication, and the certificates are managed by [`cert-manager`](https://cert-manager.io/), making it a prerequisite that must be [installed](https://cert-manager.io/docs/installation/).
-
-```bash
-$ kubectl apply -f config/install.yaml
-```
-
-> Please note that this single YAML manifest is missing some required automations.
-> The preferred way to install Kamaji is using its Helm Chart.
-> Please, refer to the section [**Setup Kamaji on a generic infrastructure**.](/guides/kamaji-deployment-guide#install-kamaji-controller)
 
 ### Deploy Tenant Control Plane
 
@@ -156,7 +140,7 @@ EOF
 > Check networkProfile fields according to your installation
 > To let Kamaji works in kind, you have indicate that the service must be [NodePort](https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport)
 
-### Get Kubeconfig
+### Get the kubeconfig
 
 Let's retrieve kubeconfig and store in `/tmp/kubeconfig`
 

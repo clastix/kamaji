@@ -46,7 +46,9 @@ nav:
   - guides/kamaji-azure-deployment-guide.md
   - guides/postgresql-datastore.md
   - guides/mysql-datastore.md
+  - guides/kamaji-gitops-flux.md
   - guides/upgrade.md
+  - guides/datastore-migration.md
 - 'Use Cases': use-cases.md
 - 'Reference':
   - reference/index.md

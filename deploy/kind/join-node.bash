@@ -7,7 +7,7 @@ export DOCKER_IMAGE_NAME="kindest/node"
 export DOCKER_NETWORK="kind"
 
 # Variables
-export KUBERNETES_VERSION=${1:-v1.23.5}
+export KUBERNETES_VERSION=${1:-v1.23.4}
 export KUBECONFIG="${KUBECONFIG:-/tmp/kubeconfig}"
 
 if [ -z $2 ]

@@ -7,7 +7,26 @@ The process of upgrading a _“tenant cluster”_ consists in two steps:
 ## Upgrade of Tenant Control Plane
 You should patch the `TenantControlPlane.spec.kubernetes.version` custom resource with a new compatible value according to the [Version Skew Policy](https://kubernetes.io/releases/version-skew-policy/).
 
-> Note: during the upgrade, a new ReplicaSet of Tenant Control Plane pod will be created, so make sure you have at least two pods to avoid service disruption.
+During the upgrade, a new ReplicaSet of Tenant Control Plane pod will be created, so make sure you have enough replicas to avoid service disruption. Also make sure you have the Rolling Update strategy properly configured:
+
+```yaml
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: tenant-00
+spec:
+  controlPlane:
+    deployment:
+      replicas: 3
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 1
+        type: RollingUpdate
+...
+```
 
 ## Upgrade of Tenant Worker Nodes
-As currently Kamaji is not providing any helpers for Tenant Worker Nodes, you should make sure to upgrade them manually, for example, with the help of `kubeadm`. We have in roadmap, the Cluster APIs support so that you can upgrade _“tenant clusters”_ in a fully declarative way.
+As currently Kamaji is not providing any helpers for Tenant Worker Nodes, you should make sure to upgrade them manually, for example, with the help of `kubeadm`. Refer to the official [documentation](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/#upgrade-worker-nodes).
+
+> We have in roadmap, the Cluster APIs support so that you can upgrade _“tenant clusters”_ in a fully declarative way.

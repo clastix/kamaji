@@ -20,7 +20,7 @@ Global hyper-scalers are leading the Managed Kubernetes space, while other cloud
 **Kamaji** aims to solve these pains by leveraging multi-tenancy and simplifying how to run multiple control planes on the same infrastructure with a fraction of the operational burden.
 
 ## How it works
-Kamaji turns any Kubernetes cluster into an _“admin cluster”_ to orchestrate other Kubernetes clusters called _“tenant clusters”_. What makes Kamaji special is that Control Planes of _“tenant clusters”_ are just regular pods running in the _“admin cluster”_ instead of dedicated Virtual Machines. This solution makes running control planes at scale cheaper and easier to deploy and operate.
+Kamaji turns any Kubernetes cluster into an _“admin cluster”_ to orchestrate other Kubernetes clusters called _“tenant clusters”_. Kamaji is special because the Control Planes of _“tenant clusters”_ are just regular pods instead of dedicated Virtual Machines. This solution makes running Control Planes at scale cheaper and easier to deploy and operate.
 
 ![Architecture](docs/content/images/kamaji-light.png#gh-light-mode-only)
 ![Architecture](docs/content/images/kamaji-dark.png#gh-dark-mode-only)

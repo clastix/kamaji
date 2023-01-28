@@ -13,7 +13,6 @@ The guide requires:
 
   * [Prepare the bootstrap workspace](#prepare-the-bootstrap-workspace)
   * [Access Admin cluster](#access-admin-cluster)
-  * [Install DataStore](#install-datastore)
   * [Install Kamaji controller](#install-kamaji-controller)
   * [Create Tenant Cluster](#create-tenant-cluster)
   * [Cleanup](#cleanup)
@@ -96,21 +95,13 @@ And check you can access:
 kubectl cluster-info
 ```
 
-## Install datastore
-The Kamaji controller needs to access a multi-tenant datastore in order to save data of the tenants' clusters. The Kamaji Helm Chart provides the installation of an unamanaged `etcd`. However, a managed `etcd` is highly recommended in production.
-
-As alternative, the [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides a viable option to setup a manged multi-tenant `etcd` as 3 replicas StatefulSet with data persistence:
-
-```bash
-helm repo add clastix https://clastix.github.io/charts
-helm repo update
-helm install etcd clastix/kamaji-etcd -n kamaji-system --create-namespace
-```
-
-Optionally, Kamaji offers the possibility of using a different storage system for the tenants' clusters, as MySQL or PostgreSQL compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
-
 ## Install Kamaji Controller
-Install Kamaji with `helm` using an unmanaged `etcd` as datastore:
+
+Kamaji takes advantage of the [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/), such as validating and mutating webhook configurations. These webhooks are secured by a TLS communication, and the certificates are managed by [`cert-manager`](https://cert-manager.io/), making it a prerequisite that must be [installed](https://cert-manager.io/docs/installation/).
+
+The Kamaji controller needs to access a default datastore in order to save data of the tenants' clusters. The Kamaji Helm Chart provides the installation of a basic unamanaged `etcd`, out of box. 
+
+Install Kamaji with `helm` using an unmanaged `etcd` as default datastore:
 
 ```bash
 helm repo add clastix https://clastix.github.io/charts
@@ -118,15 +109,7 @@ helm repo update
 helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
 ```
 
-Alternatively, if you opted for a managed `etcd` datastore:
-
-```
-helm repo add clastix https://clastix.github.io/charts
-helm repo update
-helm install kamaji clastix/kamaji -n kamaji-system --create-namespace --set etcd.deploy=false    
-```
-
-Congratulations! You just turned your Azure Kubernetes AKS cluster into a Kamaji cluster capable to run multiple Tenant Control Planes.
+A managed datastore is highly recommended in production. The [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides a viable option to setup a managed multi-tenant `etcd` running as StatefulSet made of three replicas. Optionally, Kamaji offers support for a different storage system, as `MySQL` or `PostgreSQL` compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
 
 ## Create Tenant Cluster
 
@@ -146,6 +129,7 @@ metadata:
   name: ${TENANT_NAME}
   namespace: ${TENANT_NAMESPACE}
 spec:
+  dataStore: default
   controlPlane:
     deployment:
       replicas: 3
@@ -171,7 +155,7 @@ spec:
           requests:
             cpu: 125m
             memory: 256Mi
-          limits: {} 
+          limits: {}
     service:
       additionalMetadata:
         labels:
