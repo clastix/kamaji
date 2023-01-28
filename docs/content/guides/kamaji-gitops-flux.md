@@ -1,20 +1,16 @@
 # Manage tenant resources GitOps-way from the admin cluster
 
-In this guide, you can learn how to apply applications and resources in general, the GitOps-way, to the Tenant Control Planes.
+This guide describe a declarative way to deploy Kubernetes add-ons across multiple Tenant Clusters, the GitOps-way. An admin may need to apply a specific workload into Tenant Clusters and ensure is constantly reconciled, no matter what the tenants will do in their clusters. Examples include installing monitoring agents, ensuring specific policies, installing infrastructure operators like Cert Manager and so on.
 
-An admin may need to apply a specific workload into tenant control planes and ensure is constantly reconciled, no matter what the tenants will do in their clusters.
-
-Examples include installing monitoring agents, ensuring specific policies, installing infrastructure operators like Cert Manager and so on.
+This way the tenant resources can be ensured from a single pane of glass, from the *admin cluster*.
 
 ## Flux as the GitOps operator
 
-As GitOps ensures a constant reconciliation to a Git-versioned desired state, Flux can satisfy the requirement of those scenarios.
-
-In particular, the controllers that reconcile [resources](https://fluxcd.io/flux/concepts/#reconciliation) support communicating to external clusters.
+As GitOps ensures a constant reconciliation to a Git-versioned desired state, [Flux](https://fluxcd.io) can satisfy the requirement of those scenarios. In particular, the controllers that reconcile [resources](https://fluxcd.io/flux/concepts/#reconciliation) support communicating to external clusters.
 
 In this scenario the Flux toolkit would run in the *admin cluster*, with reconcile controllers reconciling resources into *tenant clusters*.
 
-<img src="../images/kamaji-flux.png" alt="kamaji-flux" width="720"/>
+![Architecture](../images/kamaji-flux.png)
 
 This is something possible as the Flux reconciliation Custom Resources specifications provide ability to specify `Secret` which contain a `kubeconfig` - here you can find the related documentation for both [`Kustomization`](https://fluxcd.io/flux/components/kustomize/kustomization/#remote-clusters--cluster-api) and [`HelmRelease`](https://fluxcd.io/flux/components/helm/helmreleases/#remote-clusters--cluster-api) CRs.
 
@@ -85,10 +81,6 @@ tenant1-cert-manager              2/2     2            2           4m3s
 tenant1-cert-manager-cainjector   1/1     1            1           4m3s
 tenant1-cert-manager-webhook      1/1     1            1           4m3s
 ```
-
-## Conclusion
-
-This way tenant resources can be ensured from a single pane of glass, from the *admin cluster*.
 
 No matter what the tenant users will do on the *tenant cluster*, the Flux reconciliation controllers wirunning in the *admin cluster* will ensure the desired state declared by the reconciliation resources applied existing in the *admin cluster*, will be reconciled in the *tenant cluster*.
 
