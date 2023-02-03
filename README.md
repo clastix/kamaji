@@ -40,7 +40,8 @@ Please refer to the [Getting Started guide](https://kamaji.clastix.io/getting-st
 
 ## Roadmap
 
-- [ ] Benchmarking and stress-test
+- [x] Benchmarking
+- [ ] Stress-test
 - [x] Support for dynamic address allocation on native Load Balancer
 - [x] Zero Downtime Tenant Control Plane upgrade
 - [x] `konnectivity` integration
