@@ -50,6 +50,7 @@ nav:
 - 'Use Cases': use-cases.md
 - 'Reference':
   - reference/index.md
+  - reference/benchmark.md
   - reference/configuration.md
   - reference/conformance.md
   - reference/versioning.md
@@ -58,4 +59,3 @@ nav:
   - contribute/index.md
   - contribute/guidelines.md
   - contribute/governance.md
-
