@@ -70,6 +70,13 @@ Create the name of the Service to user for webhooks
 {{- end }}
 
 {{/*
+Create the name of the Service to user for metrics
+*/}}
+{{- define "kamaji.metricsServiceName" -}}
+{{- printf "%s-metrics-service" (include "kamaji.fullname" .) }}
+{{- end }}
+
+{{/*
 Create the name of the cert-manager secret
 */}}
 {{- define "kamaji.webhookSecretName" -}}
