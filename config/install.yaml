@@ -2317,6 +2317,9 @@ spec:
         - containerPort: 9443
           name: webhook-server
           protocol: TCP
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
@@ -2417,6 +2420,25 @@ spec:
           keyPath: tls.key
           name: root-client-certs
           namespace: kamaji-system
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: kamaji-controller-manager-metrics-monitor
+  namespace: kamaji-system
+spec:
+  endpoints:
+  - path: /metrics
+    port: metrics
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - kamaji-system
+  selector:
+    matchLabels:
+      control-plane: controller-manager
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration

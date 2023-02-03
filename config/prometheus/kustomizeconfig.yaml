@@ -1,0 +1,4 @@
+varReference:
+  - kind: ServiceMonitor
+    group: monitoring.coreos.com
+    path: spec/namespaceSelector/matchNames

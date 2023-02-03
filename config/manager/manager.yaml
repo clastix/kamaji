@@ -42,6 +42,10 @@ spec:
         image: controller:latest
         imagePullPolicy: Always
         name: manager
+        ports:
+          - containerPort: 8080
+            name: metrics
+            protocol: TCP
         securityContext:
           allowPrivilegeEscalation: false
         livenessProbe:
