@@ -128,6 +128,7 @@ Here the values you can override:
 | serviceAccount.annotations | object | `{}` |  |
 | serviceAccount.create | bool | `true` |  |
 | serviceAccount.name | string | `"kamaji-controller-manager"` |  |
+| serviceMonitor.enabled | bool | `false` | Toggle the ServiceMonitor true if you have Prometheus Operator installed and configured |
 | temporaryDirectoryPath | string | `"/tmp/kamaji"` | Directory which will be used to work with temporary files. (default "/tmp/kamaji") |
 | tolerations | list | `[]` | Kubernetes node taints that the Kamaji controller pods would tolerate |
 

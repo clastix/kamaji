@@ -15,6 +15,11 @@ image:
 # -- A list of extra arguments to add to the kamaji controller default ones
 extraArgs: []
 
+
+serviceMonitor:
+  # -- Toggle the ServiceMonitor true if you have Prometheus Operator installed and configured
+  enabled: false
+
 etcd:
   # -- Install an etcd with enabled multi-tenancy along with Kamaji
   deploy: true

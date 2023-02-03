@@ -3,15 +3,14 @@ kind: Service
 metadata:
   labels:
     {{- include "kamaji.labels" . | nindent 4 }}
-    app.kubernetes.io/component: webhook
-    app.kubernetes.io/instance: webhook-service
-  name: {{ include "kamaji.webhookServiceName" . }}
+    app.kubernetes.io/component: metrics
+  name: {{ include "kamaji.metricsServiceName" . }}
   namespace: {{ .Release.Namespace }}
 spec:
   ports:
-    - port: 443
+    - port: 8080
+      name: metrics
       protocol: TCP
-      name: webhook-server
-      targetPort: webhook-server
+      targetPort: metrics
   selector:
     {{- include "kamaji.selectorLabels" . | nindent 4 }}
