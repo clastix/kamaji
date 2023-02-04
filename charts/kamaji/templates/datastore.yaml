@@ -12,7 +12,12 @@ spec:
     {{- include "datastore.endpoints" . | indent 4 }}
 {{- if (and .Values.datastore.basicAuth.usernameSecret.name .Values.datastore.basicAuth.passwordSecret.name) }}
   basicAuth:
-    {{- .Values.datastore.basicAuth | toYaml | nindent 4 }}
+    username:
+      secretReference:
+        {{- .Values.datastore.basicAuth.usernameSecret | toYaml | nindent 8 }}
+    password:
+      secretReference:
+        {{- .Values.datastore.basicAuth.passwordSecret | toYaml | nindent 8 }}
 {{- end }}
   tlsConfig:
     certificateAuthority:
