@@ -156,15 +156,13 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			continue
 		}
 
-		if err = utils.UpdateStatus(ctx, r.Client, r.getTenantControlPlane(ctx, req.NamespacedName), resource); err != nil {
+		if err = utils.UpdateStatus(ctx, r.Client, tenantControlPlane, resource); err != nil {
 			log.Error(err, "update of the resource failed", "resource", resource.GetName())
 
 			return ctrl.Result{}, err
 		}
 
 		log.Info(fmt.Sprintf("%s has been configured", resource.GetName()))
-
-		return ctrl.Result{}, nil
 	}
 
 	log.Info(fmt.Sprintf("%s has been reconciled", tenantControlPlane.GetName()))

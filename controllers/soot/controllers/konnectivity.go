@@ -60,7 +60,7 @@ func (k *KonnectivityAgent) Reconcile(ctx context.Context, _ reconcile.Request) 
 			continue
 		}
 
-		if err = utils.UpdateStatus(ctx, k.AdminClient, k.GetTenantControlPlaneFunc, resource); err != nil {
+		if err = utils.UpdateStatus(ctx, k.AdminClient, tcp, resource); err != nil {
 			k.logger.Error(err, "update status failed", "resource", resource.GetName())
 
 			return reconcile.Result{}, err

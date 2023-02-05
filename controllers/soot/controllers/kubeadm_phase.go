@@ -50,7 +50,7 @@ func (k *KubeadmPhase) Reconcile(ctx context.Context, _ reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	if err = utils.UpdateStatus(ctx, k.Phase.GetClient(), k.GetTenantControlPlaneFunc, k.Phase); err != nil {
+	if err = utils.UpdateStatus(ctx, k.Phase.GetClient(), tcp, k.Phase); err != nil {
 		k.logger.Error(err, "update status failed")
 
 		return reconcile.Result{}, err

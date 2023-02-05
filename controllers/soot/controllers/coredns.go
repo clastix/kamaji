@@ -60,7 +60,7 @@ func (c *CoreDNS) Reconcile(ctx context.Context, request reconcile.Request) (rec
 		return reconcile.Result{}, nil
 	}
 
-	if err = utils.UpdateStatus(ctx, c.AdminClient, c.GetTenantControlPlaneFunc, resource); err != nil {
+	if err = utils.UpdateStatus(ctx, c.AdminClient, tcp, resource); err != nil {
 		c.logger.Error(err, "update status failed", "resource", resource.GetName())
 
 		return reconcile.Result{}, err

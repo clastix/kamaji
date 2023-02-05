@@ -60,7 +60,7 @@ func (k *KubeProxy) Reconcile(ctx context.Context, _ reconcile.Request) (reconci
 		return reconcile.Result{}, nil
 	}
 
-	if err = utils.UpdateStatus(ctx, k.AdminClient, k.GetTenantControlPlaneFunc, resource); err != nil {
+	if err = utils.UpdateStatus(ctx, k.AdminClient, tcp, resource); err != nil {
 		k.logger.Error(err, "update status failed")
 
 		return reconcile.Result{}, err
