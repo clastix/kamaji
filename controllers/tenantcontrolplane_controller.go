@@ -6,18 +6,23 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
+	"github.com/juju/mutex/v2"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	errors2 "k8s.io/apimachinery/pkg/api/errors"
+	apimachineryerrors "k8s.io/apimachinery/pkg/api/errors"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/utils/clock"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -36,14 +41,17 @@ import (
 
 // TenantControlPlaneReconciler reconciles a TenantControlPlane object.
 type TenantControlPlaneReconciler struct {
-	Client               client.Client
-	APIReader            client.Reader
-	Config               TenantControlPlaneReconcilerConfig
-	TriggerChan          TenantControlPlaneChannel
-	KamajiNamespace      string
-	KamajiServiceAccount string
-	KamajiService        string
-	KamajiMigrateImage   string
+	Client                  client.Client
+	APIReader               client.Reader
+	Config                  TenantControlPlaneReconcilerConfig
+	TriggerChan             TenantControlPlaneChannel
+	KamajiNamespace         string
+	KamajiServiceAccount    string
+	KamajiService           string
+	KamajiMigrateImage      string
+	MaxConcurrentReconciles int
+
+	clock mutex.Clock
 }
 
 // TenantControlPlaneReconcilerConfig gives the necessary configuration for TenantControlPlaneReconciler.
@@ -68,7 +76,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	tenantControlPlane, err := r.getTenantControlPlane(ctx, req.NamespacedName)()
 	if err != nil {
-		if errors2.IsNotFound(err) {
+		if apimachineryerrors.IsNotFound(err) {
 			log.Info("resource may have been deleted, skipping")
 
 			return ctrl.Result{}, nil
@@ -78,6 +86,25 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 		return ctrl.Result{}, err
 	}
+
+	releaser, err := mutex.Acquire(r.mutexSpec(tenantControlPlane))
+	if err != nil {
+		switch {
+		case errors.As(err, &mutex.ErrTimeout):
+			log.Info("acquire timed out, current process is blocked by another reconciliation")
+
+			return ctrl.Result{Requeue: true}, nil
+		case errors.As(err, &mutex.ErrCancelled):
+			log.Info("acquire cancelled")
+
+			return ctrl.Result{Requeue: true}, nil
+		default:
+			log.Error(err, "acquire failed")
+
+			return ctrl.Result{}, err
+		}
+	}
+	defer releaser.Release()
 
 	markedToBeDeleted := tenantControlPlane.GetDeletionTimestamp() != nil
 
@@ -176,8 +203,20 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	return ctrl.Result{}, nil
 }
 
+func (r *TenantControlPlaneReconciler) mutexSpec(obj client.Object) mutex.Spec {
+	return mutex.Spec{
+		Name:    strings.ReplaceAll(fmt.Sprintf("kamaji%s", obj.GetUID()), "-", ""),
+		Clock:   r.clock,
+		Delay:   10 * time.Millisecond,
+		Timeout: time.Second,
+		Cancel:  nil,
+	}
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.clock = clock.RealClock{}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		Watches(&source.Channel{Source: r.TriggerChan}, handler.Funcs{GenericFunc: func(genericEvent event.GenericEvent, limitingInterface workqueue.RateLimitingInterface) {
 			limitingInterface.AddRateLimited(ctrl.Request{
@@ -221,6 +260,9 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 
 			return ok && v == "migrate"
 		}))).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: r.MaxConcurrentReconciles,
+		}).
 		Complete(r)
 }
 
