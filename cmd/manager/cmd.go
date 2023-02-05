@@ -41,6 +41,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		managerServiceName        string
 		webhookCABundle           []byte
 		migrateJobImage           string
+		maxConcurrentReconciles   int
 
 		webhookCAPath string
 	)
@@ -111,11 +112,12 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 					KineContainerImage:   kineImage,
 					TmpBaseDirectory:     tmpDirectory,
 				},
-				TriggerChan:          tcpChannel,
-				KamajiNamespace:      managerNamespace,
-				KamajiServiceAccount: managerServiceAccountName,
-				KamajiService:        managerServiceName,
-				KamajiMigrateImage:   migrateJobImage,
+				TriggerChan:             tcpChannel,
+				KamajiNamespace:         managerNamespace,
+				KamajiServiceAccount:    managerServiceAccountName,
+				KamajiService:           managerServiceName,
+				KamajiMigrateImage:      migrateJobImage,
+				MaxConcurrentReconciles: maxConcurrentReconciles,
 			}
 
 			if err = reconciler.SetupWithManager(mgr); err != nil {
@@ -201,6 +203,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	cmd.Flags().StringVar(&kineImage, "kine-image", "rancher/kine:v0.9.2-amd64", "Container image along with tag to use for the Kine sidecar container (used only if etcd-storage-type is set to one of kine strategies).")
 	cmd.Flags().StringVar(&datastore, "datastore", "etcd", "The default DataStore that should be used by Kamaji to setup the required storage.")
 	cmd.Flags().StringVar(&migrateJobImage, "migrate-image", fmt.Sprintf("clastix/kamaji:v%s", internal.GitTag), "Specify the container image to launch when a TenantControlPlane is migrated to a new datastore.")
+	cmd.Flags().IntVar(&maxConcurrentReconciles, "max-concurrent-tcp-reconciles", 1, "Specify the number of workers for the Tenant Control Plane controller (beware of CPU consumption)")
 	cmd.Flags().StringVar(&managerNamespace, "pod-namespace", os.Getenv("POD_NAMESPACE"), "The Kubernetes Namespace on which the Operator is running in, required for the TenantControlPlane migration jobs.")
 	cmd.Flags().StringVar(&managerServiceName, "webhook-service-name", "kamaji-webhook-service", "The Kamaji webhook server Service name which is used to get validation webhooks, required for the TenantControlPlane migration jobs.")
 	cmd.Flags().StringVar(&managerServiceAccountName, "serviceaccount-name", os.Getenv("SERVICE_ACCOUNT"), "The Kubernetes Namespace on which the Operator is running in, required for the TenantControlPlane migration jobs.")
