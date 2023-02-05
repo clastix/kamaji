@@ -19,6 +19,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.13.0
 	go.etcd.io/etcd/api/v3 v3.5.6
 	go.etcd.io/etcd/client/v3 v3.5.6
+	go.uber.org/automaxprocs v1.5.1
 	k8s.io/api v0.26.0
 	k8s.io/apimachinery v0.26.0
 	k8s.io/apiserver v0.26.0
