@@ -16,6 +16,10 @@ import (
 	"github.com/clastix/kamaji/internal/kubeadm"
 )
 
+const (
+	OperationResultEnqueueBack controllerutil.OperationResult = "enqueueBack"
+)
+
 type Resource interface {
 	Define(context.Context, *kamajiv1alpha1.TenantControlPlane) error
 	ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool

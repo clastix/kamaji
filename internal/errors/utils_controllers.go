@@ -6,5 +6,14 @@ package errors
 import "github.com/pkg/errors"
 
 func ShouldReconcileErrorBeIgnored(err error) bool {
-	return errors.As(err, &NonExposedLoadBalancerError{}) || errors.As(err, &MissingValidIPError{})
+	switch {
+	case errors.As(err, &NonExposedLoadBalancerError{}):
+		return true
+	case errors.As(err, &MissingValidIPError{}):
+		return true
+	case errors.As(err, &MigrationInProcessError{}):
+		return true
+	default:
+		return false
+	}
 }
