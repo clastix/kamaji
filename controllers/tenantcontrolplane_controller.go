@@ -163,6 +163,12 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 
 		log.Info(fmt.Sprintf("%s has been configured", resource.GetName()))
+
+		if result == resources.OperationResultEnqueueBack {
+			log.Info("requested enqueuing back", "resources", resource.GetName())
+
+			return ctrl.Result{Requeue: true}, nil
+		}
 	}
 
 	log.Info(fmt.Sprintf("%s has been reconciled", tenantControlPlane.GetName()))

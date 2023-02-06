@@ -3,6 +3,12 @@
 
 package errors
 
+type MigrationInProcessError struct{}
+
+func (n MigrationInProcessError) Error() string {
+	return "cannot continue reconciliation, the current TenantControlPlane is still in migration status"
+}
+
 type NonExposedLoadBalancerError struct{}
 
 func (n NonExposedLoadBalancerError) Error() string {

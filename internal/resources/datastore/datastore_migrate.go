@@ -14,9 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	kamajierrors "github.com/clastix/kamaji/internal/errors"
+	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -70,8 +71,8 @@ func (d *Migrate) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1
 	return nil
 }
 
-func (d *Migrate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
-	return d.ShouldCleanUp
+func (d *Migrate) ShouldCleanup(tcp *kamajiv1alpha1.TenantControlPlane) bool {
+	return d.ShouldCleanUp && *tcp.Status.Kubernetes.Version.Status == kamajiv1alpha1.VersionMigrating
 }
 
 func (d *Migrate) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -125,26 +126,22 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 	}
 
 	switch res {
-	case controllerutil.OperationResultNone:
-		if len(d.job.Status.Conditions) == 0 {
-			break
-		}
+	case controllerutil.OperationResultCreated, controllerutil.OperationResultUpdated:
+		d.inProgress = true
 
-		condition := d.job.Status.Conditions[0]
-		if condition.Type == batchv1.JobComplete && condition.Status == corev1.ConditionTrue {
+		return resources.OperationResultEnqueueBack, nil
+	case controllerutil.OperationResultNone:
+
+		if len(d.job.Status.Conditions) > 0 && d.job.Status.Conditions[0].Type == batchv1.JobComplete && d.job.Status.Conditions[0].Status == corev1.ConditionTrue {
 			return controllerutil.OperationResultNone, nil
 		}
 
-		log.FromContext(ctx).Info("migration job not yet completed", "reason", condition.Reason, "message", condition.Message)
-	case controllerutil.OperationResultCreated:
-		break
+		d.inProgress = true
+
+		return controllerutil.OperationResultNone, kamajierrors.MigrationInProcessError{}
 	default:
-		return "", fmt.Errorf("unexpected status %s from the migration job", res)
+		return controllerutil.OperationResultNone, fmt.Errorf("unexpected status %s from the migration job", res)
 	}
-
-	d.inProgress = true
-
-	return controllerutil.OperationResultNone, nil
 }
 
 func (d *Migrate) GetName() string {
