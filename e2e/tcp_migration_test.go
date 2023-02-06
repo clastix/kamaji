@@ -62,6 +62,8 @@ var _ = Describe("When migrating a Tenant Control Plane to another datastore", f
 	})
 	// Check if TenantControlPlane resource has been created
 	It("Should contain all the migrated data", func() {
+		time.Sleep(10 * time.Second)
+
 		By("getting TCP rest.Config")
 		config, err := utilities.GetTenantKubeconfig(context.Background(), k8sClient, tcp)
 		Expect(err).ToNot(HaveOccurred())
