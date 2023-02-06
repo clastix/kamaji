@@ -77,11 +77,16 @@ spec:
         securityContext:
           {{- toYaml .Values.securityContext | nindent 12 }}
         volumeMounts:
+          - mountPath: /tmp
+            name: tmp
           - mountPath: /tmp/k8s-webhook-server/serving-certs
             name: cert
             readOnly: true
       terminationGracePeriodSeconds: 10
       volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
         - name: cert
           secret:
             defaultMode: 420
