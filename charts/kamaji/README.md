@@ -11,7 +11,6 @@ Kamaji is a tool aimed to build and operate a Managed Kubernetes Service with a 
 | Dario Tranchitella | <dario@tranchitella.eu> |  |
 | Massimiliano Giovagnoli | <me@maxgio.it> |  |
 | Adriano Pezzuto | <me@bsctl.io> |  |
-| Gonzalo Gabriel Jiménez Fuentes | <iam@mendrugory.com> |  |
 
 ## Source Code
 
