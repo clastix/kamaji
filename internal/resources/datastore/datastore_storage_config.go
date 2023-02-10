@@ -15,7 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -27,7 +26,7 @@ type Config struct {
 }
 
 func (r *Config) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Storage.Config.Checksum != r.resource.GetAnnotations()[constants.Checksum] ||
+	return tenantControlPlane.Status.Storage.Config.Checksum != utilities.GetObjectChecksum(r.resource) ||
 		tenantControlPlane.Status.Storage.DataStoreName != r.DataStore.GetName()
 }
 
@@ -70,7 +69,7 @@ func (r *Config) UpdateTenantControlPlaneStatus(_ context.Context, tenantControl
 	tenantControlPlane.Status.Storage.Driver = string(r.DataStore.Spec.Driver)
 	tenantControlPlane.Status.Storage.DataStoreName = r.DataStore.GetName()
 	tenantControlPlane.Status.Storage.Config.SecretName = r.resource.GetName()
-	tenantControlPlane.Status.Storage.Config.Checksum = r.resource.GetAnnotations()[constants.Checksum]
+	tenantControlPlane.Status.Storage.Config.Checksum = utilities.GetObjectChecksum(r.resource)
 
 	return nil
 }
@@ -79,9 +78,9 @@ func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.Te
 	return func() error {
 		var password []byte
 
-		savedHash, ok := r.resource.GetAnnotations()[constants.Checksum]
+		hash := utilities.GetObjectChecksum(r.resource)
 		switch {
-		case ok && savedHash == utilities.CalculateMapChecksum(r.resource.Data):
+		case len(hash) > 0 && hash == utilities.CalculateMapChecksum(r.resource.Data):
 			password = r.resource.Data["DB_PASSWORD"]
 		default:
 			password = []byte(uuid.New().String())
@@ -106,13 +105,7 @@ func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.Te
 			"DB_PASSWORD":          password,
 		}
 
-		annotations := r.resource.GetAnnotations()
-		if annotations == nil {
-			annotations = map[string]string{}
-		}
-
-		annotations[constants.Checksum] = utilities.CalculateMapChecksum(r.resource.Data)
-		r.resource.SetAnnotations(annotations)
+		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),

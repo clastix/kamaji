@@ -7,7 +7,34 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"sort"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/clastix/kamaji/internal/constants"
 )
+
+// GetObjectChecksum returns the annotation checksum in case this is set,
+// otherwise, an empty string.
+func GetObjectChecksum(obj client.Object) string {
+	v, ok := obj.GetAnnotations()[constants.Checksum]
+	if !ok {
+		return ""
+	}
+
+	return v
+}
+
+// SetObjectChecksum calculates the checksum for the given map and store it in the object annotations.
+func SetObjectChecksum(obj client.Object, data any) {
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	annotations[constants.Checksum] = CalculateMapChecksum(data)
+
+	obj.SetAnnotations(annotations)
+}
 
 // CalculateMapChecksum orders the map according to its key, and calculating the overall md5 of the values.
 // It's expected to work with ConfigMap (map[string]string) and Secrets (map[string][]byte).
@@ -36,7 +63,7 @@ func calculateMapStringString(data map[string]string) string {
 		checksum += data[key]
 	}
 
-	return MD5Checksum([]byte(checksum))
+	return md5Checksum([]byte(checksum))
 }
 
 func calculateMapStringByte(data map[string][]byte) string {
@@ -53,10 +80,10 @@ func calculateMapStringByte(data map[string][]byte) string {
 		checksum += string(data[key])
 	}
 
-	return MD5Checksum([]byte(checksum))
+	return md5Checksum([]byte(checksum))
 }
 
-func MD5Checksum(value []byte) string {
+func md5Checksum(value []byte) string {
 	hash := md5.Sum(value)
 
 	return hex.EncodeToString(hash[:])

@@ -18,7 +18,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -31,7 +30,7 @@ type FrontProxyClientCertificate struct {
 }
 
 func (r *FrontProxyClientCertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum != r.resource.GetAnnotations()[constants.Checksum]
+	return tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum != utilities.GetObjectChecksum(r.resource)
 }
 
 func (r *FrontProxyClientCertificate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
@@ -76,7 +75,7 @@ func (r *FrontProxyClientCertificate) GetName() string {
 func (r *FrontProxyClientCertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.FrontProxyClient.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.FrontProxyClient.SecretName = r.resource.GetName()
-	tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum = r.resource.GetAnnotations()[constants.Checksum]
+	tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum = utilities.GetObjectChecksum(r.resource)
 
 	return nil
 }
@@ -93,7 +92,7 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 
 			return err
 		}
-		if checksum := tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()[constants.Checksum] {
+		if checksum := tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) {
 			isCAValid, err := crypto.VerifyCertificate(r.resource.Data[kubeadmconstants.FrontProxyClientCertName], secretCA.Data[kubeadmconstants.FrontProxyCACertName], x509.ExtKeyUsageClientAuth)
 			if err != nil {
 				logger.Info(fmt.Sprintf("certificate-authority verify failed: %s", err.Error()))
@@ -144,12 +143,7 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 			},
 		))
 
-		annotations := r.resource.GetAnnotations()
-		if annotations == nil {
-			annotations = map[string]string{}
-		}
-		annotations[constants.Checksum] = utilities.CalculateMapChecksum(r.resource.Data)
-		r.resource.SetAnnotations(annotations)
+		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

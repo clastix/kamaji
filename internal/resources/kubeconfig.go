@@ -88,7 +88,7 @@ func (r *KubeconfigResource) UpdateTenantControlPlaneStatus(ctx context.Context,
 
 	status.LastUpdate = metav1.Now()
 	status.SecretName = r.resource.GetName()
-	status.Checksum = r.resource.Annotations[constants.Checksum]
+	status.Checksum = utilities.GetObjectChecksum(r.resource)
 
 	return nil
 }
