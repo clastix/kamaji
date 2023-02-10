@@ -16,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -32,7 +31,7 @@ type CACertificate struct {
 
 func (r *CACertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return r.isRotatingCA || tenantControlPlane.Status.Certificates.CA.SecretName != r.resource.GetName() ||
-		tenantControlPlane.Status.Certificates.CA.Checksum != r.resource.GetAnnotations()[constants.Checksum]
+		tenantControlPlane.Status.Certificates.CA.Checksum != utilities.GetObjectChecksum(r.resource)
 }
 
 func (r *CACertificate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
@@ -77,7 +76,7 @@ func (r *CACertificate) GetName() string {
 func (r *CACertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.CA.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.CA.SecretName = r.resource.GetName()
-	tenantControlPlane.Status.Certificates.CA.Checksum = r.resource.GetAnnotations()[constants.Checksum]
+	tenantControlPlane.Status.Certificates.CA.Checksum = utilities.GetObjectChecksum(r.resource)
 	if r.isRotatingCA {
 		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionCARotating
 	}
@@ -89,7 +88,7 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
-		if checksum := tenantControlPlane.Status.Certificates.CA.Checksum; len(checksum) > 0 && checksum == r.resource.GetAnnotations()[constants.Checksum] {
+		if checksum := tenantControlPlane.Status.Certificates.CA.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) {
 			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
 				r.resource.Data[kubeadmconstants.CACertName],
 				r.resource.Data[kubeadmconstants.CAKeyName],
@@ -133,12 +132,7 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			},
 		))
 
-		annotations := r.resource.GetAnnotations()
-		if annotations == nil {
-			annotations = map[string]string{}
-		}
-		annotations[constants.Checksum] = utilities.CalculateMapChecksum(r.resource.Data)
-		r.resource.SetAnnotations(annotations)
+		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

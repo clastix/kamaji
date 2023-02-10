@@ -16,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -29,7 +28,7 @@ type Certificate struct {
 }
 
 func (r *Certificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Storage.Certificate.Checksum != r.resource.GetAnnotations()[constants.Checksum]
+	return tenantControlPlane.Status.Storage.Certificate.Checksum != utilities.GetObjectChecksum(r.resource)
 }
 
 func (r *Certificate) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
@@ -70,7 +69,7 @@ func (r *Certificate) GetName() string {
 
 func (r *Certificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Storage.Certificate.SecretName = r.resource.GetName()
-	tenantControlPlane.Status.Storage.Certificate.Checksum = r.resource.GetAnnotations()[constants.Checksum]
+	tenantControlPlane.Status.Storage.Certificate.Checksum = utilities.GetObjectChecksum(r.resource)
 	tenantControlPlane.Status.Storage.Certificate.LastUpdate = metav1.Now()
 
 	return nil
@@ -89,7 +88,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 
 		r.resource.Data["ca.crt"] = ca
 
-		if r.resource.GetAnnotations()[constants.Checksum] == utilities.CalculateMapChecksum(r.resource.Data) {
+		if utilities.GetObjectChecksum(r.resource) == utilities.CalculateMapChecksum(r.resource.Data) {
 			if r.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
 				if isValid, _ := crypto.IsValidCertificateKeyPairBytes(r.resource.Data["server.crt"], r.resource.Data["server.key"]); isValid {
 					return nil
@@ -140,12 +139,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 		r.resource.Data["server.crt"] = crt.Bytes()
 		r.resource.Data["server.key"] = key.Bytes()
 
-		annotations := r.resource.GetAnnotations()
-		if annotations == nil {
-			annotations = map[string]string{}
-		}
-		annotations[constants.Checksum] = utilities.CalculateMapChecksum(r.resource.Data)
-		r.resource.SetAnnotations(annotations)
+		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(),

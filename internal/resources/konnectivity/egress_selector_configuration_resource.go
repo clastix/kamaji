@@ -16,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -65,13 +64,13 @@ func (r *EgressSelectorConfigurationResource) GetName() string {
 }
 
 func (r *EgressSelectorConfigurationResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Checksum != r.resource.GetAnnotations()[constants.Checksum]
+	return tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Checksum != utilities.GetObjectChecksum(r.resource)
 }
 
 func (r *EgressSelectorConfigurationResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Name = r.resource.GetName()
-		tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Checksum = r.resource.GetAnnotations()[constants.Checksum]
+		tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Checksum = utilities.GetObjectChecksum(r.resource)
 
 		return nil
 	}
@@ -114,11 +113,7 @@ func (r *EgressSelectorConfigurationResource) mutate(_ context.Context, tenantCo
 			"egress-selector-configuration.yaml": string(yamlConfiguration),
 		}
 
-		annotations := r.resource.GetAnnotations()
-		if annotations == nil {
-			annotations = map[string]string{}
-		}
-		annotations[constants.Checksum] = utilities.CalculateMapChecksum(r.resource.Data)
+		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

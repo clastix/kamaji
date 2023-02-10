@@ -18,7 +18,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -30,7 +29,7 @@ type CertificateResource struct {
 }
 
 func (r *CertificateResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum != r.resource.GetAnnotations()[constants.Checksum]
+	return tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum != utilities.GetObjectChecksum(r.resource)
 }
 
 func (r *CertificateResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -76,7 +75,7 @@ func (r *CertificateResource) UpdateTenantControlPlaneStatus(ctx context.Context
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Certificate.LastUpdate = metav1.Now()
 		tenantControlPlane.Status.Addons.Konnectivity.Certificate.SecretName = r.resource.GetName()
-		tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum = r.resource.GetAnnotations()[constants.Checksum]
+		tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum = utilities.GetObjectChecksum(r.resource)
 
 		return nil
 	}
@@ -135,12 +134,7 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 			},
 		))
 
-		annotations := r.resource.GetAnnotations()
-		if annotations == nil {
-			annotations = map[string]string{}
-		}
-		annotations[constants.Checksum] = utilities.CalculateMapChecksum(r.resource.Data)
-		r.resource.SetAnnotations(annotations)
+		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
