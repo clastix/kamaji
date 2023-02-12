@@ -109,13 +109,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			return err
 		}
 
-		r.resource.SetLabels(utilities.MergeMaps(
-			utilities.KamajiLabels(),
-			map[string]string{
-				"k8s-app":                         AgentName,
-				"addonmanager.kubernetes.io/mode": "Reconcile",
-			},
-		))
+		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
 
 		if r.resource.Spec.Selector == nil {
 			r.resource.Spec.Selector = &metav1.LabelSelector{}

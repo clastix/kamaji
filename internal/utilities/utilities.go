@@ -18,16 +18,11 @@ const (
 	separator = "-"
 )
 
-func KamajiLabels() map[string]string {
+func KamajiLabels(tcpName, resourceName string) map[string]string {
 	return map[string]string{
-		constants.ProjectNameLabelKey: constants.ProjectNameLabelValue,
-	}
-}
-
-func CommonLabels(clusterName string) map[string]string {
-	return map[string]string{
-		"kamaji.clastix.io/type":    "cluster",
-		"kamaji.clastix.io/cluster": clusterName,
+		constants.ProjectNameLabelKey:       constants.ProjectNameLabelValue,
+		constants.ControlPlaneLabelKey:      tcpName,
+		constants.ControlPlaneLabelResource: resourceName,
 	}
 }
 

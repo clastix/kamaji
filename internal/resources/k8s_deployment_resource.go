@@ -76,7 +76,7 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 			DataStore:          r.DataStore,
 			KineContainerImage: r.KineContainerImage,
 		}
-		d.SetLabels(r.resource, utilities.MergeMaps(utilities.CommonLabels(tenantControlPlane.GetName()), tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Labels))
+		d.SetLabels(r.resource, utilities.MergeMaps(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()), tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Labels))
 		d.SetAnnotations(r.resource, utilities.MergeMaps(r.resource.Annotations, tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Annotations))
 		d.SetTemplateLabels(&r.resource.Spec.Template, r.deploymentTemplateLabels(ctx, tenantControlPlane))
 		d.SetNodeSelector(&r.resource.Spec.Template.Spec, tenantControlPlane)
@@ -135,7 +135,8 @@ func (r *KubernetesDeploymentResource) deploymentTemplateLabels(ctx context.Cont
 	}
 
 	labels = map[string]string{
-		"kamaji.clastix.io/soot":                                            tenantControlPlane.GetName(),
+		"kamaji.clastix.io/name":                                            tenantControlPlane.GetName(),
+		"kamaji.clastix.io/component":                                       r.GetName(),
 		"component.kamaji.clastix.io/api-server-certificate":                hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.APIServer.SecretName),
 		"component.kamaji.clastix.io/api-server-kubelet-client-certificate": hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.APIServerKubeletClient.SecretName),
 		"component.kamaji.clastix.io/ca":                                    hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.CA.SecretName),

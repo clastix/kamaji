@@ -69,7 +69,7 @@ func (r *ServiceAccountResource) Define(ctx context.Context, tenantControlPlane 
 
 func (r *ServiceAccountResource) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	if tcp.Spec.Addons.Konnectivity != nil {
-		return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate())
+		return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(tcp))
 	}
 
 	return controllerutil.OperationResultNone, nil
@@ -94,15 +94,9 @@ func (r *ServiceAccountResource) UpdateTenantControlPlaneStatus(_ context.Contex
 	return nil
 }
 
-func (r *ServiceAccountResource) mutate() controllerutil.MutateFn {
+func (r *ServiceAccountResource) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		r.resource.SetLabels(utilities.MergeMaps(
-			utilities.KamajiLabels(),
-			map[string]string{
-				"kubernetes.io/cluster-service":   "true",
-				"addonmanager.kubernetes.io/mode": "Reconcile",
-			},
-		))
+		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
 
 		return nil
 	}

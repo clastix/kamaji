@@ -174,13 +174,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			r.KubeConfigFileName: kubeconfig,
 		}
 
-		r.resource.SetLabels(utilities.MergeMaps(
-			utilities.KamajiLabels(),
-			map[string]string{
-				"kamaji.clastix.io/name":      tenantControlPlane.GetName(),
-				"kamaji.clastix.io/component": r.GetName(),
-			},
-		))
+		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
 
 		r.resource.SetAnnotations(map[string]string{
 			constants.Checksum: checksum,

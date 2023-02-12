@@ -80,14 +80,14 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 	address, _ := tenantControlPlane.DeclaredControlPlaneAddress(ctx, r.Client)
 
 	return func() error {
-		labels := utilities.MergeMaps(utilities.CommonLabels(tenantControlPlane.GetName()), tenantControlPlane.Spec.ControlPlane.Service.AdditionalMetadata.Labels)
+		labels := utilities.MergeMaps(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()), tenantControlPlane.Spec.ControlPlane.Service.AdditionalMetadata.Labels)
 		r.resource.SetLabels(labels)
 
 		annotations := utilities.MergeMaps(r.resource.GetAnnotations(), tenantControlPlane.Spec.ControlPlane.Service.AdditionalMetadata.Annotations)
 		r.resource.SetAnnotations(annotations)
 
 		r.resource.Spec.Selector = map[string]string{
-			"kamaji.clastix.io/soot": tenantControlPlane.GetName(),
+			"kamaji.clastix.io/name": tenantControlPlane.GetName(),
 		}
 
 		if len(r.resource.Spec.Ports) == 0 {

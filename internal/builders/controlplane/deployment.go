@@ -785,7 +785,7 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 func (d *Deployment) SetSelector(deploymentSpec *appsv1.DeploymentSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
 	deploymentSpec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"kamaji.clastix.io/soot": tcp.GetName(),
+			"kamaji.clastix.io/name": tcp.GetName(),
 		},
 	}
 }

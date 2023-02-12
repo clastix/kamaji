@@ -68,7 +68,7 @@ func (r *ClusterRoleBindingResource) Define(ctx context.Context, tenantControlPl
 
 func (r *ClusterRoleBindingResource) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	if tcp.Spec.Addons.Konnectivity != nil {
-		return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate())
+		return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(tcp))
 	}
 
 	return controllerutil.OperationResultNone, nil
@@ -93,10 +93,10 @@ func (r *ClusterRoleBindingResource) UpdateTenantControlPlaneStatus(_ context.Co
 	return nil
 }
 
-func (r *ClusterRoleBindingResource) mutate() controllerutil.MutateFn {
+func (r *ClusterRoleBindingResource) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
 		r.resource.SetLabels(utilities.MergeMaps(
-			utilities.KamajiLabels(),
+			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
 				"kubernetes.io/cluster-service":   "true",
 				"addonmanager.kubernetes.io/mode": "Reconcile",
