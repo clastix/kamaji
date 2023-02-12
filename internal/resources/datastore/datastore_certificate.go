@@ -142,12 +142,8 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
 		r.resource.SetLabels(utilities.MergeMaps(
-			utilities.KamajiLabels(),
+			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			r.resource.GetLabels(),
-			map[string]string{
-				"kamaji.clastix.io/name":      tenantControlPlane.GetName(),
-				"kamaji.clastix.io/component": r.GetName(),
-			},
 		))
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())

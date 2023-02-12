@@ -135,13 +135,7 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 			kubeadmconstants.FrontProxyClientKeyName:  certificateKeyPair.PrivateKey,
 		}
 
-		r.resource.SetLabels(utilities.MergeMaps(
-			utilities.KamajiLabels(),
-			map[string]string{
-				"kamaji.clastix.io/name":      tenantControlPlane.GetName(),
-				"kamaji.clastix.io/component": r.GetName(),
-			},
-		))
+		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 

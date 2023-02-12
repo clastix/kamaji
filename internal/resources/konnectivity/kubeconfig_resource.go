@@ -157,13 +157,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
-		r.resource.SetLabels(utilities.MergeMaps(
-			utilities.KamajiLabels(),
-			map[string]string{
-				"kamaji.clastix.io/name":      tenantControlPlane.GetName(),
-				"kamaji.clastix.io/component": r.GetName(),
-			},
-		))
+		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

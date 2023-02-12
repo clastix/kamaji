@@ -88,7 +88,7 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 			return err
 		}
 
-		r.resource.SetLabels(utilities.KamajiLabels())
+		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
 
 		params := kubeadm.Parameters{
 			TenantControlPlaneAddress:     address,

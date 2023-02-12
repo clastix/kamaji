@@ -82,7 +82,7 @@ func (r *EgressSelectorConfigurationResource) UpdateTenantControlPlaneStatus(ctx
 
 func (r *EgressSelectorConfigurationResource) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) func() error {
 	return func() error {
-		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels()))
+		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
 		configuration := &apiserverv1alpha1.EgressSelectorConfiguration{
 			TypeMeta: metav1.TypeMeta{
