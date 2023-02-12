@@ -203,7 +203,7 @@ spec:
     protocol: TCP
     targetPort: ${TENANT_PORT}
   selector:
-    kamaji.clastix.io/soot: ${TENANT_NAME}
+    kamaji.clastix.io/name: ${TENANT_NAME}
   type: LoadBalancer
 EOF
 
