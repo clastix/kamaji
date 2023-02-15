@@ -98,6 +98,7 @@ Here the values you can override:
 | etcd.overrides.endpoints | object | `{"etcd-0":"etcd-0.etcd.kamaji-system.svc.cluster.local","etcd-1":"etcd-1.etcd.kamaji-system.svc.cluster.local","etcd-2":"etcd-2.etcd.kamaji-system.svc.cluster.local"}` | (map) Dictionary of the endpoints for the etcd cluster's members, key is the name of the etcd server. Don't define the protocol (TLS is automatically inflected), or any port, inflected from .etcd.peerApiPort value. |
 | etcd.peerApiPort | int | `2380` | The peer API port which servers are listening to. |
 | etcd.persistence.accessModes[0] | string | `"ReadWriteOnce"` |  |
+| etcd.persistence.customAnnotations | object | `{}` | The custom annotations to add to the PVC |
 | etcd.persistence.size | string | `"10Gi"` |  |
 | etcd.persistence.storageClass | string | `""` |  |
 | etcd.port | int | `2379` | The client request port. |
