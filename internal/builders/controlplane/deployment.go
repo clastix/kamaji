@@ -288,7 +288,7 @@ func (d *Deployment) BuildScheduler(podSpec *corev1.PodSpec, tenantControlPlane 
 	args["--leader-elect"] = "true" //nolint:goconst
 
 	podSpec.Containers[schedulerIndex].Name = "kube-scheduler"
-	podSpec.Containers[schedulerIndex].Image = fmt.Sprintf("k8s.gcr.io/kube-scheduler:%s", tenantControlPlane.Spec.Kubernetes.Version)
+	podSpec.Containers[schedulerIndex].Image = fmt.Sprintf("registry.k8s.io/kube-scheduler:%s", tenantControlPlane.Spec.Kubernetes.Version)
 	podSpec.Containers[schedulerIndex].Command = []string{"kube-scheduler"}
 	podSpec.Containers[schedulerIndex].Args = utilities.ArgsFromMapToSlice(args)
 	podSpec.Containers[schedulerIndex].VolumeMounts = []corev1.VolumeMount{
@@ -373,7 +373,7 @@ func (d *Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContr
 	args["--use-service-account-credentials"] = "true"
 
 	podSpec.Containers[controllerManagerIndex].Name = "kube-controller-manager"
-	podSpec.Containers[controllerManagerIndex].Image = fmt.Sprintf("k8s.gcr.io/kube-controller-manager:%s", tenantControlPlane.Spec.Kubernetes.Version)
+	podSpec.Containers[controllerManagerIndex].Image = fmt.Sprintf("registry.k8s.io/kube-controller-manager:%s", tenantControlPlane.Spec.Kubernetes.Version)
 	podSpec.Containers[controllerManagerIndex].Command = []string{"kube-controller-manager"}
 	podSpec.Containers[controllerManagerIndex].Args = utilities.ArgsFromMapToSlice(args)
 	podSpec.Containers[controllerManagerIndex].VolumeMounts = []corev1.VolumeMount{
@@ -461,7 +461,7 @@ func (d *Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPl
 
 	podSpec.Containers[apiServerIndex].Name = "kube-apiserver"
 	podSpec.Containers[apiServerIndex].Args = utilities.ArgsFromMapToSlice(args)
-	podSpec.Containers[apiServerIndex].Image = fmt.Sprintf("k8s.gcr.io/kube-apiserver:%s", tenantControlPlane.Spec.Kubernetes.Version)
+	podSpec.Containers[apiServerIndex].Image = fmt.Sprintf("registry.k8s.io/kube-apiserver:%s", tenantControlPlane.Spec.Kubernetes.Version)
 	podSpec.Containers[apiServerIndex].Command = []string{"kube-apiserver"}
 	podSpec.Containers[apiServerIndex].LivenessProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
