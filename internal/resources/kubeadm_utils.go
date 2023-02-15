@@ -63,7 +63,7 @@ func GetKubeadmManifestDeps(ctx context.Context, client client.Client, tenantCon
 		if len(kubeProxy.ImageRepository) > 0 {
 			config.Parameters.KubeProxyOptions.Repository = kubeProxy.ImageRepository
 		} else {
-			config.Parameters.KubeProxyOptions.Repository = "k8s.gcr.io"
+			config.Parameters.KubeProxyOptions.Repository = "registry.k8s.io"
 		}
 
 		if len(kubeProxy.ImageTag) > 0 {

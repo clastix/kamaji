@@ -360,7 +360,7 @@ func (k *KubeProxy) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Ten
 	if len(tcp.Spec.Addons.KubeProxy.ImageRepository) > 0 {
 		config.Parameters.KubeProxyOptions.Repository = tcp.Spec.Addons.KubeProxy.ImageRepository
 	} else {
-		config.Parameters.KubeProxyOptions.Repository = "k8s.gcr.io"
+		config.Parameters.KubeProxyOptions.Repository = "registry.k8s.io"
 	}
 
 	if len(tcp.Spec.Addons.KubeProxy.ImageTag) > 0 {
