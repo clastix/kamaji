@@ -81,6 +81,10 @@ spec:
   volumeClaimTemplates:
   - metadata:
       name: data
+      {{- with .Values.etcd.persistence.customAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       storageClassName: {{ .Values.etcd.persistence.storageClassName }}
       accessModes:

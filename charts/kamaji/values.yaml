@@ -57,6 +57,9 @@ etcd:
     storageClass: ""
     accessModes:
     - ReadWriteOnce
+    # -- The custom annotations to add to the PVC
+    customAnnotations: {}
+    #  volumeType: local
 
   overrides:
     caSecret:
