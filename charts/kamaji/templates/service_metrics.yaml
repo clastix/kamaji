@@ -2,8 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    {{- include "kamaji.labels" . | nindent 4 }}
-    app.kubernetes.io/component: metrics
+    {{- $data := . | mustMergeOverwrite (dict "component" "metrics") -}}
+    {{- include "kamaji.labels" $data | nindent 4 }}
   name: {{ include "kamaji.metricsServiceName" . }}
   namespace: {{ .Release.Namespace }}
 spec:

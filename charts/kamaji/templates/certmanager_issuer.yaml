@@ -2,8 +2,8 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   labels:
-    {{- include "kamaji.labels" . | nindent 4 }}
-    app.kubernetes.io/component: issuer
+    {{- $data := . | mustMergeOverwrite (dict "component" "issuer") -}}
+    {{- include "kamaji.labels" $data | nindent 4 }}
   name: kamaji-selfsigned-issuer
   namespace: {{ .Release.Namespace }}
 spec:

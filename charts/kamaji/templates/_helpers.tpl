@@ -46,9 +46,9 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 Selector labels
 */}}
 {{- define "kamaji.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "kamaji.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: controller-manager
+app.kubernetes.io/name: {{ default (include "kamaji.name" .) .name }}
+app.kubernetes.io/instance: {{ default .Release.Name .instance }}
+app.kubernetes.io/component: {{ default "controller-manager" .component }}
 {{- end }}
 
 {{/*

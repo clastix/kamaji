@@ -3,8 +3,8 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    {{- include "kamaji.labels" . | nindent 4 }}
-    app.kubernetes.io/component: servicemonitor
+    {{- $data := . | mustMergeOverwrite (dict "component" "servicemonitor") -}}
+    {{- include "kamaji.labels" $data | nindent 4 }}
   name: {{ include "kamaji.fullname" . }}
   namespace: {{ .Release.Namespace }}
 spec:
