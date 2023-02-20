@@ -4,8 +4,8 @@ metadata:
   annotations:
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "kamaji.certificateName" . }}
   labels:
-    {{- include "kamaji.labels" . | nindent 4 }}
-    app.kubernetes.io/instance: validating-webhook-configuration
+    {{- $data := . | mustMergeOverwrite (dict "instance" "validating-webhook-configuration") -}}
+    {{- include "kamaji.labels" $data | nindent 4 }}
   name: kamaji-validating-webhook-configuration
 webhooks:
   - admissionReviewVersions:
