@@ -82,7 +82,7 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
-		if checksum := tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) {
+		if checksum := tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0 {
 			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
 				r.resource.Data[kubeadmconstants.FrontProxyCACertName],
 				r.resource.Data[kubeadmconstants.FrontProxyCAKeyName],

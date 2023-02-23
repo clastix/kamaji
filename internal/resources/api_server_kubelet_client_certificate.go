@@ -93,7 +93,7 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 			return err
 		}
 
-		if checksum := tenantControlPlane.Status.Certificates.APIServerKubeletClient.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) {
+		if checksum := tenantControlPlane.Status.Certificates.APIServerKubeletClient.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0 {
 			isCAValid, err := crypto.VerifyCertificate(r.resource.Data[kubeadmconstants.APIServerKubeletClientCertName], secretCA.Data[kubeadmconstants.CACertName], x509.ExtKeyUsageClientAuth)
 			if err != nil {
 				logger.Info(fmt.Sprintf("certificate-authority verify failed: %s", err.Error()))
