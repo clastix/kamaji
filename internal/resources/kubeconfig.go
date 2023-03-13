@@ -37,8 +37,15 @@ type KubeconfigResource struct {
 	TmpDirectory       string
 }
 
-func (r *KubeconfigResource) ShouldStatusBeUpdated(context.Context, *kamajiv1alpha1.TenantControlPlane) bool {
-	return false
+func (r *KubeconfigResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
+	// an update is required only in case of missing status checksum, or name:
+	// this data is required by the following resource handlers.
+	status, err := r.getKubeconfigStatus(tcp)
+	if err != nil {
+		return false
+	}
+
+	return len(status.Checksum) == 0 || len(status.SecretName) == 0
 }
 
 func (r *KubeconfigResource) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
@@ -151,27 +158,29 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 			return err
 		}
+		// A new kubeconfig must be generated when one of the following cases is occurring:
+		// 1. the status checksum is different from the computed one
+		// 2. the resource UID is empty, meaning it's a new resource (tl;dr; a first reconciliation)
+		//
+		// And finally, we're checking if the kubeconfig is valid: if not, generating a new one.
+		if (status.Checksum != checksum || len(r.resource.UID) == 0) && !kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName]) {
+			kubeconfig, err := kubeadm.CreateKubeconfig(
+				r.KubeConfigFileName,
 
-		if (status.Checksum == checksum || len(r.resource.UID) > 0) && kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName]) {
-			return nil
-		}
+				kubeadm.CertificatePrivateKeyPair{
+					Certificate: apiServerCertificatesSecret.Data[kubeadmconstants.CACertName],
+					PrivateKey:  apiServerCertificatesSecret.Data[kubeadmconstants.CAKeyName],
+				},
+				config,
+			)
+			if err != nil {
+				logger.Error(err, "cannot create a valid kubeconfig")
 
-		kubeconfig, err := kubeadm.CreateKubeconfig(
-			r.KubeConfigFileName,
-
-			kubeadm.CertificatePrivateKeyPair{
-				Certificate: apiServerCertificatesSecret.Data[kubeadmconstants.CACertName],
-				PrivateKey:  apiServerCertificatesSecret.Data[kubeadmconstants.CAKeyName],
-			},
-			config,
-		)
-		if err != nil {
-			logger.Error(err, "cannot create a valid kubeconfig")
-
-			return err
-		}
-		r.resource.Data = map[string][]byte{
-			r.KubeConfigFileName: kubeconfig,
+				return err
+			}
+			r.resource.Data = map[string][]byte{
+				r.KubeConfigFileName: kubeconfig,
+			}
 		}
 
 		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
