@@ -25,13 +25,25 @@ type KubernetesIngressResource struct {
 	Name     string
 }
 
-func (r *KubernetesIngressResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return !(tenantControlPlane.Status.Kubernetes.Ingress.Name == r.resource.GetName() &&
-		tenantControlPlane.Status.Kubernetes.Ingress.Namespace == r.resource.GetNamespace())
+func (r *KubernetesIngressResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
+	// No update in case of no ingress in spec, neither in status.
+	if tcp.Spec.ControlPlane.Ingress == nil && tcp.Status.Kubernetes.Ingress == nil {
+		return false
+	}
+	// Must be updated when TCP is using an Ingress, and status is not tracking it.
+	if tcp.Spec.ControlPlane.Ingress != nil && tcp.Status.Kubernetes.Ingress == nil {
+		return true
+	}
+	// Must be updated when the status is referring to an Ingress, although spec doesn't.
+	if tcp.Spec.ControlPlane.Ingress == nil && tcp.Status.Kubernetes.Ingress != nil {
+		return true
+	}
+	// In case of status skew, update it.
+	return tcp.Status.Kubernetes.Ingress.Name != r.resource.GetName() || tcp.Status.Kubernetes.Ingress.Namespace != r.resource.GetNamespace()
 }
 
-func (r *KubernetesIngressResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.ControlPlane.Ingress == nil
+func (r *KubernetesIngressResource) ShouldCleanup(tcp *kamajiv1alpha1.TenantControlPlane) bool {
+	return tcp.Spec.ControlPlane.Ingress == nil
 }
 
 func (r *KubernetesIngressResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -52,14 +64,16 @@ func (r *KubernetesIngressResource) CleanUp(ctx context.Context, _ *kamajiv1alph
 
 func (r *KubernetesIngressResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Spec.ControlPlane.Ingress != nil {
-		tenantControlPlane.Status.Kubernetes.Ingress.IngressStatus = r.resource.Status
-		tenantControlPlane.Status.Kubernetes.Ingress.Name = r.resource.GetName()
-		tenantControlPlane.Status.Kubernetes.Ingress.Namespace = r.resource.GetNamespace()
+		tenantControlPlane.Status.Kubernetes.Ingress = &kamajiv1alpha1.KubernetesIngressStatus{
+			IngressStatus: r.resource.Status,
+			Name:          r.resource.GetName(),
+			Namespace:     r.resource.GetNamespace(),
+		}
 
 		return nil
 	}
 
-	tenantControlPlane.Status.Kubernetes.Ingress = &kamajiv1alpha1.KubernetesIngressStatus{}
+	tenantControlPlane.Status.Kubernetes.Ingress = nil
 
 	return nil
 }
