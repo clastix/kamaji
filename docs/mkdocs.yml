@@ -38,7 +38,9 @@ theme:
 # Generate navigation bar
 nav:
 - 'Kamaji': index.md
-- 'Getting started': getting-started.md
+- 'Getting started':
+  - getting-started/install.md
+  - getting-started/getting-started.md
 - 'Concepts': concepts.md
 - 'Guides':
   - guides/index.md
