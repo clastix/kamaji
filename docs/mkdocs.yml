@@ -60,7 +60,5 @@ nav:
   - reference/conformance.md
   - reference/versioning.md
   - reference/api.md
-- 'Contribute':
-  - contribute/index.md
-  - contribute/guidelines.md
-  - contribute/governance.md
+- 'Contribute': contribute.md
+

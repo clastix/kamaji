@@ -41,11 +41,7 @@ Please, split changes into several and documented small commits: this will help 
 ## Code convention
 
 Kamaji is written in Golang. The changes must follow the Pull Request method where a _GitHub Action_ will
-check the `golangci-lint`, so ensure your changes respect the coding standard.
-
-### golint
-
-You can easily check them issuing the _Make_ recipe `golint`.
+check the `golangci-lint`, so ensure your changes respect the coding standard. You can easily check them issuing the _Make_ recipe `golint`.
 
 ```
 # make golint
@@ -54,10 +50,10 @@ golangci-lint run -c .golangci.yml
 
 > Enabled linters and related options are defined in the [.golanci.yml file](https://github.com/clastix/Kamaji/blob/master/.golangci.yml)
 
+Please, add a new single line at end of any file as the current coding style.
+
 ## Finding contributions to work on
-Looking at the existing issues is a great way to find something to contribute on. As our projects, by default, use the
-default GitHub issue labels (enhancement/bug/duplicate/help wanted/invalid/question/wontfix), looking at any 'help wanted'
-and 'good first issue' issues are a great place to start.
+Looking at the existing issues is a great way to find something to contribute on. As our projects, by default, use the default GitHub issue labels (enhancement/bug/duplicate/help wanted/invalid/question/wontfix), looking at any 'help wanted' and 'good first issue' issues are a great place to start.
 
 ## Design Docs
 
@@ -74,10 +70,31 @@ When filing an issue, please check existing open, or recently closed, issues to 
 * Any modifications you've made relevant to the bug
 * Anything unusual about your environment or deployment
 
-## Miscellanea
+## Governance
 
-Please, add a new single line at end of any file as the current coding style.
+This document lays out the guidelines under which the Kamaji project will be governed.
+The goal is to make sure that the roles and responsibilities are well defined and clarify how decisions are made.
+
+### Roles
+
+In the context of Kamaji project, we consider the following roles:
+
+* __Users__: everyone using Kamaji, typically willing to provide feedback by proposing features and/or filing issues.
+
+* __Contributors__: everyone contributing code, documentation, examples, tests, and participating in feature proposals as well as design discussions.
+
+* __Maintainers__: are responsible for engaging with and assisting contributors to iterate on the contributions until it reaches acceptable quality. Maintainers can decide whether the contributions can be accepted into the project or rejected.
+
+### Release Management
+
+The release process will be governed by Maintainers.
+
+### Roadmap Planning
+
+Maintainers will share roadmap and release versions as milestones in GitHub [project's page](https://github.com/clastix/kamaji). 
+
 
 ## Licensing
 
 See the [LICENSE](https://github.com/clastix/Kamaji/blob/master/LICENSE) file for our project's licensing. We can ask you to confirm the licensing of your contribution.
+
