@@ -26,20 +26,25 @@ type KubernetesIngressResource struct {
 }
 
 func (r *KubernetesIngressResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
-	// No update in case of no ingress in spec, neither in status.
-	if tcp.Spec.ControlPlane.Ingress == nil && tcp.Status.Kubernetes.Ingress == nil {
+	switch {
+	case tcp.Spec.ControlPlane.Ingress == nil && tcp.Status.Kubernetes.Ingress == nil:
+		// No update in case of no ingress in spec, neither in status.
 		return false
-	}
-	// Must be updated when TCP is using an Ingress, and status is not tracking it.
-	if tcp.Spec.ControlPlane.Ingress != nil && tcp.Status.Kubernetes.Ingress == nil {
+	case tcp.Spec.ControlPlane.Ingress != nil && tcp.Status.Kubernetes.Ingress == nil,
+		// Must be updated when TCP is using an Ingress, and status is not tracking it
+		// or
+		// Must be updated when the status is referring to an Ingress, although spec doesn't.
+		tcp.Spec.ControlPlane.Ingress == nil && tcp.Status.Kubernetes.Ingress != nil:
 		return true
-	}
-	// Must be updated when the status is referring to an Ingress, although spec doesn't.
-	if tcp.Spec.ControlPlane.Ingress == nil && tcp.Status.Kubernetes.Ingress != nil {
+	case len(r.resource.Status.LoadBalancer.Ingress) > 0 && tcp.Status.Kubernetes.Ingress == nil || tcp.Status.Kubernetes.Ingress.LoadBalancer.Ingress == nil:
+		// Must be updated since missing the Ingress status
 		return true
+	case r.resource.Status.LoadBalancer.Ingress[0].IP != tcp.Status.Kubernetes.Ingress.LoadBalancer.Ingress[0].IP:
+		// Must bne updated, Ingress load balancer IP is slightly different
+		return true
+	default:
+		return tcp.Status.Kubernetes.Ingress.Name != r.resource.GetName() || tcp.Status.Kubernetes.Ingress.Namespace != r.resource.GetNamespace()
 	}
-	// In case of status skew, update it.
-	return tcp.Status.Kubernetes.Ingress.Name != r.resource.GetName() || tcp.Status.Kubernetes.Ingress.Namespace != r.resource.GetNamespace()
 }
 
 func (r *KubernetesIngressResource) ShouldCleanup(tcp *kamajiv1alpha1.TenantControlPlane) bool {
