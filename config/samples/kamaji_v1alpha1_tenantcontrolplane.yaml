@@ -1,22 +1,22 @@
 apiVersion: kamaji.clastix.io/v1alpha1
 kind: TenantControlPlane
 metadata:
-  name: test
+  name: k8s-126
 spec:
   controlPlane:
     deployment:
-      replicas: 1
+      replicas: 2
     service:
       serviceType: LoadBalancer
   kubernetes:
-    version: "v1.25.4"
+    version: "v1.26.0"
     kubelet:
-      cgroupfs: cgroupfs
-    admissionControllers:
-      - ResourceQuota
-      - LimitRanger
+      cgroupfs: systemd
   networkProfile:
     port: 6443
   addons:
     coreDNS: {}
     kubeProxy: {}
+    konnectivity:
+      server:
+        port: 8132
