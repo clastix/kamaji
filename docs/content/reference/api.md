@@ -9971,21 +9971,28 @@ Resources defines the amount of memory and CPU to allocate to each component of 
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourcesapiserver">apiServer</a></b></td>
         <td>object</td>
         <td>
-          ComponentResourceRequirements describes the compute resource requirements.<br/>
+          ResourceRequirements describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourcescontrollermanager">controllerManager</a></b></td>
         <td>object</td>
         <td>
-          ComponentResourceRequirements describes the compute resource requirements.<br/>
+          ResourceRequirements describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourceskine">kine</a></b></td>
+        <td>object</td>
+        <td>
+          Define the kine container resources. Available only if Kamaji is running using Kine as backing storage.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourcesscheduler">scheduler</a></b></td>
         <td>object</td>
         <td>
-          ComponentResourceRequirements describes the compute resource requirements.<br/>
+          ResourceRequirements describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9996,7 +10003,7 @@ Resources defines the amount of memory and CPU to allocate to each component of 
 
 
 
-ComponentResourceRequirements describes the compute resource requirements.
+ResourceRequirements describes the compute resource requirements.
 
 <table>
     <thead>
@@ -10008,6 +10015,15 @@ ComponentResourceRequirements describes the compute resource requirements.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourcesapiserverclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>limits</b></td>
         <td>map[string]int or string</td>
         <td>
@@ -10021,6 +10037,32 @@ ComponentResourceRequirements describes the compute resource requirements.
           Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.resources.apiServer.claims[index]
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
@@ -10029,7 +10071,7 @@ ComponentResourceRequirements describes the compute resource requirements.
 
 
 
-ComponentResourceRequirements describes the compute resource requirements.
+ResourceRequirements describes the compute resource requirements.
 
 <table>
     <thead>
@@ -10041,6 +10083,15 @@ ComponentResourceRequirements describes the compute resource requirements.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourcescontrollermanagerclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>limits</b></td>
         <td>map[string]int or string</td>
         <td>
@@ -10058,11 +10109,11 @@ ComponentResourceRequirements describes the compute resource requirements.
 </table>
 
 
-### TenantControlPlane.spec.controlPlane.deployment.resources.scheduler
+### TenantControlPlane.spec.controlPlane.deployment.resources.controllerManager.claims[index]
 
 
 
-ComponentResourceRequirements describes the compute resource requirements.
+ResourceClaim references one entry in PodSpec.ResourceClaims.
 
 <table>
     <thead>
@@ -10074,6 +10125,41 @@ ComponentResourceRequirements describes the compute resource requirements.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.resources.kine
+
+
+
+Define the kine container resources. Available only if Kamaji is running using Kine as backing storage.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourceskineclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>limits</b></td>
         <td>map[string]int or string</td>
         <td>
@@ -10087,6 +10173,100 @@ ComponentResourceRequirements describes the compute resource requirements.
           Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.resources.kine.claims[index]
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.resources.scheduler
+
+
+
+ResourceRequirements describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentresourcesschedulerclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.resources.scheduler.claims[index]
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
@@ -10751,6 +10931,15 @@ Resources define the amount of CPU and memory to allocate to the Konnectivity se
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityserverresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>limits</b></td>
         <td>map[string]int or string</td>
         <td>
@@ -10764,6 +10953,32 @@ Resources define the amount of CPU and memory to allocate to the Konnectivity se
           Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.addons.konnectivity.server.resources.claims[index]
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
