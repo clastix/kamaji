@@ -362,10 +362,14 @@ func (d *Deployment) BuildScheduler(podSpec *corev1.PodSpec, tenantControlPlane 
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	}
-	podSpec.Containers[index].ImagePullPolicy = corev1.PullAlways
-	podSpec.Containers[index].Resources = corev1.ResourceRequirements{
-		Limits:   nil,
-		Requests: nil,
+
+	switch {
+	case tenantControlPlane.Spec.ControlPlane.Deployment.Resources == nil:
+		podSpec.Containers[index].Resources = corev1.ResourceRequirements{}
+	case tenantControlPlane.Spec.ControlPlane.Deployment.Resources.Scheduler != nil:
+		podSpec.Containers[index].Resources = *tenantControlPlane.Spec.ControlPlane.Deployment.Resources.Scheduler
+	default:
+		podSpec.Containers[index].Resources = corev1.ResourceRequirements{}
 	}
 	// Volume mounts
 	var extraVolumeMounts []corev1.VolumeMount
@@ -383,13 +387,6 @@ func (d *Deployment) BuildScheduler(podSpec *corev1.PodSpec, tenantControlPlane 
 	})
 
 	podSpec.Containers[index].VolumeMounts = volumeMounts
-
-	if componentsResources := tenantControlPlane.Spec.ControlPlane.Deployment.Resources; componentsResources != nil {
-		if resource := componentsResources.Scheduler; resource != nil {
-			podSpec.Containers[index].Resources.Limits = resource.Limits
-			podSpec.Containers[index].Resources.Requests = resource.Requests
-		}
-	}
 }
 
 func (d *Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) {
@@ -458,6 +455,14 @@ func (d *Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContr
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	}
+	switch {
+	case tenantControlPlane.Spec.ControlPlane.Deployment.Resources == nil:
+		podSpec.Containers[index].Resources = corev1.ResourceRequirements{}
+	case tenantControlPlane.Spec.ControlPlane.Deployment.Resources.ControllerManager != nil:
+		podSpec.Containers[index].Resources = *tenantControlPlane.Spec.ControlPlane.Deployment.Resources.ControllerManager
+	default:
+		podSpec.Containers[index].Resources = corev1.ResourceRequirements{}
+	}
 	// Volume mounts
 	var extraVolumeMounts []corev1.VolumeMount
 
@@ -499,19 +504,6 @@ func (d *Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContr
 	})
 
 	podSpec.Containers[index].VolumeMounts = volumeMounts
-
-	// Managing container resources
-	podSpec.Containers[index].Resources = corev1.ResourceRequirements{
-		Limits:   nil,
-		Requests: nil,
-	}
-
-	if componentsResources := tenantControlPlane.Spec.ControlPlane.Deployment.Resources; componentsResources != nil {
-		if resource := componentsResources.ControllerManager; resource != nil {
-			podSpec.Containers[index].Resources.Limits = resource.Limits
-			podSpec.Containers[index].Resources.Requests = resource.Requests
-		}
-	}
 }
 
 // ensureVolumeMount retrieve the index for the named volumeMount, in case of missing it's going to be appended.
@@ -636,17 +628,14 @@ func (d *Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPl
 	})
 
 	podSpec.Containers[index].VolumeMounts = volumeMounts
-	// Managing container resource requirements
-	podSpec.Containers[index].Resources = corev1.ResourceRequirements{
-		Limits:   nil,
-		Requests: nil,
-	}
 
-	if componentsResources := tenantControlPlane.Spec.ControlPlane.Deployment.Resources; componentsResources != nil {
-		if resource := componentsResources.APIServer; resource != nil {
-			podSpec.Containers[index].Resources.Limits = resource.Limits
-			podSpec.Containers[index].Resources.Requests = resource.Requests
-		}
+	switch {
+	case tenantControlPlane.Spec.ControlPlane.Deployment.Resources == nil:
+		podSpec.Containers[index].Resources = corev1.ResourceRequirements{}
+	case tenantControlPlane.Spec.ControlPlane.Deployment.Resources.APIServer != nil:
+		podSpec.Containers[index].Resources = *tenantControlPlane.Spec.ControlPlane.Deployment.Resources.APIServer
+	default:
+		podSpec.Containers[index].Resources = corev1.ResourceRequirements{}
 	}
 }
 
@@ -887,6 +876,17 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 			Name:          "server",
 			Protocol:      corev1.ProtocolTCP,
 		},
+	}
+
+	podSpec.Containers[index].ImagePullPolicy = corev1.PullAlways
+
+	switch {
+	case tcp.Spec.ControlPlane.Deployment.Resources == nil:
+		podSpec.Containers[index].Resources = corev1.ResourceRequirements{}
+	case tcp.Spec.ControlPlane.Deployment.Resources.Kine != nil:
+		podSpec.Containers[index].Resources = *tcp.Spec.ControlPlane.Deployment.Resources.Kine
+	default:
+		podSpec.Containers[index].Resources = corev1.ResourceRequirements{}
 	}
 }
 
