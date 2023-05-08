@@ -150,7 +150,7 @@ kubectl -n ${TENANT_NAMESPACE} apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.y
 After a few seconds, check the created resources in the tenants namespace and when ready it will look similar to the following:
 
 ```command
-kubectl -n tenants get tcp,deploy,pods,svc
+kubectl -n ${TENANT_NAMESPACE} get tcp,deploy,pods,svc
 
 NAME                           VERSION   STATUS   CONTROL-PLANE ENDPOINT   KUBECONFIG                   DATASTORE   AGE
 tenantcontrolplane/tenant-00   v1.25.2   Ready    192.168.32.240:6443      tenant-00-admin-kubeconfig   default     2m20s
