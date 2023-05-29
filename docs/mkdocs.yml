@@ -43,8 +43,7 @@ theme:
         icon: material/lightbulb-outline
         name: Switch to system preference
   favicon: content/images/favicon.png
-  icon:
-    logo: content/images/logo.png
+  logo: content/images/logo.png
 
 markdown_extensions:
   - admonition
