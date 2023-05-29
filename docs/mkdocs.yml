@@ -9,7 +9,7 @@ site_author: bsctl
 site_description: >-
   Kamaji deploys and operates Kubernetes Control Plane at scale with a fraction of the operational burden.
 
-copyright: Copyright &copy; 2022 - 2023 Clastix Labs
+copyright: Copyright &copy; 2020 - 2023 Clastix Labs
 
 theme:
   name: material
@@ -20,6 +20,7 @@ theme:
     - navigation.sections
     - navigation.path
     - navigation.footer
+    - content.code.copy
   include_sidebar: true
   palette:
     # Palette toggle for automatic mode
