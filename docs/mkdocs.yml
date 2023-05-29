@@ -1,39 +1,56 @@
-site_name: Kamaji
 repo_name: clastix/kamaji
 repo_url: https://github.com/clastix/kamaji
+
+site_name: Kamaji
 site_url: https://kamaji.clastix.io/
 docs_dir: content
 site_dir: site
+site_author: bsctl
+site_description: >-
+  Kamaji deploys and operates Kubernetes Control Plane at scale with a fraction of the operational burden.
+
+copyright: Copyright &copy; 2022 - 2023 Clastix Labs
 
 theme:
   name: material
   features:
     - navigation.tabs
-    - navigation.tabs.sticky
+    - navigation.indexes
     - navigation.instant
     - navigation.sections
+    - navigation.path
+    - navigation.footer
   include_sidebar: true
   palette:
-
     # Palette toggle for automatic mode
     - media: "(prefers-color-scheme)"
+      primary: white
       toggle:
         icon: material/brightness-auto
         name: Switch to light mode
-
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
-      scheme: default 
+      scheme: default
+      primary: white 
       toggle:
         icon: material/lightbulb
         name: Switch to dark mode
-
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: white
       toggle:
         icon: material/lightbulb-outline
         name: Switch to system preference
+  favicon: content/images/favicon.png
+  icon:
+    logo: content/images/logo.png
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
 
 # Generate navigation bar
 nav:
