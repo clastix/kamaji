@@ -14,6 +14,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers/finalizers"
+	builder "github.com/clastix/kamaji/internal/builders/controlplane"
 	"github.com/clastix/kamaji/internal/datastore"
 	"github.com/clastix/kamaji/internal/resources"
 	ds "github.com/clastix/kamaji/internal/resources/datastore"
@@ -245,7 +246,7 @@ func getKonnectivityServerRequirementsResources(c client.Client) []resources.Res
 
 func getKonnectivityServerPatchResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
-		&konnectivity.KubernetesDeploymentResource{Client: c},
+		&konnectivity.KubernetesDeploymentResource{Builder: builder.Konnectivity{}, Client: c},
 		&konnectivity.ServiceResource{Client: c},
 	}
 }
