@@ -146,6 +146,22 @@ type DeploymentSpec struct {
 	// such as kube-apiserver, controller-manager, and scheduler.
 	ExtraArgs          *ControlPlaneExtraArgs `json:"extraArgs,omitempty"`
 	AdditionalMetadata AdditionalMetadata     `json:"additionalMetadata,omitempty"`
+	// AdditionalInitContainers allows adding additional init containers to the Control Plane deployment.
+	AdditionalInitContainers []corev1.Container `json:"additionalInitContainers,omitempty"`
+	// AdditionalContainers allows adding additional containers to the Control Plane deployment.
+	AdditionalContainers []corev1.Container `json:"additionalContainers,omitempty"`
+	// AdditionalVolumes allows to add additional volumes to the Control Plane deployment.
+	AdditionalVolumes []corev1.Volume `json:"additionalVolumes,omitempty"`
+	// AdditionalVolumeMounts allows to mount an additional volume into each component of the Control Plane
+	// (kube-apiserver, controller-manager, and scheduler).
+	AdditionalVolumeMounts *AdditionalVolumeMounts `json:"additionalVolumeMounts,omitempty"`
+}
+
+// AdditionalVolumeMounts allows mounting additional volumes to the Control Plane components.
+type AdditionalVolumeMounts struct {
+	APIServer         []corev1.VolumeMount `json:"apiServer,omitempty"`
+	ControllerManager []corev1.VolumeMount `json:"controllerManager,omitempty"`
+	Scheduler         []corev1.VolumeMount `json:"scheduler,omitempty"`
 }
 
 // ControlPlaneExtraArgs allows specifying additional arguments to the Control Plane components.
