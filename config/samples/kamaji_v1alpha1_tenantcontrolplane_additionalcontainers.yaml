@@ -1,0 +1,30 @@
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: additionalcontainers
+spec:
+  dataStore: postgresql-bronze
+  controlPlane:
+    deployment:
+      replicas: 1
+      additionalInitContainers:
+        - name: init
+          image: registry.k8s.io/e2e-test-images/busybox:1.29-4
+          command:
+            - /bin/sh
+            - -c
+            - echo hello world
+      additionalContainers:
+        - name: nginx
+          image: registry.k8s.io/e2e-test-images/nginx:1.15-4
+    service:
+      serviceType: LoadBalancer
+  kubernetes:
+    version: "v1.26.0"
+    kubelet:
+      cgroupfs: systemd
+  networkProfile:
+    port: 6443
+  addons:
+    coreDNS: {}
+    kubeProxy: {}
