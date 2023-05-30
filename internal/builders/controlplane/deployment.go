@@ -21,29 +21,27 @@ import (
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
-type orderedIndex int
-
+// Volume names.
 const (
-	apiServerIndex orderedIndex = iota
-	schedulerIndex
-	controllerManagerIndex
-)
-
-const (
-	etcKubernetesPKIVolume orderedIndex = iota
-	etcCACertificates
-	etcSSLCerts
-	usrShareCACertificates
-	usrLocalShareCACertificates
-	schedulerKubeconfig
-	controllerManagerKubeconfig
+	kubernetesPKIVolumeName               = "etc-kubernetes-pki"
+	caCertificatesVolumeName              = "etc-ca-certificates"
+	sslCertsVolumeName                    = "etc-ssl-certs"
+	usrShareCACertificatesVolumeName      = "usr-share-ca-certificates"
+	usrLocalShareCaCertificateVolumeName  = "usr-local-share-ca-certificates"
+	schedulerKubeconfigVolumeName         = "scheduler-kubeconfig"
+	controllerManagerKubeconfigVolumeName = "controller-manager-kubeconfig"
+	dataStoreCertsVolumeName              = "kine-config"
+	kineVolumeCertName                    = "kine-certs"
 )
 
 const (
 	apiServerFlagsAnnotation = "kube-apiserver.kamaji.clastix.io/args"
-	kineContainerName        = "kine"
-	dataStoreCerts           = "kine-config"
-	kineVolumeCertName       = "kine-certs"
+	// Kamaji container names.
+	apiServerContainerName    = "kube-apiserver"
+	controlPlaneContainerName = "kube-controller-manager"
+	schedulerContainerName    = "kube-scheduler"
+	kineContainerName         = "kine"
+	kineInitContainerName     = "chmod"
 )
 
 type Deployment struct {
@@ -57,6 +55,36 @@ func (d *Deployment) SetContainers(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.
 	d.BuildScheduler(podSpec, tcp)
 	d.buildControllerManager(podSpec, tcp)
 	d.buildKine(podSpec, tcp)
+}
+
+// SetInitContainers allows adding extra init containers from the user-space:
+// this function must be called priorit the SetContainers to ensure the idempotency of podSpec building.
+func (d *Deployment) SetInitContainers(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
+	initContainers := tcp.Spec.ControlPlane.Deployment.AdditionalInitContainers
+
+	if d.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
+		podSpec.InitContainers = initContainers
+	}
+
+	found, index := utilities.HasNamedContainer(podSpec.InitContainers, kineInitContainerName)
+	if found {
+		initContainers = append(initContainers, podSpec.InitContainers[index:]...)
+	}
+
+	podSpec.InitContainers = initContainers
+}
+
+// SetAdditionalContainers must be called before SetContainers: the user-space ones are going to be prepended
+// to simplify the management of the Kamaji ones during the create or update action.
+func (d *Deployment) SetAdditionalContainers(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
+	containers := tcp.Spec.ControlPlane.Deployment.AdditionalContainers
+
+	found, index := utilities.HasNamedContainer(podSpec.Containers, apiServerContainerName)
+	if found {
+		containers = append(containers, podSpec.Containers[index:]...)
+	}
+
+	podSpec.Containers = containers
 }
 
 func (d *Deployment) SetStrategy(deployment *appsv1.DeploymentSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
@@ -112,7 +140,9 @@ func (d *Deployment) SetVolumes(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Ten
 }
 
 func (d *Deployment) buildPKIVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	if index := int(etcKubernetesPKIVolume) + 1; len(podSpec.Volumes) < index {
+	found, index := utilities.HasNamedVolume(podSpec.Volumes, kubernetesPKIVolumeName)
+	if !found {
+		index = len(podSpec.Volumes)
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
 	}
 
@@ -161,115 +191,128 @@ func (d *Deployment) buildPKIVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1
 		})
 	}
 
-	podSpec.Volumes[etcKubernetesPKIVolume] = corev1.Volume{
-		Name: "etc-kubernetes-pki",
-		VolumeSource: corev1.VolumeSource{
-			Projected: &corev1.ProjectedVolumeSource{
-				Sources:     sources,
-				DefaultMode: pointer.Int32(420),
-			},
+	podSpec.Volumes[index].Name = kubernetesPKIVolumeName
+	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+		Projected: &corev1.ProjectedVolumeSource{
+			Sources:     sources,
+			DefaultMode: pointer.Int32(420),
 		},
 	}
 }
 
 func (d *Deployment) buildCAVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	if index := int(etcCACertificates) + 1; len(podSpec.Volumes) < index {
+	found, index := utilities.HasNamedVolume(podSpec.Volumes, caCertificatesVolumeName)
+	if !found {
+		index = len(podSpec.Volumes)
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
 	}
 
-	podSpec.Volumes[etcCACertificates] = corev1.Volume{
-		Name: "etc-ca-certificates",
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  tcp.Status.Certificates.CA.SecretName,
-				DefaultMode: pointer.Int32(420),
-			},
+	podSpec.Volumes[index].Name = caCertificatesVolumeName
+	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  tcp.Status.Certificates.CA.SecretName,
+			DefaultMode: pointer.Int32(420),
 		},
 	}
 }
 
 func (d *Deployment) buildSSLCertsVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	if index := int(etcSSLCerts) + 1; len(podSpec.Volumes) < index {
+	found, index := utilities.HasNamedVolume(podSpec.Volumes, sslCertsVolumeName)
+	if !found {
+		index = len(podSpec.Volumes)
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
 	}
 
-	podSpec.Volumes[etcSSLCerts] = corev1.Volume{
-		Name: "etc-ssl-certs",
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  tcp.Status.Certificates.CA.SecretName,
-				DefaultMode: pointer.Int32(420),
-			},
+	podSpec.Volumes[index].Name = sslCertsVolumeName
+	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  tcp.Status.Certificates.CA.SecretName,
+			DefaultMode: pointer.Int32(420),
 		},
 	}
 }
 
 func (d *Deployment) buildShareCAVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	if index := int(usrShareCACertificates) + 1; len(podSpec.Volumes) < index {
+	found, index := utilities.HasNamedVolume(podSpec.Volumes, usrShareCACertificatesVolumeName)
+	if !found {
+		index = len(podSpec.Volumes)
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
 	}
 
-	podSpec.Volumes[usrShareCACertificates] = corev1.Volume{
-		Name: "usr-share-ca-certificates",
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  tcp.Status.Certificates.CA.SecretName,
-				DefaultMode: pointer.Int32(420),
-			},
+	podSpec.Volumes[index].Name = usrShareCACertificatesVolumeName
+	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  tcp.Status.Certificates.CA.SecretName,
+			DefaultMode: pointer.Int32(420),
 		},
 	}
 }
 
 func (d *Deployment) buildLocalShareCAVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	if index := int(usrLocalShareCACertificates) + 1; len(podSpec.Volumes) < index {
+	found, index := utilities.HasNamedVolume(podSpec.Volumes, usrLocalShareCaCertificateVolumeName)
+	if !found {
+		index = len(podSpec.Volumes)
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
 	}
 
-	podSpec.Volumes[usrLocalShareCACertificates] = corev1.Volume{
-		Name: "usr-local-share-ca-certificates",
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  tcp.Status.Certificates.CA.SecretName,
-				DefaultMode: pointer.Int32(420),
-			},
+	podSpec.Volumes[index].Name = usrLocalShareCaCertificateVolumeName
+	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  tcp.Status.Certificates.CA.SecretName,
+			DefaultMode: pointer.Int32(420),
 		},
 	}
 }
 
 func (d *Deployment) buildSchedulerVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	if index := int(schedulerKubeconfig) + 1; len(podSpec.Volumes) < index {
+	found, index := utilities.HasNamedVolume(podSpec.Volumes, schedulerKubeconfigVolumeName)
+	if !found {
+		index = len(podSpec.Volumes)
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
 	}
 
-	podSpec.Volumes[schedulerKubeconfig] = corev1.Volume{
-		Name: "scheduler-kubeconfig",
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  tcp.Status.KubeConfig.Scheduler.SecretName,
-				DefaultMode: pointer.Int32(420),
-			},
+	podSpec.Volumes[index].Name = schedulerKubeconfigVolumeName
+	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  tcp.Status.KubeConfig.Scheduler.SecretName,
+			DefaultMode: pointer.Int32(420),
 		},
 	}
 }
 
 func (d *Deployment) buildControllerManagerVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	if index := int(controllerManagerKubeconfig) + 1; len(podSpec.Volumes) < index {
+	found, index := utilities.HasNamedVolume(podSpec.Volumes, controllerManagerKubeconfigVolumeName)
+	if !found {
+		index = len(podSpec.Volumes)
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
 	}
 
-	podSpec.Volumes[controllerManagerKubeconfig] = corev1.Volume{
-		Name: "controller-manager-kubeconfig",
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  tcp.Status.KubeConfig.ControllerManager.SecretName,
-				DefaultMode: pointer.Int32(420),
-			},
+	podSpec.Volumes[index].Name = controllerManagerKubeconfigVolumeName
+	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  tcp.Status.KubeConfig.ControllerManager.SecretName,
+			DefaultMode: pointer.Int32(420),
 		},
 	}
 }
 
+// SetAdditionalVolumes must be called before SetVolumes: the user-space ones are going to be prepended
+// to simplify the management of the Kamaji ones during the create or update action.
+func (d *Deployment) SetAdditionalVolumes(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
+	volumes := tcp.Spec.ControlPlane.Deployment.AdditionalVolumes
+
+	found, index := utilities.HasNamedVolume(podSpec.Volumes, kubernetesPKIVolumeName)
+	if found {
+		volumes = append(volumes, podSpec.Volumes[index:]...)
+	}
+
+	podSpec.Volumes = volumes
+}
+
 func (d *Deployment) BuildScheduler(podSpec *corev1.PodSpec, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) {
-	if index := int(schedulerIndex) + 1; len(podSpec.Containers) < index {
+	found, index := utilities.HasNamedContainer(podSpec.Containers, schedulerContainerName)
+	if !found {
+		index = len(podSpec.Containers)
 		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
 	}
 
@@ -287,18 +330,11 @@ func (d *Deployment) BuildScheduler(podSpec *corev1.PodSpec, tenantControlPlane 
 	args["--kubeconfig"] = kubeconfig
 	args["--leader-elect"] = "true" //nolint:goconst
 
-	podSpec.Containers[schedulerIndex].Name = "kube-scheduler"
-	podSpec.Containers[schedulerIndex].Image = fmt.Sprintf("registry.k8s.io/kube-scheduler:%s", tenantControlPlane.Spec.Kubernetes.Version)
-	podSpec.Containers[schedulerIndex].Command = []string{"kube-scheduler"}
-	podSpec.Containers[schedulerIndex].Args = utilities.ArgsFromMapToSlice(args)
-	podSpec.Containers[schedulerIndex].VolumeMounts = []corev1.VolumeMount{
-		{
-			Name:      "scheduler-kubeconfig",
-			ReadOnly:  true,
-			MountPath: "/etc/kubernetes",
-		},
-	}
-	podSpec.Containers[schedulerIndex].LivenessProbe = &corev1.Probe{
+	podSpec.Containers[index].Name = schedulerContainerName
+	podSpec.Containers[index].Image = fmt.Sprintf("registry.k8s.io/kube-scheduler:%s", tenantControlPlane.Spec.Kubernetes.Version)
+	podSpec.Containers[index].Command = []string{"kube-scheduler"}
+	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
+	podSpec.Containers[index].LivenessProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/healthz",
@@ -312,8 +348,7 @@ func (d *Deployment) BuildScheduler(podSpec *corev1.PodSpec, tenantControlPlane 
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	}
-
-	podSpec.Containers[schedulerIndex].StartupProbe = &corev1.Probe{
+	podSpec.Containers[index].StartupProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/healthz",
@@ -327,25 +362,44 @@ func (d *Deployment) BuildScheduler(podSpec *corev1.PodSpec, tenantControlPlane 
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	}
-	podSpec.Containers[schedulerIndex].ImagePullPolicy = corev1.PullAlways
-	podSpec.Containers[schedulerIndex].Resources = corev1.ResourceRequirements{
+	podSpec.Containers[index].ImagePullPolicy = corev1.PullAlways
+	podSpec.Containers[index].Resources = corev1.ResourceRequirements{
 		Limits:   nil,
 		Requests: nil,
 	}
+	// Volume mounts
+	var extraVolumeMounts []corev1.VolumeMount
+
+	if additionalVolumeMounts := tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalVolumeMounts; additionalVolumeMounts != nil {
+		extraVolumeMounts = append(extraVolumeMounts, additionalVolumeMounts.Scheduler...)
+	}
+
+	volumeMounts := d.initVolumeMounts(schedulerKubeconfigVolumeName, podSpec.Containers[index].VolumeMounts, extraVolumeMounts...)
+
+	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
+		Name:      schedulerKubeconfigVolumeName,
+		ReadOnly:  true,
+		MountPath: "/etc/kubernetes",
+	})
+
+	podSpec.Containers[index].VolumeMounts = volumeMounts
 
 	if componentsResources := tenantControlPlane.Spec.ControlPlane.Deployment.Resources; componentsResources != nil {
 		if resource := componentsResources.Scheduler; resource != nil {
-			podSpec.Containers[schedulerIndex].Resources.Limits = resource.Limits
-			podSpec.Containers[schedulerIndex].Resources.Requests = resource.Requests
+			podSpec.Containers[index].Resources.Limits = resource.Limits
+			podSpec.Containers[index].Resources.Requests = resource.Requests
 		}
 	}
 }
 
 func (d *Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) {
-	if index := int(controllerManagerIndex) + 1; len(podSpec.Containers) < index {
+	found, index := utilities.HasNamedContainer(podSpec.Containers, controlPlaneContainerName)
+	if !found {
+		index = len(podSpec.Containers)
 		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
 	}
-
+	// Configuring the arguments of the container,
+	// taking in consideration the extra args from the user-space.
 	args := map[string]string{}
 
 	if tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs != nil {
@@ -372,44 +426,11 @@ func (d *Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContr
 	args["--service-account-private-key-file"] = path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName)
 	args["--use-service-account-credentials"] = "true"
 
-	podSpec.Containers[controllerManagerIndex].Name = "kube-controller-manager"
-	podSpec.Containers[controllerManagerIndex].Image = fmt.Sprintf("registry.k8s.io/kube-controller-manager:%s", tenantControlPlane.Spec.Kubernetes.Version)
-	podSpec.Containers[controllerManagerIndex].Command = []string{"kube-controller-manager"}
-	podSpec.Containers[controllerManagerIndex].Args = utilities.ArgsFromMapToSlice(args)
-	podSpec.Containers[controllerManagerIndex].VolumeMounts = []corev1.VolumeMount{
-		{
-			Name:      "controller-manager-kubeconfig",
-			ReadOnly:  true,
-			MountPath: "/etc/kubernetes",
-		},
-		{
-			Name:      "etc-kubernetes-pki",
-			ReadOnly:  true,
-			MountPath: v1beta3.DefaultCertificatesDir,
-		},
-		{
-			Name:      "etc-ca-certificates",
-			ReadOnly:  true,
-			MountPath: "/etc/ca-certificates",
-		},
-		{
-			Name:      "etc-ssl-certs",
-			ReadOnly:  true,
-			MountPath: "/etc/ssl/certs",
-		},
-		{
-			Name:      "usr-share-ca-certificates",
-			ReadOnly:  true,
-			MountPath: "/usr/share/ca-certificates",
-		},
-		{
-			Name:      "usr-local-share-ca-certificates",
-			ReadOnly:  true,
-			MountPath: "/usr/local/share/ca-certificates",
-		},
-	}
-
-	podSpec.Containers[controllerManagerIndex].LivenessProbe = &corev1.Probe{
+	podSpec.Containers[index].Name = "kube-controller-manager"
+	podSpec.Containers[index].Image = fmt.Sprintf("registry.k8s.io/kube-controller-manager:%s", tenantControlPlane.Spec.Kubernetes.Version)
+	podSpec.Containers[index].Command = []string{"kube-controller-manager"}
+	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
+	podSpec.Containers[index].LivenessProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/healthz",
@@ -423,8 +444,7 @@ func (d *Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContr
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	}
-
-	podSpec.Containers[controllerManagerIndex].StartupProbe = &corev1.Probe{
+	podSpec.Containers[index].StartupProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/healthz",
@@ -438,32 +458,106 @@ func (d *Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContr
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	}
-	podSpec.Containers[controllerManagerIndex].ImagePullPolicy = corev1.PullAlways
-	podSpec.Containers[controllerManagerIndex].Resources = corev1.ResourceRequirements{
+	// Volume mounts
+	var extraVolumeMounts []corev1.VolumeMount
+
+	if additionalVolumeMounts := tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalVolumeMounts; additionalVolumeMounts != nil {
+		extraVolumeMounts = append(extraVolumeMounts, additionalVolumeMounts.ControllerManager...)
+	}
+
+	volumeMounts := d.initVolumeMounts(controllerManagerKubeconfigVolumeName, podSpec.Containers[index].VolumeMounts, extraVolumeMounts...)
+
+	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
+		Name:      controllerManagerKubeconfigVolumeName,
+		ReadOnly:  true,
+		MountPath: "/etc/kubernetes",
+	})
+	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
+		Name:      kubernetesPKIVolumeName,
+		ReadOnly:  true,
+		MountPath: v1beta3.DefaultCertificatesDir,
+	})
+	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
+		Name:      caCertificatesVolumeName,
+		ReadOnly:  true,
+		MountPath: "/etc/ca-certificates",
+	})
+	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
+		Name:      sslCertsVolumeName,
+		ReadOnly:  true,
+		MountPath: "/etc/ssl/certs",
+	})
+	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
+		Name:      usrShareCACertificatesVolumeName,
+		ReadOnly:  true,
+		MountPath: "/usr/share/ca-certificates",
+	})
+	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
+		Name:      usrLocalShareCaCertificateVolumeName,
+		ReadOnly:  true,
+		MountPath: "/usr/local/share/ca-certificates",
+	})
+
+	podSpec.Containers[index].VolumeMounts = volumeMounts
+
+	// Managing container resources
+	podSpec.Containers[index].Resources = corev1.ResourceRequirements{
 		Limits:   nil,
 		Requests: nil,
 	}
 
 	if componentsResources := tenantControlPlane.Spec.ControlPlane.Deployment.Resources; componentsResources != nil {
 		if resource := componentsResources.ControllerManager; resource != nil {
-			podSpec.Containers[controllerManagerIndex].Resources.Limits = resource.Limits
-			podSpec.Containers[controllerManagerIndex].Resources.Requests = resource.Requests
+			podSpec.Containers[index].Resources.Limits = resource.Limits
+			podSpec.Containers[index].Resources.Requests = resource.Requests
 		}
 	}
 }
 
+// ensureVolumeMount retrieve the index for the named volumeMount, in case of missing it's going to be appended.
+func (d *Deployment) ensureVolumeMount(in *[]corev1.VolumeMount, desired corev1.VolumeMount) {
+	list := *in
+
+	found, index := utilities.HasNamedVolumeMount(*in, desired.Name)
+	if !found {
+		index = len(list)
+		list = append(list, corev1.VolumeMount{})
+	}
+
+	list[index] = desired
+
+	*in = list
+}
+
+// initVolumeMounts is responsible to create the idempotent slice of corev1.VolumeMount:
+// firstSystemVolumeMountName must refer to the first Kamaji-space volume mount to detect properly user-space ones.
+func (d *Deployment) initVolumeMounts(firstSystemVolumeMountName string, actual []corev1.VolumeMount, extra ...corev1.VolumeMount) []corev1.VolumeMount {
+	var volumeMounts []corev1.VolumeMount
+
+	volumeMounts = append(volumeMounts, extra...)
+	// Retrieve the first safe volume mount to pick up from:
+	// this is required to be sure to delete all the extra containers from the user space.
+	if vmFound, vmIndex := utilities.HasNamedVolumeMount(actual, firstSystemVolumeMountName); vmFound {
+		volumeMounts = append(volumeMounts, actual[vmIndex:]...)
+	}
+
+	return volumeMounts
+}
+
 func (d *Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPlane *kamajiv1alpha1.TenantControlPlane, address string) {
-	if index := int(apiServerIndex) + 1; len(podSpec.Containers) < index {
+	found, index := utilities.HasNamedContainer(podSpec.Containers, apiServerContainerName)
+	if !found {
+		index = len(podSpec.Containers)
 		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
 	}
 
-	args := d.buildKubeAPIServerCommand(tenantControlPlane, address, utilities.ArgsFromSliceToMap(podSpec.Containers[apiServerIndex].Args))
+	args := d.buildKubeAPIServerCommand(tenantControlPlane, address, utilities.ArgsFromSliceToMap(podSpec.Containers[index].Args))
 
-	podSpec.Containers[apiServerIndex].Name = "kube-apiserver"
-	podSpec.Containers[apiServerIndex].Args = utilities.ArgsFromMapToSlice(args)
-	podSpec.Containers[apiServerIndex].Image = fmt.Sprintf("registry.k8s.io/kube-apiserver:%s", tenantControlPlane.Spec.Kubernetes.Version)
-	podSpec.Containers[apiServerIndex].Command = []string{"kube-apiserver"}
-	podSpec.Containers[apiServerIndex].LivenessProbe = &corev1.Probe{
+	podSpec.Containers[index].Name = apiServerContainerName
+	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
+	podSpec.Containers[index].Image = fmt.Sprintf("registry.k8s.io/kube-apiserver:%s", tenantControlPlane.Spec.Kubernetes.Version)
+	podSpec.Containers[index].Command = []string{"kube-apiserver"}
+	podSpec.Containers[index].LivenessProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/livez",
@@ -477,7 +571,7 @@ func (d *Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPl
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	}
-	podSpec.Containers[apiServerIndex].ReadinessProbe = &corev1.Probe{
+	podSpec.Containers[index].ReadinessProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/readyz",
@@ -491,7 +585,7 @@ func (d *Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPl
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	}
-	podSpec.Containers[apiServerIndex].StartupProbe = &corev1.Probe{
+	podSpec.Containers[index].StartupProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/livez",
@@ -505,45 +599,53 @@ func (d *Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPl
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	}
-	podSpec.Containers[apiServerIndex].ImagePullPolicy = corev1.PullAlways
+	podSpec.Containers[index].ImagePullPolicy = corev1.PullAlways
+	// Volume mounts
+	var extraVolumeMounts []corev1.VolumeMount
 
-	if len(podSpec.Containers[apiServerIndex].VolumeMounts) < 5 {
-		podSpec.Containers[apiServerIndex].VolumeMounts = make([]corev1.VolumeMount, 5)
+	if additionalVolumeMounts := tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalVolumeMounts; additionalVolumeMounts != nil {
+		extraVolumeMounts = append(extraVolumeMounts, additionalVolumeMounts.APIServer...)
 	}
-	podSpec.Containers[apiServerIndex].VolumeMounts[0] = corev1.VolumeMount{
-		Name:      "etc-kubernetes-pki",
+
+	volumeMounts := d.initVolumeMounts(kubernetesPKIVolumeName, podSpec.Containers[index].VolumeMounts, extraVolumeMounts...)
+
+	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
+		Name:      kubernetesPKIVolumeName,
 		ReadOnly:  true,
 		MountPath: v1beta3.DefaultCertificatesDir,
-	}
-	podSpec.Containers[apiServerIndex].VolumeMounts[1] = corev1.VolumeMount{
-		Name:      "etc-ca-certificates",
+	})
+	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
+		Name:      caCertificatesVolumeName,
 		ReadOnly:  true,
 		MountPath: "/etc/ca-certificates",
-	}
-	podSpec.Containers[apiServerIndex].VolumeMounts[2] = corev1.VolumeMount{
-		Name:      "etc-ssl-certs",
+	})
+	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
+		Name:      sslCertsVolumeName,
 		ReadOnly:  true,
 		MountPath: "/etc/ssl/certs",
-	}
-	podSpec.Containers[apiServerIndex].VolumeMounts[3] = corev1.VolumeMount{
-		Name:      "usr-share-ca-certificates",
+	})
+	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
+		Name:      usrShareCACertificatesVolumeName,
 		ReadOnly:  true,
 		MountPath: "/usr/share/ca-certificates",
-	}
-	podSpec.Containers[apiServerIndex].VolumeMounts[4] = corev1.VolumeMount{
-		Name:      "usr-local-share-ca-certificates",
+	})
+	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
+		Name:      usrLocalShareCaCertificateVolumeName,
 		ReadOnly:  true,
 		MountPath: "/usr/local/share/ca-certificates",
-	}
-	podSpec.Containers[apiServerIndex].Resources = corev1.ResourceRequirements{
+	})
+
+	podSpec.Containers[index].VolumeMounts = volumeMounts
+	// Managing container resource requirements
+	podSpec.Containers[index].Resources = corev1.ResourceRequirements{
 		Limits:   nil,
 		Requests: nil,
 	}
 
 	if componentsResources := tenantControlPlane.Spec.ControlPlane.Deployment.Resources; componentsResources != nil {
 		if resource := componentsResources.APIServer; resource != nil {
-			podSpec.Containers[apiServerIndex].Resources.Limits = resource.Limits
-			podSpec.Containers[apiServerIndex].Resources.Requests = resource.Requests
+			podSpec.Containers[index].Resources.Limits = resource.Limits
+			podSpec.Containers[index].Resources.Requests = resource.Requests
 		}
 	}
 }
@@ -629,41 +731,42 @@ func (d *Deployment) secretProjection(secretName, certKeyName, keyName string) *
 }
 
 func (d *Deployment) removeKineVolumes(podSpec *corev1.PodSpec) {
-	if found, index := utilities.HasNamedVolume(podSpec.Volumes, kineVolumeCertName); found {
-		var volumes []corev1.Volume
+	for _, volumeName := range []string{kineVolumeCertName, dataStoreCertsVolumeName} {
+		if found, index := utilities.HasNamedVolume(podSpec.Volumes, volumeName); found {
+			var volumes []corev1.Volume
 
-		volumes = append(volumes, podSpec.Volumes[:index]...)
-		volumes = append(volumes, podSpec.Volumes[index+1:]...)
+			volumes = append(volumes, podSpec.Volumes[:index]...)
+			volumes = append(volumes, podSpec.Volumes[index+1:]...)
 
-		podSpec.Volumes = volumes
+			podSpec.Volumes = volumes
+		}
 	}
 }
 
 func (d *Deployment) buildKineVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
-	// Adding the volume for chmod'ed Kine certificates.
-	found, index := utilities.HasNamedVolume(podSpec.Volumes, dataStoreCerts)
-	if !found {
-		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
-		index = len(podSpec.Volumes) - 1
+	if d.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
+		return
 	}
 
-	podSpec.Volumes[index].Name = dataStoreCerts
+	found, index := utilities.HasNamedVolume(podSpec.Volumes, dataStoreCertsVolumeName)
+	if !found {
+		index = len(podSpec.Volumes)
+		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
+	}
+
+	podSpec.Volumes[index].Name = dataStoreCertsVolumeName
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.Storage.Certificate.SecretName,
 			DefaultMode: pointer.Int32(420),
 		},
 	}
-	if d.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
-		d.removeKineVolumes(podSpec)
-
-		return
-	}
 	// Adding the volume to read Kine certificates:
 	// these must be subsequently fixed with a chmod due to pg issues with private key.
-	if found, index = utilities.HasNamedVolume(podSpec.Volumes, kineVolumeCertName); !found {
+	found, index = utilities.HasNamedVolume(podSpec.Volumes, kineVolumeCertName)
+	if !found {
+		index = len(podSpec.Volumes)
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
-		index = len(podSpec.Volumes) - 1
 	}
 
 	podSpec.Volumes[index].Name = kineVolumeCertName
@@ -673,8 +776,8 @@ func (d *Deployment) buildKineVolume(podSpec *corev1.PodSpec, tcp *kamajiv1alpha
 }
 
 func (d *Deployment) removeKineContainers(podSpec *corev1.PodSpec) {
-	found, index := utilities.HasNamedContainer(podSpec.Containers, kineContainerName)
-	if found {
+	// Removing the kine container, if present
+	if found, index := utilities.HasNamedContainer(podSpec.Containers, kineContainerName); found {
 		var containers []corev1.Container
 
 		containers = append(containers, podSpec.Containers[:index]...)
@@ -682,24 +785,59 @@ func (d *Deployment) removeKineContainers(podSpec *corev1.PodSpec) {
 
 		podSpec.Containers = containers
 	}
+	// Removing the kine init-container, if present
+	if found, index := utilities.HasNamedContainer(podSpec.InitContainers, kineInitContainerName); found {
+		var initContainers []corev1.Container
 
-	podSpec.InitContainers = nil
+		initContainers = append(initContainers, podSpec.InitContainers[:index]...)
+		initContainers = append(initContainers, podSpec.InitContainers[index+1:]...)
+
+		podSpec.InitContainers = initContainers
+	}
 }
 
 func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
 	if d.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
 		d.removeKineContainers(podSpec)
+		d.removeKineVolumes(podSpec)
 
 		return
 	}
-	// Kine is expecting an additional container, and it must be removed before proceeding with the additional one
-	// in order to make this function idempotent.
-	found, index := utilities.HasNamedContainer(podSpec.Containers, kineContainerName)
+	// Ensuring the init container required for kine is present:
+	// a chmod is required for kine in order to read the certificates to connect to the secured datastore.
+	found, index := utilities.HasNamedContainer(podSpec.InitContainers, kineInitContainerName)
 	if !found {
-		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
-		index = len(podSpec.Containers) - 1
+		index = len(podSpec.InitContainers)
+		podSpec.InitContainers = append(podSpec.InitContainers, corev1.Container{})
 	}
 
+	podSpec.InitContainers[index].Name = kineInitContainerName
+	podSpec.InitContainers[index].Image = d.KineContainerImage
+	podSpec.InitContainers[index].Command = []string{"sh"}
+	podSpec.InitContainers[index].Args = []string{
+		"-c",
+		"cp /kine/*.* /certs && chmod -R 600 /certs/*.*",
+	}
+	podSpec.InitContainers[index].VolumeMounts = []corev1.VolumeMount{
+		{
+			Name:      dataStoreCertsVolumeName,
+			ReadOnly:  true,
+			MountPath: "/kine",
+		},
+		{
+			Name:      kineVolumeCertName,
+			MountPath: "/certs",
+			ReadOnly:  false,
+		},
+	}
+	// Kine is expecting an additional container, and it must be removed before proceeding with the additional one
+	// in order to make this function idempotent.
+	found, index = utilities.HasNamedContainer(podSpec.Containers, kineContainerName)
+	if !found {
+		index = len(podSpec.Containers)
+		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
+	}
+	// Building kine arguments, taking in consideration the user-space ones if provided.
 	args := map[string]string{}
 
 	if tcp.Spec.ControlPlane.Deployment.ExtraArgs != nil {
@@ -717,33 +855,6 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 	args["--cert-file"] = "/certs/server.crt"
 	args["--key-file"] = "/certs/server.key"
 
-	podSpec.InitContainers = []corev1.Container{
-		{
-			Name:                     "chmod",
-			Image:                    d.KineContainerImage,
-			ImagePullPolicy:          corev1.PullAlways,
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Command:                  []string{"sh"},
-			Args: []string{
-				"-c",
-				"cp /kine/*.* /certs && chmod -R 600 /certs/*.*",
-			},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      dataStoreCerts,
-					ReadOnly:  true,
-					MountPath: "/kine",
-				},
-				{
-					Name:      kineVolumeCertName,
-					MountPath: "/certs",
-					ReadOnly:  false,
-				},
-			},
-		},
-	}
-
 	podSpec.Containers[index].Name = kineContainerName
 	podSpec.Containers[index].Image = d.KineContainerImage
 	podSpec.Containers[index].Command = []string{"/bin/kine"}
@@ -755,8 +866,6 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 			ReadOnly:  false,
 		},
 	}
-	podSpec.Containers[index].TerminationMessagePath = corev1.TerminationMessagePathDefault
-	podSpec.Containers[index].TerminationMessagePolicy = corev1.TerminationMessageReadFile
 	podSpec.Containers[index].Env = []corev1.EnvVar{
 		{
 			Name:  "GODEBUG",
@@ -779,7 +888,6 @@ func (d *Deployment) buildKine(podSpec *corev1.PodSpec, tcp *kamajiv1alpha1.Tena
 			Protocol:      corev1.ProtocolTCP,
 		},
 	}
-	podSpec.Containers[index].ImagePullPolicy = corev1.PullAlways
 }
 
 func (d *Deployment) SetSelector(deploymentSpec *appsv1.DeploymentSpec, tcp *kamajiv1alpha1.TenantControlPlane) {
@@ -835,7 +943,7 @@ func (d *Deployment) ResetKubeAPIServerFlags(resource *appsv1.Deployment, tcp *k
 		return
 	}
 	// kube-apiserver container is not still there, we can skip the hashing
-	if found, _ := utilities.HasNamedContainer(resource.Spec.Template.Spec.Containers, "kube-apiserver"); !found {
+	if found, _ := utilities.HasNamedContainer(resource.Spec.Template.Spec.Containers, apiServerContainerName); !found {
 		return
 	}
 	// setting up annotation to avoid assignment to a nil one
@@ -855,7 +963,8 @@ func (d *Deployment) ResetKubeAPIServerFlags(resource *appsv1.Deployment, tcp *k
 	}
 	// there's a mismatch in the count from the previous hash: let's reset and store the desired extra args count.
 	if count != len(tcp.Spec.ControlPlane.Deployment.ExtraArgs.APIServer) {
-		resource.Spec.Template.Spec.Containers[apiServerIndex].Args = []string{}
+		_, index := utilities.HasNamedContainer(resource.Spec.Template.Spec.Containers, apiServerContainerName)
+		resource.Spec.Template.Spec.Containers[index].Args = []string{}
 	}
 
 	resource.GetAnnotations()[apiServerFlagsAnnotation] = fmt.Sprintf("%d", len(tcp.Spec.ControlPlane.Deployment.ExtraArgs.APIServer))

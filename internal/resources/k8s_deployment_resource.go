@@ -88,8 +88,13 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 		d.SetRuntimeClass(&r.resource.Spec.Template.Spec, tenantControlPlane)
 		d.SetReplicas(&r.resource.Spec, tenantControlPlane)
 		d.ResetKubeAPIServerFlags(r.resource, tenantControlPlane)
+		d.SetInitContainers(&r.resource.Spec.Template.Spec, tenantControlPlane)
+		d.SetAdditionalContainers(&r.resource.Spec.Template.Spec, tenantControlPlane)
 		d.SetContainers(&r.resource.Spec.Template.Spec, tenantControlPlane, address)
+		d.SetAdditionalVolumes(&r.resource.Spec.Template.Spec, tenantControlPlane)
 		d.SetVolumes(&r.resource.Spec.Template.Spec, tenantControlPlane)
+
+		r.Client.Scheme().Default(r.resource)
 
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
