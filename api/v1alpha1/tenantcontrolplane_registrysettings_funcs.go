@@ -7,12 +7,8 @@ import (
 	"fmt"
 )
 
-func (r *RegistrySettings) buildContainerImage(name, tag string) (image string) {
-	if len(r.Registry) > 0 {
-		image = fmt.Sprintf("%s/", r.Registry)
-	}
-
-	image += fmt.Sprintf("%s:%s", name, tag)
+func (r *RegistrySettings) buildContainerImage(name, tag string) string {
+	image := fmt.Sprintf("%s/%s:%s", r.Registry, name, tag)
 
 	if len(r.TagSuffix) > 0 {
 		image += r.TagSuffix

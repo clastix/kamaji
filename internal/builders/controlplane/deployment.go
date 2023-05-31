@@ -330,7 +330,7 @@ func (d *Deployment) BuildScheduler(podSpec *corev1.PodSpec, tenantControlPlane 
 	args["--leader-elect"] = "true" //nolint:goconst
 
 	podSpec.Containers[index].Name = schedulerContainerName
-	podSpec.Containers[index].Image = fmt.Sprintf("registry.k8s.io/kube-scheduler:%s", tenantControlPlane.Spec.Kubernetes.Version)
+	podSpec.Containers[index].Image = tenantControlPlane.Spec.ControlPlane.Deployment.RegistrySettings.KubeSchedulerImage(tenantControlPlane.Spec.Kubernetes.Version)
 	podSpec.Containers[index].Command = []string{"kube-scheduler"}
 	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
 	podSpec.Containers[index].LivenessProbe = &corev1.Probe{
@@ -423,7 +423,7 @@ func (d *Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContr
 	args["--use-service-account-credentials"] = "true"
 
 	podSpec.Containers[index].Name = "kube-controller-manager"
-	podSpec.Containers[index].Image = fmt.Sprintf("registry.k8s.io/kube-controller-manager:%s", tenantControlPlane.Spec.Kubernetes.Version)
+	podSpec.Containers[index].Image = tenantControlPlane.Spec.ControlPlane.Deployment.RegistrySettings.KubeControllerManagerImage(tenantControlPlane.Spec.Kubernetes.Version)
 	podSpec.Containers[index].Command = []string{"kube-controller-manager"}
 	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
 	podSpec.Containers[index].LivenessProbe = &corev1.Probe{
@@ -546,7 +546,7 @@ func (d *Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPl
 
 	podSpec.Containers[index].Name = apiServerContainerName
 	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
-	podSpec.Containers[index].Image = fmt.Sprintf("registry.k8s.io/kube-apiserver:%s", tenantControlPlane.Spec.Kubernetes.Version)
+	podSpec.Containers[index].Image = tenantControlPlane.Spec.ControlPlane.Deployment.RegistrySettings.KubeAPIServerImage(tenantControlPlane.Spec.Kubernetes.Version)
 	podSpec.Containers[index].Command = []string{"kube-apiserver"}
 	podSpec.Containers[index].LivenessProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
