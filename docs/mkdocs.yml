@@ -79,3 +79,6 @@ nav:
   - reference/api.md
 - 'Contribute': contribute.md
 
+plugins:
+  - social:
+      cards_layout: default/invert
