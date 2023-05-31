@@ -103,6 +103,10 @@ type ControlPlaneComponentsResources struct {
 }
 
 type DeploymentSpec struct {
+	// RegistrySettings allows to override the default images for the given Tenant Control Plane instance.
+	// It could be used to point to a different container registry rather than the public one.
+	// +kubebuilder:default={registry:"registry.k8s.io",apiServerImage:"kube-apiserver",controllerManagerImage:"kube-controller-manager",schedulerImage:"kube-scheduler"}
+	RegistrySettings RegistrySettings `json:"registrySettings,omitempty"`
 	// +kubebuilder:default=2
 	Replicas int32 `json:"replicas,omitempty"`
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
