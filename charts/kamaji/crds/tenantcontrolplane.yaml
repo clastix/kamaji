@@ -3332,6 +3332,30 @@ spec:
                             type: string
                           description: 'NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node''s labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/'
                           type: object
+                        registrySettings:
+                          default:
+                            apiServerImage: kube-apiserver
+                            controllerManagerImage: kube-controller-manager
+                            registry: registry.k8s.io
+                            schedulerImage: kube-scheduler
+                          description: RegistrySettings allows to override the default images for the given Tenant Control Plane instance. It could be used to point to a different container registry rather than the public one.
+                          properties:
+                            apiServerImage:
+                              default: kube-apiserver
+                              type: string
+                            controllerManagerImage:
+                              default: kube-controller-manager
+                              type: string
+                            registry:
+                              default: registry.k8s.io
+                              type: string
+                            schedulerImage:
+                              default: kube-scheduler
+                              type: string
+                            tagSuffix:
+                              description: The tag to append to all the Control Plane container images. Optional.
+                              type: string
+                          type: object
                         replicas:
                           default: 2
                           format: int32
