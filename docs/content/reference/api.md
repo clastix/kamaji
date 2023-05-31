@@ -1011,6 +1011,15 @@ Defining the options for the deployed Tenant Control Plane as Deployment resourc
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentregistrysettings">registrySettings</a></b></td>
+        <td>object</td>
+        <td>
+          RegistrySettings allows to override the default images for the given Tenant Control Plane instance. It could be used to point to a different container registry rather than the public one.<br/>
+          <br/>
+            <i>Default</i>: map[apiServerImage:kube-apiserver controllerManagerImage:kube-controller-manager registry:registry.k8s.io schedulerImage:kube-scheduler]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
@@ -9946,6 +9955,68 @@ ExtraArgs allows adding additional arguments to the Control Plane components, su
         <td>[]string</td>
         <td>
           <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.registrySettings
+
+
+
+RegistrySettings allows to override the default images for the given Tenant Control Plane instance. It could be used to point to a different container registry rather than the public one.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>apiServerImage</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Default</i>: kube-apiserver<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>controllerManagerImage</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Default</i>: kube-controller-manager<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>registry</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Default</i>: registry.k8s.io<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>schedulerImage</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Default</i>: kube-scheduler<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>tagSuffix</b></td>
+        <td>string</td>
+        <td>
+          The tag to append to all the Control Plane container images. Optional.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
