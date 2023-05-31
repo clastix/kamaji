@@ -1,31 +1,33 @@
 # Setup Kamaji on Azure
 This guide will lead you through the process of creating a working Kamaji setup on on MS Azure.
 
-The material here is relatively dense. We strongly encourage you to dedicate time to walk through these instructions, with a mind to learning. We do NOT provide any "one-click" deployment here. However, once you've understood the components involved it is encouraged that you build suitable, auditable GitOps deployment processes around your final infrastructure.
+!!! warning ""
+    The material here is relatively dense. We strongly encourage you to dedicate time to walk through these instructions, with a mind to learning. We do NOT provide any "one-click" deployment here. However, once you've understood the components involved it is encouraged that you build suitable, auditable GitOps deployment processes around your final infrastructure.
 
 The guide requires:
 
-- one bootstrap workstation
-- an AKS Kubernetes cluster to run the Admin and Tenant Control Planes
-- an arbitrary number of Azure virtual machines to host `Tenant`s' workloads
+- a bootstrap machine
+- a Kubernetes cluster to run the Admin and Tenant Control Planes
+- an arbitrary number of machines to host `Tenant`s' workloads
 
 ## Summary
 
   * [Prepare the bootstrap workspace](#prepare-the-bootstrap-workspace)
   * [Access Admin cluster](#access-admin-cluster)
+  * [Install Cert Manager](#install-cert-manager)
   * [Install Kamaji controller](#install-kamaji-controller)
   * [Create Tenant Cluster](#create-tenant-cluster)
   * [Cleanup](#cleanup)
 
 ## Prepare the bootstrap workspace
-This guide is supposed to be run from a remote or local bootstrap machine. First, clone the repo and prepare the workspace directory:
+On the bootstrap machine, clone the repo and prepare the workspace directory:
 
 ```bash
 git clone https://github.com/clastix/kamaji
 cd kamaji/deploy
 ```
 
-We assume you have installed on your workstation:
+We assume you have installed on the bootstrap machine:
 
 - [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
 - [kubeadm](https://kubernetes.io/docs/tasks/tools/#kubeadm)
@@ -39,10 +41,10 @@ Make sure you have a valid Azure subscription, and login to Azure:
 az account set --subscription "MySubscription"
 az login
 ```
-> Currently, the Kamaji setup, including Admin and Tenant clusters need to be deployed within the same Azure region. Cross-regions deployments are not supported.
+
 
 ## Access Admin cluster
-In Kamaji, an Admin Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The admin cluster acts as management cluster for all the Tenant clusters and implements Monitoring, Logging, and Governance of all the Kamaji setup, including all Tenant clusters. For this guide, we're going to use an instance of Azure Kubernetes Service - AKS as the Admin Cluster.
+In Kamaji, an Admin Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The admin cluster acts as management cluster for all the Tenant clusters and implements Monitoring, Logging, and Governance of all the Kamaji setup, including all Tenant clusters. For this guide, we're going to use an instance of Azure Kubernetes Service (AKS) as Admin Cluster.
 
 Throughout the following instructions, shell variables are used to indicate values that you should adjust to your own Azure environment:
 
@@ -95,11 +97,24 @@ And check you can access:
 kubectl cluster-info
 ```
 
+## Install Cert Manager
+
+Kamaji takes advantage of the [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/), such as validating and mutating webhook configurations. These webhooks are secured by a TLS communication, and the certificates are managed by [`cert-manager`](https://cert-manager.io/), making it a prerequisite that must be installed:
+
+```bash
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+helm install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version v1.11.0 \
+  --set installCRDs=true
+```
+
 ## Install Kamaji Controller
 
-Kamaji takes advantage of the [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/), such as validating and mutating webhook configurations. These webhooks are secured by a TLS communication, and the certificates are managed by [`cert-manager`](https://cert-manager.io/), making it a prerequisite that must be [installed](https://cert-manager.io/docs/installation/).
-
-The Kamaji controller needs to access a default datastore in order to save data of the tenants' clusters. The Kamaji Helm Chart provides the installation of a basic unamanaged `etcd`, out of box. 
+Installing Kamaji via Helm charts is the preferred way. The Kamaji controller needs to access a Datastore in order to save data of the tenants' clusters. The Kamaji Helm Chart provides the installation of a basic unamanaged `etcd` as datastore, out of box. 
 
 Install Kamaji with `helm` using an unmanaged `etcd` as default datastore:
 
@@ -109,7 +124,8 @@ helm repo update
 helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
 ```
 
-A managed datastore is highly recommended in production. The [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides a viable option to setup a managed multi-tenant `etcd` running as StatefulSet made of three replicas. Optionally, Kamaji offers support for a different storage system, as `MySQL` or `PostgreSQL` compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
+!!! note "A managed datastore is highly recommended in production"
+     The [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides the code to setup a multi-tenant `etcd` running as StatefulSet made of three replicas. Optionally, Kamaji offers support for a more robust storage system, as `MySQL` or `PostgreSQL` compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
 
 ## Create Tenant Cluster
 
@@ -257,7 +273,11 @@ kubernetes   10.240.0.100:6443   57m
 ```
 
 ### Prepare worker nodes to join
-Currently Kamaji does not provide any helper for creation of tenant worker nodes. You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`. In the future, we'll provide integration with Cluster APIs and other tools, as for example, Terrform.
+
+Currently Kamaji does not provide any helper for creation of tenant worker nodes. You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`. 
+
+!!! note "Cluster APIs support"
+     In the future, we'll provide creation of tenant clusters through Cluster APIs.
 
 Create an Azure VM Stateful Set to host worker nodes
 

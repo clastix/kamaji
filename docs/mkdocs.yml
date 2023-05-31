@@ -55,16 +55,12 @@ markdown_extensions:
 # Generate navigation bar
 nav:
 - 'Kamaji': index.md
-- 'Getting started':
-  - getting-started/install.md
-  - getting-started/getting-started.md
+- 'Getting started': getting-started.md
 - 'Concepts': concepts.md
 - 'Guides':
   - guides/index.md
-  - guides/kamaji-deployment-guide.md
-  - guides/kamaji-azure-deployment-guide.md
-  - guides/postgresql-datastore.md
-  - guides/mysql-datastore.md
+  - guides/kamaji-azure-deployment.md
+  - guides/alternative-datastore.md
   - guides/kamaji-gitops-flux.md
   - guides/upgrade.md
   - guides/datastore-migration.md
