@@ -45,7 +45,6 @@ const (
 )
 
 type Deployment struct {
-	Address            string
 	KineContainerImage string
 	DataStore          kamajiv1alpha1.DataStore
 }
