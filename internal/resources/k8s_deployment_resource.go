@@ -72,7 +72,6 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 		}
 
 		d := builder.Deployment{
-			Address:            address,
 			DataStore:          r.DataStore,
 			KineContainerImage: r.KineContainerImage,
 		}
