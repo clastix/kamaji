@@ -246,7 +246,7 @@ func getKonnectivityServerRequirementsResources(c client.Client) []resources.Res
 
 func getKonnectivityServerPatchResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
-		&konnectivity.KubernetesDeploymentResource{Builder: builder.Konnectivity{}, Client: c},
+		&konnectivity.KubernetesDeploymentResource{Builder: builder.Konnectivity{Scheme: *c.Scheme()}, Client: c},
 		&konnectivity.ServiceResource{Client: c},
 	}
 }

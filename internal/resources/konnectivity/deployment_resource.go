@@ -87,11 +87,7 @@ func (r *KubernetesDeploymentResource) mutate(_ context.Context, tenantControlPl
 			return fmt.Errorf("the Deployment resource is not ready to be mangled for Konnectivity server enrichment")
 		}
 
-		r.Builder.BuildKonnectivityContainer(tenantControlPlane.Spec.Addons.Konnectivity, tenantControlPlane.Spec.ControlPlane.Deployment.Replicas, &r.resource.Spec.Template.Spec)
-		r.Builder.BuildVolumeMounts(&r.resource.Spec.Template.Spec)
-		r.Builder.BuildVolumes(tenantControlPlane.Status.Addons.Konnectivity, &r.resource.Spec.Template.Spec)
-
-		r.Client.Scheme().Default(r.resource)
+		r.Builder.Build(r.resource, *tenantControlPlane)
 
 		return nil
 	}
