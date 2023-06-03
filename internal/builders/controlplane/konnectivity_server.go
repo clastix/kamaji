@@ -6,7 +6,9 @@ package controlplane
 import (
 	"fmt"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 
@@ -27,9 +29,11 @@ const (
 	konnectivityServerKubeconfigVolume = "konnectivity-server-kubeconfig"
 )
 
-type Konnectivity struct{}
+type Konnectivity struct {
+	Scheme runtime.Scheme
+}
 
-func (k Konnectivity) BuildKonnectivityContainer(addon *kamajiv1alpha1.KonnectivitySpec, replicas int32, podSpec *corev1.PodSpec) {
+func (k Konnectivity) buildKonnectivityContainer(addon *kamajiv1alpha1.KonnectivitySpec, replicas int32, podSpec *corev1.PodSpec) {
 	found, index := utilities.HasNamedContainer(podSpec.Containers, konnectivityServerName)
 	if !found {
 		index = len(podSpec.Containers)
@@ -170,7 +174,7 @@ func (k Konnectivity) RemovingContainer(podSpec *corev1.PodSpec) {
 	}
 }
 
-func (k Konnectivity) BuildVolumeMounts(podSpec *corev1.PodSpec) {
+func (k Konnectivity) buildVolumeMounts(podSpec *corev1.PodSpec) {
 	found, index := utilities.HasNamedContainer(podSpec.Containers, apiServerContainerName)
 	if !found {
 		return
@@ -203,7 +207,7 @@ func (k Konnectivity) BuildVolumeMounts(podSpec *corev1.PodSpec) {
 	podSpec.Containers[index].VolumeMounts[vIndex].MountPath = "/etc/kubernetes/konnectivity/configurations"
 }
 
-func (k Konnectivity) BuildVolumes(status kamajiv1alpha1.KonnectivityStatus, podSpec *corev1.PodSpec) {
+func (k Konnectivity) buildVolumes(status kamajiv1alpha1.KonnectivityStatus, podSpec *corev1.PodSpec) {
 	found, index := false, 0
 	// Defining volumes for the UDS socket
 	found, index = utilities.HasNamedVolume(podSpec.Volumes, konnectivityUDSVolume)
@@ -248,4 +252,12 @@ func (k Konnectivity) BuildVolumes(status kamajiv1alpha1.KonnectivityStatus, pod
 			DefaultMode: pointer.Int32(420),
 		},
 	}
+}
+
+func (k Konnectivity) Build(deployment *appsv1.Deployment, tenantControlPlane kamajiv1alpha1.TenantControlPlane) {
+	k.buildKonnectivityContainer(tenantControlPlane.Spec.Addons.Konnectivity, tenantControlPlane.Spec.ControlPlane.Deployment.Replicas, &deployment.Spec.Template.Spec)
+	k.buildVolumeMounts(&deployment.Spec.Template.Spec)
+	k.buildVolumes(tenantControlPlane.Status.Addons.Konnectivity, &deployment.Spec.Template.Spec)
+
+	k.Scheme.Default(deployment)
 }
