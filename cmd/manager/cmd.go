@@ -25,6 +25,8 @@ import (
 	"github.com/clastix/kamaji/internal"
 	datastoreutils "github.com/clastix/kamaji/internal/datastore/utils"
 	"github.com/clastix/kamaji/internal/webhook"
+	"github.com/clastix/kamaji/internal/webhook/handlers"
+	"github.com/clastix/kamaji/internal/webhook/routes"
 )
 
 func NewCmd(scheme *runtime.Scheme) *cobra.Command {
@@ -126,12 +128,6 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
-			if err = (&webhook.Freeze{}).SetupWithManager(mgr); err != nil {
-				setupLog.Error(err, "unable to register webhook", "webhook", "Freeze")
-
-				return err
-			}
-
 			if err = (&kamajiv1alpha1.DatastoreUsedSecret{}).SetupWithManager(ctx, mgr); err != nil {
 				setupLog.Error(err, "unable to create indexer", "indexer", "DatastoreUsedSecret")
 
@@ -144,13 +140,27 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
-			if err = (&kamajiv1alpha1.TenantControlPlane{}).SetupWebhookWithManager(mgr, datastore); err != nil {
-				setupLog.Error(err, "unable to create webhook", "webhook", "TenantControlPlane")
-
-				return err
-			}
-			if err = (&kamajiv1alpha1.DataStore{}).SetupWebhookWithManager(mgr); err != nil {
-				setupLog.Error(err, "unable to create webhook", "webhook", "DataStore")
+			err = webhook.Register(mgr, map[routes.Route][]handlers.Handler{
+				routes.TenantControlPlaneMigrate{}: {
+					handlers.Freeze{},
+				},
+				routes.TenantControlPlaneDefaults{}: {
+					handlers.TenantControlPlaneDefaults{DefaultDatastore: datastore},
+				},
+				routes.TenantControlPlaneValidate{}: {
+					handlers.TenantControlPlaneVersion{},
+					handlers.TenantControlPlaneKubeletAddresses{},
+					handlers.TenantControlPlaneDataStore{Client: mgr.GetClient()},
+				},
+				routes.DataStoreValidate{}: {
+					handlers.DataStoreValidation{Client: mgr.GetClient()},
+				},
+				routes.DataStoreSecrets{}: {
+					handlers.DataStoreSecretValidation{Client: mgr.GetClient()},
+				},
+			})
+			if err != nil {
+				setupLog.Error(err, "unable to create webhook")
 
 				return err
 			}
@@ -187,6 +197,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			return nil
 		},
 	}
+
 	// Setting zap logger
 	zapfs := flag.NewFlagSet("zap", flag.ExitOnError)
 	opts := zap.Options{
