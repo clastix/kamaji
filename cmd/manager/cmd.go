@@ -23,6 +23,7 @@ import (
 	"github.com/clastix/kamaji/controllers"
 	"github.com/clastix/kamaji/controllers/soot"
 	"github.com/clastix/kamaji/internal"
+	"github.com/clastix/kamaji/internal/builders/controlplane"
 	datastoreutils "github.com/clastix/kamaji/internal/datastore/utils"
 	"github.com/clastix/kamaji/internal/webhook"
 	"github.com/clastix/kamaji/internal/webhook/handlers"
@@ -151,6 +152,16 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 					handlers.TenantControlPlaneVersion{},
 					handlers.TenantControlPlaneKubeletAddresses{},
 					handlers.TenantControlPlaneDataStore{Client: mgr.GetClient()},
+					handlers.TenantControlPlaneDeployment{
+						Client: mgr.GetClient(),
+						DeploymentBuilder: controlplane.Deployment{
+							Client:             mgr.GetClient(),
+							KineContainerImage: kineImage,
+						},
+						KonnectivityBuilder: controlplane.Konnectivity{
+							Scheme: *mgr.GetScheme(),
+						},
+					},
 				},
 				routes.DataStoreValidate{}: {
 					handlers.DataStoreValidation{Client: mgr.GetClient()},
