@@ -14,26 +14,6 @@ webhooks:
       service:
         name: {{ include "kamaji.webhookServiceName" . }}
         namespace: {{ .Release.Namespace }}
-        path: /mutate-kamaji-clastix-io-v1alpha1-datastore
-    failurePolicy: Fail
-    name: mdatastore.kb.io
-    rules:
-      - apiGroups:
-          - kamaji.clastix.io
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - datastores
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-    clientConfig:
-      service:
-        name: {{ include "kamaji.webhookServiceName" . }}
-        namespace: {{ .Release.Namespace }}
         path: /mutate-kamaji-clastix-io-v1alpha1-tenantcontrolplane
     failurePolicy: Fail
     name: mtenantcontrolplane.kb.io
