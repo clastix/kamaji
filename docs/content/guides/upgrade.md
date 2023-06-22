@@ -27,6 +27,9 @@ spec:
 ```
 
 ## Upgrade of Tenant Worker Nodes
-As currently Kamaji is not providing any helpers for Tenant Worker Nodes, you should make sure to upgrade them manually, for example, with the help of `kubeadm`. Refer to the official [documentation](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/#upgrade-worker-nodes).
 
-> We have in roadmap, the Cluster APIs support so that you can upgrade _“tenant clusters”_ in a fully declarative way.
+As currently Kamaji is not providing any helpers for Tenant Worker Nodes, you should make sure to upgrade them manually, for example, with the help of `kubeadm`.
+Refer to the official [documentation](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/#upgrade-worker-nodes).
+
+Kamaji is offering a [Cluster API Control Plane provider](https://github.com/clastix/cluster-api-control-plane-provider-kamaji), thus integrating with the Kubernetes clusters declarative management approach.
+You can refer to the official [Cluster API documentation](https://cluster-api.sigs.k8s.io/).

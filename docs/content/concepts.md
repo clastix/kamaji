@@ -20,9 +20,13 @@ Kamaji offers a [Custom Resource Definition](https://kubernetes.io/docs/tasks/ex
 All the _“tenant clusters”_ built with Kamaji are fully compliant CNCF Kubernetes clusters and are compatible with the standard Kubernetes toolchains everybody knows and loves. See [CNCF compliance](reference/conformance.md).
 
 ## Tenant worker nodes
-And what about the tenant worker nodes? They are just _"worker nodes"_, i.e. regular virtual or bare metal machines, connecting to the APIs server of the Tenant Control Plane. Kamaji's goal is to manage the lifecycle of hundreds of these _“tenant clusters”_, not only one, so how to add another tenant cluster to Kamaji? As you could expect, you have just deploys a new Tenant Control Plane in one of the _“admin cluster”_ namespace, and then joins the tenant worker nodes to it.
 
-We have in roadmap, the Cluster APIs support as well as a Terraform provider so that you can create _“tenant clusters”_ in a declarative way.
+And what about the tenant worker nodes?
+They are just _"worker nodes"_, i.e. regular virtual or bare metal machines, connecting to the APIs server of the Tenant Control Plane.
+Kamaji's goal is to manage the lifecycle of hundreds of these _“tenant clusters”_, not only one, so how to add another tenant cluster to Kamaji?
+As you could expect, you have just deploys a new Tenant Control Plane in one of the _“admin cluster”_ namespace, and then joins the tenant worker nodes to it.
+
+A [Cluster API ControlPlane provider](https://github.com/clastix/cluster-api-control-plane-provider-kamaji) has been released, allowing to offer a Cluster API-native declarative lifecycle, by automating the worker nodes join.
 
 ## Datastores
 Putting the Tenant Control Plane in a pod is the easiest part. Also, we have to make sure each tenant cluster saves the state to be able to store and retrieve data. As we can deploy a Kubernetes cluster with an external `etcd` cluster, we explored this option for the Tenant Control Planes. On the admin cluster, you can deploy one or multi-tenant `etcd` to save the state of multiple tenant clusters. Kamaji offers a Custom Resource Definition called `DataStore` to provide a declarative approach of managing multiple datastores. By sharing the datastore between multiple tenants, the resiliency is still guaranteed and the pods' count remains under control, so it solves the main goal of resiliency and costs optimization. The trade-off here is that you have to operate external datastores, in addition to `etcd` of the _“admin cluster”_ and manage the access to be sure that each _“tenant cluster”_ uses only its data.

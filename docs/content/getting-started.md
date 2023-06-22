@@ -240,10 +240,11 @@ And make sure it is `${TENANT_ADDR}:${TENANT_PORT}`.
 
 ### Prepare worker nodes to join
 
-Currently Kamaji does not provide any helper for creation of tenant worker nodes. You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`. 
+Currently, Kamaji does not provide any helper for creation of tenant worker nodes.
+You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`.
 
-!!! note "Cluster APIs support"
-     In the future, we'll provide creation of tenant clusters through Cluster APIs.
+Kamaji is sticking to the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api) project contracts by providing a `ControlPlane` provider.
+Please, refer to the [official repository](https://github.com/clastix/cluster-api-control-plane-provider-kamaji) to learn more about it.
 
 You can use the provided helper script `/deploy/nodes-prerequisites.sh`, in order to install the dependencies on all the worker nodes:
 

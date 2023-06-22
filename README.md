@@ -35,7 +35,7 @@
 - [x] Seamless migration between datastores
 - [ ] Automatic assignment to a datastore
 - [ ] Autoscaling of Tenant Control Plane
-- [ ] Provisioning through Cluster APIs
+- [x] Provisioning through Cluster APIs
 - [ ] Terraform provider
 - [ ] Custom Prometheus metrics for monitoring and alerting
 
