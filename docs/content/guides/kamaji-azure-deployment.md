@@ -274,10 +274,11 @@ kubernetes   10.240.0.100:6443   57m
 
 ### Prepare worker nodes to join
 
-Currently Kamaji does not provide any helper for creation of tenant worker nodes. You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`. 
+Currently, Kamaji does not provide any helper for creation of tenant worker nodes.
+You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`. 
 
-!!! note "Cluster APIs support"
-     In the future, we'll provide creation of tenant clusters through Cluster APIs.
+Kamaji is sticking to the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api) project contracts by providing a `ControlPlane` provider.
+An Azure-based cluster is not yet available: the available road-map is available on the [official repository](https://github.com/clastix/cluster-api-control-plane-provider-kamaji).
 
 Create an Azure VM Stateful Set to host worker nodes
 
