@@ -117,10 +117,10 @@ func (r *KubeconfigResource) CreateOrUpdate(ctx context.Context, tenantControlPl
 	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
-func (r *KubeconfigResource) checksum(apiServerCertificatesSecret *corev1.Secret, kubeadmChecksum string) string {
+func (r *KubeconfigResource) checksum(caCertificatesSecret *corev1.Secret, kubeadmChecksum string) string {
 	return utilities.CalculateMapChecksum(map[string][]byte{
-		"ca-cert-checksum": apiServerCertificatesSecret.Data[kubeadmconstants.CACertName],
-		"ca-key-checksum":  apiServerCertificatesSecret.Data[kubeadmconstants.CAKeyName],
+		"ca-cert-checksum": caCertificatesSecret.Data[kubeadmconstants.CACertName],
+		"ca-key-checksum":  caCertificatesSecret.Data[kubeadmconstants.CAKeyName],
 		"kubeadmconfig":    []byte(kubeadmChecksum),
 	})
 }
@@ -142,15 +142,15 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
-		apiServerCertificatesSecretNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
-		apiServerCertificatesSecret := &corev1.Secret{}
-		if err := r.Client.Get(ctx, apiServerCertificatesSecretNamespacedName, apiServerCertificatesSecret); err != nil {
+		caSecretNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
+		caCertificatesSecret := &corev1.Secret{}
+		if err = r.Client.Get(ctx, caSecretNamespacedName, caCertificatesSecret); err != nil {
 			logger.Error(err, "cannot retrieve the CA")
 
 			return err
 		}
 
-		checksum := r.checksum(apiServerCertificatesSecret, config.Checksum())
+		checksum := r.checksum(caCertificatesSecret, config.Checksum())
 
 		status, err := r.getKubeconfigStatus(tenantControlPlane)
 		if err != nil {
@@ -158,26 +158,28 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 			return err
 		}
-		// A new kubeconfig must be generated when one of the following cases is occurring:
-		// 1. the status checksum is different from the computed one
-		// 2. the resource UID is empty, meaning it's a new resource (tl;dr; a first reconciliation)
-		//
-		// And finally, we're checking if the kubeconfig is valid: if not, generating a new one.
-		if (status.Checksum != checksum || len(r.resource.UID) == 0) && !kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName]) {
-			kubeconfig, err := kubeadm.CreateKubeconfig(
-				r.KubeConfigFileName,
 
-				kubeadm.CertificatePrivateKeyPair{
-					Certificate: apiServerCertificatesSecret.Data[kubeadmconstants.CACertName],
-					PrivateKey:  apiServerCertificatesSecret.Data[kubeadmconstants.CAKeyName],
-				},
-				config,
-			)
-			if err != nil {
-				logger.Error(err, "cannot create a valid kubeconfig")
+		var shouldCreate bool
 
-				return err
+		shouldCreate = shouldCreate || r.resource.Data == nil                                            // Missing data key
+		shouldCreate = shouldCreate || len(r.resource.Data) == 0                                         // Missing data key
+		shouldCreate = shouldCreate || len(r.resource.Data[r.KubeConfigFileName]) == 0                   // Missing kubeconfig file, must be generated
+		shouldCreate = shouldCreate || !kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName]) // invalid kubeconfig
+		shouldCreate = shouldCreate || status.Checksum != checksum || len(r.resource.UID) == 0           // Wrong checksum
+
+		if shouldCreate {
+			crtKeyPair := kubeadm.CertificatePrivateKeyPair{
+				Certificate: caCertificatesSecret.Data[kubeadmconstants.CACertName],
+				PrivateKey:  caCertificatesSecret.Data[kubeadmconstants.CAKeyName],
 			}
+
+			kubeconfig, kcErr := kubeadm.CreateKubeconfig(r.KubeConfigFileName, crtKeyPair, config)
+			if kcErr != nil {
+				logger.Error(kcErr, "cannot shouldCreate a valid kubeconfig")
+
+				return kcErr
+			}
+
 			r.resource.Data = map[string][]byte{
 				r.KubeConfigFileName: kubeconfig,
 			}
