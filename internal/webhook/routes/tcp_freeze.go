@@ -4,9 +4,8 @@
 package routes
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-
-	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
 type TenantControlPlaneMigrate struct{}
@@ -16,5 +15,5 @@ func (t TenantControlPlaneMigrate) GetPath() string {
 }
 
 func (t TenantControlPlaneMigrate) GetObject() runtime.Object {
-	return &kamajiv1alpha1.TenantControlPlane{}
+	return &corev1.Namespace{}
 }
