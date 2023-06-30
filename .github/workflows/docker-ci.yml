@@ -12,6 +12,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Generate build-args
         id: build-args
@@ -85,7 +87,13 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          build-args:
+          build-args: |
+            GIT_LAST_TAG=${{ env.GIT_LAST_TAG }}
+            GIT_HEAD_COMMIT=${{ env.GIT_HEAD_COMMIT }}
+            GIT_TAG_COMMIT=${{ env.GIT_TAG_COMMIT }}
+            GIT_MODIFIED=${{ env.GIT_MODIFIED }}
+            GIT_REPO=${{ env.GIT_REPO }}
+            BUILD_DATE=${{ env.BUILD_DATE }}
 
       - name: Image digest
         run: echo ${{ steps.build-release.outputs.digest }}
