@@ -31,3 +31,5 @@ bin
 **/*.csr
 **/server-csr.json
 .DS_Store
+
+dist/

@@ -1,0 +1,55 @@
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - 
+    # Binary name
+    id: "kamaji"
+
+    # Custom environment variables to be set during the builds.
+    # Invalid environment variables will be ignored.
+    #
+    # Default: os.Environ() ++ env config section
+    # Templates: allowed (since v1.14)
+    env:
+      - CGO_ENABLED=0
+    
+    # GOOS list to build for.
+    # For more info refer to: https://golang.org/doc/install/source#environment
+    #
+    # Default: [ 'darwin', 'linux', 'windows' ]
+    goos:
+      - linux
+
+    # GOARCH to build for.
+    # For more info refer to: https://golang.org/doc/install/source#environment
+    #
+    # Default: [ '386', 'amd64', 'arm64' ]
+    goarch:
+      - amd64
+      - arm64
+    
+    # Custom ldflags.
+    ldflags: "-X github.com/clastix/kamaji/internal.GitRepo=${{.Env.GIT_REPO}} -X github.com/clastix/kamaji/internal.GitTag={{.Env.VERSION}} -X github.com/clastix/kamaji/internal.GitCommit={{.Env.GIT_HEAD_COMMIT}} -X github.com/clastix/kamaji/internal.GitDirty={{.Env.GIT_MODIFIED}} -X github.com/clastix/kamaji/internal.BuildTime={{.Env.BUILD_DATE}}"
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}amd64
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+    - goos: windows
+      format: zip
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'

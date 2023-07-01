@@ -171,6 +171,24 @@ docker-build: ## Build docker image with the manager.
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
+create-tag: # Add a tag to the current commit and push it to the remote repository.
+	@git tag -a v$(VERSION) -m "Welcome to kamoji version $(VERSION)"
+	@git push origin v$(VERSION)
+
+# Prerequisites: git is not in dirty state
+# If GITHUB_TOKEN exists, release a version according to the current tag.
+# If an error is encountered, the local tag and the remote tag will be deleted.
+# - use the VERSION as arg (e.g make release VERSION=0.4.0)
+# - use environment variables to overwrite this value (e.g export VERSION=0.4.0)
+release: create-tag
+	GIT_REPO=$(GIT_REPO) \
+	GIT_HEAD_COMMIT=$(GIT_HEAD_COMMIT) \
+	VERSION=$(VERSION) \
+	GIT_MODIFIED=$(GIT_MODIFIED) \
+	BUILD_DATE=$(BUILD_DATE) \
+	goreleaser release --clean || \
+    (git tag -d v$(VERSION) && git push origin :refs/tags/v$(VERSION))
+
 ##@ Deployment
 
 metallb:
