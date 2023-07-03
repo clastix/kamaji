@@ -4,6 +4,9 @@
 package kubeadm
 
 import (
+	"fmt"
+
+	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -18,6 +21,14 @@ import (
 
 	"github.com/clastix/kamaji/internal/utilities"
 )
+
+const (
+	// kubeletConfigMapName defines base kubelet configuration ConfigMap name for kubeadm < 1.24.
+	kubeletConfigMapName = "kubelet-config-%d.%d"
+)
+
+// minVerUnversionedKubeletConfig defines minimum version from which kubeadm uses kubelet-config as a ConfigMap name.
+var minVerUnversionedKubeletConfig = semver.MustParse("1.24.0")
 
 func UploadKubeadmConfig(client kubernetes.Interface, config *Configuration) ([]byte, error) {
 	return nil, uploadconfig.UploadConfiguration(&config.InitConfiguration, client)
@@ -34,7 +45,10 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) ([]
 		return nil, err
 	}
 
-	configMapName := kubeadmconstants.KubeletBaseConfigurationConfigMap
+	configMapName, err := generateKubeletConfigMapName(config.Parameters.TenantControlPlaneVersion)
+	if err != nil {
+		return nil, err
+	}
 
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -155,4 +169,18 @@ func createConfigMapRBACRules(client kubernetes.Interface) error {
 			},
 		},
 	})
+}
+
+func generateKubeletConfigMapName(version string) (string, error) {
+	parsedVersion, err := semver.ParseTolerant(version)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to parse kubernetes version %q", version)
+	}
+
+	majorMinor := semver.Version{Major: parsedVersion.Major, Minor: parsedVersion.Minor}
+	if majorMinor.GTE(minVerUnversionedKubeletConfig) {
+		return kubeadmconstants.KubeletBaseConfigurationConfigMap, nil
+	}
+
+	return fmt.Sprintf(kubeletConfigMapName, parsedVersion.Major, parsedVersion.Minor), nil
 }
