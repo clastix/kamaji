@@ -35,7 +35,6 @@ func CreateKubeadmInitConfiguration(params Parameters) (*Configuration, error) {
 		AdvertiseAddress: params.TenantControlPlaneAddress,
 		BindPort:         params.TenantControlPlanePort,
 	}
-	conf.NodeRegistration.Name = params.TenantControlPlaneName
 
 	caFile, certFile, keyFile := "", "", ""
 	if strings.HasPrefix(params.ETCDs[0], "https") {
