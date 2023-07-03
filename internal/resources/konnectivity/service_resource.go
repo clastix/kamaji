@@ -142,6 +142,9 @@ func (r *ServiceResource) mutate(_ context.Context, tenantControlPlane *kamajiv1
 		r.resource.Spec.Ports[1].Protocol = corev1.ProtocolTCP
 		r.resource.Spec.Ports[1].Port = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port
 		r.resource.Spec.Ports[1].TargetPort = intstr.FromInt(int(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port))
+		if tenantControlPlane.Spec.ControlPlane.Service.ServiceType == kamajiv1alpha1.ServiceTypeNodePort {
+			r.resource.Spec.Ports[1].NodePort = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port
+		}
 
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
