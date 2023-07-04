@@ -64,7 +64,7 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) ([]
 		return nil, err
 	}
 
-	if err = createConfigMapRBACRules(client); err != nil {
+	if err = createConfigMapRBACRules(client, configMapName); err != nil {
 		return nil, errors.Wrap(err, "error creating kubelet configuration configmap RBAC rules")
 	}
 
@@ -128,7 +128,7 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration) ([]by
 	return utilities.EncodeToYaml(&kc)
 }
 
-func createConfigMapRBACRules(client kubernetes.Interface) error {
+func createConfigMapRBACRules(client kubernetes.Interface, configMapName string) error {
 	configMapRBACName := kubeadmconstants.KubeletBaseConfigMapRole
 
 	if err := apiclient.CreateOrUpdateRole(client, &rbacv1.Role{
@@ -141,7 +141,7 @@ func createConfigMapRBACRules(client kubernetes.Interface) error {
 				Verbs:         []string{"get"},
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
-				ResourceNames: []string{kubeadmconstants.KubeletBaseConfigurationConfigMap},
+				ResourceNames: []string{configMapName},
 			},
 		},
 	}); err != nil {
