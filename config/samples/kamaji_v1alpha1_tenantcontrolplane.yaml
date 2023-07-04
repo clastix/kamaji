@@ -1,7 +1,7 @@
 apiVersion: kamaji.clastix.io/v1alpha1
 kind: TenantControlPlane
 metadata:
-  name: k8s-126
+  name: 126-k8s
 spec:
   controlPlane:
     deployment:
