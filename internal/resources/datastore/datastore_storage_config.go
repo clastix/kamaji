@@ -6,6 +6,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
@@ -94,8 +95,9 @@ func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.Te
 			if len(fromStatus) > 0 {
 				return []byte(fromStatus)
 			}
-
-			return []byte(fmt.Sprintf("%s_%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName()))
+			// The dash character (-) must be replaced with an underscore, PostgreSQL is complaining about it:
+			// https://github.com/clastix/kamaji/issues/328
+			return []byte(strings.ReplaceAll(fmt.Sprintf("%s_%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName()), "-", "_"))
 		}
 
 		r.resource.Data = map[string][]byte{
