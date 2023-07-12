@@ -114,7 +114,7 @@ helm install \
 
 ## Install Kamaji Controller
 
-Installing Kamaji via Helm charts is the preferred way. The Kamaji controller needs to access a Datastore in order to save data of the tenants' clusters. The Kamaji Helm Chart provides the installation of a basic unamanaged `etcd` as datastore, out of box. 
+Installing Kamaji via Helm charts is the preferred way. The Kamaji controller needs to access a Datastore in order to save data of the tenants' clusters. The Kamaji Helm Chart provides the installation of a basic unmanaged `etcd` as datastore, out of box. 
 
 Install Kamaji with `helm` using an unmanaged `etcd` as default datastore:
 
