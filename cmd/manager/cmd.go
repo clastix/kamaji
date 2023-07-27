@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	goRuntime "runtime"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -33,18 +34,19 @@ import (
 func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	// CLI flags
 	var (
-		metricsBindAddress        string
-		healthProbeBindAddress    string
-		leaderElect               bool
-		tmpDirectory              string
-		kineImage                 string
-		datastore                 string
-		managerNamespace          string
-		managerServiceAccountName string
-		managerServiceName        string
-		webhookCABundle           []byte
-		migrateJobImage           string
-		maxConcurrentReconciles   int
+		metricsBindAddress         string
+		healthProbeBindAddress     string
+		leaderElect                bool
+		tmpDirectory               string
+		kineImage                  string
+		controllerReconcileTimeout time.Duration
+		datastore                  string
+		managerNamespace           string
+		managerServiceAccountName  string
+		managerServiceName         string
+		webhookCABundle            []byte
+		migrateJobImage            string
+		maxConcurrentReconciles    int
 
 		webhookCAPath string
 	)
@@ -71,6 +73,10 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 
 			if err = datastoreutils.CheckExists(ctx, scheme, datastore); err != nil {
 				return err
+			}
+
+			if controllerReconcileTimeout.Seconds() == 0 {
+				return fmt.Errorf("the controller reconcile timeout must be greater than zero")
 			}
 
 			return nil
@@ -111,6 +117,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				Client:    mgr.GetClient(),
 				APIReader: mgr.GetAPIReader(),
 				Config: controllers.TenantControlPlaneReconcilerConfig{
+					ReconcileTimeout:     controllerReconcileTimeout,
 					DefaultDataStoreName: datastore,
 					KineContainerImage:   kineImage,
 					TmpBaseDirectory:     tmpDirectory,
@@ -231,6 +238,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	cmd.Flags().StringVar(&managerServiceName, "webhook-service-name", "kamaji-webhook-service", "The Kamaji webhook server Service name which is used to get validation webhooks, required for the TenantControlPlane migration jobs.")
 	cmd.Flags().StringVar(&managerServiceAccountName, "serviceaccount-name", os.Getenv("SERVICE_ACCOUNT"), "The Kubernetes Namespace on which the Operator is running in, required for the TenantControlPlane migration jobs.")
 	cmd.Flags().StringVar(&webhookCAPath, "webhook-ca-path", "/tmp/k8s-webhook-server/serving-certs/ca.crt", "Path to the Manager webhook server CA, required for the TenantControlPlane migration jobs.")
+	cmd.Flags().DurationVar(&controllerReconcileTimeout, "controller-reconcile-timeout", 30*time.Second, "The reconciliation request timeout before the controller withdraw the external resource calls, such as dealing with the Datastore, or the Tenant Control Plane API endpoint.")
 
 	cobra.OnInitialize(func() {
 		viper.AutomaticEnv()
