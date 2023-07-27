@@ -56,6 +56,7 @@ type TenantControlPlaneReconciler struct {
 
 // TenantControlPlaneReconcilerConfig gives the necessary configuration for TenantControlPlaneReconciler.
 type TenantControlPlaneReconcilerConfig struct {
+	ReconcileTimeout     time.Duration
 	DefaultDataStoreName string
 	KineContainerImage   string
 	TmpBaseDirectory     string
@@ -73,6 +74,10 @@ type TenantControlPlaneReconcilerConfig struct {
 
 func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
+
+	var cancelFn context.CancelFunc
+	ctx, cancelFn = context.WithTimeout(ctx, r.Config.ReconcileTimeout)
+	defer cancelFn()
 
 	tenantControlPlane, err := r.getTenantControlPlane(ctx, req.NamespacedName)()
 	if err != nil {
