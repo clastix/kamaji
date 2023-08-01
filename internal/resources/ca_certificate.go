@@ -4,6 +4,7 @@
 package resources
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -96,6 +97,13 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.CACertAndKeyBaseName, err.Error()))
 			}
+			// Appending the Cluster API required keys if they're missing:
+			// with this we're sure to avoid introducing breaking changes.
+			if isValid && (!bytes.Equal(r.resource.Data[corev1.TLSCertKey], r.resource.Data[kubeadmconstants.CACertName]) || !bytes.Equal(r.resource.Data[kubeadmconstants.CAKeyName], r.resource.Data[corev1.TLSPrivateKeyKey])) {
+				r.resource.Data[corev1.TLSCertKey] = r.resource.Data[kubeadmconstants.CACertName]
+				r.resource.Data[corev1.TLSPrivateKeyKey] = r.resource.Data[kubeadmconstants.CAKeyName]
+			}
+
 			if isValid {
 				return nil
 			}
@@ -122,6 +130,11 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 		r.resource.Data = map[string][]byte{
 			kubeadmconstants.CACertName: ca.Certificate,
 			kubeadmconstants.CAKeyName:  ca.PrivateKey,
+			// Required for Cluster API integration which is reading the basic TLS keys.
+			// We cannot switch over basic corev1.Secret keys for backward compatibility,
+			// it would require a new CA generation breaking all the clusters deployed.
+			corev1.TLSCertKey:       ca.Certificate,
+			corev1.TLSPrivateKeyKey: ca.PrivateKey,
 		}
 
 		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
