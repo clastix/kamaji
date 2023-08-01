@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: v0.3.1
+appVersion: v0.3.2
 description: Kamaji deploys and operates Kubernetes at scale with a fraction of the operational burden. Kamaji turns any Kubernetes cluster into an “admin cluster” to orchestrate other Kubernetes clusters called “tenant clusters”. Kamaji is special because the Control Plane components are running in a single pod instead of dedicated machines. This solution makes running multiple Control Planes cheaper and easier to deploy and operate.
 home: https://github.com/clastix/kamaji
 icon: https://github.com/clastix/kamaji/raw/master/assets/logo-colored.png
@@ -15,7 +15,7 @@ name: kamaji
 sources:
 - https://github.com/clastix/kamaji
 type: application
-version: 0.12.2
+version: 0.12.3
 annotations:
   catalog.cattle.io/certified: partner
   catalog.cattle.io/release-name: kamaji
