@@ -159,6 +159,20 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
+		r.resource.SetLabels(utilities.MergeMaps(
+			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
+			map[string]string{
+				constants.ControllerLabelResource: "kubeconfig",
+			},
+		))
+		r.resource.SetAnnotations(map[string]string{constants.Checksum: checksum})
+
+		if err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
+			logger.Error(err, "cannot set controller reference", "resource", r.GetName())
+
+			return err
+		}
+
 		var shouldCreate bool
 
 		shouldCreate = shouldCreate || r.resource.Data == nil                                            // Missing data key
@@ -185,13 +199,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			}
 		}
 
-		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
-
-		r.resource.SetAnnotations(map[string]string{
-			constants.Checksum: checksum,
-		})
-
-		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
+		return nil
 	}
 }
 
