@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -92,6 +93,18 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 
 			return err
 		}
+
+		r.resource.SetLabels(utilities.MergeMaps(
+			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
+			map[string]string{
+				constants.ControllerLabelResource: "x509",
+			},
+		))
+
+		if err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
+			logger.Error(err, "cannot set controller reference", "resource", r.GetName())
+		}
+
 		if checksum := tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0 {
 			isCAValid, err := crypto.VerifyCertificate(r.resource.Data[kubeadmconstants.FrontProxyClientCertName], secretCA.Data[kubeadmconstants.FrontProxyCACertName], x509.ExtKeyUsageClientAuth)
 			if err != nil {
@@ -135,10 +148,8 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 			kubeadmconstants.FrontProxyClientKeyName:  certificateKeyPair.PrivateKey,
 		}
 
-		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
-
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
-		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
+		return nil
 	}
 }

@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -86,6 +87,19 @@ func (r *KubeconfigResource) UpdateTenantControlPlaneStatus(_ context.Context, t
 func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
+
+		r.resource.SetLabels(utilities.MergeMaps(
+			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
+			map[string]string{
+				constants.ControllerLabelResource: "kubeconfig",
+			},
+		))
+
+		if err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
+			logger.Error(err, "cannot set controller reference for kubeconfig", "resource", r.GetName())
+
+			return err
+		}
 
 		if checksum := tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) {
 			return nil
@@ -157,8 +171,6 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
-		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
-
-		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
+		return nil
 	}
 }
