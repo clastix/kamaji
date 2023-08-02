@@ -189,7 +189,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 			kubeconfig, kcErr := kubeadm.CreateKubeconfig(r.KubeConfigFileName, crtKeyPair, config)
 			if kcErr != nil {
-				logger.Error(kcErr, "cannot shouldCreate a valid kubeconfig")
+				logger.Error(kcErr, "cannot create a valid kubeconfig")
 
 				return kcErr
 			}
