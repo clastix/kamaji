@@ -44,17 +44,7 @@ func GetTenantKubeconfig(ctx context.Context, client client.Client, tenantContro
 		return nil, err
 	}
 
-	bytes, ok := secretKubeconfig.Data[kubeadmconstants.AdminKubeConfigFileName]
-	if !ok {
-		return nil, fmt.Errorf("%s is not into kubeconfig secret", kubeadmconstants.AdminKubeConfigFileName)
-	}
-
-	kubeconfig := &clientcmdapiv1.Config{}
-	if err := DecodeFromYAML(string(bytes), kubeconfig); err != nil {
-		return nil, err
-	}
-
-	return kubeconfig, nil
+	return DecodeKubeconfig(*secretKubeconfig, kubeadmconstants.AdminKubeConfigFileName)
 }
 
 func GetRESTClientConfig(ctx context.Context, client client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*restclient.Config, error) {

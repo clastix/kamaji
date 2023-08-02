@@ -50,6 +50,10 @@ type TenantControlPlaneReconciler struct {
 	KamajiService           string
 	KamajiMigrateImage      string
 	MaxConcurrentReconciles int
+	// CertificateChan is the channel used by the CertificateLifecycleController that is checking for
+	// certificates and kubeconfig user certs validity: a generic event for the given TCP will be triggered
+	// once the validity threshold for the given certificate is reached.
+	CertificateChan CertificateChannel
 
 	clock mutex.Clock
 }
@@ -223,6 +227,14 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 	r.clock = clock.RealClock{}
 
 	return ctrl.NewControllerManagedBy(mgr).
+		Watches(&source.Channel{Source: r.CertificateChan}, handler.Funcs{GenericFunc: func(genericEvent event.GenericEvent, limitingInterface workqueue.RateLimitingInterface) {
+			limitingInterface.AddRateLimited(ctrl.Request{
+				NamespacedName: k8stypes.NamespacedName{
+					Namespace: genericEvent.Object.GetNamespace(),
+					Name:      genericEvent.Object.GetName(),
+				},
+			})
+		}}).
 		Watches(&source.Channel{Source: r.TriggerChan}, handler.Funcs{GenericFunc: func(genericEvent event.GenericEvent, limitingInterface workqueue.RateLimitingInterface) {
 			limitingInterface.AddRateLimited(ctrl.Request{
 				NamespacedName: k8stypes.NamespacedName{
