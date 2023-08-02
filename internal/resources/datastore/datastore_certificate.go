@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -88,6 +89,19 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 
 		r.resource.Data["ca.crt"] = ca
 
+		r.resource.SetLabels(utilities.MergeMaps(
+			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
+			map[string]string{
+				constants.ControllerLabelResource: "x509",
+			},
+		))
+
+		if err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
+			logger.Error(err, "cannot set controller reference", "resource", r.GetName())
+
+			return err
+		}
+
 		if utilities.GetObjectChecksum(r.resource) == utilities.CalculateMapChecksum(r.resource.Data) {
 			if r.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
 				if isValid, _ := crypto.IsValidCertificateKeyPairBytes(r.resource.Data["server.crt"], r.resource.Data["server.key"]); isValid {
@@ -141,11 +155,6 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
-		r.resource.SetLabels(utilities.MergeMaps(
-			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
-			r.resource.GetLabels(),
-		))
-
-		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
+		return nil
 	}
 }

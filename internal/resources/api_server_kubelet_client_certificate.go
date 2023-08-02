@@ -103,6 +103,8 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 
 		if err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
 			logger.Error(err, "cannot set controller reference", "resource", r.GetName())
+
+			return err
 		}
 
 		if checksum := tenantControlPlane.Status.Certificates.APIServerKubeletClient.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0 {

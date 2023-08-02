@@ -103,6 +103,8 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 
 		if err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
 			logger.Error(err, "cannot set controller reference", "resource", r.GetName())
+
+			return err
 		}
 
 		if checksum := tenantControlPlane.Status.Certificates.APIServer.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0 {

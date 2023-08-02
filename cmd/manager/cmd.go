@@ -31,6 +31,7 @@ import (
 	"github.com/clastix/kamaji/internal/webhook/routes"
 )
 
+//nolint:maintidx
 func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	// CLI flags
 	var (
@@ -105,7 +106,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
-			tcpChannel := make(controllers.TenantControlPlaneChannel)
+			tcpChannel, certChannel := make(controllers.TenantControlPlaneChannel), make(controllers.CertificateChannel)
 
 			if err = (&controllers.DataStore{TenantControlPlaneTrigger: tcpChannel}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "DataStore")
@@ -122,6 +123,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 					KineContainerImage:   kineImage,
 					TmpBaseDirectory:     tmpDirectory,
 				},
+				CertificateChan:         certChannel,
 				TriggerChan:             tcpChannel,
 				KamajiNamespace:         managerNamespace,
 				KamajiServiceAccount:    managerServiceAccountName,
@@ -132,6 +134,12 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 
 			if err = reconciler.SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Namespace")
+
+				return err
+			}
+
+			if err = (&controllers.CertificateLifecycle{Channel: certChannel}).SetupWithManager(mgr); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "CertificateLifecycle")
 
 				return err
 			}
