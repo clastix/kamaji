@@ -65,6 +65,7 @@ nav:
   - guides/upgrade.md
   - guides/datastore-migration.md
   - guides/backup-and-restore.md
+  - guides/certs-lifecycle.md
 - 'Use Cases': use-cases.md
 - 'Reference':
   - reference/index.md
