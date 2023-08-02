@@ -7,9 +7,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/clientcmd"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,6 +21,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/constants"
+	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -166,6 +170,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		shouldCreate = shouldCreate || len(r.resource.Data[r.KubeConfigFileName]) == 0                   // Missing kubeconfig file, must be generated
 		shouldCreate = shouldCreate || !kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName]) // invalid kubeconfig
 		shouldCreate = shouldCreate || status.Checksum != checksum || len(r.resource.UID) == 0           // Wrong checksum
+		shouldCreate = shouldCreate || !r.isValid(logger)
 
 		if shouldCreate {
 			crtKeyPair := kubeadm.CertificatePrivateKeyPair{
@@ -210,4 +215,47 @@ func (r *KubeconfigResource) localhostAsAdvertiseAddress(config *kubeadm.Configu
 	config.InitConfiguration.LocalAPIEndpoint.AdvertiseAddress = localhost
 
 	return nil
+}
+
+func (r *KubeconfigResource) isValid(logger logr.Logger) bool {
+	isValid, err := r.checkCertificateAndPrivateKeyPairValidity()
+	if err != nil {
+		logger.Info(err.Error())
+	}
+
+	return isValid
+}
+
+func (r *KubeconfigResource) checkCertificateAndPrivateKeyPairValidity() (bool, error) {
+	data, err := toKubeconfigBytes(r.resource, r.KubeConfigFileName)
+	if err != nil {
+		return false, err
+	}
+
+	config, err := clientcmd.Load(data)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to convert kubeconfig Secret into a clientcmdapi.Config")
+	}
+
+	for _, authInfo := range config.AuthInfos {
+		isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(authInfo.ClientCertificateData, authInfo.ClientKeyData)
+		if err != nil {
+			return false, errors.Wrapf(err, "%s certificate-private_key pair is not valid", r.KubeConfigFileName)
+		}
+
+		if isValid {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func toKubeconfigBytes(out *corev1.Secret, kubeConfigFileName string) ([]byte, error) {
+	data, ok := out.Data[kubeConfigFileName]
+	if !ok {
+		return nil, errors.Errorf("missing key %q in secret data", kubeConfigFileName)
+	}
+
+	return data, nil
 }
