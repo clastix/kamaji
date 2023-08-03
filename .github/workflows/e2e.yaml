@@ -13,6 +13,7 @@ on:
       - 'main.go'
       - 'Makefile'
       - 'internal/**'
+      - 'cmd/**'
   pull_request:
     branches: [ "*" ]
     paths:
@@ -25,6 +26,7 @@ on:
       - 'main.go'
       - 'Makefile'
       - 'internal/**'
+      - 'cmd/**'
 
 jobs:
   kind:
