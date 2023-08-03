@@ -14,8 +14,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -41,6 +43,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		tmpDirectory               string
 		kineImage                  string
 		controllerReconcileTimeout time.Duration
+		cacheResyncPeriod          time.Duration
 		datastore                  string
 		managerNamespace           string
 		managerServiceAccountName  string
@@ -99,6 +102,11 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				LeaderElection:          leaderElect,
 				LeaderElectionNamespace: managerNamespace,
 				LeaderElectionID:        "799b98bc.clastix.io",
+				NewCache: func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
+					opts.Resync = &cacheResyncPeriod
+
+					return cache.New(config, opts)
+				},
 			})
 			if err != nil {
 				setupLog.Error(err, "unable to start manager")
@@ -247,6 +255,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	cmd.Flags().StringVar(&managerServiceAccountName, "serviceaccount-name", os.Getenv("SERVICE_ACCOUNT"), "The Kubernetes Namespace on which the Operator is running in, required for the TenantControlPlane migration jobs.")
 	cmd.Flags().StringVar(&webhookCAPath, "webhook-ca-path", "/tmp/k8s-webhook-server/serving-certs/ca.crt", "Path to the Manager webhook server CA, required for the TenantControlPlane migration jobs.")
 	cmd.Flags().DurationVar(&controllerReconcileTimeout, "controller-reconcile-timeout", 30*time.Second, "The reconciliation request timeout before the controller withdraw the external resource calls, such as dealing with the Datastore, or the Tenant Control Plane API endpoint.")
+	cmd.Flags().DurationVar(&cacheResyncPeriod, "cache-resync-period", 10*time.Hour, "The controller-runtime.Manager cache resync period.")
 
 	cobra.OnInitialize(func() {
 		viper.AutomaticEnv()
