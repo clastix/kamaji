@@ -10,6 +10,9 @@ import (
 
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/kubeconfig"
+
+	"github.com/clastix/kamaji/internal/crypto"
+	"github.com/clastix/kamaji/internal/utilities"
 )
 
 func buildCertificateDirectoryWithCA(ca CertificatePrivateKeyPair, directory string) error {
@@ -46,6 +49,13 @@ func CreateKubeconfig(kubeconfigName string, ca CertificatePrivateKeyPair, confi
 	return os.ReadFile(path)
 }
 
-func IsKubeconfigValid(kubeconfigBytes []byte) bool {
-	return len(kubeconfigBytes) > 0
+func IsKubeconfigValid(bytes []byte) bool {
+	kc, err := utilities.DecodeKubeconfigYAML(bytes)
+	if err != nil {
+		return false
+	}
+
+	ok, _ := crypto.IsValidCertificateKeyPairBytes(kc.AuthInfos[0].AuthInfo.ClientCertificateData, kc.AuthInfos[0].AuthInfo.ClientKeyData)
+
+	return ok
 }
