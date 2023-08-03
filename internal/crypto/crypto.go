@@ -194,9 +194,11 @@ func generateCertificateKeyPairBytes(template *x509.Certificate, caCert *x509.Ce
 }
 
 func checkCertificateValidity(cert x509.Certificate) bool {
-	now := time.Now()
+	// Avoiding waiting for the exact expiration date by creating a one-day gap
+	notAfter := cert.NotAfter.After(time.Now().AddDate(0, 0, 1))
+	notBefore := cert.NotBefore.Before(time.Now())
 
-	return now.Before(cert.NotAfter) && now.After(cert.NotBefore)
+	return notAfter && notBefore
 }
 
 func checkPublicKeys(a rsa.PublicKey, b rsa.PublicKey) bool {
