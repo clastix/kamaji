@@ -191,6 +191,8 @@ kind: TenantControlPlane
 metadata:
   name: benchmark$I
   namespace: $NS
+  labels:
+    tenant.clastix.io: benchmark$I
 spec:
   dataStore: $DS
   controlPlane:

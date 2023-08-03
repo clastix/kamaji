@@ -2,6 +2,8 @@ apiVersion: kamaji.clastix.io/v1alpha1
 kind: TenantControlPlane
 metadata:
   name: konnectivity-addon
+  labels:
+    tenant.clastix.io: konnectivity-addon
 spec:
   deployment:
     replicas: 2
