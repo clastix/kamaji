@@ -14,6 +14,8 @@ apiVersion: kamaji.clastix.io/v1alpha1
 kind: TenantControlPlane
 metadata:
   name: tenant-00
+  labels:
+    tenant.clastix.io: tenant-00
 spec:
   controlPlane:
     deployment:

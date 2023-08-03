@@ -2,6 +2,8 @@ apiVersion: kamaji.clastix.io/v1alpha1
 kind: TenantControlPlane
 metadata:
   name: kine
+  labels:
+    tenant.clastix.io: kine
 spec:
   addons:
     coreDNS: {}

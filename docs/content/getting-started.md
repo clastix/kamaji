@@ -99,6 +99,8 @@ kind: TenantControlPlane
 metadata:
   name: ${TENANT_NAME}
   namespace: ${TENANT_NAMESPACE}
+  labels:
+    tenant.clastix.io: ${TENANT_NAME}
 spec:
   dataStore: default
   controlPlane:

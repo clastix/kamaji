@@ -2,6 +2,8 @@ apiVersion: kamaji.clastix.io/v1alpha1
 kind: TenantControlPlane
 metadata:
   name: additional-volumes
+  labels:
+    tenant.clastix.io: additional-volumes
 spec:
   controlPlane:
     deployment:
