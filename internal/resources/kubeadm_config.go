@@ -71,7 +71,7 @@ func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(ctx context.Conte
 
 func (r *KubeadmConfigResource) getControlPlaneEndpoint(ingress *kamajiv1alpha1.IngressSpec, address string, port int32) string {
 	if ingress != nil && len(ingress.Hostname) > 0 {
-		return ingress.Hostname
+		address, port = utilities.GetControlPlaneAddressAndPortFromHostname(ingress.Hostname, port)
 	}
 
 	return fmt.Sprintf("%s:%d", address, port)
