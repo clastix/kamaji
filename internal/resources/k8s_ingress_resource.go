@@ -147,7 +147,7 @@ func (r *KubernetesIngressResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 			return fmt.Errorf("missing hostname to expose the Tenant Control Plane using an Ingress resource")
 		}
 
-		rule.Host = tenantControlPlane.Spec.ControlPlane.Ingress.Hostname
+		rule.Host, _ = utilities.GetControlPlaneAddressAndPortFromHostname(tenantControlPlane.Spec.ControlPlane.Ingress.Hostname, 0)
 
 		r.resource.Spec.Rules = []networkingv1.IngressRule{
 			rule,
