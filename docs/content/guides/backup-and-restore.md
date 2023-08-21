@@ -1,4 +1,4 @@
-# Backup and restore
+# Backup and Restore
 
 As mentioned in the introduction, Kamaji “tenant clusters” are just regular pods scheduled on top of a choosn admin cluster; as such, you can take advantage of the same backup and restore methods that you would use to maintain the standard workload.
 

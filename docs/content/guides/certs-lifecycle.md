@@ -1,4 +1,4 @@
-# Certificates lifecycle
+# Certificates Lifecycle
 
 Kamaji is responsible for creating the required certificates, such as:
 
