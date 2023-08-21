@@ -27,8 +27,17 @@ func (h handlersChainer) Handler(object runtime.Object, routeHandlers ...handler
 	return func(ctx context.Context, req admission.Request) admission.Response {
 		decodedObj, oldDecodedObj := object.DeepCopyObject(), object.DeepCopyObject()
 
-		if err := h.decoder.Decode(req, decodedObj); err != nil {
-			return admission.Errored(http.StatusInternalServerError, errors.Wrap(err, fmt.Sprintf("unable to decode into %T", object)))
+		switch req.Operation {
+		case admissionv1.Delete:
+			// When deleting the OldObject struct field contains the object being deleted:
+			// https://github.com/kubernetes/kubernetes/pull/76346
+			if err := h.decoder.DecodeRaw(req.OldObject, decodedObj); err != nil {
+				return admission.Errored(http.StatusInternalServerError, errors.Wrap(err, fmt.Sprintf("unable to decode deleted object into %T", object)))
+			}
+		default:
+			if err := h.decoder.Decode(req, decodedObj); err != nil {
+				return admission.Errored(http.StatusInternalServerError, errors.Wrap(err, fmt.Sprintf("unable to decode into %T", object)))
+			}
 		}
 
 		fnInvoker := func(fn func(runtime.Object) handlers.AdmissionResponse) (patches []jsonpatch.JsonPatchOperation, err error) {
