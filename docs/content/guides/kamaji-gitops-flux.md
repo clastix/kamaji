@@ -1,4 +1,4 @@
-# Manage tenant resources GitOps-way from the admin cluster
+# Manage Tenant Control Planes with GitOps
 
 This guide describe a declarative way to deploy Kubernetes add-ons across multiple Tenant Clusters, the GitOps-way. An admin may need to apply a specific workload into Tenant Clusters and ensure is constantly reconciled, no matter what the tenants will do in their clusters. Examples include installing monitoring agents, ensuring specific policies, installing infrastructure operators like Cert Manager and so on.
 
