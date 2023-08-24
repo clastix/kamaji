@@ -1,0 +1,65 @@
+project_name: kamaji
+
+before:
+  hooks:
+  - go mod tidy
+
+builds:
+  - goos:
+      - linux
+    goarch:
+      - amd64
+    ldflags:
+      - "-X github.com/clastix/kamaji/internal.GitRepo=${{ .GitURL }} -X github.com/clastix/kamaji/internal.GitTag={{ .Tag }} -X github.com/clastix/kamaji/internal.GitCommit={{ .ShortCommit }} -X github.com/clastix/kamaji/internal.GitDirty={{ .IsGitDirty }} -X github.com/clastix/kamaji/internal.BuildTime={{ .Date }}"
+    env:
+      - CGO_ENABLED=0
+
+kos:
+  - base_image: cgr.dev/chainguard/static
+    repository: ghcr.io/maxgio92/kamaji
+    bare: true
+    tags:
+      - '{{ .Version }}'
+      - latest
+    platforms:
+      - linux/amd64
+    sbom: none # defaults spdx
+    #ldflags: # Inherited from builds.ldflags
+    #env: # Inherited from builds.env
+
+source:
+  enabled: true
+  name_template: "{{ .ProjectName }}_{{ .Version }}_source"
+
+release:
+  extra_files:
+    - glob: config/release/*.yaml
+
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
+  algorithm: sha256
+  extra_files:
+    - glob: config/release/*.yaml
+
+sboms:
+  - id: source
+    cmd: syft
+    artifacts: source
+    documents:
+      - "{{ .ProjectName }}_{{ .Version }}_sbom.spdx.json"
+  
+docker_signs:
+  - cmd: cosign
+    artifacts: all
+    output: true
+    args:
+      - 'sign'
+      - '${artifact}'
+      - "--yes"
+  
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
