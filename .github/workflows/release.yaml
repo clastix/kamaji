@@ -6,8 +6,9 @@ on:
       - "v*"
 
 permissions:
-  contents: write
-  packages: write
+  contents: write # needed to write releases
+  packages: write # needed for ghcr access
+  id-token: write # needed for cosign keyless signing
   # issues: write
 
 jobs:
