@@ -1,0 +1,15 @@
+{
+    "name": "kamaji-core",
+    "config": {
+      "image": "docker.io/clastix/kamaji",
+      "live_reload_deps": [
+        "main.go",
+        "go.mod",
+        "go.sum",
+        "api",
+        "config",
+        "controllers"
+      ],
+      "label": "CACPCK"
+    }
+}
