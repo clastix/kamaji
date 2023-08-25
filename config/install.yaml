@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
+    cluster.x-k8s.io/provider: kamaji-core
     control-plane: controller-manager
   name: kamaji-system
 ---
@@ -11,6 +12,8 @@ metadata:
   annotations:
     cert-manager.io/inject-ca-from: kamaji-system/kamaji-serving-cert
     controller-gen.kubebuilder.io/version: v0.11.4
+  labels:
+    cluster.x-k8s.io/provider: kamaji-core
   name: datastores.kamaji.clastix.io
 spec:
   group: kamaji.clastix.io
@@ -250,6 +253,8 @@ metadata:
   annotations:
     cert-manager.io/inject-ca-from: kamaji-system/kamaji-serving-cert
     controller-gen.kubebuilder.io/version: v0.11.4
+  labels:
+    cluster.x-k8s.io/provider: kamaji-core
   name: tenantcontrolplanes.kamaji.clastix.io
 spec:
   conversion:
@@ -4744,12 +4749,16 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  labels:
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-controller-manager
   namespace: kamaji-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  labels:
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-leader-election-role
   namespace: kamaji-system
 rules:
@@ -4788,6 +4797,8 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  labels:
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-manager-role
 rules:
 - apiGroups:
@@ -4910,6 +4921,8 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  labels:
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-metrics-reader
 rules:
 - nonResourceURLs:
@@ -4920,6 +4933,8 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  labels:
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-proxy-role
 rules:
 - apiGroups:
@@ -4938,6 +4953,8 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  labels:
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-leader-election-rolebinding
   namespace: kamaji-system
 roleRef:
@@ -4952,6 +4969,8 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  labels:
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -4965,6 +4984,8 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  labels:
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -4991,6 +5012,8 @@ data:
       resourceName: 799b98bc.clastix.io
 kind: ConfigMap
 metadata:
+  labels:
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-manager-config
   namespace: kamaji-system
 ---
@@ -4998,6 +5021,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
+    cluster.x-k8s.io/provider: kamaji-core
     control-plane: controller-manager
   name: kamaji-controller-manager-metrics-service
   namespace: kamaji-system
@@ -5008,6 +5032,7 @@ spec:
     protocol: TCP
     targetPort: https
   selector:
+    cluster.x-k8s.io/provider: kamaji-core
     control-plane: controller-manager
 ---
 apiVersion: v1
@@ -5020,6 +5045,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: service
     app.kubernetes.io/part-of: operator
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-webhook-service
   namespace: kamaji-system
 spec:
@@ -5028,12 +5054,14 @@ spec:
     protocol: TCP
     targetPort: 9443
   selector:
+    cluster.x-k8s.io/provider: kamaji-core
     control-plane: controller-manager
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
+    cluster.x-k8s.io/provider: kamaji-core
     control-plane: controller-manager
   name: kamaji-controller-manager
   namespace: kamaji-system
@@ -5041,16 +5069,19 @@ spec:
   replicas: 1
   selector:
     matchLabels:
+      cluster.x-k8s.io/provider: kamaji-core
       control-plane: controller-manager
   template:
     metadata:
       labels:
+        cluster.x-k8s.io/provider: kamaji-core
         control-plane: controller-manager
     spec:
       containers:
       - args:
         - manager
         - --leader-elect
+        - --datastore=kamaji-etcd
         command:
         - /kamaji
         env:
@@ -5117,6 +5148,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: certificate
     app.kubernetes.io/part-of: operator
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-serving-cert
   namespace: kamaji-system
 spec:
@@ -5138,6 +5170,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: issuer
     app.kubernetes.io/part-of: operator
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-selfsigned-issuer
   namespace: kamaji-system
 spec:
@@ -5146,6 +5179,8 @@ spec:
 apiVersion: kamaji.clastix.io/v1alpha1
 kind: DataStore
 metadata:
+  labels:
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-etcd
   namespace: kamaji-system
 spec:
@@ -5183,6 +5218,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
+    cluster.x-k8s.io/provider: kamaji-core
     control-plane: controller-manager
   name: kamaji-controller-manager-metrics-monitor
   namespace: kamaji-system
@@ -5210,6 +5246,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: mutatingwebhookconfiguration
     app.kubernetes.io/part-of: operator
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
@@ -5245,6 +5282,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: validatingwebhookconfiguration
     app.kubernetes.io/part-of: operator
+    cluster.x-k8s.io/provider: kamaji-core
   name: kamaji-validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
