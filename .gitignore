@@ -24,6 +24,9 @@ bin
 *~
 .vscode
 
+# Tilt files.
+.tiltbuild
+
 **/*.kubeconfig
 **/*.crt
 **/*.key
