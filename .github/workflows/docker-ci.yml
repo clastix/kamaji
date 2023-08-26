@@ -19,7 +19,7 @@ jobs:
         id: build-args
         run: |
           # Declare vars for internal use
-          VERSION=$(git describe --abbrev=0 --tags)
+          VERSION=$(make get_version)
           GIT_HEAD_COMMIT=$(git rev-parse --short HEAD)
           GIT_TAG_COMMIT=$(git rev-parse --short $VERSION)
           GIT_MODIFIED_1=$(git diff $GIT_HEAD_COMMIT $GIT_TAG_COMMIT --quiet && echo "" || echo ".dev")

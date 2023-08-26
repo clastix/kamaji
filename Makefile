@@ -154,6 +154,10 @@ GIT_MODIFIED    ?= $$(echo "$(GIT_MODIFIED_1)$(GIT_MODIFIED_2)")
 GIT_REPO        ?= $$(git config --get remote.origin.url)
 BUILD_DATE      ?= $$(git log -1 --format="%at" | xargs -I{} date -d @{} +%Y-%m-%dT%H:%M:%S)
 
+.PHONY: get_version
+get_version:
+	@echo -n v$(VERSION)
+
 build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
