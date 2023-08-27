@@ -169,3 +169,6 @@ admission webhook "catchall.migrate.kamaji.clastix.io" denied the request
 After a while, depending on the amount of data to migrate, the Tenant Control Plane is put back in full operating mode by the Kamaji controller.
 
 > Please, note the datastore migration leaves the data on the default datastore, so you have to remove it manually.
+
+## Post migration
+After migrating data to the new datastore, complete the migration procedure by restarting the `kubelet.service` on all the tenant worker nodes.
