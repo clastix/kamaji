@@ -278,9 +278,9 @@ kubernetes   10.240.0.100:6443   57m
 
 The Tenant Control Plane is made of pods running in the Kamaji Admin Cluster. At this point, the tenant cluster has no worker nodes. So, the next step is to join some worker nodes to the Tenant Control Plane.
 
-Kamaji does not provide any helper for creation of tenant worker nodes, insteat it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api) project by providing a `ControlPlane` provider. This allows you to create the tenant clusters, including worker nodes, in a completely declarative way. Currently, a Cluster API `ControlPlane` provider for Azure is not yet available: check the road-map on the [official repository](https://github.com/clastix/cluster-api-control-plane-provider-kamaji). 
+Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the tenant clusters, including worker nodes, in a completely declarative way. Currently, a Cluster API `ControlPlane` provider for Azure is not yet available: check the road-map on the [official repository](https://github.com/clastix/cluster-api-control-plane-provider-kamaji). 
 
-An alternative approach to create and join worker nodes in Azure is to manually create the VMs, turn them into Kubernetes worker nodes and then join through the  `kubeadm` command.
+An alternative approach to create and join worker nodes in Azure is to manually create the VMs, turn them into Kubernetes worker nodes and then join through the `kubeadm` command.
 
 Create an Azure VM Stateful Set to host worker nodes
 
