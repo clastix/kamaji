@@ -274,13 +274,13 @@ NAME         ENDPOINTS           AGE
 kubernetes   10.240.0.100:6443   57m
 ```
 
-### Prepare worker nodes to join
+### Join worker nodes
 
-Currently, Kamaji does not provide any helper for creation of tenant worker nodes.
-You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`. 
+The Tenant Control Plane is made of pods running in the Kamaji Admin Cluster. At this point, the tenant cluster has no worker nodes. So, the next step is to join some worker nodes to the Tenant Control Plane.
 
-Kamaji is sticking to the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api) project contracts by providing a `ControlPlane` provider.
-An Azure-based cluster is not yet available: the available road-map is available on the [official repository](https://github.com/clastix/cluster-api-control-plane-provider-kamaji).
+Kamaji does not provide any helper for creation of tenant worker nodes, insteat it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api) project by providing a `ControlPlane` provider. This allows you to create the tenant clusters, including worker nodes, in a completely declarative way. Currently, a Cluster API `ControlPlane` provider for Azure is not yet available: check the road-map on the [official repository](https://github.com/clastix/cluster-api-control-plane-provider-kamaji). 
+
+An alternative approach to create and join worker nodes in Azure is to manually create the VMs, turn them into Kubernetes worker nodes and then join through the  `kubeadm` command.
 
 Create an Azure VM Stateful Set to host worker nodes
 
@@ -298,7 +298,6 @@ az vmss create \
    --vnet-name $KAMAJI_VNET_NAME \
    --subnet $TENANT_SUBNET_NAME \
    --computer-name-prefix $TENANT_NAME- \
-   --custom-data ./tenant-cloudinit.yaml \
    --load-balancer "" \
    --instance-count 0
 
@@ -313,15 +312,20 @@ az vmss scale \
    --new-capacity 3
 ```
 
-### Join worker nodes
-The current approach for joining nodes is to use `kubeadm` and therefore, we will create a bootstrap token to perform the action. In order to facilitate the step, we will store the entire command of joining in a variable:
+Once all the machines are ready, follow the related [documentation](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) in order to:
+
+- install `containerd` as container runtime
+- install `crictl`, the command line for working with `containerd`
+- install `kubectl`, `kubelet`, and `kubeadm` in the desired version
+
+After the installation is complete on all the nodes, store the entire command of joining in a variable:
 
 ```bash
 TENANT_ADDR=$(kubectl -n ${TENANT_NAMESPACE} get svc ${TENANT_NAME} -o json | jq -r ."spec.loadBalancerIP")
 JOIN_CMD=$(echo "sudo kubeadm join ${TENANT_ADDR}:6443 ")$(kubeadm --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig token create --print-join-command |cut -d" " -f4-)
 ```
 
-A bash loop will be used to join all the available nodes.
+Use a loop to log in to and run the join command on each node:
 
 ```bash
 VMIDS=($(az vmss list-instances \
