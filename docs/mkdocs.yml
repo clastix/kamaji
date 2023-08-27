@@ -67,6 +67,7 @@ nav:
   - guides/backup-and-restore.md
   - guides/certs-lifecycle.md
   - guides/cluster-api.md
+  - guides/console.md
 - 'Use Cases': use-cases.md
 - 'Reference':
   - reference/index.md
