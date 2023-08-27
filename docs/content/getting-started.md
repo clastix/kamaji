@@ -222,7 +222,7 @@ Kubernetes control plane is running at https://192.168.32.240:6443
 CoreDNS is running at https://192.168.32.240:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
 ```
 
-Check out how the Tenant control Plane advertises itself to workloads:
+Check out how the Tenant Control Plane advertises itself to workloads:
 
 ```bash
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get svc
@@ -240,38 +240,34 @@ kubernetes   192.168.32.240:6443   18m
 
 And make sure it is `${TENANT_ADDR}:${TENANT_PORT}`.
 
-### Prepare worker nodes to join
+### Join worker nodes
 
-Currently, Kamaji does not provide any helper for creation of tenant worker nodes.
-You should get a set of machines from your infrastructure provider, turn them into worker nodes, and then join to the tenant control plane with the `kubeadm`.
+The Tenant Control Plane is made of pods running in the Kamaji Admin Cluster. At this point, the tenant cluster has no worker nodes. So, the next step is to join some worker nodes to the Tenant Control Plane.
 
-Kamaji is sticking to the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api) project contracts by providing a `ControlPlane` provider.
-Please, refer to the [official repository](https://github.com/clastix/cluster-api-control-plane-provider-kamaji) to learn more about it.
+Kamaji does not provide any helper for creation of tenant worker nodes, insteat it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api) project by providing a `ControlPlane` provider. This allows you to create the tenant clusters, including worker nodes, in a completely declarative way. Refer to the [Cluster API guide](guides/cluster-api.md) to learn more about supported providers.
 
-You can use the provided helper script `/deploy/nodes-prerequisites.sh`, in order to install the dependencies on all the worker nodes:
+An alternative approach for joining nodes is to use the `kubeadm` command on each node. Follow the related [documentation](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) in order to:
 
-- Install `containerd` as container runtime
-- Install `crictl`, the command line for working with `containerd`
-- Install `kubectl`, `kubelet`, and `kubeadm` in the desired version
+- install `containerd` as container runtime
+- install `crictl`, the command line for working with `containerd`
+- install `kubectl`, `kubelet`, and `kubeadm` in the desired version
 
-!!! warning ""
-    The provided script is just a facility: it assumes all worker nodes are running `Ubuntu 20.04`. Make sure to adapt the script if you're using a different distribution.
-
-Run the script:
+After the installation is complete on all the nodes, open the command line on your Linux workstation and store the IP address of each node in an environment variable:
 
 ```bash
-HOSTS=(${WORKER0} ${WORKER1} ${WORKER2})
-./nodes-prerequisites.sh ${TENANT_VERSION:1} ${HOSTS[@]}
+WORKER0=<address of first node>
+WORKER1=<address of second node>
+WORKER2=<address of third node>
 ```
 
-### Join worker nodes
-The current approach for joining nodes is to use `kubeadm` and therefore, we will create a bootstrap token to perform the action. In order to facilitate the step, we will store the entire command of joining in a variable:
+Store the join command in a variable:
 
 ```bash
 JOIN_CMD=$(echo "sudo ")$(kubeadm --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig token create --print-join-command)
+
 ```
 
-A bash loop will be used to join all the available nodes.
+Use a loop to log in to and run the join command on each node:
 
 ```bash
 HOSTS=(${WORKER0} ${WORKER1} ${WORKER2})
@@ -280,6 +276,10 @@ for i in "${!HOSTS[@]}"; do
   ssh ${USER}@${HOST} -t ${JOIN_CMD};
 done
 ```
+
+!!! tip "yaki"
+    This manual process can be further automated to handle the node prerequisites and joining. See [yaki](https://github.com/clastix/yaki) script, which you could modify for your preferred operating system and version. The provided script is just a facility: it assumes all worker nodes are running `Ubuntu 22.04`. Make sure to adapt the script if you're using a different distribution.
+
 
 Checking the nodes:
 
