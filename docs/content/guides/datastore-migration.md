@@ -1,6 +1,6 @@
 # Datastore Migration
 
-On the admin cluster, you can deploy one or more multi-tenant datastores as `etcd`, `PostgreSQL`, and `MySQL` to save the state of the tenant clusters. A Tenant Control Plane can be migrated from a datastore to another one without service disruption or without complex and error prone backup & restore procedures.
+On the Management Cluster, you can deploy one or more multi-tenant datastores as `etcd`, `PostgreSQL`, and `MySQL` to save the state of the Tenant Clusters. A Tenant Control Plane can be migrated from a datastore to another one without service disruption or without complex and error prone backup & restore procedures.
 
 This guide will assist you to live migrate Tenant's data from a datastore to another one having the same `etcd` driver.
 

@@ -2,13 +2,13 @@
 
 This guide describe a declarative way to deploy Kubernetes add-ons across multiple Tenant Clusters, the GitOps-way. An admin may need to apply a specific workload into Tenant Clusters and ensure is constantly reconciled, no matter what the tenants will do in their clusters. Examples include installing monitoring agents, ensuring specific policies, installing infrastructure operators like Cert Manager and so on.
 
-This way the tenant resources can be ensured from a single pane of glass, from the *admin cluster*.
+This way the tenant resources can be ensured from a single pane of glass, from the *Management Cluster*.
 
 ## Flux as the GitOps operator
 
 As GitOps ensures a constant reconciliation to a Git-versioned desired state, [Flux](https://fluxcd.io) can satisfy the requirement of those scenarios. In particular, the controllers that reconcile [resources](https://fluxcd.io/flux/concepts/#reconciliation) support communicating to external clusters.
 
-In this scenario the Flux toolkit would run in the *admin cluster*, with reconcile controllers reconciling resources into *tenant clusters*.
+In this scenario the Flux toolkit would run in the *Management Cluster*, with reconcile controllers reconciling resources into *Tenant Clusters*.
 
 ![Architecture](../images/kamaji-flux.png)
 
@@ -29,7 +29,7 @@ tenant1   v1.25.1   Ready    172.18.0.2:31443         tenant1-admin-kubeconfig  
 
 > As the *admin* user has *cluster-admin* `ClusterRole` it will have the necessary privileges to operate on Custom Resources too.
 
-Given that Flux it's installed in the *admin cluster* - guide [here](https://fluxcd.io/flux/installation/) - resources can be ensured for specifics tenant clusters, by filling the `spec.kubeConfig` field of the Flux reconciliation resource.
+Given that Flux it's installed in the *Management Cluster* - guide [here](https://fluxcd.io/flux/installation/) - resources can be ensured for specifics Tenant Clusters, by filling the `spec.kubeConfig` field of the Flux reconciliation resource.
 
 For example, it might be needed to ensure [cert-manager](https://cert-manager.io/) is installed into a *tenant1* cluster with Helm. It can be done by declaring an `HelmRelease` as follows:
 
@@ -69,7 +69,7 @@ spec:
     replicaCount: 2
 ```
 
-and applying it in the *admin cluster*, alongside the related *jetstack* `HelmRepository`, in the *tenants* `Namespace`.
+and applying it in the *Management Cluster*, alongside the related *jetstack* `HelmRepository`, in the *tenants* `Namespace`.
 
 The result would be having Cert Manager installed in the *default* `Namespace` of the tenant *tenant1*'s cluster:
 
@@ -82,7 +82,7 @@ tenant1-cert-manager-cainjector   1/1     1            1           4m3s
 tenant1-cert-manager-webhook      1/1     1            1           4m3s
 ```
 
-No matter what the tenant users will do on the *tenant cluster*, the Flux reconciliation controllers wirunning in the *admin cluster* will ensure the desired state declared by the reconciliation resources applied existing in the *admin cluster*, will be reconciled in the *tenant cluster*.
+No matter what the tenant users will do on the *Tenant Cluster*, the Flux reconciliation controllers wirunning in the *Management Cluster* will ensure the desired state declared by the reconciliation resources applied existing in the *Management Cluster*, will be reconciled in the *Tenant Cluster*.
 
-Furthermore, this approach does not need to have in each tenant cluster nor Flux neither applied the related reconciliation Custom Resorces.
+Furthermore, this approach does not need to have in each Tenant Cluster nor Flux neither applied the related reconciliation Custom Resorces.
 

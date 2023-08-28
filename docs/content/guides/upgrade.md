@@ -1,5 +1,5 @@
 # Tenant Cluster Upgrade
-The process of upgrading a _“tenant cluster”_ consists in two steps:
+The process of upgrading a _“Tenant Cluster”_ consists in two steps:
 
 1. Upgrade the Tenant Control Plane
 2. Upgrade of Tenant Worker Nodes

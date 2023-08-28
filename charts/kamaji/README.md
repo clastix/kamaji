@@ -2,7 +2,7 @@
 
 ![Version: 0.12.4](https://img.shields.io/badge/Version-0.12.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.3.3](https://img.shields.io/badge/AppVersion-v0.3.3-informational?style=flat-square)
 
-Kamaji deploys and operates Kubernetes at scale with a fraction of the operational burden. Kamaji turns any Kubernetes cluster into an “admin cluster” to orchestrate other Kubernetes clusters called “tenant clusters”. Kamaji is special because the Control Plane components are running in a single pod instead of dedicated machines. This solution makes running multiple Control Planes cheaper and easier to deploy and operate.
+Kamaji deploys and operates Kubernetes at scale with a fraction of the operational burden. Kamaji turns any Kubernetes cluster into an “admin cluster” to orchestrate other Kubernetes clusters called “Tenant clusters”. Kamaji is special because the Control Plane components are running in a single pod instead of dedicated machines. This solution makes running multiple Control Planes cheaper and easier to deploy and operate.
 
 ## Maintainers
 

@@ -4,7 +4,7 @@ Kamaji offers the possibility of having a different storage system than `etcd` t
 
 ## Install the datastore
 
-On the admin cluster, install one of the alternative supported datastore:
+On the Management Cluster, install one of the alternative supported datastore:
 
 - **MySQL** install it with command:
 

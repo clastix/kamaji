@@ -13,7 +13,7 @@ The guide requires:
 ## Summary
 
   * [Prepare the bootstrap workspace](#prepare-the-bootstrap-workspace)
-  * [Access Admin cluster](#access-admin-cluster)
+  * [Access Management Cluster](#access-management-cluster)
   * [Install Cert Manager](#install-cert-manager)
   * [Install Kamaji controller](#install-kamaji-controller)
   * [Create Tenant Cluster](#create-tenant-cluster)
@@ -27,15 +27,15 @@ git clone https://github.com/clastix/kamaji
 cd kamaji/deploy
 ```
 
-We assume you have installed on the bootstrap machine:
+We assume you have installed on the bootstrap workstation:
 
 - [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
 - [kubeadm](https://kubernetes.io/docs/tasks/tools/#kubeadm)
 - [helm](https://helm.sh/docs/intro/install/)
 - [jq](https://stedolan.github.io/jq/)
 
-## Access Admin cluster
-In Kamaji, an Admin Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The admin cluster acts as management cluster for all the Tenant clusters and hosts monitoring, logging, and governance of Kamaji setup, including all Tenant clusters. 
+## Access Management Cluster
+In Kamaji, the Management Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The Management Cluster acts as cockpit for all the Tenant Clusters as it hosts monitoring, logging, and governance of Kamaji setup, including all Tenant Clusters. 
 
 Throughout the following instructions, shell variables are used to indicate values that you should adjust to your environment:
 
@@ -43,14 +43,14 @@ Throughout the following instructions, shell variables are used to indicate valu
 source kamaji.env
 ```
 
-Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji setup. To work properly, the admin cluster should provide:
+Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji setup. To work properly, the Management Clusterr should provide:
 
 - CNI module installed, eg. [Calico](https://github.com/projectcalico/calico), [Cilium](https://github.com/cilium/cilium).
 - CSI module installed with a Storage Class for the Tenant datastores. Local Persistent Volumes are an option.
 - Support for LoadBalancer service type, eg. [MetalLB](https://metallb.universe.tf/), or a Cloud based controller.
 - Optionally, a Monitoring Stack installed, eg. [Prometheus](https://github.com/prometheus-community).
 
-Make sure you have a `kubeconfig` file with admin permissions on the cluster you want to turn into Kamaji Admin Cluster and check you can access:
+Make sure you have a `kubeconfig` file with admin permissions on the cluster you want to turn into Kamaji Management Cluster and check you can access:
 
 ```bash
 kubectl cluster-info
@@ -185,7 +185,7 @@ NAME                TYPE           CLUSTER-IP      EXTERNAL-IP      PORT(S)     
 service/tenant-00   LoadBalancer   10.32.132.241   192.168.32.240   6443:32152/TCP,8132:32713/TCP   2m20s
 ```
 
-The regular Tenant Control Plane containers: `kube-apiserver`, `kube-controller-manager`, `kube-scheduler` are running unchanged in the `tcp` pods instead of dedicated machines and they are exposed through a service on the port `6443` of worker nodes in the admin cluster.
+The regular Tenant Control Plane containers: `kube-apiserver`, `kube-controller-manager`, `kube-scheduler` are running unchanged in the `tcp` pods instead of dedicated machines and they are exposed through a service on the port `6443` of worker nodes in the Management Cluster.
 
 The `LoadBalancer` service type is used to expose the Tenant Control Plane on the assigned `loadBalancerIP` acting as `ControlPlaneEndpoint` for the worker nodes and other clients as, for example, `kubectl`. Service types `NodePort` and `ClusterIP` are still viable options to expose the Tenant Control Plane, depending on the case. High Availability and rolling updates of the Tenant Control Planes are provided by the `tcp` Deployment and all the resources reconcilied by the Kamaji controller.
 
@@ -242,9 +242,9 @@ And make sure it is `${TENANT_ADDR}:${TENANT_PORT}`.
 
 ### Join worker nodes
 
-The Tenant Control Plane is made of pods running in the Kamaji Admin Cluster. At this point, the tenant cluster has no worker nodes. So, the next step is to join some worker nodes to the Tenant Control Plane.
+The Tenant Control Plane is made of pods running in the Kamaji Management Cluster. At this point, the Tenant Cluster has no worker nodes. So, the next step is to join some worker nodes to the Tenant Control Plane.
 
-Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the tenant clusters, including worker nodes, in a completely declarative way. Refer to the [Cluster API guide](guides/cluster-api.md) to learn more about supported providers.
+Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Refer to the [Cluster API guide](guides/cluster-api.md) to learn more about supported providers.
 
 An alternative approach for joining nodes is to use the `kubeadm` command on each node. Follow the related [documentation](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) in order to:
 
@@ -302,7 +302,7 @@ curl https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/ca
 
 Before to apply the Calico manifest, you can customize it as necessary according to your preferences.
 
-Apply to the tenant cluster:
+Apply to the Tenant Cluster:
 
 ```bash
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig apply -f calico.yaml

@@ -104,7 +104,7 @@ The rotation will occur the day before their expiration.
 
 ## Certificate Authority rotation
 
-Kamaji is also taking care of your tenant clusters Certificate Authority.
+Kamaji is also taking care of your Tenant Clusters Certificate Authority.
 
 This can be rotated manually by deleting the following secret.
 

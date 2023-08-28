@@ -5,7 +5,7 @@ Kamaji has been designed to operate a large scale of Kubernetes Tenant Control P
 In the Operator jargon, a manager is created to start several controllers, each one with their own responsibility.
 When a manager is started, all the underlying controllers are started, along with other "runnable" resources, like the webhook server.
 
-Kamaji operates several reconciliation operations, both in the admin and tenant clusters.
+Kamaji operates several reconciliation operations, both in the admin and Tenant Clusters.
 With that said, a main manager is responsible to reconcile the admin resources (Deployment, Secret, ConfigMap, etc.), for each Tenant Control Plane a new manager will be spin-up as a main manager controller.
 These Tenant Control Plane managers, named in the code base as soot managers, in turn, start and run controllers to ensure the desired state of the underlying add-ons, and required resources such as kubeadm ones.
 
@@ -25,7 +25,7 @@ Your mileage may vary and just want to share with the community how it has been 
 
 ## Infrastructure
 
-The benchmark has been issued on a Kubernetes cluster backed by Elastic Kubernetes Service used as an Admin cluster.
+The benchmark has been issued on a Kubernetes cluster backed by Elastic Kubernetes Service used as Management Cluster.
 
 Two node pools have been created to avoid the noisy neighbour effect, and to increase the performances:
 
@@ -238,4 +238,4 @@ If you're encountering different results, please, engage with the community to s
 
 # Running a thousand of Tenant Control Planes using multiple DataStores
 
-The next benchmark must address the use case where a Kamaji admin cluster manages up to a thousand Tenant Control Plane instances.
+The next benchmark must address the use case where a Kamaji Management Cluster manages up to a thousand Tenant Control Plane instances.

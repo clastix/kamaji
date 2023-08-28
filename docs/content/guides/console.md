@@ -2,9 +2,9 @@
 This guide will introduce you to the basics of the Kamaji Console, a web UI to help you to view and control your Kamaji setup.
 
 ## Install with Helm
-The Kamaji Console is a web interface running on the Kamaji Admin Cluster that you can install with Helm. Check the Helm Chart [documentation](https://github.com/clastix/kamaji-console) for all the available settings.
+The Kamaji Console is a web interface running on the Kamaji Management Cluster that you can install with Helm. Check the Helm Chart [documentation](https://github.com/clastix/kamaji-console) for all the available settings.
 
-The Kamaji Console requires a Secret in the Kamaji Admin Cluster that contains the configuration and credentials to access the console from the browser. You can have the Helm Chart generate it for you, or create it yourself and provide the name of the Secret during installation. Before to install the Kamaji Console, access your workstation, replace the placeholders with actual values, and execute the following command:
+The Kamaji Console requires a Secret in the Kamaji Management Cluster that contains the configuration and credentials to access the console from the browser. You can have the Helm Chart generate it for you, or create it yourself and provide the name of the Secret during installation. Before to install the Kamaji Console, access your workstation, replace the placeholders with actual values, and execute the following command:
 
 ```bash
 # The secret is required, otherwise the installation will fail
