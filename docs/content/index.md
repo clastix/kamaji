@@ -28,7 +28,7 @@ A. No, Kamaji is a Kubernetes Operator you can install on top of any Kubernetes 
 
 Q. How is Kamaji different from typical multi-cluster management solutions?
 
-A. Most of the existing multi-cluster management solutions provision specific infrastructure for the control plane, in most cases dedicated machines. Kamaji is special because the control plane of the downstream clusters are regular pods running in the management cluster instead of a dedicated machines. This solution makes running control plane at scale cheaper and easier to deploy and operate.
+A. Most of the existing multi-cluster management solutions provision specific infrastructure for the control plane, in most cases dedicated machines. Kamaji is special because the control plane of the downstream clusters are regular pods running in the management cluster. This solution makes running control plane at scale cheaper and easier to deploy and operate.
 
 Q. Is it safe to run Kubernetes control plane components in a pod instead of dedicated virtual machines?
 
@@ -36,15 +36,15 @@ A. Yes, the tenant control plane components are packaged in the same way they ar
 
 Q. How is Kamaji different from managed Kubernetes services offered by Public Clouds?
 
-A. Control, Flexibility, Efficiency, and Consistency: Kamaji gives you full control over all your Kubernetes infrestructure, offering unparalleled consistency across disparate environments: cloud, data-center, and edge while simplifying and centralizing operations, maintenance and management tasks.
+A. Control, Efficiency, and Consistency: Kamaji gives you full control over all your Kubernetes infrestructure, offering unparalleled consistency across disparate environments: cloud, data-center, and edge while simplifying and centralizing operations, maintenance and management tasks.
 
-Bring Your Own Devices: Unlike other managed Kubernetes providers, Kamaji allows you to connect worker nodes from any infrastructure or any cloud, offering greater freedom and compatibility.
+Bring Your Own Devices: Unlike other Managed Kubernetes services, Kamaji allows you to connect worker nodes from any infrastructure or any cloud, offering greater freedom and compatibility.
 
-Efficiency: By leveraging an innovative open architecure, Kamaji helps reduce costs associated with managing multiple separate control planes in different environments or paying for additional tools and resources.
+Efficiency: By leveraging an innovative open architecure, Kamaji helps reduce costs associated with managing multiple and separate control planes in different environments or paying for additional tools.
 
 Q. How Kamaji differs from Cluster API?
 
-A. 
+A. Kamaji and Cluster API complement each other. Kamaji's core idea is having a declarative approach to control plane management, as well as maintaining the state and automating the lifecycle. The same is done by Cluster API, thus combined you get the best of the class: Cluster API managing the clusters' nodes and automating their bootstrap and lifecycle, Kamaji by simplifying the Control Plane management and save resources. See supported [CAPI providers](guides/cluster-api.md).
 
 Q. You already provide a Kubernetes multi-tenancy solution with [Capsule](https://capsule.clastix.io). Why does Kamaji matter?
 
