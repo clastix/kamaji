@@ -72,8 +72,8 @@ Here the values you can override:
 | datastore.basicAuth.usernameSecret.keyPath | string | `nil` | The Secret key where the data is stored. |
 | datastore.basicAuth.usernameSecret.name | string | `nil` | The name of the Secret containing the username used to connect to the relational database. |
 | datastore.basicAuth.usernameSecret.namespace | string | `nil` | The namespace of the Secret containing the username used to connect to the relational database. |
-| datastore.driver | string | `"etcd"` | The Kamaji Datastore driver, supported: etcd, MySQL, PostgreSQL (defaults=etcd). |
-| datastore.endpoints | array | `[]` | List of endpoints of the selected Datastore. When letting the Chart install the etcd datastore, this field is populated automatically. |
+| datastore.driver | string | `"etcd"` | (string) The Kamaji Datastore driver, supported: etcd, MySQL, PostgreSQL (defaults=etcd). |
+| datastore.endpoints | list | `[]` | (array) List of endpoints of the selected Datastore. When letting the Chart install the etcd datastore, this field is populated automatically. |
 | datastore.nameOverride | string | `nil` | The Datastore name override, if empty defaults to `default` |
 | datastore.tlsConfig.certificateAuthority.certificate.keyPath | string | `nil` | Key of the Secret which contains the content of the certificate. |
 | datastore.tlsConfig.certificateAuthority.certificate.name | string | `nil` | Name of the Secret containing the CA required to establish the mandatory SSL/TLS connection to the datastore. |
@@ -95,7 +95,7 @@ Here the values you can override:
 | etcd.overrides.caSecret.namespace | string | `"kamaji-system"` | Namespace of the secret which contains CA's certificate and private key. (default: "kamaji-system") |
 | etcd.overrides.clientSecret.name | string | `"root-client-certs"` | Name of the secret which contains ETCD client certificates. (default: "root-client-certs") |
 | etcd.overrides.clientSecret.namespace | string | `"kamaji-system"` | Name of the namespace where the secret which contains ETCD client certificates is. (default: "kamaji-system") |
-| etcd.overrides.endpoints | map | `{"etcd-0":"etcd-0.etcd.kamaji-system.svc.cluster.local","etcd-1":"etcd-1.etcd.kamaji-system.svc.cluster.local","etcd-2":"etcd-2.etcd.kamaji-system.svc.cluster.local"}` | Dictionary of the endpoints for the etcd cluster's members, key is the name of the etcd server. Don't define the protocol (TLS is automatically inflected), or any port, inflected from .etcd.peerApiPort value. |
+| etcd.overrides.endpoints | object | `{"etcd-0":"etcd-0.etcd.kamaji-system.svc.cluster.local","etcd-1":"etcd-1.etcd.kamaji-system.svc.cluster.local","etcd-2":"etcd-2.etcd.kamaji-system.svc.cluster.local"}` | (map) Dictionary of the endpoints for the etcd cluster's members, key is the name of the etcd server. Don't define the protocol (TLS is automatically inflected), or any port, inflected from .etcd.peerApiPort value. |
 | etcd.peerApiPort | int | `2380` | The peer API port which servers are listening to. |
 | etcd.persistence.accessModes[0] | string | `"ReadWriteOnce"` |  |
 | etcd.persistence.customAnnotations | object | `{}` | The custom annotations to add to the PVC |
@@ -112,8 +112,8 @@ Here the values you can override:
 | image.tag | string | `nil` | Overrides the image tag whose default is the chart appVersion. |
 | imagePullSecrets | list | `[]` |  |
 | livenessProbe | object | `{"httpGet":{"path":"/healthz","port":"healthcheck"},"initialDelaySeconds":15,"periodSeconds":20}` | The livenessProbe for the controller container |
-| loggingDevel.enable | string | `false` | Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false) |
-| metricsBindAddress | string | `":8080"` | The address the metric endpoint binds to. (default ":8080") |
+| loggingDevel.enable | bool | `false` | (string) Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false) |
+| metricsBindAddress | string | `":8080"` | (string) The address the metric endpoint binds to. (default ":8080") |
 | nameOverride | string | `""` |  |
 | nodeSelector | object | `{}` | Kubernetes node selector rules to schedule Kamaji controller |
 | podAnnotations | object | `{}` | The annotations to apply to the Kamaji controller pods. |
