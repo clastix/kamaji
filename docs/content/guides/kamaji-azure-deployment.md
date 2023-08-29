@@ -13,7 +13,7 @@ The guide requires:
 ## Summary
 
   * [Prepare the bootstrap workspace](#prepare-the-bootstrap-workspace)
-  * [Access Admin cluster](#access-admin-cluster)
+  * [Access Management Cluster](#access-management-cluster)
   * [Install Cert Manager](#install-cert-manager)
   * [Install Kamaji controller](#install-kamaji-controller)
   * [Create Tenant Cluster](#create-tenant-cluster)
@@ -43,8 +43,8 @@ az login
 ```
 
 
-## Access Admin cluster
-In Kamaji, an Admin Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The admin cluster acts as management cluster for all the Tenant clusters and implements Monitoring, Logging, and Governance of all the Kamaji setup, including all Tenant clusters. For this guide, we're going to use an instance of Azure Kubernetes Service (AKS) as Admin Cluster.
+## Access Management Cluster
+In Kamaji, a Management Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The Management Cluster acts as cockpit for all the Tenant clusters and implements Monitoring, Logging, and Governance of all the Kamaji setup, including all Tenant Clusters. For this guide, we're going to use an instance of Azure Kubernetes Service (AKS) as Management Cluster.
 
 Throughout the following instructions, shell variables are used to indicate values that you should adjust to your own Azure environment:
 
@@ -276,9 +276,9 @@ kubernetes   10.240.0.100:6443   57m
 
 ### Join worker nodes
 
-The Tenant Control Plane is made of pods running in the Kamaji Admin Cluster. At this point, the tenant cluster has no worker nodes. So, the next step is to join some worker nodes to the Tenant Control Plane.
+The Tenant Control Plane is made of pods running in the Kamaji Management Cluster. At this point, the Tenant Cluster has no worker nodes. So, the next step is to join some worker nodes to the Tenant Control Plane.
 
-Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the tenant clusters, including worker nodes, in a completely declarative way. Currently, a Cluster API `ControlPlane` provider for Azure is not yet available: check the road-map on the [official repository](https://github.com/clastix/cluster-api-control-plane-provider-kamaji). 
+Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Currently, a Cluster API `ControlPlane` provider for Azure is not yet available: check the road-map on the [official repository](https://github.com/clastix/cluster-api-control-plane-provider-kamaji). 
 
 An alternative approach to create and join worker nodes in Azure is to manually create the VMs, turn them into Kubernetes worker nodes and then join through the `kubeadm` command.
 
@@ -370,7 +370,7 @@ As per [documentation](https://projectcalico.docs.tigera.io/reference/public-clo
 - `CALICO_IPV4POOL_IPIP="Never"`
 - `CALICO_IPV4POOL_VXLAN="Always"`
 
-Apply to the tenant cluster:
+Apply to the Tenant Cluster:
 
 ```bash
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig apply -f calico.yaml

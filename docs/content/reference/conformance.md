@@ -4,7 +4,7 @@ For organizations using Kubernetes, conformance enables interoperability, consis
 The standard set of conformance tests is currently those defined by the `[Conformance]` tag in the
 [kubernetes e2e](https://github.com/kubernetes/kubernetes/tree/master/test/e2e) suite.
 
-All the _“tenant clusters”_ built with Kamaji are CNCF conformant:
+All the _“Tenant Clusters”_ built with Kamaji are CNCF conformant:
 
 - [v1.23](https://github.com/cncf/k8s-conformance/pull/2194)
 - [v1.24](https://github.com/cncf/k8s-conformance/pull/2193)
@@ -21,13 +21,13 @@ regularly built and kept up to date to execute against all currently supported v
 
 Download a [binary release](https://github.com/vmware-tanzu/sonobuoy/releases) of the CLI.
 
-Make sure to access your tenant cluster:
+Make sure to access your Tenant Cluster:
 
 ```
 export KUBECONFIG=tenant.kubeconfig
 ```
 
-Deploy a Sonobuoy pod to your tenant cluster with:
+Deploy a Sonobuoy pod to your Tenant Cluster with:
 
 ```
 sonobuoy run --mode=certified-conformance
