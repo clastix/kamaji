@@ -255,7 +255,7 @@ func (k Konnectivity) buildVolumes(status kamajiv1alpha1.KonnectivityStatus, pod
 }
 
 func (k Konnectivity) Build(deployment *appsv1.Deployment, tenantControlPlane kamajiv1alpha1.TenantControlPlane) {
-	k.buildKonnectivityContainer(tenantControlPlane.Spec.Addons.Konnectivity, tenantControlPlane.Spec.ControlPlane.Deployment.Replicas, &deployment.Spec.Template.Spec)
+	k.buildKonnectivityContainer(tenantControlPlane.Spec.Addons.Konnectivity, *tenantControlPlane.Spec.ControlPlane.Deployment.Replicas, &deployment.Spec.Template.Spec)
 	k.buildVolumeMounts(&deployment.Spec.Template.Spec)
 	k.buildVolumes(tenantControlPlane.Status.Addons.Konnectivity, &deployment.Spec.Template.Spec)
 

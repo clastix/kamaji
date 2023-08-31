@@ -108,7 +108,7 @@ type DeploymentSpec struct {
 	// +kubebuilder:default={registry:"registry.k8s.io",apiServerImage:"kube-apiserver",controllerManagerImage:"kube-controller-manager",schedulerImage:"kube-scheduler"}
 	RegistrySettings RegistrySettings `json:"registrySettings,omitempty"`
 	// +kubebuilder:default=2
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas,omitempty"`
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
 	// Selector which must match a node's labels for the pod to be scheduled on that node.
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/

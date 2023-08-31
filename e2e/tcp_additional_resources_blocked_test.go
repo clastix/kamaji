@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
@@ -26,7 +27,7 @@ var _ = Describe("Deploy a TenantControlPlane resource with additional resources
 		Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 			ControlPlane: kamajiv1alpha1.ControlPlane{
 				Deployment: kamajiv1alpha1.DeploymentSpec{
-					Replicas: 1,
+					Replicas: pointer.Int32(1),
 					AdditionalInitContainers: []corev1.Container{{
 						Name:  initContainerName,
 						Image: initContainerImage,
