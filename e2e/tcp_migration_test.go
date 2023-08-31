@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/utils/pointer"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -35,7 +36,7 @@ var _ = Describe("When migrating a Tenant Control Plane to another datastore", f
 				DataStore: "etcd-bronze",
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					Deployment: kamajiv1alpha1.DeploymentSpec{
-						Replicas: 1,
+						Replicas: pointer.Int32(1),
 					},
 					Service: kamajiv1alpha1.ServiceSpec{
 						ServiceType: "NodePort",

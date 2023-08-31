@@ -21,6 +21,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd"
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/util"
+	"k8s.io/utils/pointer"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
@@ -43,7 +44,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					Deployment: kamajiv1alpha1.DeploymentSpec{
-						Replicas: 1,
+						Replicas: pointer.Int32(1),
 					},
 					Service: kamajiv1alpha1.ServiceSpec{
 						ServiceType: "NodePort",

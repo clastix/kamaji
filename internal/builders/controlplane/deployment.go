@@ -928,7 +928,7 @@ func (d Deployment) setSelector(deploymentSpec *appsv1.DeploymentSpec, tcp kamaj
 }
 
 func (d Deployment) setReplicas(deploymentSpec *appsv1.DeploymentSpec, tcp kamajiv1alpha1.TenantControlPlane) {
-	deploymentSpec.Replicas = pointer.Int32(tcp.Spec.ControlPlane.Deployment.Replicas)
+	deploymentSpec.Replicas = tcp.Spec.ControlPlane.Deployment.Replicas
 }
 
 func (d Deployment) setRuntimeClass(spec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
