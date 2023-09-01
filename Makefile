@@ -169,7 +169,7 @@ docker-build: ## Build docker image with the manager.
 		--build-arg GIT_TAG_COMMIT=$(GIT_TAG_COMMIT) \
 		--build-arg GIT_MODIFIED=$(GIT_MODIFIED) \
 		--build-arg GIT_REPO=$(GIT_REPO) \
-		--build-arg GIT_LAST_TAG=$(VERSION) \
+		--build-arg GIT_LAST_TAG=v$(VERSION) \
 		--build-arg BUILD_DATE=$(BUILD_DATE)
 
 docker-push: ## Push docker image with the manager.
