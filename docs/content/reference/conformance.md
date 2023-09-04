@@ -1,4 +1,4 @@
-# Conformance
+# CNCF Conformance
 For organizations using Kubernetes, conformance enables interoperability, consistency, and confirmability between Kubernetes installations. The Cloud Computing Native Foundation - CNCF - provides the [Certified Kubernetes Conformance Program](https://www.cncf.io/certification/software-conformance/).
 
 The standard set of conformance tests is currently those defined by the `[Conformance]` tag in the
@@ -9,6 +9,9 @@ All the _“Tenant Clusters”_ built with Kamaji are CNCF conformant:
 - [v1.23](https://github.com/cncf/k8s-conformance/pull/2194)
 - [v1.24](https://github.com/cncf/k8s-conformance/pull/2193)
 - [v1.25](https://github.com/cncf/k8s-conformance/pull/2188)
+- [v1.26](https://github.com/cncf/k8s-conformance/pull/2787)
+- [v1.27](https://github.com/cncf/k8s-conformance/pull/2786)
+- [v1.28](https://github.com/cncf/k8s-conformance/pull/2785)
 
 <p align="left" style="padding: 6px 6px">
   <img src="https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/certified-kubernetes/versionless/color/certified-kubernetes-color.png" width="100" />
