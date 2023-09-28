@@ -40,6 +40,7 @@ type GroupDeletableResourceBuilderConfiguration struct {
 	tcpReconcilerConfig TenantControlPlaneReconcilerConfig
 	tenantControlPlane  kamajiv1alpha1.TenantControlPlane
 	connection          datastore.Connection
+	dataStore           kamajiv1alpha1.DataStore
 }
 
 // GetResources returns a list of resources that will be used to provide tenant control planes
@@ -59,6 +60,11 @@ func GetDeletableResources(tcp *kamajiv1alpha1.TenantControlPlane, config GroupD
 		res = append(res, &ds.Setup{
 			Client:     config.client,
 			Connection: config.connection,
+		})
+		res = append(res, &ds.Config{
+			Client:     config.client,
+			ConnString: config.connection.GetConnectionString(),
+			DataStore:  config.dataStore,
 		})
 	}
 
