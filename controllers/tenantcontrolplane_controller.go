@@ -145,6 +145,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			tcpReconcilerConfig: r.Config,
 			tenantControlPlane:  *tenantControlPlane,
 			connection:          dsConnection,
+			dataStore:           *ds,
 		}
 
 		for _, resource := range GetDeletableResources(tenantControlPlane, groupDeletableResourceBuilderConfiguration) {

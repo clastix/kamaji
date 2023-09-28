@@ -9,13 +9,18 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/controllers/finalizers"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -62,6 +67,30 @@ func (r *Config) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv
 	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
+func (r *Config) Delete(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	secret := r.resource.DeepCopy()
+
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: r.resource.Name, Namespace: r.resource.Namespace}, secret); err != nil {
+		if kubeerrors.IsNotFound(err) {
+			return nil
+		}
+
+		return errors.Wrap(err, "cannot retrieve the DataStore Secret for removal")
+	}
+
+	secret.SetFinalizers(nil)
+
+	if err := r.Client.Update(ctx, secret); err != nil {
+		if kubeerrors.IsNotFound(err) {
+			return nil
+		}
+
+		return errors.Wrap(err, "cannot remove DataStore Secret finalizers")
+	}
+
+	return nil
+}
+
 func (r *Config) GetName() string {
 	return "datastore-config"
 }
@@ -99,6 +128,10 @@ func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.Te
 			// https://github.com/clastix/kamaji/issues/328
 			return []byte(strings.ReplaceAll(fmt.Sprintf("%s_%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName()), "-", "_"))
 		}
+
+		finalizersList := sets.New[string](r.resource.GetFinalizers()...)
+		finalizersList.Insert(finalizers.DatastoreSecretFinalizer)
+		r.resource.SetFinalizers(finalizersList.UnsortedList())
 
 		r.resource.Data = map[string][]byte{
 			"DB_CONNECTION_STRING": []byte(r.ConnString),

@@ -5,6 +5,7 @@ package finalizers
 
 const (
 	// DatastoreFinalizer is using a wrong name, since it's related to the underlying datastore.
-	DatastoreFinalizer = "finalizer.kamaji.clastix.io"
-	SootFinalizer      = "finalizer.kamaji.clastix.io/soot"
+	DatastoreFinalizer       = "finalizer.kamaji.clastix.io"
+	DatastoreSecretFinalizer = "finalizer.kamaji.clastix.io/datastore-secret"
+	SootFinalizer            = "finalizer.kamaji.clastix.io/soot"
 )
