@@ -37,13 +37,21 @@ spec:
       containers:
         - name: kubectl
           image: {{ printf "clastix/kubectl:%s" (include "etcd.jobsTagKubeVersion" .) }}
-          command:
-            - sh
-            - -c
-            - |-
-              kubectl --namespace={{ .Release.Namespace }} delete secret --ignore-not-found=true {{ include "etcd.caSecretName" . }} {{ include "etcd.clientSecretName" . }} &&
-              kubectl --namespace={{ .Release.Namespace }} create secret generic {{ include "etcd.caSecretName" . }} --from-file=/certs/ca.crt --from-file=/certs/ca.key --from-file=/certs/peer-key.pem --from-file=/certs/peer.pem --from-file=/certs/server-key.pem --from-file=/certs/server.pem &&
-              kubectl --namespace={{ .Release.Namespace }} create secret tls {{ include "etcd.clientSecretName" . }} --key=/certs/root-client-key.pem --cert=/certs/root-client.pem
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              if kubectl get secret {{ include "etcd.caSecretName" . }} --namespace={{ .Release.Namespace }} &>/dev/null; then
+                echo "Secret {{ include "etcd.caSecretName" . }} already exists"
+              else
+                echo "Creating secret {{ include "etcd.caSecretName" . }}"
+                kubectl --namespace={{ .Release.Namespace }} create secret generic {{ include "etcd.caSecretName" . }} --from-file=/certs/ca.crt --from-file=/certs/ca.key --from-file=/certs/peer-key.pem --from-file=/certs/peer.pem --from-file=/certs/server-key.pem --from-file=/certs/server.pem
+              fi
+              if kubectl get secret {{ include "etcd.clientSecretName" . }} --namespace={{ .Release.Namespace }} &>/dev/null; then
+                echo "Secret {{ include "etcd.clientSecretName" . }} already exists"
+              else
+                echo "Creating secret {{ include "etcd.clientSecretName" . }}"
+                kubectl --namespace={{ .Release.Namespace }} create secret tls {{ include "etcd.clientSecretName" . }} --key=/certs/root-client-key.pem --cert=/certs/root-client.pem
+              fi
           volumeMounts:
             - mountPath: /certs
               name: certs
