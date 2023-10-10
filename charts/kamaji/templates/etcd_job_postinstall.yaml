@@ -30,11 +30,15 @@ spec:
             - bash
             - -c
             - |-
-              etcdctl member list -w table &&
-              etcdctl user add --no-password=true root &&
-              etcdctl role add root &&
-              etcdctl user grant-role root root &&
-              etcdctl auth enable
+              etcdctl member list -w table
+              if etcdctl user get root &>/dev/null; then
+                echo "User already exists, nothing to do"
+              else
+                etcdctl user add --no-password=true root &&
+                etcdctl role add root &&
+                etcdctl user grant-role root root &&
+                etcdctl auth enable
+              fi
           env:
             - name: ETCDCTL_ENDPOINTS
               value: https://etcd-0.{{ include "etcd.serviceName" . }}.{{ .Release.Namespace }}.svc.cluster.local:2379
