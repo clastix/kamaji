@@ -16,6 +16,7 @@ rules:
       - secrets
     verbs:
       - get
+      - delete
     resourceNames:
       - {{ include "etcd.caSecretName" . }}
       - {{ include "etcd.clientSecretName" . }}
