@@ -12,3 +12,4 @@ In Kamaji, there are different components that might require independent version
 | v0.3.2 | v1.22+             | [v1.21.0 .. v1.27.3] |
 | v0.3.3 | v1.22+             | [v1.21.0 .. v1.27.3] |
 | v0.3.4 | v1.22+             | [v1.21.0 .. v1.28.1] |
+| v0.3.5 | v1.22+             | [v1.21.0 .. v1.28.1] |
