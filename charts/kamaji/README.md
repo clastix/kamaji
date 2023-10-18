@@ -1,6 +1,6 @@
 # kamaji
 
-![Version: 0.12.7](https://img.shields.io/badge/Version-0.12.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.3.5](https://img.shields.io/badge/AppVersion-v0.3.5-informational?style=flat-square)
+![Version: 0.12.8](https://img.shields.io/badge/Version-0.12.8-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.3.5](https://img.shields.io/badge/AppVersion-v0.3.5-informational?style=flat-square)
 
 Kamaji is a Kubernetes Control Plane Manager.
 
@@ -100,7 +100,7 @@ Here the values you can override:
 | etcd.persistence.accessModes[0] | string | `"ReadWriteOnce"` |  |
 | etcd.persistence.customAnnotations | object | `{}` | The custom annotations to add to the PVC |
 | etcd.persistence.size | string | `"10Gi"` |  |
-| etcd.persistence.storageClass | string | `""` |  |
+| etcd.persistence.storageClassName | string | `""` |  |
 | etcd.port | int | `2379` | The client request port. |
 | etcd.serviceAccount.create | bool | `true` | Create a ServiceAccount, required to install and provision the etcd backing storage (default: true) |
 | etcd.serviceAccount.name | string | `""` | Define the ServiceAccount name to use during the setup and provision of the etcd backing storage (default: "") |
