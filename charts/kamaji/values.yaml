@@ -54,7 +54,7 @@ etcd:
     name: ""
   persistence:
     size: 10Gi
-    storageClass: ""
+    storageClassName: ""
     accessModes:
     - ReadWriteOnce
     # -- The custom annotations to add to the PVC
