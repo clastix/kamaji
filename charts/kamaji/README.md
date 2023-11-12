@@ -1,6 +1,6 @@
 # kamaji
 
-![Version: 0.12.8](https://img.shields.io/badge/Version-0.12.8-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.3.5](https://img.shields.io/badge/AppVersion-v0.3.5-informational?style=flat-square)
+![Version: 0.12.9](https://img.shields.io/badge/Version-0.12.9-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.3.5](https://img.shields.io/badge/AppVersion-v0.3.5-informational?style=flat-square)
 
 Kamaji is a Kubernetes Control Plane Manager.
 
@@ -73,8 +73,9 @@ Here the values you can override:
 | datastore.basicAuth.usernameSecret.name | string | `nil` | The name of the Secret containing the username used to connect to the relational database. |
 | datastore.basicAuth.usernameSecret.namespace | string | `nil` | The namespace of the Secret containing the username used to connect to the relational database. |
 | datastore.driver | string | `"etcd"` | (string) The Kamaji Datastore driver, supported: etcd, MySQL, PostgreSQL (defaults=etcd). |
+| datastore.enabled | bool | `true` | (bool) Enable the Kamaji Datastore creation (default=true) |
 | datastore.endpoints | list | `[]` | (array) List of endpoints of the selected Datastore. When letting the Chart install the etcd datastore, this field is populated automatically. |
-| datastore.nameOverride | string | `nil` | The Datastore name override, if empty defaults to `default` |
+| datastore.nameOverride | string | `nil` | The Datastore name override, if empty and enabled=true defaults to `default`, if enabled=false, this is the name of the Datastore to connect to.  |
 | datastore.tlsConfig.certificateAuthority.certificate.keyPath | string | `nil` | Key of the Secret which contains the content of the certificate. |
 | datastore.tlsConfig.certificateAuthority.certificate.name | string | `nil` | Name of the Secret containing the CA required to establish the mandatory SSL/TLS connection to the datastore. |
 | datastore.tlsConfig.certificateAuthority.certificate.namespace | string | `nil` | Namespace of the Secret containing the CA required to establish the mandatory SSL/TLS connection to the datastore. |
