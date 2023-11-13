@@ -1,3 +1,4 @@
+{{- if .Values.datastore.enabled}}
 apiVersion: kamaji.clastix.io/v1alpha1
 kind: DataStore
 metadata:
@@ -24,3 +25,4 @@ spec:
       {{- include "datastore.certificateAuthority" . | indent 6 }}
     clientCertificate:
       {{- include "datastore.clientCertificate" . | indent 6 }}
+{{- end}}

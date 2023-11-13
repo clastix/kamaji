@@ -157,7 +157,9 @@ loggingDevel:
   enable: false
 
 datastore:
-  # -- (string) The Datastore name override, if empty defaults to `default`
+  # -- (bool) Enable the Kamaji Datastore creation (default=true)
+  enabled: true
+  # -- (string) The Datastore name override, if empty and enabled=true defaults to `default`, if enabled=false, this is the name of the Datastore to connect to. 
   nameOverride:
   # -- (string) The Kamaji Datastore driver, supported: etcd, MySQL, PostgreSQL (defaults=etcd).
   driver: etcd

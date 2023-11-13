@@ -2,7 +2,11 @@
 Create a default fully qualified datastore name.
 */}}
 {{- define "datastore.fullname" -}}
+{{- if .Values.datastore.enabled }}
 {{- default "default" .Values.datastore.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- required "A valid .Values.datastore.nameOverride required!" .Values.datastore.nameOverride }}
+{{- end }}
 {{- end }}
 
 {{/*

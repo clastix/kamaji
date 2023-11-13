@@ -15,7 +15,7 @@ name: kamaji
 sources:
 - https://github.com/clastix/kamaji
 type: application
-version: 0.12.8
+version: 0.12.9
 annotations:
   catalog.cattle.io/certified: partner
   catalog.cattle.io/release-name: kamaji
