@@ -1,6 +1,6 @@
 # kamaji
 
-![Version: 0.12.9](https://img.shields.io/badge/Version-0.12.9-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.3.5](https://img.shields.io/badge/AppVersion-v0.3.5-informational?style=flat-square)
+![Version: 0.12.10](https://img.shields.io/badge/Version-0.12.10-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.3.5](https://img.shields.io/badge/AppVersion-v0.3.5-informational?style=flat-square)
 
 Kamaji is a Kubernetes Control Plane Manager.
 
@@ -105,6 +105,7 @@ Here the values you can override:
 | etcd.port | int | `2379` | The client request port. |
 | etcd.serviceAccount.create | bool | `true` | Create a ServiceAccount, required to install and provision the etcd backing storage (default: true) |
 | etcd.serviceAccount.name | string | `""` | Define the ServiceAccount name to use during the setup and provision of the etcd backing storage (default: "") |
+| etcd.tolerations | list | `[]` | (array) Kubernetes affinity rules to apply to Kamaji etcd pods |
 | extraArgs | list | `[]` | A list of extra arguments to add to the kamaji controller default ones |
 | fullnameOverride | string | `""` |  |
 | healthProbeBindAddress | string | `":8081"` | The address the probe endpoint binds to. (default ":8081") |

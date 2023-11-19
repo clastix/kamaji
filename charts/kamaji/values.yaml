@@ -60,6 +60,9 @@ etcd:
     # -- The custom annotations to add to the PVC
     customAnnotations: {}
     #  volumeType: local
+  
+  # -- (array) Kubernetes affinity rules to apply to Kamaji etcd pods
+  tolerations: []
 
   overrides:
     caSecret:
