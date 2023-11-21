@@ -22,6 +22,10 @@ spec:
         - name: certs
           secret:
             secretName: {{ include "etcd.caSecretName" . }}
+      {{- with .Values.etcd.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: etcd
           image: {{ .Values.etcd.image.repository }}:{{ .Values.etcd.image.tag | default "v3.5.4" }}
