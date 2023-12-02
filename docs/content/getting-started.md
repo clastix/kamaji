@@ -97,8 +97,9 @@ etcd-2                       1/1     Running     0             90s
 kamaji-7949578bfb-lj44p      1/1     Running     0             12s
 ```
 
-!!! tip 
-     Unsuccessful first installation can happen, because, for example, missing the `StorageClass` or even, a trivial `Ctrl+C` during the installing. See [Cleanup](#cleanup) section before to retry an aborted installation.
+> An unsuccessful first installation could fail for several reasons, such as missing a `StorageClass`, or even for a trivial `Ctrl+C` during the installation phase.
+>
+> See the [Cleanup](#cleanup) section before to retry an aborted installation. 
 
 ## Create Tenant Cluster
 
