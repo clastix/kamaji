@@ -86,6 +86,21 @@ helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
 !!! note "A managed datastore is highly recommended in production"
      The [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides the code to setup a multi-tenant `etcd` running as StatefulSet made of three replicas. Optionally, Kamaji offers support for a more robust storage system, as `MySQL` or `PostgreSQL` compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
 
+Now you should end up with a working Kamaji instance, including the default `datastore`:
+
+```bash
+kubectl -n kamaji-system get pods
+NAME                         READY   STATUS      RESTARTS      AGE
+etcd-0                       1/1     Running     0             50s
+etcd-1                       1/1     Running     0             60s
+etcd-2                       1/1     Running     0             90s
+kamaji-7949578bfb-lj44p      1/1     Running     0             12s
+```
+
+> An unsuccessful first installation could fail for several reasons, such as missing a `StorageClass`, or even for a trivial `Ctrl+C` during the installation phase.
+>
+> See the [Cleanup](#cleanup) section before to retry an aborted installation. 
+
 ## Create Tenant Cluster
 
 ### Tenant Control Plane
@@ -319,7 +334,8 @@ tenant-00-worker-02   Ready    <none>   2m32s   v1.25.0
 ```
 
 ## Cleanup
-Remove the worker nodes joined the tenant control plane
+### Delete a Tenant Cluster
+First, remove the worker nodes joined the tenant control plane
 
 ```bash
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig delete nodes --all 
@@ -337,10 +353,37 @@ for i in "${!HOSTS[@]}"; do
 done
 ```
 
-Delete the tenant control plane from kamaji
+Delete the tenant control plane from Kamaji
 
 ```bash
 kubectl delete -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
+```
+
+### Uninstall Kamaji
+Uninstall the Kamaji controller by removing the Helm release
+
+```bash
+helm uninstall kamaji -n kamaji-system
+```
+
+The default datastore installed three `etcd` replicas with persistent volumes, so remove the `PersistentVolumeClaims` resources:
+
+```bash
+kubectl -n kamaji-system delete pvc --all
+```
+
+Also delete the custom resources:
+
+```bash
+kubectl delete crd tenantcontrolplanes.kamaji.clastix.io
+kubectl delete crd datastores.kamaji.clastix.io
+```
+
+In case of a broken installation, manually remove the hooks installed by Kamaji:
+
+```bash
+kubectl delete ValidatingWebhookConfiguration kamaji-validating-webhook-configuration
+kubectl delete MutatingWebhookConfiguration kamaji-mutating-webhook-configuration
 ```
 
 That's all folks!
