@@ -43,7 +43,7 @@ func (d *Migrate) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1
 
 	d.job = &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("migrate-%s-%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName()),
+			Name:      fmt.Sprintf("migrate-%s", tenantControlPlane.UID),
 			Namespace: d.KamajiNamespace,
 		},
 	}
