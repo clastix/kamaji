@@ -183,6 +183,12 @@ func getKubeconfigResources(c client.Client, tcpReconcilerConfig TenantControlPl
 			TmpDirectory:       getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.KubeconfigResource{
+			Name:               "admin-kubeconfig",
+			Client:             c,
+			KubeConfigFileName: resources.SuperAdminKubeConfigFileName,
+			TmpDirectory:       getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+		},
+		&resources.KubeconfigResource{
 			Name:               "controller-manager-kubeconfig",
 			Client:             c,
 			KubeConfigFileName: resources.ControllerManagerKubeConfigFileName,

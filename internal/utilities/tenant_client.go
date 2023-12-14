@@ -44,7 +44,7 @@ func GetTenantKubeconfig(ctx context.Context, client client.Client, tenantContro
 		return nil, err
 	}
 
-	return DecodeKubeconfig(*secretKubeconfig, kubeadmconstants.AdminKubeConfigFileName)
+	return DecodeKubeconfig(*secretKubeconfig, kubeadmconstants.SuperAdminKubeConfigFileName)
 }
 
 func GetRESTClientConfig(ctx context.Context, client client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*restclient.Config, error) {

@@ -45,7 +45,7 @@ type KubeadmPhaseResource interface {
 	Resource
 	KubeadmResource
 	GetClient() client.Client
-	GetKubeadmFunction() (func(clientset.Interface, *kubeadm.Configuration) ([]byte, error), error)
+	GetKubeadmFunction(context.Context, *kamajiv1alpha1.TenantControlPlane) (func(clientset.Interface, *kubeadm.Configuration) ([]byte, error), error)
 	GetStatus(*kamajiv1alpha1.TenantControlPlane) (kamajiv1alpha1.KubeadmConfigChecksumDependant, error)
 	SetKubeadmConfigChecksum(string)
 	GetWatchedObject() client.Object
