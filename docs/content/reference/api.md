@@ -1163,10 +1163,24 @@ A single application container that you want to run within a pod.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexresizepolicyindex">resizePolicy</a></b></td>
+        <td>[]object</td>
+        <td>
+          Resources resize policy for the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexresources">resources</a></b></td>
         <td>object</td>
         <td>
           Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>restartPolicy</b></td>
+        <td>string</td>
+        <td>
+          RestartPolicy defines the restart behavior of individual containers in a pod. This field may only be set for init containers, and the only allowed value is "Always". For non-init containers or when this field is not specified, the restart behavior is defined by the Pod's restart policy and the container type. Setting the RestartPolicy as "Always" for the init container will have the following effect: this init container will be continually restarted on exit until all regular containers have terminated. Once all regular containers have completed, all init containers with restartPolicy "Always" will be shut down. This lifecycle differs from normal init containers and is often referred to as a "sidecar" container. Although this init container still starts in the init container sequence, it does not wait for the container to complete before proceeding to the next init container. Instead, the next init container starts immediately after this init container is started, or after any startupProbe has successfully completed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1652,6 +1666,13 @@ PostStart is called immediately after a container is created. If the handler fai
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexlifecyclepoststartsleep">sleep</a></b></td>
+        <td>object</td>
+        <td>
+          Sleep represents the duration that the container should sleep before being terminated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexlifecyclepoststarttcpsocket">tcpSocket</a></b></td>
         <td>object</td>
         <td>
@@ -1761,7 +1782,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -1769,6 +1790,34 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td>string</td>
         <td>
           The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.additionalContainers[index].lifecycle.postStart.sleep
+
+
+
+Sleep represents the duration that the container should sleep before being terminated.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>seconds</b></td>
+        <td>integer</td>
+        <td>
+          Seconds is the number of seconds to sleep.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>true</td>
       </tr></tbody>
@@ -1835,6 +1884,13 @@ PreStop is called immediately before a container is terminated due to an API req
         <td>object</td>
         <td>
           HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexlifecycleprestopsleep">sleep</a></b></td>
+        <td>object</td>
+        <td>
+          Sleep represents the duration that the container should sleep before being terminated.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1947,7 +2003,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -1955,6 +2011,34 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td>string</td>
         <td>
           The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.additionalContainers[index].lifecycle.preStop.sleep
+
+
+
+Sleep represents the duration that the container should sleep before being terminated.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>seconds</b></td>
+        <td>integer</td>
+        <td>
+          Seconds is the number of seconds to sleep.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>true</td>
       </tr></tbody>
@@ -2029,7 +2113,7 @@ Periodic probe of container liveness. Container will be restarted if the probe f
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexlivenessprobegrpc">grpc</a></b></td>
         <td>object</td>
         <td>
-          GRPC specifies an action involving a GRPC port. This is a beta field and requires enabling GRPCContainerProbe feature gate.<br/>
+          GRPC specifies an action involving a GRPC port.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2125,7 +2209,7 @@ Exec specifies the action to take.
 
 
 
-GRPC specifies an action involving a GRPC port. This is a beta field and requires enabling GRPCContainerProbe feature gate.
+GRPC specifies an action involving a GRPC port.
 
 <table>
     <thead>
@@ -2230,7 +2314,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -2372,7 +2456,7 @@ Periodic probe of container service readiness. Container will be removed from se
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexreadinessprobegrpc">grpc</a></b></td>
         <td>object</td>
         <td>
-          GRPC specifies an action involving a GRPC port. This is a beta field and requires enabling GRPCContainerProbe feature gate.<br/>
+          GRPC specifies an action involving a GRPC port.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2468,7 +2552,7 @@ Exec specifies the action to take.
 
 
 
-GRPC specifies an action involving a GRPC port. This is a beta field and requires enabling GRPCContainerProbe feature gate.
+GRPC specifies an action involving a GRPC port.
 
 <table>
     <thead>
@@ -2573,7 +2657,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -2620,6 +2704,39 @@ TCPSocket specifies an action involving a TCP port.
 </table>
 
 
+### TenantControlPlane.spec.controlPlane.deployment.additionalContainers[index].resizePolicy[index]
+
+
+
+ContainerResizePolicy represents resource resize policy for the container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resourceName</b></td>
+        <td>string</td>
+        <td>
+          Name of the resource to which this resource resize policy applies. Supported values: cpu, memory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>restartPolicy</b></td>
+        <td>string</td>
+        <td>
+          Restart policy to apply when specified resource is resized. If not specified, it defaults to NotRequired.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### TenantControlPlane.spec.controlPlane.deployment.additionalContainers[index].resources
 
 
@@ -2641,7 +2758,7 @@ Compute Resources required by this container. Cannot be updated. More info: http
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
  This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable.<br/>
+ This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2655,7 +2772,7 @@ Compute Resources required by this container. Cannot be updated. More info: http
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2895,7 +3012,7 @@ The seccomp options to use by this container. If seccomp options are provided at
         <td><b>localhostProfile</b></td>
         <td>string</td>
         <td>
-          localhostProfile indicates a profile defined in a file on the node should be used. The profile must be preconfigured on the node to work. Must be a descending path, relative to the kubelet's configured seccomp profile location. Must only be set if type is "Localhost".<br/>
+          localhostProfile indicates a profile defined in a file on the node should be used. The profile must be preconfigured on the node to work. Must be a descending path, relative to the kubelet's configured seccomp profile location. Must be set if type is "Localhost". Must NOT be set for any other type.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2935,7 +3052,7 @@ The Windows specific settings applied to all containers. If unspecified, the opt
         <td><b>hostProcess</b></td>
         <td>boolean</td>
         <td>
-          HostProcess determines if a container should be run as a 'Host Process' container. This field is alpha-level and will only be honored by components that enable the WindowsHostProcessContainers feature flag. Setting this field without the feature flag will result in errors when validating the Pod. All of a Pod's containers must have the same effective HostProcess value (it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).  In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
+          HostProcess determines if a container should be run as a 'Host Process' container. All of a Pod's containers must have the same effective HostProcess value (it is not allowed to have a mix of HostProcess containers and non-HostProcess containers). In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2984,7 +3101,7 @@ StartupProbe indicates that the Pod has successfully initialized. If specified, 
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexstartupprobegrpc">grpc</a></b></td>
         <td>object</td>
         <td>
-          GRPC specifies an action involving a GRPC port. This is a beta field and requires enabling GRPCContainerProbe feature gate.<br/>
+          GRPC specifies an action involving a GRPC port.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3080,7 +3197,7 @@ Exec specifies the action to take.
 
 
 
-GRPC specifies an action involving a GRPC port. This is a beta field and requires enabling GRPCContainerProbe feature gate.
+GRPC specifies an action involving a GRPC port.
 
 <table>
     <thead>
@@ -3185,7 +3302,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -3419,10 +3536,24 @@ A single application container that you want to run within a pod.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexresizepolicyindex">resizePolicy</a></b></td>
+        <td>[]object</td>
+        <td>
+          Resources resize policy for the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexresources">resources</a></b></td>
         <td>object</td>
         <td>
           Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>restartPolicy</b></td>
+        <td>string</td>
+        <td>
+          RestartPolicy defines the restart behavior of individual containers in a pod. This field may only be set for init containers, and the only allowed value is "Always". For non-init containers or when this field is not specified, the restart behavior is defined by the Pod's restart policy and the container type. Setting the RestartPolicy as "Always" for the init container will have the following effect: this init container will be continually restarted on exit until all regular containers have terminated. Once all regular containers have completed, all init containers with restartPolicy "Always" will be shut down. This lifecycle differs from normal init containers and is often referred to as a "sidecar" container. Although this init container still starts in the init container sequence, it does not wait for the container to complete before proceeding to the next init container. Instead, the next init container starts immediately after this init container is started, or after any startupProbe has successfully completed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3908,6 +4039,13 @@ PostStart is called immediately after a container is created. If the handler fai
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexlifecyclepoststartsleep">sleep</a></b></td>
+        <td>object</td>
+        <td>
+          Sleep represents the duration that the container should sleep before being terminated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexlifecyclepoststarttcpsocket">tcpSocket</a></b></td>
         <td>object</td>
         <td>
@@ -4017,7 +4155,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -4025,6 +4163,34 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td>string</td>
         <td>
           The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.additionalInitContainers[index].lifecycle.postStart.sleep
+
+
+
+Sleep represents the duration that the container should sleep before being terminated.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>seconds</b></td>
+        <td>integer</td>
+        <td>
+          Seconds is the number of seconds to sleep.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>true</td>
       </tr></tbody>
@@ -4091,6 +4257,13 @@ PreStop is called immediately before a container is terminated due to an API req
         <td>object</td>
         <td>
           HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexlifecycleprestopsleep">sleep</a></b></td>
+        <td>object</td>
+        <td>
+          Sleep represents the duration that the container should sleep before being terminated.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4203,7 +4376,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -4211,6 +4384,34 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td>string</td>
         <td>
           The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.additionalInitContainers[index].lifecycle.preStop.sleep
+
+
+
+Sleep represents the duration that the container should sleep before being terminated.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>seconds</b></td>
+        <td>integer</td>
+        <td>
+          Seconds is the number of seconds to sleep.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>true</td>
       </tr></tbody>
@@ -4285,7 +4486,7 @@ Periodic probe of container liveness. Container will be restarted if the probe f
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexlivenessprobegrpc">grpc</a></b></td>
         <td>object</td>
         <td>
-          GRPC specifies an action involving a GRPC port. This is a beta field and requires enabling GRPCContainerProbe feature gate.<br/>
+          GRPC specifies an action involving a GRPC port.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4381,7 +4582,7 @@ Exec specifies the action to take.
 
 
 
-GRPC specifies an action involving a GRPC port. This is a beta field and requires enabling GRPCContainerProbe feature gate.
+GRPC specifies an action involving a GRPC port.
 
 <table>
     <thead>
@@ -4486,7 +4687,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -4628,7 +4829,7 @@ Periodic probe of container service readiness. Container will be removed from se
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexreadinessprobegrpc">grpc</a></b></td>
         <td>object</td>
         <td>
-          GRPC specifies an action involving a GRPC port. This is a beta field and requires enabling GRPCContainerProbe feature gate.<br/>
+          GRPC specifies an action involving a GRPC port.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4724,7 +4925,7 @@ Exec specifies the action to take.
 
 
 
-GRPC specifies an action involving a GRPC port. This is a beta field and requires enabling GRPCContainerProbe feature gate.
+GRPC specifies an action involving a GRPC port.
 
 <table>
     <thead>
@@ -4829,7 +5030,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -4876,6 +5077,39 @@ TCPSocket specifies an action involving a TCP port.
 </table>
 
 
+### TenantControlPlane.spec.controlPlane.deployment.additionalInitContainers[index].resizePolicy[index]
+
+
+
+ContainerResizePolicy represents resource resize policy for the container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resourceName</b></td>
+        <td>string</td>
+        <td>
+          Name of the resource to which this resource resize policy applies. Supported values: cpu, memory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>restartPolicy</b></td>
+        <td>string</td>
+        <td>
+          Restart policy to apply when specified resource is resized. If not specified, it defaults to NotRequired.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### TenantControlPlane.spec.controlPlane.deployment.additionalInitContainers[index].resources
 
 
@@ -4897,7 +5131,7 @@ Compute Resources required by this container. Cannot be updated. More info: http
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
  This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable.<br/>
+ This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4911,7 +5145,7 @@ Compute Resources required by this container. Cannot be updated. More info: http
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5151,7 +5385,7 @@ The seccomp options to use by this container. If seccomp options are provided at
         <td><b>localhostProfile</b></td>
         <td>string</td>
         <td>
-          localhostProfile indicates a profile defined in a file on the node should be used. The profile must be preconfigured on the node to work. Must be a descending path, relative to the kubelet's configured seccomp profile location. Must only be set if type is "Localhost".<br/>
+          localhostProfile indicates a profile defined in a file on the node should be used. The profile must be preconfigured on the node to work. Must be a descending path, relative to the kubelet's configured seccomp profile location. Must be set if type is "Localhost". Must NOT be set for any other type.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5191,7 +5425,7 @@ The Windows specific settings applied to all containers. If unspecified, the opt
         <td><b>hostProcess</b></td>
         <td>boolean</td>
         <td>
-          HostProcess determines if a container should be run as a 'Host Process' container. This field is alpha-level and will only be honored by components that enable the WindowsHostProcessContainers feature flag. Setting this field without the feature flag will result in errors when validating the Pod. All of a Pod's containers must have the same effective HostProcess value (it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).  In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
+          HostProcess determines if a container should be run as a 'Host Process' container. All of a Pod's containers must have the same effective HostProcess value (it is not allowed to have a mix of HostProcess containers and non-HostProcess containers). In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5240,7 +5474,7 @@ StartupProbe indicates that the Pod has successfully initialized. If specified, 
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexstartupprobegrpc">grpc</a></b></td>
         <td>object</td>
         <td>
-          GRPC specifies an action involving a GRPC port. This is a beta field and requires enabling GRPCContainerProbe feature gate.<br/>
+          GRPC specifies an action involving a GRPC port.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5336,7 +5570,7 @@ Exec specifies the action to take.
 
 
 
-GRPC specifies an action involving a GRPC port. This is a beta field and requires enabling GRPCContainerProbe feature gate.
+GRPC specifies an action involving a GRPC port.
 
 <table>
     <thead>
@@ -5441,7 +5675,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -6735,7 +6969,7 @@ emptyDir represents a temporary directory that shares a pod's lifetime. More inf
         <td><b>sizeLimit</b></td>
         <td>int or string</td>
         <td>
-          sizeLimit is the total amount of local storage required for this EmptyDir volume. The size limit is also applicable for memory medium. The maximum usage on memory medium EmptyDir would be the minimum value between the SizeLimit specified here and the sum of memory limits of all containers in a pod. The default is nil which means that the limit is undefined. More info: http://kubernetes.io/docs/user-guide/volumes#emptydir<br/>
+          sizeLimit is the total amount of local storage required for this EmptyDir volume. The size limit is also applicable for memory medium. The maximum usage on memory medium EmptyDir would be the minimum value between the SizeLimit specified here and the sum of memory limits of all containers in a pod. The default is nil which means that the limit is undefined. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6869,6 +7103,13 @@ The specification for the PersistentVolumeClaim. The entire content is copied un
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>volumeAttributesClassName</b></td>
+        <td>string</td>
+        <td>
+          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim. If specified, the CSI driver will create or update the volume with the attributes defined in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName, it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass will be applied to the claim but it's not allowed to reset this field to empty string once it is set. If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass will be set by the persistentvolume controller if it exists. If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource exists. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>volumeMode</b></td>
         <td>string</td>
         <td>
@@ -6989,15 +7230,6 @@ resources represents the minimum resources the volume should have. If RecoverVol
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalvolumesindexephemeralvolumeclaimtemplatespecresourcesclaimsindex">claims</a></b></td>
-        <td>[]object</td>
-        <td>
-          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
- This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>limits</b></td>
         <td>map[string]int or string</td>
         <td>
@@ -7008,35 +7240,9 @@ resources represents the minimum resources the volume should have. If RecoverVol
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### TenantControlPlane.spec.controlPlane.deployment.additionalVolumes[index].ephemeral.volumeClaimTemplate.spec.resources.claims[index]
-
-
-
-ResourceClaim references one entry in PodSpec.ResourceClaims.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
-        </td>
-        <td>true</td>
       </tr></tbody>
 </table>
 
@@ -7766,6 +7972,16 @@ Projection that may be projected along with other supported volume types
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalvolumesindexprojectedsourcesindexclustertrustbundle">clusterTrustBundle</a></b></td>
+        <td>object</td>
+        <td>
+          ClusterTrustBundle allows a pod to access the `.spec.trustBundle` field of ClusterTrustBundle objects in an auto-updating file. 
+ Alpha, gated by the ClusterTrustBundleProjection feature gate. 
+ ClusterTrustBundle objects can either be selected by name, or by the combination of signer name and a label selector. 
+ Kubelet performs aggressive normalization of the PEM contents written into the pod filesystem.  Esoteric PEM features such as inter-block comments and block headers are stripped.  Certificates are deduplicated. The ordering of certificates within the file is arbitrary, and Kubelet may change the order over time.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalvolumesindexprojectedsourcesindexconfigmap">configMap</a></b></td>
         <td>object</td>
         <td>
@@ -7791,6 +8007,136 @@ Projection that may be projected along with other supported volume types
         <td>object</td>
         <td>
           serviceAccountToken is information about the serviceAccountToken data to project<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.additionalVolumes[index].projected.sources[index].clusterTrustBundle
+
+
+
+ClusterTrustBundle allows a pod to access the `.spec.trustBundle` field of ClusterTrustBundle objects in an auto-updating file. 
+ Alpha, gated by the ClusterTrustBundleProjection feature gate. 
+ ClusterTrustBundle objects can either be selected by name, or by the combination of signer name and a label selector. 
+ Kubelet performs aggressive normalization of the PEM contents written into the pod filesystem.  Esoteric PEM features such as inter-block comments and block headers are stripped.  Certificates are deduplicated. The ordering of certificates within the file is arbitrary, and Kubelet may change the order over time.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Relative path from the volume root to write the bundle.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalvolumesindexprojectedsourcesindexclustertrustbundlelabelselector">labelSelector</a></b></td>
+        <td>object</td>
+        <td>
+          Select all ClusterTrustBundles that match this label selector.  Only has effect if signerName is set.  Mutually-exclusive with name.  If unset, interpreted as "match nothing".  If set but empty, interpreted as "match everything".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Select a single ClusterTrustBundle by object name.  Mutually-exclusive with signerName and labelSelector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          If true, don't block pod startup if the referenced ClusterTrustBundle(s) aren't available.  If using name, then the named ClusterTrustBundle is allowed not to exist.  If using signerName, then the combination of signerName and labelSelector is allowed to match zero ClusterTrustBundles.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>signerName</b></td>
+        <td>string</td>
+        <td>
+          Select all ClusterTrustBundles that match this signer name. Mutually-exclusive with name.  The contents of all selected ClusterTrustBundles will be unified and deduplicated.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.additionalVolumes[index].projected.sources[index].clusterTrustBundle.labelSelector
+
+
+
+Select all ClusterTrustBundles that match this label selector.  Only has effect if signerName is set.  Mutually-exclusive with name.  If unset, interpreted as "match nothing".  If set but empty, interpreted as "match everything".
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalvolumesindexprojectedsourcesindexclustertrustbundlelabelselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.additionalVolumes[index].projected.sources[index].clusterTrustBundle.labelSelector.matchExpressions[index]
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9100,7 +9446,21 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentaffinitypodaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermlabelselector">labelSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over a set of resources, in this case pods.<br/>
+          A label query over a set of resources, in this case pods. If it's null, this PodAffinityTerm matches with no Pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector. Also, MatchLabelKeys cannot be set when LabelSelector isn't set. This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mismatchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MismatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector. Also, MismatchLabelKeys cannot be set when LabelSelector isn't set. This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9125,7 +9485,7 @@ Required. A pod affinity term, associated with the corresponding weight.
 
 
 
-A label query over a set of resources, in this case pods.
+A label query over a set of resources, in this case pods. If it's null, this PodAffinityTerm matches with no Pods.
 
 <table>
     <thead>
@@ -9293,7 +9653,21 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentaffinitypodaffinityrequiredduringschedulingignoredduringexecutionindexlabelselector">labelSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over a set of resources, in this case pods.<br/>
+          A label query over a set of resources, in this case pods. If it's null, this PodAffinityTerm matches with no Pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector. Also, MatchLabelKeys cannot be set when LabelSelector isn't set. This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mismatchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MismatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector. Also, MismatchLabelKeys cannot be set when LabelSelector isn't set. This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9318,7 +9692,7 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
 
 
 
-A label query over a set of resources, in this case pods.
+A label query over a set of resources, in this case pods. If it's null, this PodAffinityTerm matches with no Pods.
 
 <table>
     <thead>
@@ -9554,7 +9928,21 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentaffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermlabelselector">labelSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over a set of resources, in this case pods.<br/>
+          A label query over a set of resources, in this case pods. If it's null, this PodAffinityTerm matches with no Pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector. Also, MatchLabelKeys cannot be set when LabelSelector isn't set. This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mismatchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MismatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector. Also, MismatchLabelKeys cannot be set when LabelSelector isn't set. This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9579,7 +9967,7 @@ Required. A pod affinity term, associated with the corresponding weight.
 
 
 
-A label query over a set of resources, in this case pods.
+A label query over a set of resources, in this case pods. If it's null, this PodAffinityTerm matches with no Pods.
 
 <table>
     <thead>
@@ -9747,7 +10135,21 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentaffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindexlabelselector">labelSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over a set of resources, in this case pods.<br/>
+          A label query over a set of resources, in this case pods. If it's null, this PodAffinityTerm matches with no Pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector. Also, MatchLabelKeys cannot be set when LabelSelector isn't set. This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mismatchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MismatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector. Also, MismatchLabelKeys cannot be set when LabelSelector isn't set. This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9772,7 +10174,7 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
 
 
 
-A label query over a set of resources, in this case pods.
+A label query over a set of resources, in this case pods. If it's null, this PodAffinityTerm matches with no Pods.
 
 <table>
     <thead>
@@ -10091,7 +10493,7 @@ ResourceRequirements describes the compute resource requirements.
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
  This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable.<br/>
+ This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10105,7 +10507,7 @@ ResourceRequirements describes the compute resource requirements.
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10159,7 +10561,7 @@ ResourceRequirements describes the compute resource requirements.
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
  This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable.<br/>
+ This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10173,7 +10575,7 @@ ResourceRequirements describes the compute resource requirements.
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10227,7 +10629,7 @@ Define the kine container resources. Available only if Kamaji is running using K
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
  This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable.<br/>
+ This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10241,7 +10643,7 @@ Define the kine container resources. Available only if Kamaji is running using K
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10295,7 +10697,7 @@ ResourceRequirements describes the compute resource requirements.
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
  This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable.<br/>
+ This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10309,7 +10711,7 @@ ResourceRequirements describes the compute resource requirements.
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10513,7 +10915,8 @@ TopologySpreadConstraint specifies how to spread matching pods among the given t
         <td><b>matchLabelKeys</b></td>
         <td>[]string</td>
         <td>
-          MatchLabelKeys is a set of pod label keys to select the pods over which spreading will be calculated. The keys are used to lookup values from the incoming pod labels, those key-value labels are ANDed with labelSelector to select the group of existing pods over which spreading will be calculated for the incoming pod. Keys that don't exist in the incoming pod labels will be ignored. A null or empty list means only match against labelSelector.<br/>
+          MatchLabelKeys is a set of pod label keys to select the pods over which spreading will be calculated. The keys are used to lookup values from the incoming pod labels, those key-value labels are ANDed with labelSelector to select the group of existing pods over which spreading will be calculated for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector. MatchLabelKeys cannot be set when LabelSelector isn't set. Keys that don't exist in the incoming pod labels will be ignored. A null or empty list means only match against labelSelector. 
+ This is a beta field and requires the MatchLabelKeysInPodTopologySpread feature gate to be enabled (enabled by default).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11007,7 +11410,7 @@ Resources define the amount of CPU and memory to allocate to the Konnectivity se
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
  This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable.<br/>
+ This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11021,7 +11424,7 @@ Resources define the amount of CPU and memory to allocate to the Konnectivity se
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11811,6 +12214,13 @@ LoadBalancerIngress represents the status of a load-balancer ingress point: traf
         <td>string</td>
         <td>
           IP is set for load-balancer ingress points that are IP based (typically GCE or OpenStack load-balancers)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ipMode</b></td>
+        <td>string</td>
+        <td>
+          IPMode specifies how the load-balancer IP behaves, and may only be specified when the ip field is specified. Setting this to "VIP" indicates that traffic is delivered to the node with the destination set to the load-balancer's IP and port. Setting this to "Proxy" indicates that traffic is delivered to the node or pod with the destination set to the node's IP and node port or the pod's IP and port. Service implementations may use this information to adjust traffic routing.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12873,7 +13283,7 @@ KubernetesIngressStatus defines the status for the Tenant Control Plane Ingress 
         <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesingressloadbalancer">loadBalancer</a></b></td>
         <td>object</td>
         <td>
-          LoadBalancer contains the current status of the load-balancer.<br/>
+          loadBalancer contains the current status of the load-balancer.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12884,7 +13294,7 @@ KubernetesIngressStatus defines the status for the Tenant Control Plane Ingress 
 
 
 
-LoadBalancer contains the current status of the load-balancer.
+loadBalancer contains the current status of the load-balancer.
 
 <table>
     <thead>
@@ -12899,7 +13309,7 @@ LoadBalancer contains the current status of the load-balancer.
         <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesingressloadbalanceringressindex">ingress</a></b></td>
         <td>[]object</td>
         <td>
-          Ingress is a list containing ingress points for the load-balancer.<br/>
+          ingress is a list containing ingress points for the load-balancer.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12925,21 +13335,21 @@ IngressLoadBalancerIngress represents the status of a load-balancer ingress poin
         <td><b>hostname</b></td>
         <td>string</td>
         <td>
-          Hostname is set for load-balancer ingress points that are DNS based.<br/>
+          hostname is set for load-balancer ingress points that are DNS based.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>ip</b></td>
         <td>string</td>
         <td>
-          IP is set for load-balancer ingress points that are IP based.<br/>
+          ip is set for load-balancer ingress points that are IP based.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesingressloadbalanceringressindexportsindex">ports</a></b></td>
         <td>[]object</td>
         <td>
-          Ports provides information about the ports exposed by this LoadBalancer.<br/>
+          ports provides information about the ports exposed by this LoadBalancer.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12965,7 +13375,7 @@ IngressPortStatus represents the error condition of a service port
         <td><b>port</b></td>
         <td>integer</td>
         <td>
-          Port is the port number of the ingress port.<br/>
+          port is the port number of the ingress port.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -12974,7 +13384,7 @@ IngressPortStatus represents the error condition of a service port
         <td><b>protocol</b></td>
         <td>string</td>
         <td>
-          Protocol is the protocol of the ingress port. The supported values are: "TCP", "UDP", "SCTP"<br/>
+          protocol is the protocol of the ingress port. The supported values are: "TCP", "UDP", "SCTP"<br/>
           <br/>
             <i>Default</i>: TCP<br/>
         </td>
@@ -12983,7 +13393,7 @@ IngressPortStatus represents the error condition of a service port
         <td><b>error</b></td>
         <td>string</td>
         <td>
-          Error is to record the problem with the service port The format of the error shall comply with the following rules: - built-in error values shall be specified in this file and those shall use CamelCase names - cloud provider specific error values must have names that comply with the format foo.example.com/CamelCase. --- The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
+          error is to record the problem with the service port The format of the error shall comply with the following rules: - built-in error values shall be specified in this file and those shall use CamelCase names - cloud provider specific error values must have names that comply with the format foo.example.com/CamelCase. --- The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13169,6 +13579,13 @@ LoadBalancerIngress represents the status of a load-balancer ingress point: traf
         <td>string</td>
         <td>
           IP is set for load-balancer ingress points that are IP based (typically GCE or OpenStack load-balancers)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ipMode</b></td>
+        <td>string</td>
+        <td>
+          IPMode specifies how the load-balancer IP behaves, and may only be specified when the ip field is specified. Setting this to "VIP" indicates that traffic is delivered to the node with the destination set to the load-balancer's IP and port. Setting this to "Proxy" indicates that traffic is delivered to the node or pod with the destination set to the node's IP and node port or the pod's IP and port. Service implementations may use this information to adjust traffic routing.<br/>
         </td>
         <td>false</td>
       </tr><tr>
