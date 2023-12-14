@@ -25,7 +25,7 @@ import (
 )
 
 type DataStore struct {
-	client client.Client
+	Client client.Client
 	// TenantControlPlaneTrigger is the channel used to communicate across the controllers:
 	// if a Data Source is updated we have to be sure that the reconciliation of the certificates content
 	// for each Tenant Control Plane is put in place properly.
@@ -39,7 +39,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	log := log.FromContext(ctx)
 
 	ds := &kamajiv1alpha1.DataStore{}
-	if err := r.client.Get(ctx, request.NamespacedName, ds); err != nil {
+	if err := r.Client.Get(ctx, request.NamespacedName, ds); err != nil {
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
@@ -51,7 +51,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 
 	tcpList := kamajiv1alpha1.TenantControlPlaneList{}
 
-	if err := r.client.List(ctx, &tcpList, client.MatchingFieldsSelector{
+	if err := r.Client.List(ctx, &tcpList, client.MatchingFieldsSelector{
 		Selector: fields.OneTermEqualSelector(kamajiv1alpha1.TenantControlPlaneUsedDataStoreKey, ds.GetName()),
 	}); err != nil {
 		log.Error(err, "cannot retrieve list of the Tenant Control Plane using the following instance")
@@ -66,7 +66,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 
 	ds.Status.UsedBy = tcpSets.List()
 
-	if err := r.client.Status().Update(ctx, ds); err != nil {
+	if err := r.Client.Status().Update(ctx, ds); err != nil {
 		log.Error(err, "cannot update the status for the given instance")
 
 		return reconcile.Result{}, err
@@ -79,12 +79,6 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	}
 
 	return reconcile.Result{}, nil
-}
-
-func (r *DataStore) InjectClient(client client.Client) error {
-	r.client = client
-
-	return nil
 }
 
 func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
@@ -102,15 +96,15 @@ func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
 		For(&kamajiv1alpha1.DataStore{}, builder.WithPredicates(
 			predicate.ResourceVersionChangedPredicate{},
 		)).
-		Watches(&source.Kind{Type: &kamajiv1alpha1.TenantControlPlane{}}, handler.Funcs{
-			CreateFunc: func(createEvent event.CreateEvent, limitingInterface workqueue.RateLimitingInterface) {
+		WatchesRawSource(source.Kind(mgr.GetCache(), &kamajiv1alpha1.TenantControlPlane{}), handler.Funcs{
+			CreateFunc: func(_ context.Context, createEvent event.CreateEvent, limitingInterface workqueue.RateLimitingInterface) {
 				enqueueFn(createEvent.Object.(*kamajiv1alpha1.TenantControlPlane), limitingInterface)
 			},
-			UpdateFunc: func(updateEvent event.UpdateEvent, limitingInterface workqueue.RateLimitingInterface) {
+			UpdateFunc: func(_ context.Context, updateEvent event.UpdateEvent, limitingInterface workqueue.RateLimitingInterface) {
 				enqueueFn(updateEvent.ObjectOld.(*kamajiv1alpha1.TenantControlPlane), limitingInterface)
 				enqueueFn(updateEvent.ObjectNew.(*kamajiv1alpha1.TenantControlPlane), limitingInterface)
 			},
-			DeleteFunc: func(deleteEvent event.DeleteEvent, limitingInterface workqueue.RateLimitingInterface) {
+			DeleteFunc: func(_ context.Context, deleteEvent event.DeleteEvent, limitingInterface workqueue.RateLimitingInterface) {
 				enqueueFn(deleteEvent.Object.(*kamajiv1alpha1.TenantControlPlane), limitingInterface)
 			},
 		}).

@@ -64,9 +64,9 @@ func CreateKubeadmInitConfiguration(params Parameters) (*Configuration, error) {
 		fmt.Sprintf("%s.%s.svc.cluster.local", params.TenantControlPlaneName, params.TenantControlPlaneNamespace),
 		params.TenantControlPlaneAddress,
 	}, params.TenantControlPlaneCertSANs...)
-	conf.APIServer.ControlPlaneComponent.ExtraArgs = map[string]string{
-		"etcd-compaction-interval": "0s",
-		"etcd-prefix":              fmt.Sprintf("/%s", params.TenantControlPlaneName),
+	conf.APIServer.ControlPlaneComponent.ExtraArgs = []kubeadmapi.Arg{
+		{Name: "etcd-compaction-interval", Value: "0s"},
+		{Name: "etcd-prefix", Value: fmt.Sprintf("/%s", params.TenantControlPlaneName)},
 	}
 	conf.ClusterName = params.TenantControlPlaneName
 

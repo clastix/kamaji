@@ -67,6 +67,6 @@ func (k *KubeadmPhase) SetupWithManager(mgr manager.Manager) error {
 
 	return controllerruntime.NewControllerManagedBy(mgr).
 		For(k.Phase.GetWatchedObject(), builder.WithPredicates(predicate.NewPredicateFuncs(k.Phase.GetPredicateFunc()))).
-		Watches(&source.Channel{Source: k.TriggerChannel}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(&source.Channel{Source: k.TriggerChannel}, &handler.EnqueueRequestForObject{}).
 		Complete(k)
 }

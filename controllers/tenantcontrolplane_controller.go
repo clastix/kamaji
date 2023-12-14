@@ -228,7 +228,7 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 	r.clock = clock.RealClock{}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		Watches(&source.Channel{Source: r.CertificateChan}, handler.Funcs{GenericFunc: func(genericEvent event.GenericEvent, limitingInterface workqueue.RateLimitingInterface) {
+		WatchesRawSource(&source.Channel{Source: r.CertificateChan}, handler.Funcs{GenericFunc: func(_ context.Context, genericEvent event.GenericEvent, limitingInterface workqueue.RateLimitingInterface) {
 			limitingInterface.AddRateLimited(ctrl.Request{
 				NamespacedName: k8stypes.NamespacedName{
 					Namespace: genericEvent.Object.GetNamespace(),
@@ -236,7 +236,7 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 				},
 			})
 		}}).
-		Watches(&source.Channel{Source: r.TriggerChan}, handler.Funcs{GenericFunc: func(genericEvent event.GenericEvent, limitingInterface workqueue.RateLimitingInterface) {
+		WatchesRawSource(&source.Channel{Source: r.TriggerChan}, handler.Funcs{GenericFunc: func(_ context.Context, genericEvent event.GenericEvent, limitingInterface workqueue.RateLimitingInterface) {
 			limitingInterface.AddRateLimited(ctrl.Request{
 				NamespacedName: k8stypes.NamespacedName{
 					Namespace: genericEvent.Object.GetNamespace(),
@@ -250,7 +250,7 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).
 		Owns(&networkingv1.Ingress{}).
-		Watches(&source.Kind{Type: &batchv1.Job{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+		WatchesRawSource(source.Kind(mgr.GetCache(), &batchv1.Job{}), handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
 			labels := object.GetLabels()
 
 			name, namespace := labels["tcp.kamaji.clastix.io/name"], labels["tcp.kamaji.clastix.io/namespace"]
