@@ -13,7 +13,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -287,7 +287,7 @@ func (k *KubeProxy) mutateDaemonSet(ctx context.Context, tenantClient client.Cli
 		ds.Spec.Template.Spec.Volumes[0].Name = k.daemonSet.Spec.Template.Spec.Volumes[0].Name
 		ds.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap = &corev1.ConfigMapVolumeSource{
 			LocalObjectReference: corev1.LocalObjectReference{Name: k.daemonSet.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap.Name},
-			DefaultMode:          pointer.Int32(420),
+			DefaultMode:          pointer.To(int32(420)),
 		}
 
 		ds.Spec.Template.Spec.Volumes[1].Name = k.daemonSet.Spec.Template.Spec.Volumes[1].Name

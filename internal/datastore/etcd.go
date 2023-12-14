@@ -136,7 +136,7 @@ func (e *EtcdClient) DeleteDB(ctx context.Context, dbName string) error {
 	return nil
 }
 
-func (e *EtcdClient) RevokePrivileges(ctx context.Context, user, dbName string) error {
+func (e *EtcdClient) RevokePrivileges(ctx context.Context, _, dbName string) error {
 	if _, err := e.Client.Auth.RoleDelete(ctx, dbName); err != nil {
 		return errors.NewRevokePrivilegesError(err)
 	}

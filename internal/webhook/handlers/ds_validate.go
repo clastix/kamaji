@@ -68,11 +68,7 @@ func (d DataStoreValidation) validate(ctx context.Context, ds kamajiv1alpha1.Dat
 		}
 	}
 
-	if err := d.validateTLSConfig(ctx, ds); err != nil {
-		return err
-	}
-
-	return nil
+	return d.validateTLSConfig(ctx, ds)
 }
 
 func (d DataStoreValidation) validateBasicAuth(ctx context.Context, ds kamajiv1alpha1.DataStore) error {

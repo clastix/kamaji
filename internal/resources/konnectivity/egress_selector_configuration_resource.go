@@ -24,7 +24,7 @@ type EgressSelectorConfigurationResource struct {
 	Client   client.Client
 }
 
-func (r *EgressSelectorConfigurationResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *EgressSelectorConfigurationResource) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utilities.AddTenantPrefix(r.GetName(), tenantControlPlane),
@@ -39,7 +39,7 @@ func (r *EgressSelectorConfigurationResource) ShouldCleanup(tenantControlPlane *
 	return tenantControlPlane.Spec.Addons.Konnectivity == nil
 }
 
-func (r *EgressSelectorConfigurationResource) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *EgressSelectorConfigurationResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
 	if err := r.Client.Delete(ctx, r.resource); err != nil {
@@ -63,11 +63,11 @@ func (r *EgressSelectorConfigurationResource) GetName() string {
 	return "konnectivity-egress-selector-configuration"
 }
 
-func (r *EgressSelectorConfigurationResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *EgressSelectorConfigurationResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Checksum != utilities.GetObjectChecksum(r.resource)
 }
 
-func (r *EgressSelectorConfigurationResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *EgressSelectorConfigurationResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Name = r.resource.GetName()
 		tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Checksum = utilities.GetObjectChecksum(r.resource)

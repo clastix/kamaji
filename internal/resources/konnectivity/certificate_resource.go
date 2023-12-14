@@ -29,7 +29,7 @@ type CertificateResource struct {
 	Client   client.Client
 }
 
-func (r *CertificateResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *CertificateResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum != utilities.GetObjectChecksum(r.resource)
 }
 
@@ -72,7 +72,7 @@ func (r *CertificateResource) GetName() string {
 	return "konnectivity-certificate"
 }
 
-func (r *CertificateResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *CertificateResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Certificate.LastUpdate = metav1.Now()
 		tenantControlPlane.Status.Addons.Konnectivity.Certificate.SecretName = r.resource.GetName()

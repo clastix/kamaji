@@ -26,11 +26,8 @@ func buildCertificateDirectoryWithCA(ca CertificatePrivateKeyPair, directory str
 	}
 
 	keyPath := path.Join(directory, kubeadmconstants.CAKeyName)
-	if err := os.WriteFile(keyPath, ca.PrivateKey, os.FileMode(0o600)); err != nil {
-		return err
-	}
 
-	return nil
+	return os.WriteFile(keyPath, ca.PrivateKey, os.FileMode(0o600))
 }
 
 func CreateKubeconfig(kubeconfigName string, ca CertificatePrivateKeyPair, config *Configuration) ([]byte, error) {

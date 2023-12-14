@@ -216,10 +216,14 @@ func (c *MySQLConnection) DBExists(ctx context.Context, dbName string) (bool, er
 	return ok, nil
 }
 
-func (c *MySQLConnection) GrantPrivilegesExists(ctx context.Context, user, dbName string) (bool, error) {
+func (c *MySQLConnection) GrantPrivilegesExists(_ context.Context, user, dbName string) (bool, error) {
 	statementShowGrantsStatement := fmt.Sprintf(mysqlShowGrantsStatement, user)
-	rows, err := c.db.Query(statementShowGrantsStatement)
+	rows, err := c.db.Query(statementShowGrantsStatement) //nolint:sqlclosecheck
 	if err != nil {
+		return false, errors.NewGrantPrivilegesError(err)
+	}
+
+	if err = rows.Err(); err != nil {
 		return false, errors.NewGrantPrivilegesError(err)
 	}
 
