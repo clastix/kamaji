@@ -20,6 +20,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	cmdutils "github.com/clastix/kamaji/cmd/utils"
@@ -95,15 +97,19 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			setupLog.Info(fmt.Sprintf("Go OS/Arch: %s/%s", goRuntime.GOOS, goRuntime.GOARCH))
 
 			mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-				Scheme:                  scheme,
-				MetricsBindAddress:      metricsBindAddress,
-				Port:                    9443,
+				Scheme: scheme,
+				Metrics: metricsserver.Options{
+					BindAddress: metricsBindAddress,
+				},
+				WebhookServer: ctrlwebhook.NewServer(ctrlwebhook.Options{
+					Port: 9443,
+				}),
 				HealthProbeBindAddress:  healthProbeBindAddress,
 				LeaderElection:          leaderElect,
 				LeaderElectionNamespace: managerNamespace,
 				LeaderElectionID:        "799b98bc.clastix.io",
 				NewCache: func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
-					opts.Resync = &cacheResyncPeriod
+					opts.SyncPeriod = &cacheResyncPeriod
 
 					return cache.New(config, opts)
 				},
@@ -116,7 +122,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 
 			tcpChannel, certChannel := make(controllers.TenantControlPlaneChannel), make(controllers.CertificateChannel)
 
-			if err = (&controllers.DataStore{TenantControlPlaneTrigger: tcpChannel}).SetupWithManager(mgr); err != nil {
+			if err = (&controllers.DataStore{Client: mgr.GetClient(), TenantControlPlaneTrigger: tcpChannel}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "DataStore")
 
 				return err

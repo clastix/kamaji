@@ -12,13 +12,13 @@ import (
 	"k8s.io/client-go/util/retry"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -175,10 +175,12 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	}()
 
 	mgr, err := controllerruntime.NewManager(tcpRest, controllerruntime.Options{
-		Logger:             log.Log.WithName(fmt.Sprintf("soot_%s_%s", tcp.GetNamespace(), tcp.GetName())),
-		Scheme:             m.client.Scheme(),
-		MetricsBindAddress: "0",
-		NewClient: func(cache cache.Cache, config *rest.Config, options client.Options, uncachedObjects ...client.Object) (client.Client, error) {
+		Logger: log.Log.WithName(fmt.Sprintf("soot_%s_%s", tcp.GetNamespace(), tcp.GetName())),
+		Scheme: m.client.Scheme(),
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
+		NewClient: func(config *rest.Config, options client.Options) (client.Client, error) {
 			return client.New(config, client.Options{
 				Scheme: m.client.Scheme(),
 			})
@@ -289,7 +291,7 @@ func (m *Manager) SetupWithManager(mgr manager.Manager) error {
 	m.sootMap = make(map[string]sootItem)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
-		Watches(&source.Channel{Source: m.sootManagerErrChan}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(&source.Channel{Source: m.sootManagerErrChan}, &handler.EnqueueRequestForObject{}).
 		For(&kamajiv1alpha1.TenantControlPlane{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			obj := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 			// status is required to understand if we have to start or stop the soot manager

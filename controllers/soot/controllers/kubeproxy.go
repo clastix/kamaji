@@ -79,7 +79,7 @@ func (k *KubeProxy) SetupWithManager(mgr manager.Manager) error {
 		For(&rbacv1.ClusterRoleBinding{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == kubeadm.KubeProxyClusterRoleBindingName
 		}))).
-		Watches(&source.Channel{Source: k.TriggerChannel}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(&source.Channel{Source: k.TriggerChannel}, &handler.EnqueueRequestForObject{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&rbacv1.Role{}).
 		Owns(&rbacv1.RoleBinding{}).

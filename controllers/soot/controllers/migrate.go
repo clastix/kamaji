@@ -187,7 +187,7 @@ func (m *Migrate) SetupWithManager(mgr manager.Manager) error {
 
 			return object.GetName() == vwc.GetName()
 		}))).
-		Watches(&source.Channel{Source: m.TriggerChannel}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(&source.Channel{Source: m.TriggerChannel}, &handler.EnqueueRequestForObject{}).
 		Complete(m)
 }
 

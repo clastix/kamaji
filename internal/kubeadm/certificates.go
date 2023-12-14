@@ -107,7 +107,7 @@ func GeneratePublicKeyPrivateKeyPair(baseName string, config *Configuration) (*P
 }
 
 func initPhaseCertsSA(config *Configuration) error {
-	return certs.CreateServiceAccountKeyAndPublicKeyFiles(config.InitConfiguration.CertificatesDir, config.InitConfiguration.PublicKeyAlgorithm())
+	return certs.CreateServiceAccountKeyAndPublicKeyFiles(config.InitConfiguration.CertificatesDir, config.InitConfiguration.EncryptionAlgorithmType())
 }
 
 func initPhaseFromCA(kubeadmCert *certs.KubeadmCert, config *Configuration, certificate *x509.Certificate, signer crypto.Signer) error {

@@ -4,7 +4,6 @@
 package webhook
 
 import (
-	"github.com/pkg/errors"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -16,13 +15,8 @@ import (
 func Register(mgr controllerruntime.Manager, routes map[webhookroutes.Route][]webhookhandlers.Handler) error {
 	srv := mgr.GetWebhookServer()
 
-	decoder, err := admission.NewDecoder(mgr.GetScheme())
-	if err != nil {
-		return errors.Wrap(err, "unable to create NewDecoder for webhook registration")
-	}
-
 	chainer := handlersChainer{
-		decoder: decoder,
+		decoder: admission.NewDecoder(mgr.GetScheme()),
 	}
 
 	for route, handlers := range routes {
