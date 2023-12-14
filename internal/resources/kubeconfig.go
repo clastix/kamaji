@@ -24,6 +24,7 @@ import (
 
 const (
 	AdminKubeConfigFileName             = kubeadmconstants.AdminKubeConfigFileName
+	SuperAdminKubeConfigFileName        = kubeadmconstants.SuperAdminKubeConfigFileName
 	ControllerManagerKubeConfigFileName = kubeadmconstants.ControllerManagerKubeConfigFileName
 	SchedulerKubeConfigFileName         = kubeadmconstants.SchedulerKubeConfigFileName
 	localhost                           = "127.0.0.1"
@@ -102,7 +103,7 @@ func (r *KubeconfigResource) UpdateTenantControlPlaneStatus(ctx context.Context,
 
 func (r *KubeconfigResource) getKubeconfigStatus(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*kamajiv1alpha1.KubeconfigStatus, error) {
 	switch r.KubeConfigFileName {
-	case kubeadmconstants.AdminKubeConfigFileName:
+	case kubeadmconstants.AdminKubeConfigFileName, kubeadmconstants.SuperAdminKubeConfigFileName:
 		return &tenantControlPlane.Status.KubeConfig.Admin, nil
 	case kubeadmconstants.ControllerManagerKubeConfigFileName:
 		return &tenantControlPlane.Status.KubeConfig.ControllerManager, nil
@@ -181,6 +182,11 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		shouldCreate = shouldCreate || !kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName]) // invalid kubeconfig, or expired client certificate
 		shouldCreate = shouldCreate || status.Checksum != checksum || len(r.resource.UID) == 0           // Wrong checksum
 
+		if !shouldCreate {
+			v, ok := r.resource.Data[r.KubeConfigFileName]
+			shouldCreate = len(v) == 0 || !ok
+		}
+
 		if shouldCreate {
 			crtKeyPair := kubeadm.CertificatePrivateKeyPair{
 				Certificate: caCertificatesSecret.Data[kubeadmconstants.CACertName],
@@ -194,9 +200,11 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 				return kcErr
 			}
 
-			r.resource.Data = map[string][]byte{
-				r.KubeConfigFileName: kubeconfig,
+			if r.resource.Data == nil {
+				r.resource.Data = map[string][]byte{}
 			}
+
+			r.resource.Data[r.KubeConfigFileName] = kubeconfig
 		}
 
 		return nil

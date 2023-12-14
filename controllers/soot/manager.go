@@ -258,6 +258,17 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	if err = bootstrapToken.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
 	}
+
+	kubeadmRbac := &controllers.KubeadmPhase{
+		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		Phase: &resources.KubeadmPhase{
+			Client: m.AdminClient,
+			Phase:  resources.PhaseClusterAdminRBAC,
+		},
+	}
+	if err = kubeadmRbac.SetupWithManager(mgr); err != nil {
+		return reconcile.Result{}, err
+	}
 	// Starting the manager
 	go func() {
 		if err = mgr.Start(tcpCtx); err != nil {

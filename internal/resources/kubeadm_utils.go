@@ -142,7 +142,7 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr
 		return controllerutil.OperationResultNone, err
 	}
 
-	fun, err := r.GetKubeadmFunction()
+	fun, err := r.GetKubeadmFunction(ctx, tenantControlPlane)
 	if err != nil {
 		logger.Error(err, "cannot retrieve kubeadm function")
 

@@ -6,12 +6,17 @@ package resources
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
 	bootstraptokenv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
-	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
+	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/kubeconfig"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -27,10 +32,11 @@ const (
 	PhaseUploadConfigKubeadm kubeadmPhase = iota
 	PhaseUploadConfigKubelet
 	PhaseBootstrapToken
+	PhaseClusterAdminRBAC
 )
 
 func (d kubeadmPhase) String() string {
-	return [...]string{"PhaseUploadConfigKubeadm", "PhaseUploadConfigKubelet", "PhaseBootstrapToken"}[d]
+	return [...]string{"PhaseUploadConfigKubeadm", "PhaseUploadConfigKubelet", "PhaseBootstrapToken", "PhaseClusterAdminRBAC"}[d]
 }
 
 type KubeadmPhase struct {
@@ -47,6 +53,8 @@ func (r *KubeadmPhase) GetWatchedObject() client.Object {
 		return &corev1.ConfigMap{}
 	case PhaseBootstrapToken:
 		return &corev1.Secret{}
+	case PhaseClusterAdminRBAC:
+		return &rbacv1.ClusterRoleBinding{}
 	default:
 		panic("shouldn't happen")
 	}
@@ -56,17 +64,23 @@ func (r *KubeadmPhase) GetPredicateFunc() func(obj client.Object) bool {
 	switch r.Phase {
 	case PhaseUploadConfigKubeadm:
 		return func(obj client.Object) bool {
-			return obj.GetName() == constants.KubeadmConfigConfigMap && obj.GetNamespace() == metav1.NamespaceSystem
+			return obj.GetName() == kubeadmconstants.KubeadmConfigConfigMap && obj.GetNamespace() == metav1.NamespaceSystem
 		}
 	case PhaseUploadConfigKubelet:
 		return func(obj client.Object) bool {
-			return obj.GetName() == constants.KubeletBaseConfigurationConfigMap && obj.GetNamespace() == metav1.NamespaceSystem
+			return obj.GetName() == kubeadmconstants.KubeletBaseConfigurationConfigMap && obj.GetNamespace() == metav1.NamespaceSystem
 		}
 	case PhaseBootstrapToken:
 		return func(obj client.Object) bool {
 			secret := obj.(*corev1.Secret) //nolint:forcetypeassert
 
 			return secret.Type == "bootstrap.kubernetes.io/token" && secret.GetNamespace() == metav1.NamespaceSystem
+		}
+	case PhaseClusterAdminRBAC:
+		return func(obj client.Object) bool {
+			cr := obj.(*rbacv1.ClusterRoleBinding) //nolint:forcetypeassert
+
+			return strings.HasPrefix(cr.Name, "kubeadm:")
 		}
 	default:
 		panic("shouldn't happen")
@@ -107,7 +121,7 @@ func (r *KubeadmPhase) Define(context.Context, *kamajiv1alpha1.TenantControlPlan
 	return nil
 }
 
-func (r *KubeadmPhase) GetKubeadmFunction() (func(clientset.Interface, *kubeadm.Configuration) ([]byte, error), error) {
+func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (func(clientset.Interface, *kubeadm.Configuration) ([]byte, error), error) {
 	switch r.Phase {
 	case PhaseUploadConfigKubeadm:
 		return kubeadm.UploadKubeadmConfig, nil
@@ -118,6 +132,43 @@ func (r *KubeadmPhase) GetKubeadmFunction() (func(clientset.Interface, *kubeadm.
 			bootstrapTokensEnrichment(config.InitConfiguration.BootstrapTokens)
 
 			return nil, kubeadm.BootstrapToken(client, config)
+		}, nil
+	case PhaseClusterAdminRBAC:
+		return func(c clientset.Interface, configuration *kubeadm.Configuration) ([]byte, error) {
+			tmp, err := os.MkdirTemp("", string(tcp.UID))
+			if err != nil {
+				return nil, err
+			}
+
+			defer func() { _ = os.Remove(tmp) }()
+
+			var caSecret corev1.Secret
+
+			if err = r.Client.Get(ctx, types.NamespacedName{Name: tcp.Status.Certificates.CA.SecretName, Namespace: tcp.Namespace}, &caSecret); err != nil {
+				return nil, err
+			}
+
+			crtKeyPair := kubeadm.CertificatePrivateKeyPair{
+				Certificate: caSecret.Data[kubeadmconstants.CACertName],
+				PrivateKey:  caSecret.Data[kubeadmconstants.CAKeyName],
+			}
+
+			for _, i := range []string{AdminKubeConfigFileName, SuperAdminKubeConfigFileName} {
+				configuration.InitConfiguration.CertificatesDir, _ = os.MkdirTemp(tmp, "")
+
+				kubeconfigValue, err := kubeadm.CreateKubeconfig(SuperAdminKubeConfigFileName, crtKeyPair, configuration)
+				if err != nil {
+					return nil, err
+				}
+
+				_ = os.WriteFile(fmt.Sprintf("%s/%s", tmp, i), kubeconfigValue, os.ModePerm)
+			}
+
+			if _, err = kubeconfig.EnsureAdminClusterRoleBinding(tmp, nil); err != nil {
+				return nil, err
+			}
+
+			return nil, nil
 		}, nil
 	default:
 		return nil, fmt.Errorf("no available functionality for phase %s", r.Phase)
@@ -175,7 +226,7 @@ func (r *KubeadmPhase) UpdateTenantControlPlaneStatus(ctx context.Context, tenan
 
 func (r *KubeadmPhase) GetStatus(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (kamajiv1alpha1.KubeadmConfigChecksumDependant, error) {
 	switch r.Phase {
-	case PhaseUploadConfigKubeadm, PhaseUploadConfigKubelet:
+	case PhaseUploadConfigKubeadm, PhaseUploadConfigKubelet, PhaseClusterAdminRBAC:
 		return nil, nil
 	case PhaseBootstrapToken:
 		return &tenantControlPlane.Status.KubeadmPhase.BootstrapToken, nil
