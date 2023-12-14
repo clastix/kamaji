@@ -61,7 +61,7 @@ func (r *KubeadmConfigResource) GetName() string {
 	return "kubeadmconfig"
 }
 
-func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.KubeadmConfig.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.KubeadmConfig.Checksum = utilities.GetObjectChecksum(r.resource)
 	tenantControlPlane.Status.KubeadmConfig.ConfigmapName = r.resource.GetName()
@@ -116,10 +116,6 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
-		if err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
-			return err
-		}
-
-		return nil
+		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
 }

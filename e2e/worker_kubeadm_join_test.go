@@ -19,9 +19,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	kubeadmv1beta3 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd"
-	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/util"
-	"k8s.io/utils/pointer"
+	pointer "k8s.io/utils/ptr"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
@@ -44,7 +44,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					Deployment: kamajiv1alpha1.DeploymentSpec{
-						Replicas: pointer.Int32(1),
+						Replicas: pointer.To(int32(1)),
 					},
 					Service: kamajiv1alpha1.ServiceSpec{
 						ServiceType: "NodePort",
@@ -121,7 +121,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 		var joinCommandBuffer *bytes.Buffer
 
 		By("generating kubeadm join command", func() {
-			joinCommandBuffer = bytes.NewBuffer([]byte(""))
+			joinCommandBuffer = bytes.NewBufferString("")
 
 			config, err := clientcmd.BuildConfigFromFlags("", kubeconfigFile.Name())
 			Expect(err).ToNot(HaveOccurred())
@@ -129,7 +129,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 			clientset, err := kubernetes.NewForConfig(config)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(cmd.RunCreateToken(joinCommandBuffer, clientset, "", util.DefaultInitConfiguration(), true, "", kubeconfigFile.Name())).ToNot(HaveOccurred())
+			Expect(cmd.RunCreateToken(joinCommandBuffer, clientset, "", &kubeadmv1beta3.InitConfiguration{}, true, "", kubeconfigFile.Name())).ToNot(HaveOccurred())
 		})
 
 		By("executing the command in the worker node", func() {

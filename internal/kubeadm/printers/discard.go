@@ -11,28 +11,28 @@ import (
 
 type Discard struct{}
 
-func (d Discard) PrintObj(obj runtime.Object, writer io.Writer) error {
+func (d Discard) PrintObj(runtime.Object, io.Writer) error {
 	return nil
 }
 
-func (d Discard) Fprintf(writer io.Writer, format string, args ...interface{}) (n int, err error) {
+func (d Discard) Fprintf(io.Writer, string, ...interface{}) (n int, err error) {
 	return
 }
 
-func (d Discard) Fprintln(writer io.Writer, args ...interface{}) (n int, err error) {
+func (d Discard) Fprintln(io.Writer, ...interface{}) (n int, err error) {
 	return
 }
 
-func (d Discard) Printf(format string, args ...interface{}) (n int, err error) {
+func (d Discard) Printf(string, ...interface{}) (n int, err error) {
 	return
 }
 
-func (d Discard) Println(args ...interface{}) (n int, err error) {
+func (d Discard) Println(...interface{}) (n int, err error) {
 	return
 }
 
-func (d Discard) Flush(writer io.Writer, last bool) {
+func (d Discard) Flush(io.Writer, bool) {
 }
 
-func (d Discard) Close(writer io.Writer) {
+func (d Discard) Close(io.Writer) {
 }

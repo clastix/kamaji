@@ -11,6 +11,7 @@ linters-settings:
 
 linters:
   disable:
+    - depguard
     - wrapcheck
     - gomnd
     - scopelint

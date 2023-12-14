@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"gomodules.xyz/jsonpatch/v2"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -37,7 +37,7 @@ func (t TenantControlPlaneDefaults) OnCreate(object runtime.Object) AdmissionRes
 		}
 
 		if tcp.Spec.ControlPlane.Deployment.Replicas == nil {
-			tcp.Spec.ControlPlane.Deployment.Replicas = pointer.Int32(2)
+			tcp.Spec.ControlPlane.Deployment.Replicas = pointer.To(int32(2))
 		}
 
 		return nil, nil
@@ -61,7 +61,7 @@ func (t TenantControlPlaneDefaults) OnUpdate(object runtime.Object, oldObject ru
 		}
 
 		if newTCP.Spec.ControlPlane.Deployment.Replicas == nil {
-			newTCP.Spec.ControlPlane.Deployment.Replicas = pointer.Int32(2)
+			newTCP.Spec.ControlPlane.Deployment.Replicas = pointer.To(int32(2))
 		}
 
 		return nil, nil

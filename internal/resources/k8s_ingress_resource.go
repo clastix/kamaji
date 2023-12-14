@@ -10,7 +10,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -119,7 +119,7 @@ func (r *KubernetesIngressResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 		}
 
 		path.Path = "/"
-		path.PathType = (*networkingv1.PathType)(pointer.String(string(networkingv1.PathTypePrefix)))
+		path.PathType = (*networkingv1.PathType)(pointer.To(string(networkingv1.PathTypePrefix)))
 
 		if path.Backend.Service == nil {
 			path.Backend.Service = &networkingv1.IngressServiceBackend{}

@@ -10,7 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	pointer "k8s.io/utils/ptr"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -186,7 +186,7 @@ func (k Konnectivity) buildVolumeMounts(podSpec *corev1.PodSpec) {
 
 	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
 
-	vFound, vIndex := false, 0
+	vFound, vIndex := false, 0 //nolint:wastedassign
 	// Patching the volume mounts
 	if vFound, vIndex = utilities.HasNamedVolumeMount(podSpec.Containers[index].VolumeMounts, konnectivityUDSVolume); !vFound {
 		vIndex = len(podSpec.Containers[index].VolumeMounts)
@@ -208,9 +208,8 @@ func (k Konnectivity) buildVolumeMounts(podSpec *corev1.PodSpec) {
 }
 
 func (k Konnectivity) buildVolumes(status kamajiv1alpha1.KonnectivityStatus, podSpec *corev1.PodSpec) {
-	found, index := false, 0
 	// Defining volumes for the UDS socket
-	found, index = utilities.HasNamedVolume(podSpec.Volumes, konnectivityUDSVolume)
+	found, index := utilities.HasNamedVolume(podSpec.Volumes, konnectivityUDSVolume)
 	if !found {
 		index = len(podSpec.Volumes)
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
@@ -235,7 +234,7 @@ func (k Konnectivity) buildVolumes(status kamajiv1alpha1.KonnectivityStatus, pod
 			LocalObjectReference: corev1.LocalObjectReference{
 				Name: status.ConfigMap.Name,
 			},
-			DefaultMode: pointer.Int32(420),
+			DefaultMode: pointer.To(int32(420)),
 		},
 	}
 	// Defining volume for the Konnectivity kubeconfig
@@ -249,7 +248,7 @@ func (k Konnectivity) buildVolumes(status kamajiv1alpha1.KonnectivityStatus, pod
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  status.Kubeconfig.SecretName,
-			DefaultMode: pointer.Int32(420),
+			DefaultMode: pointer.To(int32(420)),
 		},
 	}
 }

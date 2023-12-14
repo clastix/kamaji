@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	pointer "k8s.io/utils/ptr"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/upgrade"
@@ -36,7 +36,7 @@ var _ = Describe("using an unsupported TenantControlPlane Kubernetes version", f
 				Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 					ControlPlane: kamajiv1alpha1.ControlPlane{
 						Deployment: kamajiv1alpha1.DeploymentSpec{
-							Replicas: pointer.Int32(1),
+							Replicas: pointer.To(int32(1)),
 						},
 						Service: kamajiv1alpha1.ServiceSpec{
 							ServiceType: "ClusterIP",
@@ -64,7 +64,7 @@ var _ = Describe("using an unsupported TenantControlPlane Kubernetes version", f
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					Deployment: kamajiv1alpha1.DeploymentSpec{
-						Replicas: pointer.Int32(1),
+						Replicas: pointer.To(int32(1)),
 					},
 					Service: kamajiv1alpha1.ServiceSpec{
 						ServiceType: "ClusterIP",

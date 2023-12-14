@@ -4,9 +4,6 @@
 package cmd
 
 import (
-	"math/rand"
-	"time"
-
 	"github.com/spf13/cobra"
 	_ "go.uber.org/automaxprocs" // Automatically set `GOMAXPROCS` to match Linux container CPU quota.
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,9 +19,6 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		Use:   "kamaji",
 		Short: "Build and operate Kubernetes at scale with a fraction of operational burden.",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			// Seed is required to ensure non reproducibility for the certificates generate by Kamaji.
-			rand.Seed(time.Now().UnixNano())
-
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(kamajiv1alpha1.AddToScheme(scheme))
 			utilruntime.Must(appsv1.RegisterDefaults(scheme))

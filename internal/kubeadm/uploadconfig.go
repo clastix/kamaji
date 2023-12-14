@@ -17,7 +17,7 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/uploadconfig"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 	"k8s.io/kubernetes/pkg/apis/rbac"
-	"k8s.io/utils/pointer"
+	pointer "k8s.io/utils/ptr"
 
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -81,10 +81,10 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration) ([]by
 		},
 		Authentication: kubelettypes.KubeletAuthentication{
 			Anonymous: kubelettypes.KubeletAnonymousAuthentication{
-				Enabled: pointer.Bool(false),
+				Enabled: pointer.To(false),
 			},
 			Webhook: kubelettypes.KubeletWebhookAuthentication{
-				Enabled:  pointer.Bool(true),
+				Enabled:  pointer.To(true),
 				CacheTTL: zeroDuration,
 			},
 			X509: kubelettypes.KubeletX509Authentication{
@@ -110,9 +110,9 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration) ([]by
 		EvictionPressureTransitionPeriod: zeroDuration,
 		FileCheckFrequency:               zeroDuration,
 		HealthzBindAddress:               "127.0.0.1",
-		HealthzPort:                      pointer.Int32(10248),
+		HealthzPort:                      pointer.To(int32(10248)),
 		HTTPCheckFrequency:               zeroDuration,
-		ImageGCHighThresholdPercent:      pointer.Int32(100),
+		ImageGCHighThresholdPercent:      pointer.To(int32(100)),
 		NodeStatusUpdateFrequency:        zeroDuration,
 		NodeStatusReportFrequency:        zeroDuration,
 		RotateCertificates:               true,

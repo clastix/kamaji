@@ -5,7 +5,6 @@ package utils
 
 import (
 	"math/rand"
-	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -33,7 +32,6 @@ func UpdateOperationResult(current controllerutil.OperationResult, op controller
 }
 
 func RandomString(n int) string {
-	rand.Seed(time.Now().UnixNano())
 	b := make([]byte, n)
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]

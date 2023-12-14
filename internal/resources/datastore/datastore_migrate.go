@@ -64,11 +64,8 @@ func (d *Migrate) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1
 	}
 
 	d.desiredDatastore = &kamajiv1alpha1.DataStore{}
-	if err := d.Client.Get(ctx, types.NamespacedName{Name: tenantControlPlane.Spec.DataStore}, d.desiredDatastore); err != nil {
-		return err
-	}
 
-	return nil
+	return d.Client.Get(ctx, types.NamespacedName{Name: tenantControlPlane.Spec.DataStore}, d.desiredDatastore)
 }
 
 func (d *Migrate) ShouldCleanup(tcp *kamajiv1alpha1.TenantControlPlane) bool {

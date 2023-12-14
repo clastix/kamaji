@@ -78,7 +78,7 @@ func (r *PostgreSQLConnection) Migrate(ctx context.Context, tcp kamajiv1alpha1.T
 		// Dumping the old datastore in a local buffer
 		var buf bytes.Buffer
 
-		if _, err := r.switchDatabaseFn(tcp.Status.Storage.Setup.Schema).WithContext(ctx).CopyTo(&buf, "COPY kine TO STDOUT"); err != nil { //nolint:contextcheck
+		if _, err := r.switchDatabaseFn(tcp.Status.Storage.Setup.Schema).WithContext(ctx).CopyTo(&buf, "COPY kine TO STDOUT"); err != nil {
 			return fmt.Errorf("unable to copy from the origin datastore: %w", err)
 		}
 

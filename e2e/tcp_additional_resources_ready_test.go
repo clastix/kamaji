@@ -15,7 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	pointer "k8s.io/utils/ptr"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -43,7 +43,7 @@ var _ = Describe("Deploy a TenantControlPlane resource with additional options",
 		Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 			ControlPlane: kamajiv1alpha1.ControlPlane{
 				Deployment: kamajiv1alpha1.DeploymentSpec{
-					Replicas: pointer.Int32(1),
+					Replicas: pointer.To(int32(1)),
 					AdditionalInitContainers: []corev1.Container{{
 						Name:  initContainerName,
 						Image: initContainerImage,
@@ -256,7 +256,7 @@ var _ = Describe("Deploy a TenantControlPlane resource with additional options",
 				}, &deploy)).NotTo(HaveOccurred())
 
 				return deploy.Spec.Template.Spec.InitContainers
-			}, 10*time.Second, time.Second).Should(HaveLen(0), "Deployment should not contain anymore the init container")
+			}, 10*time.Second, time.Second).Should(BeEmpty(), "Deployment should not contain anymore the init container")
 
 			Eventually(func() bool {
 				deploy := appsv1.Deployment{}

@@ -29,7 +29,7 @@ func NewStorageConnection(ctx context.Context, client client.Client, ds kamajiv1
 		return NewMySQLConnection(*cc)
 	case kamajiv1alpha1.KinePostgreSQLDriver:
 		cc.TLSConfig.ServerName = cc.Endpoints[0].Host
-		//nolint:contextcheck
+
 		return NewPostgreSQLConnection(*cc)
 	case kamajiv1alpha1.EtcdDriver:
 		return NewETCDConnection(*cc)

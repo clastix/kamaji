@@ -35,7 +35,7 @@ type CoreDNS struct {
 	TriggerChannel            chan event.GenericEvent
 }
 
-func (c *CoreDNS) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (c *CoreDNS) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
 	tcp, err := c.GetTenantControlPlaneFunc()
 	if err != nil {
 		c.logger.Error(err, "cannot retrieve TenantControlPlane")

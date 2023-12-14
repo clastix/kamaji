@@ -12,7 +12,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -146,11 +146,11 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 								ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 									Path:              agentTokenName,
 									Audience:          tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Name,
-									ExpirationSeconds: pointer.Int64(3600),
+									ExpirationSeconds: pointer.To(int64(3600)),
 								},
 							},
 						},
-						DefaultMode: pointer.Int32(420),
+						DefaultMode: pointer.To(int32(420)),
 					},
 				},
 			},

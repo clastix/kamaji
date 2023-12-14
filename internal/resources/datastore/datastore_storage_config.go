@@ -67,7 +67,7 @@ func (r *Config) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv
 	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
-func (r *Config) Delete(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *Config) Delete(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) error {
 	secret := r.resource.DeepCopy()
 
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: r.resource.Name, Namespace: r.resource.Namespace}, secret); err != nil {

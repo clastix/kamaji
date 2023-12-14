@@ -57,7 +57,7 @@ func (r *KubeconfigResource) CleanUp(context.Context, *kamajiv1alpha1.TenantCont
 	return false, nil
 }
 
-func (r *KubeconfigResource) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubeconfigResource) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.getPrefixedName(tenantControlPlane),
