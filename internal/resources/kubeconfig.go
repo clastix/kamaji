@@ -6,6 +6,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -126,6 +127,7 @@ func (r *KubeconfigResource) checksum(caCertificatesSecret *corev1.Secret, kubea
 	})
 }
 
+//nolint:gocognit
 func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
@@ -186,11 +188,15 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			v, ok := r.resource.Data[r.KubeConfigFileName]
 			shouldCreate = len(v) == 0 || !ok
 		}
-
+		//nolint:nestif
 		if shouldCreate {
 			crtKeyPair := kubeadm.CertificatePrivateKeyPair{
 				Certificate: caCertificatesSecret.Data[kubeadmconstants.CACertName],
 				PrivateKey:  caCertificatesSecret.Data[kubeadmconstants.CAKeyName],
+			}
+
+			if r.resource.Data == nil {
+				r.resource.Data = map[string][]byte{}
 			}
 
 			kubeconfig, kcErr := kubeadm.CreateKubeconfig(r.KubeConfigFileName, crtKeyPair, config)
@@ -200,11 +206,24 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 				return kcErr
 			}
 
-			if r.resource.Data == nil {
-				r.resource.Data = map[string][]byte{}
-			}
-
 			r.resource.Data[r.KubeConfigFileName] = kubeconfig
+			// Adding a kubeconfig useful for the local connections:
+			// especially for the admin.conf and super-admin.conf, these would use the public IP address.
+			// However, when running in-cluster agents, it would be beneficial having a local connection
+			// to avoid unnecessary hops to the LB.
+			if strings.Contains(r.KubeConfigFileName, "admin") {
+				key := strings.ReplaceAll(r.KubeConfigFileName, ".conf", ".svc")
+
+				config.InitConfiguration.ControlPlaneEndpoint = fmt.Sprintf("%s.%s.svc:%d", tenantControlPlane.Name, tenantControlPlane.Namespace, tenantControlPlane.Spec.NetworkProfile.Port)
+				kubeconfig, kcErr = kubeadm.CreateKubeconfig(r.KubeConfigFileName, crtKeyPair, config)
+				if kcErr != nil {
+					logger.Error(kcErr, "cannot create a valid kubeconfig")
+
+					return kcErr
+				}
+
+				r.resource.Data[key] = kubeconfig
+			}
 		}
 
 		return nil
