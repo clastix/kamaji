@@ -77,6 +77,13 @@ The state is managed by the `Datastore` API, a cluster-scoped resource which can
 > 🤔 You'd like to do the same but don't know how?
 > 💡 [CLASTIX](https://clastix.io/) can help you with your needs!
 
+### 🧑‍💻‍ Production grade
+
+Kamaji is empowering several businesses, and it counts public adopters.
+Check out the [adopters](./ADOPTERS.md) file to learn more.
+
+> 🤗 If you're using Kamaji, share your love by opening a PR!
+
 ### 🍦 Vanilla Kubernetes clusters
 
 Kamaji is **not** yet-another-Kubernetes distribution: you have full freedom on the technology stack to provide to end users.
