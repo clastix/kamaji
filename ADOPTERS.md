@@ -8,6 +8,7 @@ Feel free to open a Pull-Request to get yours listed.
 | Type | Name | Since | Website | Use-Case |
 |:-|:-|:-|:-|:-|
 | Vendor | Ænix | 2023 | [link](https://aenix.io/) | Ænix provides consulting services for cloud providers and uses Kamaji for running Kubernetes-as-a-Service in free PaaS platform [Cozystack](https://cozystack.io). |
+| Vendor | Netsons | 2023 | [link](https://www.netsons.com) | Netsons is an Italian hosting and cloud provider and uses Kamaji in its [Managed Kubernetes](https://www.netsons.com/kubernetes) offering. |
 
 ### Adopter Types
 
