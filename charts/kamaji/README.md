@@ -1,6 +1,6 @@
 # kamaji
 
-![Version: 0.14.1](https://img.shields.io/badge/Version-0.14.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.4.1](https://img.shields.io/badge/AppVersion-v0.4.1-informational?style=flat-square)
+![Version: 0.15.0](https://img.shields.io/badge/Version-0.15.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.4.1](https://img.shields.io/badge/AppVersion-v0.4.1-informational?style=flat-square)
 
 Kamaji is a Kubernetes Control Plane Manager.
 
@@ -66,6 +66,8 @@ Here the values you can override:
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | Kubernetes affinity rules to apply to Kamaji controller pods |
+| cfssl.image.repository | string | `"cfssl/cfssl"` |  |
+| cfssl.image.tag | string | `"latest"` |  |
 | datastore.basicAuth.passwordSecret.keyPath | string | `nil` | The Secret key where the data is stored. |
 | datastore.basicAuth.passwordSecret.name | string | `nil` | The name of the Secret containing the password used to connect to the relational database. |
 | datastore.basicAuth.passwordSecret.namespace | string | `nil` | The namespace of the Secret containing the password used to connect to the relational database. |
