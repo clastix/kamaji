@@ -39,12 +39,14 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	log := log.FromContext(ctx)
 
 	ds := &kamajiv1alpha1.DataStore{}
-	if err := r.Client.Get(ctx, request.NamespacedName, ds); err != nil {
-		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, nil
-		}
+	err := r.Client.Get(ctx, request.NamespacedName, ds)
+	if k8serrors.IsNotFound(err) {
+		log.Info("resource have been deleted, skipping")
 
-		log.Error(err, "unable to retrieve the request")
+		return reconcile.Result{}, nil
+	}
+	if err != nil {
+		log.Error(err, "cannot retrieve the required resource")
 
 		return reconcile.Result{}, err
 	}

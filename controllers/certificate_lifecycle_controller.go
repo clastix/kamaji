@@ -40,12 +40,16 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 	logger.Info("starting CertificateLifecycle handling")
 
 	secret := corev1.Secret{}
-	if err := s.client.Get(ctx, request.NamespacedName, &secret); err != nil {
-		if k8serrors.IsNotFound(err) {
-			logger.Info("resource may have been deleted, skipping")
+	err := s.client.Get(ctx, request.NamespacedName, &secret)
+	if k8serrors.IsNotFound(err) {
+		logger.Info("resource have been deleted, skipping")
 
-			return reconcile.Result{}, nil
-		}
+		return reconcile.Result{}, nil
+	}
+	if err != nil {
+		logger.Error(err, "cannot retrieve the required resource")
+
+		return reconcile.Result{}, err
 	}
 
 	checkType, ok := secret.GetLabels()[constants.ControllerLabelResource]
@@ -56,7 +60,6 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	var crt *x509.Certificate
-	var err error
 
 	switch checkType {
 	case "x509":
