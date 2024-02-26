@@ -103,6 +103,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
 		address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
+
 		if err != nil {
 			logger.Error(err, "unable to retrieve the Tenant Control Plane address")
 
@@ -164,8 +165,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		r.resource.Spec.Template.Spec.Containers[0].Name = AgentName
 		r.resource.Spec.Template.Spec.Containers[0].Command = []string{"/proxy-agent"}
 
-		args := utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.ExtraArgs)
-
+		args := make(map[string]string)
 		args["-v"] = "8"
 		args["--logtostderr"] = "true"
 		args["--ca-cert"] = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
@@ -174,6 +174,12 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		args["--admin-server-port"] = "8133"
 		args["--health-server-port"] = "8134"
 		args["--service-account-token-path"] = "/var/run/secrets/tokens/konnectivity-agent-token"
+
+		extraArgs := utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.ExtraArgs)
+
+		for k, v := range extraArgs {
+			args[k] = v
+		}
 
 		r.resource.Spec.Template.Spec.Containers[0].Args = utilities.ArgsFromMapToSlice(args)
 		r.resource.Spec.Template.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{

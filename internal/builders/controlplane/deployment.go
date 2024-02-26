@@ -727,7 +727,7 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 
 	// Order matters, here: extraArgs could try to overwrite some arguments managed by Kamaji and that would be crucial.
 	// Adding as first element of the array of maps, we're sure that these overrides will be sanitized by our configuration.
-	return utilities.MergeMaps(extraArgs, current, desiredArgs)
+	return utilities.MergeMaps(current, desiredArgs, extraArgs)
 }
 
 func (d Deployment) secretProjection(secretName, certKeyName, keyName string) *corev1.SecretProjection {

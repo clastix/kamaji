@@ -138,7 +138,9 @@ type DeploymentSpec struct {
 	// (kube-apiserver, controller-manager, and scheduler).
 	Resources *ControlPlaneComponentsResources `json:"resources,omitempty"`
 	// ExtraArgs allows adding additional arguments to the Control Plane components,
-	// such as kube-apiserver, controller-manager, and scheduler.
+	// such as kube-apiserver, controller-manager, and scheduler. WARNING - This option
+	// can override existing parameters and cause components to misbehave in unxpected ways.
+	// Only modify if you know what you are doing.
 	ExtraArgs          *ControlPlaneExtraArgs `json:"extraArgs,omitempty"`
 	AdditionalMetadata AdditionalMetadata     `json:"additionalMetadata,omitempty"`
 	// AdditionalInitContainers allows adding additional init containers to the Control Plane deployment.

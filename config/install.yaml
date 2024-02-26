@@ -3722,7 +3722,7 @@ spec:
                             type: object
                         type: object
                       extraArgs:
-                        description: ExtraArgs allows adding additional arguments to the Control Plane components, such as kube-apiserver, controller-manager, and scheduler.
+                        description: ExtraArgs allows adding additional arguments to the Control Plane components, such as kube-apiserver, controller-manager, and scheduler. WARNING - This option can override existing parameters and cause components to misbehave in unxpected ways. Only modify if you know what you are doing.
                         properties:
                           apiServer:
                             items:
