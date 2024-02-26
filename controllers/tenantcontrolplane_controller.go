@@ -15,7 +15,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	apimachineryerrors "k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/utils/clock"
@@ -84,16 +84,15 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	defer cancelFn()
 
 	tenantControlPlane, err := r.getTenantControlPlane(ctx, req.NamespacedName)()
+	if k8serrors.IsNotFound(err) {
+		log.Info("resource have been deleted, skipping")
+
+		return reconcile.Result{}, nil
+	}
 	if err != nil {
-		if apimachineryerrors.IsNotFound(err) {
-			log.Info("resource may have been deleted, skipping")
+		log.Error(err, "cannot retrieve the required resource")
 
-			return ctrl.Result{}, nil
-		}
-
-		log.Error(err, "cannot retrieve the required instance")
-
-		return ctrl.Result{}, err
+		return reconcile.Result{}, err
 	}
 
 	releaser, err := mutex.Acquire(r.mutexSpec(tenantControlPlane))
