@@ -189,6 +189,9 @@ type ImageOverrideTrait struct {
 }
 
 // ExtraArgs allows adding additional arguments to said component.
+// WARNING - This option can override existing konnectivity
+// parameters and cause konnectivity components to misbehave in
+// unxpected ways. Only modify if you know what you are doing.
 type ExtraArgs []string
 
 type KonnectivityServerSpec struct {
