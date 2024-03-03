@@ -1000,7 +1000,7 @@ Defining the options for the deployed Tenant Control Plane as Deployment resourc
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentextraargs">extraArgs</a></b></td>
         <td>object</td>
         <td>
-          ExtraArgs allows adding additional arguments to the Control Plane components, such as kube-apiserver, controller-manager, and scheduler.<br/>
+          ExtraArgs allows adding additional arguments to the Control Plane components, such as kube-apiserver, controller-manager, and scheduler. WARNING - This option can override existing parameters and cause components to misbehave in unxpected ways. Only modify if you know what you are doing.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10320,7 +10320,7 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-ExtraArgs allows adding additional arguments to the Control Plane components, such as kube-apiserver, controller-manager, and scheduler.
+ExtraArgs allows adding additional arguments to the Control Plane components, such as kube-apiserver, controller-manager, and scheduler. WARNING - This option can override existing parameters and cause components to misbehave in unxpected ways. Only modify if you know what you are doing.
 
 <table>
     <thead>

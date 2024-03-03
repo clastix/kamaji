@@ -103,7 +103,6 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
 		address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
-
 		if err != nil {
 			logger.Error(err, "unable to retrieve the Tenant Control Plane address")
 
