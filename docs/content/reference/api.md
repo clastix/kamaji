@@ -11304,7 +11304,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td><b>extraArgs</b></td>
         <td>[]string</td>
         <td>
-          ExtraArgs allows adding additional arguments to said component.<br/>
+          ExtraArgs allows adding additional arguments to said component. WARNING - This option can override existing konnectivity parameters and cause konnectivity components to misbehave in unxpected ways. Only modify if you know what you are doing.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11357,7 +11357,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td><b>extraArgs</b></td>
         <td>[]string</td>
         <td>
-          ExtraArgs allows adding additional arguments to said component.<br/>
+          ExtraArgs allows adding additional arguments to said component. WARNING - This option can override existing konnectivity parameters and cause konnectivity components to misbehave in unxpected ways. Only modify if you know what you are doing.<br/>
         </td>
         <td>false</td>
       </tr><tr>

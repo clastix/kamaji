@@ -340,7 +340,7 @@ spec:
                           version: v0.0.32
                         properties:
                           extraArgs:
-                            description: ExtraArgs allows adding additional arguments to said component.
+                            description: ExtraArgs allows adding additional arguments to said component. WARNING - This option can override existing konnectivity parameters and cause konnectivity components to misbehave in unxpected ways. Only modify if you know what you are doing.
                             items:
                               type: string
                             type: array
@@ -360,7 +360,7 @@ spec:
                           version: v0.0.32
                         properties:
                           extraArgs:
-                            description: ExtraArgs allows adding additional arguments to said component.
+                            description: ExtraArgs allows adding additional arguments to said component. WARNING - This option can override existing konnectivity parameters and cause konnectivity components to misbehave in unxpected ways. Only modify if you know what you are doing.
                             items:
                               type: string
                             type: array
