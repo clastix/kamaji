@@ -115,6 +115,8 @@ Since Kamaji is just focusing on the Control Plane a [Kamaji's Cluster API Contr
 
 ### 🎥 Multimedia
 
+- Playlist ▶️ [Tutorials and How-Tos by Dario Tranchitella, CLASTIX](https://www.youtube.com/playlist?list=PLjiUjoV4Ws_3pNsUpTXI-KKk731nD2MQY)
+- YouTube ▶️ [Metal³ provisioning with Kamaji Hosted Control Planes by Huy Mai, Ericsson](https://youtu.be/u9sbURj6jXY?t=10536)
 - YouTube ▶️ [Hands-on introduction to Kamaji](https://www.youtube.com/watch?v=HhevxwQWQ88)
 - YouTube ▶️ [Scaling Kubernetes up to 1,000 Control Planes](https://www.youtube.com/watch?v=W_HXRXJh96U)
 - YouTube ▶️ [Equinix, Kamaji, and Cluster API](https://www.youtube.com/watch?v=TLBTqROj_wA)
