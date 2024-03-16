@@ -28,9 +28,10 @@ func (c CGroupDriver) String() string {
 }
 
 const (
-	ServiceTypeLoadBalancer = (ServiceType)(corev1.ServiceTypeLoadBalancer)
-	ServiceTypeClusterIP    = (ServiceType)(corev1.ServiceTypeClusterIP)
-	ServiceTypeNodePort     = (ServiceType)(corev1.ServiceTypeNodePort)
+	ServiceTypeLoadBalancer       = (ServiceType)(corev1.ServiceTypeLoadBalancer)
+	ServiceTypeClusterIP          = (ServiceType)(corev1.ServiceTypeClusterIP)
+	ServiceTypeNodePort           = (ServiceType)(corev1.ServiceTypeNodePort)
+	KubeconfigSecretKeyAnnotation = "kamaji.clastix.io/kubeconfig-secret-key"
 )
 
 // +kubebuilder:validation:Enum=ClusterIP;NodePort;LoadBalancer
