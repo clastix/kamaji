@@ -61,7 +61,8 @@ func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, te
 
 	d.setLabels(deployment, utilities.MergeMaps(utilities.KamajiLabels(tenantControlPlane.GetName(), "deployment"), tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Labels))
 	d.setAnnotations(deployment, utilities.MergeMaps(deployment.Annotations, tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Annotations))
-	d.setTemplateLabels(&deployment.Spec.Template, d.templateLabels(ctx, &tenantControlPlane))
+	d.setTemplateLabels(&deployment.Spec.Template, utilities.MergeMaps(d.templateLabels(ctx, &tenantControlPlane), tenantControlPlane.Spec.ControlPlane.Deployment.PodAdditionalMetadata.Labels))
+    d.setTemplateAnnotations(&deployment.Spec.Template, tenantControlPlane.Spec.ControlPlane.Deployment.PodAdditionalMetadata.Annotations)
 	d.setNodeSelector(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setToleration(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setAffinity(&deployment.Spec.Template.Spec, tenantControlPlane)
@@ -997,6 +998,10 @@ func (d Deployment) hashValue(secret corev1.Secret) string {
 
 func (d Deployment) setTemplateLabels(template *corev1.PodTemplateSpec, labels map[string]string) {
 	template.SetLabels(labels)
+}
+
+func (d Deployment) setTemplateAnnotations(template *corev1.PodTemplateSpec, annotations map[string]string) {
+	template.SetAnnotations(annotations)
 }
 
 func (d Deployment) setLabels(resource *appsv1.Deployment, labels map[string]string) {
