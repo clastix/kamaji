@@ -1,16 +1,16 @@
 # kamaji
 
-![Version: 0.15.1](https://img.shields.io/badge/Version-0.15.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.4.2](https://img.shields.io/badge/AppVersion-v0.4.2-informational?style=flat-square)
+![Version: 0.15.2](https://img.shields.io/badge/Version-0.15.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.5.0](https://img.shields.io/badge/AppVersion-v0.5.0-informational?style=flat-square)
 
-Kamaji is a Kubernetes Control Plane Manager.
+Kamaji is the Hosted Control Plane Manager for Kubernetes.
 
 ## Maintainers
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| Dario Tranchitella | <dario@tranchitella.eu> |  |
+| Dario Tranchitella | <dario@tranchitella.eu> | <https://clastix.io> |
 | Massimiliano Giovagnoli | <me@maxgio.it> |  |
-| Adriano Pezzuto | <me@bsctl.io> |  |
+| Adriano Pezzuto | <me@bsctl.io> | <https://clastix.io> |
 
 ## Source Code
 
