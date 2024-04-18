@@ -14,24 +14,24 @@ nodes:
   extraMounts:
     - hostPath: /var/run/docker.sock
       containerPath: /var/run/docker.sock
-  extraPortMappings:
-    ## expose port 80 of the node to port 80 on the host
-  - containerPort: 80
-    hostPort: 80
-    protocol: TCP
-    ## expose port 443 of the node to port 443 on the host
-  - containerPort: 443
-    hostPort: 443
-    protocol: TCP
-    ## expose port 31132 of the node to port 31132 on the host for konnectivity
-  - containerPort: 31132
-    hostPort: 31132
-    protocol: TCP   
-    ## expose port 31443 of the node to port 31443 on the host
-  - containerPort: 31443
-    hostPort: 31443
-    protocol: TCP
-    ## expose port 6443 of the node to port 8443 on the host
-  - containerPort: 6443
-    hostPort: 8443
-    protocol: TCP
+  # extraPortMappings:
+  #   ## expose port 80 of the node to port 80 on the host
+  # - containerPort: 80
+  #   hostPort: 80
+  #   protocol: TCP
+  #   ## expose port 443 of the node to port 443 on the host
+  # - containerPort: 443
+  #   hostPort: 443
+  #   protocol: TCP
+  #   ## expose port 31132 of the node to port 31132 on the host for konnectivity
+  # - containerPort: 31132
+  #   hostPort: 31132
+  #   protocol: TCP
+  #   ## expose port 31443 of the node to port 31443 on the host
+  # - containerPort: 31443
+  #   hostPort: 31443
+  #   protocol: TCP
+  #   ## expose port 6443 of the node to port 8443 on the host
+  # - containerPort: 6443
+  #   hostPort: 8443
+  #   protocol: TCP

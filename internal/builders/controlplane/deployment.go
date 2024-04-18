@@ -708,7 +708,7 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 	}
 
 	switch d.DataStore.Spec.Driver {
-	case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver:
+	case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver, kamajiv1alpha1.KineNatsDriver:
 		desiredArgs["--etcd-servers"] = "http://127.0.0.1:2379"
 	case kamajiv1alpha1.EtcdDriver:
 		httpsEndpoints := make([]string, 0, len(d.DataStore.Spec.Endpoints))
@@ -867,6 +867,8 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 		args["--endpoint"] = "mysql://$(DB_USER):$(DB_PASSWORD)@tcp($(DB_CONNECTION_STRING))/$(DB_SCHEMA)"
 	case kamajiv1alpha1.KinePostgreSQLDriver:
 		args["--endpoint"] = "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_CONNECTION_STRING)/$(DB_SCHEMA)"
+	case kamajiv1alpha1.KineNatsDriver:
+		args["--endpoint"] = "$(DB_CONNECTION_STRING)?bucket=$(DB_SCHEMA)"
 	}
 
 	args["--ca-file"] = "/certs/ca.crt"

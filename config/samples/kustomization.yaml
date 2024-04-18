@@ -1,4 +1,5 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
 - kamaji_v1alpha1_datastore_etcd.yaml
+- kamaji_v1alpha1_datastore_nats.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

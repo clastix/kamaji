@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=etcd;MySQL;PostgreSQL
+// +kubebuilder:validation:Enum=etcd;MySQL;PostgreSQL;NATS
 
 type Driver string
 
@@ -16,6 +16,7 @@ var (
 	EtcdDriver           Driver = "etcd"
 	KineMySQLDriver      Driver = "MySQL"
 	KinePostgreSQLDriver Driver = "PostgreSQL"
+	KineNatsDriver       Driver = "nats"
 )
 
 // +kubebuilder:validation:MinItems=1

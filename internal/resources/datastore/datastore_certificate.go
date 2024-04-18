@@ -128,7 +128,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 
 				return err
 			}
-		case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver:
+		case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver, kamajiv1alpha1.KineNatsDriver:
 			var crtBytes, keyBytes []byte
 			// For the SQL drivers we just need to copy the certificate, since the basic authentication is used
 			// to connect to the desired schema and database.

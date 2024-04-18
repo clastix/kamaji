@@ -33,6 +33,8 @@ func NewStorageConnection(ctx context.Context, client client.Client, ds kamajiv1
 		return NewPostgreSQLConnection(*cc)
 	case kamajiv1alpha1.EtcdDriver:
 		return NewETCDConnection(*cc)
+	case kamajiv1alpha1.KineNatsDriver:
+		return NewNATSConnection(*cc)
 	default:
 		return nil, fmt.Errorf("%s is not a valid driver", ds.Spec.Driver)
 	}

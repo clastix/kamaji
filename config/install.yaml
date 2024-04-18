@@ -108,6 +108,7 @@ spec:
                 - etcd
                 - MySQL
                 - PostgreSQL
+                - nats
                 type: string
               endpoints:
                 description: List of the endpoints to connect to the shared datastore. No need for protocol, just bare IP/FQDN and port.

@@ -1,0 +1,27 @@
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: DataStore
+metadata:
+  name: nats-silver
+spec:
+  driver: nats
+  endpoints:
+    - nats://admin:test@silver.nats-system.svc:4222
+  basicAuth: null
+  tlsConfig:
+    certificateAuthority:
+      certificate:
+        secretReference:
+          name: nats-silver-config
+          namespace: nats-system
+          keyPath: ca.crt
+    clientCertificate:
+      certificate:
+        secretReference:
+          name: nats-silver-config
+          namespace: nats-system
+          keyPath: server.crt
+      privateKey:
+        secretReference:
+          name: nats-silver-config
+          namespace: nats-system
+          keyPath: server.key

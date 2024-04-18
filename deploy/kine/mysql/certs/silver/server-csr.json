@@ -1,0 +1,14 @@
+{
+  "CN": "silver.mysql-system.svc.cluster.local",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "hosts": [
+    "127.0.0.1",
+    "localhost",
+    "silver",
+    "silver.mysql-system.svc",
+    "silver.mysql-system.svc.cluster.local"
+  ]
+}

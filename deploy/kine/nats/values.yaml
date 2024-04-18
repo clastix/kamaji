@@ -1,0 +1,30 @@
+config:
+  merge:
+    accounts:
+      private:
+        jetstream: enabled
+        users:
+        - {user: admin, password: "password", permissions: {subscribe: [">"], publish: [">"]}}
+  cluster:
+    enabled: no
+  nats:
+    tls:
+      cert_file: /etc/nats/certs/server.crt
+      key_file: /etc/nats/certs/server.key
+      ca_file: /etc/nats/certs/ca.crt
+  jetstream:
+    enabled: true
+    fileStore:
+      pvc:
+        size: 32Mi
+
+# add the tls secrets to the pod
+podTemplate:
+  volumes:
+    - name: nats-tls
+      secret:
+        secretName: nats-$NAME-config
+  volumeMounts:
+    - name: nats-tls
+      mountPath: /etc/nats/certs
+      readOnly: true

@@ -1,0 +1,14 @@
+{
+  "CN": "bronze.nats-system.svc.cluster.local",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "hosts": [
+    "127.0.0.1",
+    "localhost",
+    "bronze",
+    "bronze.nats-system.svc",
+    "bronze.nats-system.svc.cluster.local"
+  ]
+}
