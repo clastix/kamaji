@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.4
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: datastores.kamaji.clastix.io
 spec:
   group: kamaji.clastix.io
@@ -29,14 +29,19 @@ spec:
         description: DataStore is the Schema for the datastores API.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -44,21 +49,24 @@ spec:
             description: DataStoreSpec defines the desired state of DataStore.
             properties:
               basicAuth:
-                description: In case of authentication enabled for the given data
-                  store, specifies the username and password pair. This value is optional.
+                description: |-
+                  In case of authentication enabled for the given data store, specifies the username and password pair.
+                  This value is optional.
                 properties:
                   password:
                     properties:
                       content:
-                        description: Bare content of the file, base64 encoded. It
-                          has precedence over the SecretReference value.
+                        description: |-
+                          Bare content of the file, base64 encoded.
+                          It has precedence over the SecretReference value.
                         format: byte
                         type: string
                       secretReference:
                         properties:
                           keyPath:
-                            description: Name of the key for the given Secret reference
-                              where the content is stored. This value is mandatory.
+                            description: |-
+                              Name of the key for the given Secret reference where the content is stored.
+                              This value is mandatory.
                             minLength: 1
                             type: string
                           name:
@@ -77,15 +85,17 @@ spec:
                   username:
                     properties:
                       content:
-                        description: Bare content of the file, base64 encoded. It
-                          has precedence over the SecretReference value.
+                        description: |-
+                          Bare content of the file, base64 encoded.
+                          It has precedence over the SecretReference value.
                         format: byte
                         type: string
                       secretReference:
                         properties:
                           keyPath:
-                            description: Name of the key for the given Secret reference
-                              where the content is stored. This value is mandatory.
+                            description: |-
+                              Name of the key for the given Secret reference where the content is stored.
+                              This value is mandatory.
                             minLength: 1
                             type: string
                           name:
@@ -113,7 +123,8 @@ spec:
                 - PostgreSQL
                 type: string
               endpoints:
-                description: List of the endpoints to connect to the shared datastore.
+                description: |-
+                  List of the endpoints to connect to the shared datastore.
                   No need for protocol, just bare IP/FQDN and port.
                 items:
                   type: string
@@ -124,24 +135,24 @@ spec:
                   to the data store in a secure way.
                 properties:
                   certificateAuthority:
-                    description: Retrieve the Certificate Authority certificate and
-                      private key, such as bare content of the file, or a SecretReference.
-                      The key reference is required since etcd authentication is based
-                      on certificates, and Kamaji is responsible in creating this.
+                    description: |-
+                      Retrieve the Certificate Authority certificate and private key, such as bare content of the file, or a SecretReference.
+                      The key reference is required since etcd authentication is based on certificates, and Kamaji is responsible in creating this.
                     properties:
                       certificate:
                         properties:
                           content:
-                            description: Bare content of the file, base64 encoded.
+                            description: |-
+                              Bare content of the file, base64 encoded.
                               It has precedence over the SecretReference value.
                             format: byte
                             type: string
                           secretReference:
                             properties:
                               keyPath:
-                                description: Name of the key for the given Secret
-                                  reference where the content is stored. This value
-                                  is mandatory.
+                                description: |-
+                                  Name of the key for the given Secret reference where the content is stored.
+                                  This value is mandatory.
                                 minLength: 1
                                 type: string
                               name:
@@ -160,16 +171,17 @@ spec:
                       privateKey:
                         properties:
                           content:
-                            description: Bare content of the file, base64 encoded.
+                            description: |-
+                              Bare content of the file, base64 encoded.
                               It has precedence over the SecretReference value.
                             format: byte
                             type: string
                           secretReference:
                             properties:
                               keyPath:
-                                description: Name of the key for the given Secret
-                                  reference where the content is stored. This value
-                                  is mandatory.
+                                description: |-
+                                  Name of the key for the given Secret reference where the content is stored.
+                                  This value is mandatory.
                                 minLength: 1
                                 type: string
                               name:
@@ -195,16 +207,17 @@ spec:
                       certificate:
                         properties:
                           content:
-                            description: Bare content of the file, base64 encoded.
+                            description: |-
+                              Bare content of the file, base64 encoded.
                               It has precedence over the SecretReference value.
                             format: byte
                             type: string
                           secretReference:
                             properties:
                               keyPath:
-                                description: Name of the key for the given Secret
-                                  reference where the content is stored. This value
-                                  is mandatory.
+                                description: |-
+                                  Name of the key for the given Secret reference where the content is stored.
+                                  This value is mandatory.
                                 minLength: 1
                                 type: string
                               name:
@@ -223,16 +236,17 @@ spec:
                       privateKey:
                         properties:
                           content:
-                            description: Bare content of the file, base64 encoded.
+                            description: |-
+                              Bare content of the file, base64 encoded.
                               It has precedence over the SecretReference value.
                             format: byte
                             type: string
                           secretReference:
                             properties:
                               keyPath:
-                                description: Name of the key for the given Secret
-                                  reference where the content is stored. This value
-                                  is mandatory.
+                                description: |-
+                                  Name of the key for the given Secret reference where the content is stored.
+                                  This value is mandatory.
                                 minLength: 1
                                 type: string
                               name:
