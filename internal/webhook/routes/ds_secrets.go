@@ -13,7 +13,7 @@ import (
 type DataStoreSecrets struct{}
 
 func (d DataStoreSecrets) GetPath() string {
-	return "validate--v1-secret"
+	return "/validate--v1-secret"
 }
 
 func (d DataStoreSecrets) GetObject() runtime.Object {
