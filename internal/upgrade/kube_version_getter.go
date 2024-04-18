@@ -48,6 +48,6 @@ func (k kamajiKubeVersionGetter) VersionFromCILabel(ciVersionLabel, description 
 	return k.VersionGetter.VersionFromCILabel(ciVersionLabel, description)
 }
 
-func (k kamajiKubeVersionGetter) KubeletVersions() (map[string]uint16, error) {
+func (k kamajiKubeVersionGetter) KubeletVersions() (map[string][]string, error) {
 	return k.VersionGetter.KubeletVersions()
 }
