@@ -75,6 +75,7 @@ type TenantControlPlaneReconcilerConfig struct {
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;delete
+//+kubebuilder:rbac:groups=core,resources=serviceaccounts,verbs=get;list;watch
 
 func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
@@ -314,4 +315,18 @@ func (r *TenantControlPlaneReconciler) dataStore(ctx context.Context, tenantCont
 	}
 
 	return ds, nil
+}
+
+func (r *TenantControlPlaneReconciler) serviceAccount(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*corev1.ServiceAccount, error) {
+    serviceAccountName := tenantControlPlane.Spec.ControlPlane.Deployment.ServiceAccountName
+    if len(serviceAccountName) == 0 {
+        serviceAccountName = "default"
+    }
+
+    sa := &corev1.ServiceAccount{}
+    if err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: serviceAccountName, Namespace: tenantControlPlane.Namespace}, sa); err != nil {
+		return nil, errors.Wrap(err, "cannot retrieve serviceAccount")
+    }
+
+    return sa, nil
 }

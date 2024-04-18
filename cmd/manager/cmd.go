@@ -47,6 +47,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		controllerReconcileTimeout time.Duration
 		cacheResyncPeriod          time.Duration
 		datastore                  string
+		serviceAccount             string
 		managerNamespace           string
 		managerServiceAccountName  string
 		managerServiceName         string
@@ -175,7 +176,10 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 					handlers.Freeze{},
 				},
 				routes.TenantControlPlaneDefaults{}: {
-					handlers.TenantControlPlaneDefaults{DefaultDatastore: datastore},
+					handlers.TenantControlPlaneDefaults{
+						DefaultDatastore:      datastore,
+						DefaultServiceAccount: serviceAccount,
+					},
 				},
 				routes.TenantControlPlaneValidate{}: {
 					handlers.TenantControlPlaneName{},
@@ -260,6 +264,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	cmd.Flags().StringVar(&managerServiceName, "webhook-service-name", "kamaji-webhook-service", "The Kamaji webhook server Service name which is used to get validation webhooks, required for the TenantControlPlane migration jobs.")
 	cmd.Flags().StringVar(&managerServiceAccountName, "serviceaccount-name", os.Getenv("SERVICE_ACCOUNT"), "The Kubernetes Namespace on which the Operator is running in, required for the TenantControlPlane migration jobs.")
 	cmd.Flags().StringVar(&webhookCAPath, "webhook-ca-path", "/tmp/k8s-webhook-server/serving-certs/ca.crt", "Path to the Manager webhook server CA, required for the TenantControlPlane migration jobs.")
+	cmd.Flags().StringVar(&serviceAccount, "serviceAccount", "default", "The default serviceAccount that should be used by Kamaji to setup the required storage.")
 	cmd.Flags().DurationVar(&controllerReconcileTimeout, "controller-reconcile-timeout", 30*time.Second, "The reconciliation request timeout before the controller withdraw the external resource calls, such as dealing with the Datastore, or the Tenant Control Plane API endpoint.")
 	cmd.Flags().DurationVar(&cacheResyncPeriod, "cache-resync-period", 10*time.Hour, "The controller-runtime.Manager cache resync period.")
 
