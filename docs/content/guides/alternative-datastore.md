@@ -14,9 +14,9 @@ On the Management Cluster, install one of the alternative supported datastore:
 
     `$ make -C deploy/kine/postgresql postgresql`
 
-- **NATS** *EXPERIMENTAL*
+- **NATS**
 
-*Note: Currently multi-tenancy is NOT supported when using NATS as an alternative datastore*
+*Note: NATS SUPPORT IS EXPERIMENTAL: Currently multi-tenancy is NOT supported when using NATS as an alternative datastore*
 
 Currently, only username/password auth is supported.
 
@@ -44,6 +44,7 @@ config:
         size: 32Mi
 
 EOF
+```
 
 ```bash
   repo add nats https://nats-io.github.io/k8s/helm/charts/
@@ -53,7 +54,6 @@ EOF
   --namespace nats-system \
   --create-namespace
 ```
-
 
 
 ## Install Cert Manager
