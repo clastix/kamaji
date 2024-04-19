@@ -9,22 +9,12 @@ config:
     enabled: no
   nats:
     tls:
-      cert_file: /etc/nats/certs/server.crt
-      key_file: /etc/nats/certs/server.key
-      ca_file: /etc/nats/certs/ca.crt
+      enabled: true
+      secretName: nats-$NAME-config
+      cert: server.crt
+      key: server.key
   jetstream:
     enabled: true
     fileStore:
       pvc:
         size: 32Mi
-
-# add the tls secrets to the pod
-podTemplate:
-  volumes:
-    - name: nats-tls
-      secret:
-        secretName: nats-$NAME-config
-  volumeMounts:
-    - name: nats-tls
-      mountPath: /etc/nats/certs
-      readOnly: true

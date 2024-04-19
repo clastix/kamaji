@@ -7,8 +7,8 @@
   "hosts": [
     "127.0.0.1",
     "localhost",
-    "default",
-    "default.nats-system.svc",
-    "default.nats-system.svc.cluster.local"
+    "default-nats",
+    "default-nats.nats-system.svc",
+    "default-nats.nats-system.svc.cluster.local"
   ]
 }

@@ -7,8 +7,8 @@
   "hosts": [
     "127.0.0.1",
     "localhost",
-    "gold",
-    "gold.nats-system.svc",
-    "gold.nats-system.svc.cluster.local"
+    "gold-nats",
+    "gold-nats.nats-system.svc",
+    "gold-nats.nats-system.svc.cluster.local"
   ]
 }

@@ -5,8 +5,10 @@ package datastore
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/nats-io/nats.go"
 
@@ -28,27 +30,29 @@ func NewNATSConnection(config ConnectionConfig) (*NATSConnection, error) {
 		// comma separated list of endpoints
 		var ep []string
 		for _, e := range config.Endpoints {
-			ep = append(ep, e.String())
+			ep = append(ep, fmt.Sprintf("nats://%s", e.String()))
 		}
 
 		endpoints = strings.Join(ep, ",")
 	} else {
-		endpoints = config.Endpoints[0].String()
+		endpoints = fmt.Sprintf("nats://%s", config.Endpoints[0].String())
 	}
 
 	var conn *nats.Conn
 	var err error
+	var natsOpts []nats.Option
 
 	if config.TLSConfig != nil {
-		conn, err = nats.Connect(endpoints, nats.Secure(config.TLSConfig))
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		conn, err = nats.Connect(endpoints)
-		if err != nil {
-			return nil, err
-		}
+		natsOpts = append(natsOpts, nats.Secure(config.TLSConfig))
+	}
+
+	if config.User != "" && config.Password != "" {
+		natsOpts = append(natsOpts, nats.UserInfo(config.User, config.Password))
+	}
+
+	conn, err = nats.Connect(endpoints, natsOpts...)
+	if err != nil {
+		return nil, err
 	}
 
 	js, err := conn.JetStream()
@@ -69,8 +73,8 @@ func (nc *NATSConnection) CreateUser(_ context.Context, _, _ string) error {
 
 func (nc *NATSConnection) CreateDB(_ context.Context, dbName string) error {
 	_, err := nc.js.CreateKeyValue(&nats.KeyValueConfig{Bucket: dbName})
-	if err == nil {
-		return errors.New("database already exists")
+	if err != nil {
+		return errors.Wrap(err, "unable to create the datastore")
 	}
 
 	return nil
@@ -87,7 +91,7 @@ func (nc *NATSConnection) UserExists(_ context.Context, _ string) (bool, error) 
 func (nc *NATSConnection) DBExists(_ context.Context, dbName string) (bool, error) {
 	_, err := nc.js.KeyValue(dbName)
 	if err != nil {
-		if errors.Is(err, nats.ErrKeyNotFound) {
+		if errors.Is(err, nats.ErrBucketNotFound) {
 			return false, nil
 		}
 
@@ -116,7 +120,7 @@ func (nc *NATSConnection) RevokePrivileges(_ context.Context, _, _ string) error
 }
 
 func (nc *NATSConnection) GetConnectionString() string {
-	return nc.conn.ConnectedUrl()
+	return nc.config.Endpoints[0].String()
 }
 
 func (nc *NATSConnection) Close() error {

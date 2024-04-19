@@ -7,8 +7,8 @@
   "hosts": [
     "127.0.0.1",
     "localhost",
-    "$NAME",
-    "$NAME.$NAMESPACE.svc",
-    "$NAME.$NAMESPACE.svc.cluster.local"
+    "$NAME-nats",
+    "$NAME-nats.$NAMESPACE.svc",
+    "$NAME-nats.$NAMESPACE.svc.cluster.local"
   ]
 }

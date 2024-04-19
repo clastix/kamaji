@@ -27,6 +27,7 @@ nats-secret:
 	@kubectl -n $(NAMESPACE) create secret generic nats-$(NAME)-config \
 		--from-file=$(ROOT_DIR)/certs/$(NAME)/ca.crt --from-file=$(ROOT_DIR)/certs/$(NAME)/ca.key \
 		--from-file=$(ROOT_DIR)/certs/$(NAME)/server.key --from-file=$(ROOT_DIR)/certs/$(NAME)/server.crt \
+		--from-literal=password=password \
 		--dry-run=client -o yaml | kubectl apply -f -
 
 nats-deployment:

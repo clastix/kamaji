@@ -7,8 +7,8 @@
   "hosts": [
     "127.0.0.1",
     "localhost",
-    "silver",
-    "silver.nats-system.svc",
-    "silver.nats-system.svc.cluster.local"
+    "silver-nats",
+    "silver-nats.nats-system.svc",
+    "silver-nats.nats-system.svc.cluster.local"
   ]
 }
