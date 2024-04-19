@@ -19,7 +19,7 @@ import (
 )
 
 type handlersChainer struct {
-	decoder *admission.Decoder
+	decoder admission.Decoder
 }
 
 //nolint:gocognit

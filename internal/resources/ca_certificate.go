@@ -105,7 +105,7 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			}
 
 			if isValid {
-				return nil
+				return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 			}
 		}
 
