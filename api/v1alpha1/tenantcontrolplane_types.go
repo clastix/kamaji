@@ -152,8 +152,9 @@ type DeploymentSpec struct {
 	// AdditionalVolumeMounts allows to mount an additional volume into each component of the Control Plane
 	// (kube-apiserver, controller-manager, and scheduler).
 	AdditionalVolumeMounts *AdditionalVolumeMounts `json:"additionalVolumeMounts,omitempty"`
-    // ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment 
-    ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	// +kubebuilder:default="default"
+	// ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment 
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 // AdditionalVolumeMounts allows mounting additional volumes to the Control Plane components.

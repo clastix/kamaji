@@ -317,16 +317,3 @@ func (r *TenantControlPlaneReconciler) dataStore(ctx context.Context, tenantCont
 	return ds, nil
 }
 
-func (r *TenantControlPlaneReconciler) serviceAccount(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*corev1.ServiceAccount, error) {
-    serviceAccountName := tenantControlPlane.Spec.ControlPlane.Deployment.ServiceAccountName
-    if len(serviceAccountName) == 0 {
-        serviceAccountName = "default"
-    }
-
-    sa := &corev1.ServiceAccount{}
-    if err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: serviceAccountName, Namespace: tenantControlPlane.Namespace}, sa); err != nil {
-		return nil, errors.Wrap(err, "cannot retrieve serviceAccount")
-    }
-
-    return sa, nil
-}
