@@ -3,7 +3,7 @@ kind: DataStore
 metadata:
   name: nats-silver
 spec:
-  driver: nats
+  driver: NATS
   endpoints:
     - nats-silver.nats-system.svc:4222
   basicAuth:

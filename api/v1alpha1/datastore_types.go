@@ -16,7 +16,7 @@ var (
 	EtcdDriver           Driver = "etcd"
 	KineMySQLDriver      Driver = "MySQL"
 	KinePostgreSQLDriver Driver = "PostgreSQL"
-	KineNatsDriver       Driver = "nats"
+	KineNatsDriver       Driver = "NATS"
 )
 
 // +kubebuilder:validation:MinItems=1

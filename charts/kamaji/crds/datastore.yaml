@@ -118,7 +118,7 @@ spec:
                     - etcd
                     - MySQL
                     - PostgreSQL
-                    - nats
+                    - NATS
                   type: string
                 endpoints:
                   description: |-

@@ -107,6 +107,7 @@ func (r *Config) UpdateTenantControlPlaneStatus(_ context.Context, tenantControl
 func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
 		var password []byte
+		var username []byte
 
 		hash := utilities.GetObjectChecksum(r.resource)
 		switch {
@@ -133,10 +134,26 @@ func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.Te
 		finalizersList.Insert(finalizers.DatastoreSecretFinalizer)
 		r.resource.SetFinalizers(finalizersList.UnsortedList())
 
+		// TODO: remove this after multi-tenancy is implemented for NATS
+		if r.DataStore.Spec.Driver == kamajiv1alpha1.KineNatsDriver {
+			// set username and password to the basicAuth values of the NATS datastore
+			username = r.DataStore.Spec.BasicAuth.Username.Content
+			p, err := r.DataStore.Spec.BasicAuth.Password.GetContent(context.Background(), r.Client)
+
+			if err != nil {
+				return errors.Wrap(err, "failed to retrieve the password for the NATS datastore")
+			}
+
+			password = p
+
+		} else {
+			username = coalesceFn(tenantControlPlane.Status.Storage.Setup.User)
+		}
+
 		r.resource.Data = map[string][]byte{
 			"DB_CONNECTION_STRING": []byte(r.ConnString),
 			"DB_SCHEMA":            coalesceFn(tenantControlPlane.Status.Storage.Setup.Schema),
-			"DB_USER":              coalesceFn(tenantControlPlane.Status.Storage.Setup.User),
+			"DB_USER":              username,
 			"DB_PASSWORD":          password,
 		}
 
