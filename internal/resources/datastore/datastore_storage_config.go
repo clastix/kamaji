@@ -134,7 +134,9 @@ func (r *Config) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.Te
 		finalizersList.Insert(finalizers.DatastoreSecretFinalizer)
 		r.resource.SetFinalizers(finalizersList.UnsortedList())
 
-		// TODO: remove this after multi-tenancy is implemented for NATS
+		// TODO(thecodeassassin): remove this after multi-tenancy is implemented for NATS.
+		// Due to NATS is missing a programmatic approach to create users and password,
+		// we're using the Datastore root password.
 		if r.DataStore.Spec.Driver == kamajiv1alpha1.KineNatsDriver {
 			// set username and password to the basicAuth values of the NATS datastore
 			username = r.DataStore.Spec.BasicAuth.Username.Content
