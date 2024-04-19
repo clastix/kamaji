@@ -14,6 +14,48 @@ On the Management Cluster, install one of the alternative supported datastore:
 
     `$ make -C deploy/kine/postgresql postgresql`
 
+- **NATS** *EXPERIMENTAL*
+
+*Note: Currently multi-tenancy is NOT supported when using NATS as an alternative datastore*
+
+Currently, only username/password auth is supported.
+
+```bash
+cat << EOF > values-nats.yaml
+config:
+  merge:
+    accounts:
+      private:
+        jetstream: enabled
+        users:
+        - {user: admin, password: "password", permissions: {subscribe: [">"], publish: [">"]}}
+  cluster:
+    enabled: no
+  nats:
+    tls:
+      enabled: true
+      secretName: nats-config
+      cert: server.crt
+      key: server.key
+  jetstream:
+    enabled: true
+    fileStore:
+      pvc:
+        size: 32Mi
+
+EOF
+
+```bash
+  repo add nats https://nats-io.github.io/k8s/helm/charts/
+
+  helm install nats/nats \
+  -f values-nats.yaml
+  --namespace nats-system \
+  --create-namespace
+```
+
+
+
 ## Install Cert Manager
 
 As prerequisite for Kamaji, install the Cert Manager
@@ -31,7 +73,7 @@ helm install \
 
 ## Install Kamaji
 
-Use Helm to install the Kamaji Operator and make sure it uses a datastore with the proper driver `datastore.driver=<MySQL|PostgreSQL>`.
+Use Helm to install the Kamaji Operator and make sure it uses a datastore with the proper driver `datastore.driver=<MySQL|PostgreSQL|NATS>`.
 
 For example, with a PostreSQL datastore installed:
 
