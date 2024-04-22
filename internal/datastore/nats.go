@@ -8,9 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/nats-io/nats.go"
+	"github.com/pkg/errors"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )

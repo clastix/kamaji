@@ -140,20 +140,17 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 		if r.DataStore.Spec.Driver == kamajiv1alpha1.KineNatsDriver {
 			// set username and password to the basicAuth values of the NATS datastore
 			u, err := r.DataStore.Spec.BasicAuth.Username.GetContent(ctx, r.Client)
-
 			if err != nil {
 				return errors.Wrap(err, "failed to retrieve the username for the NATS datastore")
 			}
 
 			p, err := r.DataStore.Spec.BasicAuth.Password.GetContent(ctx, r.Client)
-
 			if err != nil {
 				return errors.Wrap(err, "failed to retrieve the password for the NATS datastore")
 			}
 
 			username = u
 			password = p
-
 		} else {
 			username = coalesceFn(tenantControlPlane.Status.Storage.Setup.User)
 		}
