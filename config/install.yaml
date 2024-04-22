@@ -6234,6 +6234,10 @@ spec:
                           empty definition that uses the default runtime handler.
                           More info: https://git.k8s.io/enhancements/keps/sig-node/585-runtime-class
                         type: string
+                      serviceAccountName:
+                        default: default
+                        description: ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment
+                        type: string
                       strategy:
                         default:
                           rollingUpdate:
