@@ -1039,6 +1039,13 @@ More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/<br
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentpodadditionalmetadata">podAdditionalMetadata</a></b></td>
+        <td>object</td>
+        <td>
+          AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentregistrysettings">registrySettings</a></b></td>
         <td>object</td>
         <td>
@@ -12238,6 +12245,39 @@ Only modify if you know what you are doing.
       </tr><tr>
         <td><b>scheduler</b></td>
         <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.podAdditionalMetadata
+
+
+
+AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>labels</b></td>
+        <td>map[string]string</td>
         <td>
           <br/>
         </td>
