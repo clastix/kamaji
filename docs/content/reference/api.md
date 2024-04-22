@@ -89,7 +89,7 @@ DataStoreSpec defines the desired state of DataStore.
         <td>
           The driver to use to connect to the shared datastore.<br/>
           <br/>
-            <i>Enum</i>: etcd, MySQL, PostgreSQL<br/>
+            <i>Enum</i>: etcd, MySQL, PostgreSQL, NATS<br/>
         </td>
         <td>true</td>
       </tr><tr>

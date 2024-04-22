@@ -1,0 +1,14 @@
+{
+  "CN": "$NAME.$NAMESPACE.svc.cluster.local",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "hosts": [
+    "127.0.0.1",
+    "localhost",
+    "$NAME-nats",
+    "$NAME-nats.$NAMESPACE.svc",
+    "$NAME-nats.$NAMESPACE.svc.cluster.local"
+  ]
+}
