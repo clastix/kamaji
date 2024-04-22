@@ -69,6 +69,6 @@ var _ = Describe("Deploy a TenantControlPlane with resource with custom service 
 	// Check if TenantControlPlane resource has been created and if its pods have the right service account 
 	It("Should be Ready and have correct sa" , func() {
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
-        PodsServiceAccountMustEqualTo(tcp, sa)
+		PodsServiceAccountMustEqualTo(tcp, sa)
 	})
 })
