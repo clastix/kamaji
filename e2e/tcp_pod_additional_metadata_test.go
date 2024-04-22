@@ -25,16 +25,16 @@ var _ = Describe("Deploy a TenantControlPlane resource with additional pod metad
 			ControlPlane: kamajiv1alpha1.ControlPlane{
 				Deployment: kamajiv1alpha1.DeploymentSpec{
 					Replicas: pointer.To(int32(1)),
-                    			PodAdditionalMetadata: kamajiv1alpha1.AdditionalMetadata{
-                        			Labels: map[string]string{
-                            				"hello-label": "world",
-                            				"foo-label": "bar",
-                        			},
-                        			Annotations: map[string]string{
-                            				"hello-ann": "world",
-                            				"foo-ann": "bar",
-                        			},
-                    			},
+					PodAdditionalMetadata: kamajiv1alpha1.AdditionalMetadata{
+						Labels: map[string]string{
+							"hello-label": "world",
+							"foo-label":   "bar",
+						},
+						Annotations: map[string]string{
+							"hello-ann": "world",
+							"foo-ann":   "bar",
+						},
+					},
 				},
 				Service: kamajiv1alpha1.ServiceSpec{
 					ServiceType: "ClusterIP",
@@ -70,9 +70,9 @@ var _ = Describe("Deploy a TenantControlPlane resource with additional pod metad
 	// Check if TenantControlPlane resource has been created
 	It("Should be Ready with expected additional metadata", func() {
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
-        	AllPodsLabelMustEqualTo(tcp, "hello-label", "world")
-        	AllPodsLabelMustEqualTo(tcp, "foo-label", "bar")
-        	AllPodsAnnotationMustEqualTo(tcp, "hello-ann", "world")
-        	AllPodsAnnotationMustEqualTo(tcp, "foo-ann", "bar")
+		AllPodsLabelMustEqualTo(tcp, "hello-label", "world")
+		AllPodsLabelMustEqualTo(tcp, "foo-label", "bar")
+		AllPodsAnnotationMustEqualTo(tcp, "hello-ann", "world")
+		AllPodsAnnotationMustEqualTo(tcp, "foo-ann", "bar")
 	})
 })
