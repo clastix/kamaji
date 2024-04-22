@@ -315,4 +315,3 @@ func (r *TenantControlPlaneReconciler) dataStore(ctx context.Context, tenantCont
 
 	return ds, nil
 }
-

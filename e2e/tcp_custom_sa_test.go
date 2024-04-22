@@ -16,13 +16,13 @@ import (
 )
 
 var _ = Describe("Deploy a TenantControlPlane with resource with custom service account", func() {
-    // service account object 
-    sa := &corev1.ServiceAccount{
-        ObjectMeta: metav1.ObjectMeta{
-            Name: "test",
-            Namespace: "default",
-        },
-    }
+	// service account object
+	sa := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+	}
 	// Fill TenantControlPlane object
 	tcp := &kamajiv1alpha1.TenantControlPlane{
 		ObjectMeta: metav1.ObjectMeta{
@@ -32,8 +32,8 @@ var _ = Describe("Deploy a TenantControlPlane with resource with custom service 
 		Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 			ControlPlane: kamajiv1alpha1.ControlPlane{
 				Deployment: kamajiv1alpha1.DeploymentSpec{
-					Replicas: pointer.To(int32(1)),
-                    ServiceAccountName: sa.GetName(),
+					Replicas:           pointer.To(int32(1)),
+					ServiceAccountName: sa.GetName(),
 				},
 				Service: kamajiv1alpha1.ServiceSpec{
 					ServiceType: "ClusterIP",
@@ -66,8 +66,8 @@ var _ = Describe("Deploy a TenantControlPlane with resource with custom service 
 	JustAfterEach(func() {
 		Expect(k8sClient.Delete(context.Background(), tcp)).Should(Succeed())
 	})
-	// Check if TenantControlPlane resource has been created and if its pods have the right service account 
-	It("Should be Ready and have correct sa" , func() {
+	// Check if TenantControlPlane resource has been created and if its pods have the right service account
+	It("Should be Ready and have correct sa", func() {
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
 		PodsServiceAccountMustEqualTo(tcp, sa)
 	})

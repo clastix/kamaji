@@ -153,7 +153,7 @@ type DeploymentSpec struct {
 	// (kube-apiserver, controller-manager, and scheduler).
 	AdditionalVolumeMounts *AdditionalVolumeMounts `json:"additionalVolumeMounts,omitempty"`
 	// +kubebuilder:default="default"
-	// ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment 
+	// ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 

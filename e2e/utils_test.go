@@ -139,20 +139,21 @@ func StatusMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, status kamajiv1al
 }
 
 func PodsServiceAccountMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, sa *corev1.ServiceAccount) {
-    saName := sa.GetName()
-    Eventually(func () bool {
-        tcpPods := &corev1.PodList{}
-        err := k8sClient.List(context.Background(), tcpPods, client.MatchingLabels{
-            "kamaji.clastix.io/name": tcp.GetName(),
-        })
-        if err != nil {
-            return false
-        }
-        for _, pod := range tcpPods.Items {
-            if pod.Spec.ServiceAccountName != saName {
-                return false
-            }
-        }
-        return true
-    }, 5*time.Minute, time.Second).Should(Equal(true)) 
+	saName := sa.GetName()
+	Eventually(func() bool {
+		tcpPods := &corev1.PodList{}
+		err := k8sClient.List(context.Background(), tcpPods, client.MatchingLabels{
+			"kamaji.clastix.io/name": tcp.GetName(),
+		})
+		if err != nil {
+			return false
+		}
+		for _, pod := range tcpPods.Items {
+			if pod.Spec.ServiceAccountName != saName {
+				return false
+			}
+		}
+
+		return true
+	}, 5*time.Minute, time.Second).Should(BeTrue())
 }
