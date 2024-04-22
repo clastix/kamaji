@@ -68,6 +68,7 @@ Here the values you can override:
 | affinity | object | `{}` | Kubernetes affinity rules to apply to Kamaji controller pods |
 | cfssl.image.repository | string | `"cfssl/cfssl"` |  |
 | cfssl.image.tag | string | `"latest"` |  |
+| clusterDomain | string | `"cluster.local"` | Domain of the Kubernetes cluster. |
 | datastore.basicAuth.passwordSecret.keyPath | string | `nil` | The Secret key where the data is stored. |
 | datastore.basicAuth.passwordSecret.name | string | `nil` | The name of the Secret containing the password used to connect to the relational database. |
 | datastore.basicAuth.passwordSecret.namespace | string | `nil` | The namespace of the Secret containing the password used to connect to the relational database. |
@@ -77,7 +78,7 @@ Here the values you can override:
 | datastore.driver | string | `"etcd"` | (string) The Kamaji Datastore driver, supported: etcd, MySQL, PostgreSQL (defaults=etcd). |
 | datastore.enabled | bool | `true` | (bool) Enable the Kamaji Datastore creation (default=true) |
 | datastore.endpoints | list | `[]` | (array) List of endpoints of the selected Datastore. When letting the Chart install the etcd datastore, this field is populated automatically. |
-| datastore.nameOverride | string | `nil` | The Datastore name override, if empty and enabled=true defaults to `default`, if enabled=false, this is the name of the Datastore to connect to.  |
+| datastore.nameOverride | string | `nil` | The Datastore name override, if empty and enabled=true defaults to `default`, if enabled=false, this is the name of the Datastore to connect to. |
 | datastore.tlsConfig.certificateAuthority.certificate.keyPath | string | `nil` | Key of the Secret which contains the content of the certificate. |
 | datastore.tlsConfig.certificateAuthority.certificate.name | string | `nil` | Name of the Secret containing the CA required to establish the mandatory SSL/TLS connection to the datastore. |
 | datastore.tlsConfig.certificateAuthority.certificate.namespace | string | `nil` | Namespace of the Secret containing the CA required to establish the mandatory SSL/TLS connection to the datastore. |

@@ -99,7 +99,7 @@ Comma separated list of etcd endpoints, using the overrides in case of unmanaged
 {{- $list := list -}}
 {{- if .Values.etcd.deploy }}
     {{- range $count := until 3 -}}
-        {{- $list = append $list (printf "%s-%d.%s.%s.svc.cluster.local:%d" "etcd" $count ( include "etcd.serviceName" . ) $.Release.Namespace (int $.Values.etcd.port) ) -}}
+        {{- $list = append $list (printf "%s-%d.%s.%s.svc.%s:%d" "etcd" $count ( include "etcd.serviceName" . ) $.Release.Namespace $.Values.clusterDomain (int $.Values.etcd.port) ) -}}
     {{- end }}
 {{- else if .Values.etcd.overrides.endpoints }}
     {{- range $v := .Values.etcd.overrides.endpoints -}}
@@ -118,7 +118,7 @@ Key-value of the etcd peers, using the overrides in case of unmanaged etcd.
 {{- $list := list -}}
 {{- if .Values.etcd.deploy }}
     {{- range $i, $count := until 3 -}}
-        {{- $list = append $list ( printf "etcd-%d=https://%s-%d.%s.%s.svc.cluster.local:%d" $i "etcd" $count ( include "etcd.serviceName" . ) $.Release.Namespace (int $.Values.etcd.peerApiPort) ) -}}
+        {{- $list = append $list ( printf "etcd-%d=https://%s-%d.%s.%s.svc.%s:%d" $i "etcd" $count ( include "etcd.serviceName" . ) $.Release.Namespace $.Values.clusterDomain (int $.Values.etcd.peerApiPort) ) -}}
     {{- end }}
 {{- else if .Values.etcd.overrides.endpoints }}
     {{- range $k, $v := .Values.etcd.overrides.endpoints -}}

@@ -15,6 +15,8 @@ image:
 # -- A list of extra arguments to add to the kamaji controller default ones
 extraArgs: []
 
+# -- Domain of the Kubernetes cluster.
+clusterDomain: "cluster.local"
 
 serviceMonitor:
   # -- Toggle the ServiceMonitor true if you have Prometheus Operator installed and configured
@@ -56,11 +58,11 @@ etcd:
     size: 10Gi
     storageClassName: ""
     accessModes:
-    - ReadWriteOnce
+      - ReadWriteOnce
     # -- The custom annotations to add to the PVC
     customAnnotations: {}
     #  volumeType: local
-  
+
   # -- (array) Kubernetes affinity rules to apply to Kamaji etcd pods
   tolerations: []
 
@@ -162,7 +164,7 @@ loggingDevel:
 datastore:
   # -- (bool) Enable the Kamaji Datastore creation (default=true)
   enabled: true
-  # -- (string) The Datastore name override, if empty and enabled=true defaults to `default`, if enabled=false, this is the name of the Datastore to connect to. 
+  # -- (string) The Datastore name override, if empty and enabled=true defaults to `default`, if enabled=false, this is the name of the Datastore to connect to.
   nameOverride:
   # -- (string) The Kamaji Datastore driver, supported: etcd, MySQL, PostgreSQL (defaults=etcd).
   driver: etcd

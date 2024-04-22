@@ -9,7 +9,7 @@ metadata:
 spec:
   dnsNames:
     - {{ include "kamaji.webhookServiceName" . }}.{{ .Release.Namespace }}.svc
-    - {{ include "kamaji.webhookServiceName" . }}.{{ .Release.Namespace }}.svc.cluster.local
+    - {{ include "kamaji.webhookServiceName" . }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
   issuerRef:
     kind: Issuer
     name: kamaji-selfsigned-issuer

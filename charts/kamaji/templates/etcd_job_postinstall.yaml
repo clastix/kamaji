@@ -41,7 +41,7 @@ spec:
               fi
           env:
             - name: ETCDCTL_ENDPOINTS
-              value: https://etcd-0.{{ include "etcd.serviceName" . }}.{{ .Release.Namespace }}.svc.cluster.local:2379
+              value: https://etcd-0.{{ include "etcd.serviceName" . }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:2379
             - name: ETCDCTL_CACERT
               value: /opt/certs/ca/ca.crt
             - name: ETCDCTL_CERT
