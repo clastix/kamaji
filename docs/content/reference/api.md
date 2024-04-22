@@ -1078,6 +1078,15 @@ More info: https://git.k8s.io/enhancements/keps/sig-node/585-runtime-class<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>serviceAccountName</b></td>
+        <td>string</td>
+        <td>
+          ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment<br/>
+          <br/>
+            <i>Default</i>: default<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentstrategy">strategy</a></b></td>
         <td>object</td>
         <td>
