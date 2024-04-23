@@ -77,6 +77,7 @@ func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, te
 	d.setContainers(&deployment.Spec.Template.Spec, tenantControlPlane, address)
 	d.setAdditionalVolumes(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setVolumes(&deployment.Spec.Template.Spec, tenantControlPlane)
+	d.setServiceAccount(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.Client.Scheme().Default(deployment)
 }
 
@@ -1070,4 +1071,14 @@ func (d Deployment) setToleration(spec *corev1.PodSpec, tcp kamajiv1alpha1.Tenan
 
 func (d Deployment) setAffinity(spec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
 	spec.Affinity = tcp.Spec.ControlPlane.Deployment.Affinity
+}
+
+func (d Deployment) setServiceAccount(spec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
+	if len(tcp.Spec.ControlPlane.Deployment.ServiceAccountName) > 0 {
+		spec.ServiceAccountName = tcp.Spec.ControlPlane.Deployment.ServiceAccountName
+
+		return
+	}
+
+	spec.ServiceAccountName = "default"
 }

@@ -175,7 +175,9 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 					handlers.Freeze{},
 				},
 				routes.TenantControlPlaneDefaults{}: {
-					handlers.TenantControlPlaneDefaults{DefaultDatastore: datastore},
+					handlers.TenantControlPlaneDefaults{
+						DefaultDatastore: datastore,
+					},
 				},
 				routes.TenantControlPlaneValidate{}: {
 					handlers.TenantControlPlaneName{},
