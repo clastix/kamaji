@@ -620,6 +620,7 @@ func (in *DeploymentSpec) DeepCopyInto(out *DeploymentSpec) {
 		(*in).DeepCopyInto(*out)
 	}
 	in.AdditionalMetadata.DeepCopyInto(&out.AdditionalMetadata)
+	in.PodAdditionalMetadata.DeepCopyInto(&out.PodAdditionalMetadata)
 	if in.AdditionalInitContainers != nil {
 		in, out := &in.AdditionalInitContainers, &out.AdditionalInitContainers
 		*out = make([]v1.Container, len(*in))

@@ -61,7 +61,8 @@ func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, te
 
 	d.setLabels(deployment, utilities.MergeMaps(utilities.KamajiLabels(tenantControlPlane.GetName(), "deployment"), tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Labels))
 	d.setAnnotations(deployment, utilities.MergeMaps(deployment.Annotations, tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Annotations))
-	d.setTemplateLabels(&deployment.Spec.Template, d.templateLabels(ctx, &tenantControlPlane))
+	d.setTemplateLabels(&deployment.Spec.Template, utilities.MergeMaps(d.templateLabels(ctx, &tenantControlPlane), tenantControlPlane.Spec.ControlPlane.Deployment.PodAdditionalMetadata.Labels))
+	d.setTemplateAnnotations(&deployment.Spec.Template, tenantControlPlane.Spec.ControlPlane.Deployment.PodAdditionalMetadata.Annotations)
 	d.setNodeSelector(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setToleration(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setAffinity(&deployment.Spec.Template.Spec, tenantControlPlane)
@@ -709,7 +710,7 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 	}
 
 	switch d.DataStore.Spec.Driver {
-	case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver:
+	case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver, kamajiv1alpha1.KineNatsDriver:
 		desiredArgs["--etcd-servers"] = "http://127.0.0.1:2379"
 	case kamajiv1alpha1.EtcdDriver:
 		httpsEndpoints := make([]string, 0, len(d.DataStore.Spec.Endpoints))
@@ -868,6 +869,8 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 		args["--endpoint"] = "mysql://$(DB_USER):$(DB_PASSWORD)@tcp($(DB_CONNECTION_STRING))/$(DB_SCHEMA)"
 	case kamajiv1alpha1.KinePostgreSQLDriver:
 		args["--endpoint"] = "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_CONNECTION_STRING)/$(DB_SCHEMA)"
+	case kamajiv1alpha1.KineNatsDriver:
+		args["--endpoint"] = "nats://$(DB_USER):$(DB_PASSWORD)@$(DB_CONNECTION_STRING)?bucket=$(DB_SCHEMA)"
 	}
 
 	args["--ca-file"] = "/certs/ca.crt"
@@ -998,6 +1001,10 @@ func (d Deployment) hashValue(secret corev1.Secret) string {
 
 func (d Deployment) setTemplateLabels(template *corev1.PodTemplateSpec, labels map[string]string) {
 	template.SetLabels(labels)
+}
+
+func (d Deployment) setTemplateAnnotations(template *corev1.PodTemplateSpec, annotations map[string]string) {
+	template.SetAnnotations(annotations)
 }
 
 func (d Deployment) setLabels(resource *appsv1.Deployment, labels map[string]string) {

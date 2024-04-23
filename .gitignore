@@ -32,5 +32,8 @@ bin
 **/*.key
 **/*.pem
 **/*.csr
-**/server-csr.json
 .DS_Store
+
+**/server-csr.json
+!deploy/kine/mysql/server-csr.json
+!deploy/kine/nats/server-csr.json

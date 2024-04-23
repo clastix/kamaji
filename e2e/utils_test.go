@@ -138,6 +138,44 @@ func StatusMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, status kamajiv1al
 	}, 5*time.Minute, time.Second).Should(Equal(status))
 }
 
+func AllPodsLabelMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, label string, value string) {
+	Eventually(func() bool {
+		tcpPods := &corev1.PodList{}
+		err := k8sClient.List(context.Background(), tcpPods, client.MatchingLabels{
+			"kamaji.clastix.io/name": tcp.GetName(),
+		})
+		if err != nil {
+			return false
+		}
+		for _, pod := range tcpPods.Items {
+			if pod.Labels[label] != value {
+				return false
+			}
+		}
+
+		return true
+	}, 5*time.Minute, time.Second).Should(BeTrue())
+}
+
+func AllPodsAnnotationMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, annotation string, value string) {
+	Eventually(func() bool {
+		tcpPods := &corev1.PodList{}
+		err := k8sClient.List(context.Background(), tcpPods, client.MatchingLabels{
+			"kamaji.clastix.io/name": tcp.GetName(),
+		})
+		if err != nil {
+			return false
+		}
+		for _, pod := range tcpPods.Items {
+			if pod.Annotations[annotation] != value {
+				return false
+			}
+		}
+
+		return true
+	}, 5*time.Minute, time.Second).Should(BeTrue())
+}
+
 func PodsServiceAccountMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, sa *corev1.ServiceAccount) {
 	saName := sa.GetName()
 	Eventually(func() bool {

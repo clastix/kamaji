@@ -141,8 +141,9 @@ type DeploymentSpec struct {
 	// such as kube-apiserver, controller-manager, and scheduler. WARNING - This option
 	// can override existing parameters and cause components to misbehave in unxpected ways.
 	// Only modify if you know what you are doing.
-	ExtraArgs          *ControlPlaneExtraArgs `json:"extraArgs,omitempty"`
-	AdditionalMetadata AdditionalMetadata     `json:"additionalMetadata,omitempty"`
+	ExtraArgs             *ControlPlaneExtraArgs `json:"extraArgs,omitempty"`
+	AdditionalMetadata    AdditionalMetadata     `json:"additionalMetadata,omitempty"`
+	PodAdditionalMetadata AdditionalMetadata     `json:"podAdditionalMetadata,omitempty"`
 	// AdditionalInitContainers allows adding additional init containers to the Control Plane deployment.
 	AdditionalInitContainers []corev1.Container `json:"additionalInitContainers,omitempty"`
 	// AdditionalContainers allows adding additional containers to the Control Plane deployment.

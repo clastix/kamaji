@@ -26,7 +26,7 @@ nodes:
     ## expose port 31132 of the node to port 31132 on the host for konnectivity
   - containerPort: 31132
     hostPort: 31132
-    protocol: TCP   
+    protocol: TCP
     ## expose port 31443 of the node to port 31443 on the host
   - containerPort: 31443
     hostPort: 31443

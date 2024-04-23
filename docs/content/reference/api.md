@@ -89,7 +89,7 @@ DataStoreSpec defines the desired state of DataStore.
         <td>
           The driver to use to connect to the shared datastore.<br/>
           <br/>
-            <i>Enum</i>: etcd, MySQL, PostgreSQL<br/>
+            <i>Enum</i>: etcd, MySQL, PostgreSQL, NATS<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -1036,6 +1036,13 @@ Only modify if you know what you are doing.<br/>
           NodeSelector is a selector which must be true for the pod to fit on a node.
 Selector which must match a node's labels for the pod to be scheduled on that node.
 More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentpodadditionalmetadata">podAdditionalMetadata</a></b></td>
+        <td>object</td>
+        <td>
+          AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12247,6 +12254,39 @@ Only modify if you know what you are doing.
       </tr><tr>
         <td><b>scheduler</b></td>
         <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.controlPlane.deployment.podAdditionalMetadata
+
+
+
+AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>labels</b></td>
+        <td>map[string]string</td>
         <td>
           <br/>
         </td>

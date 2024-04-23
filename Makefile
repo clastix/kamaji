@@ -134,6 +134,10 @@ datastore-postgres:
 _datastore-etcd:
 	$(HELM) upgrade --install etcd-$(NAME) clastix/kamaji-etcd --create-namespace -n etcd-system --set datastore.enabled=true
 
+_datastore-nats:
+	$(MAKE) NAME=$(NAME) NAMESPACE=nats-system -C deploy/kine/nats nats
+	kubectl apply -f $(shell pwd)/config/samples/kamaji_v1alpha1_datastore_nats_$(NAME).yaml
+
 datastore-etcd: helm
 	$(HELM) repo add clastix https://clastix.github.io/charts
 	$(HELM) repo update
@@ -141,7 +145,14 @@ datastore-etcd: helm
 	$(MAKE) NAME=silver _datastore-etcd
 	$(MAKE) NAME=gold _datastore-etcd
 
-datastores: datastore-mysql datastore-etcd datastore-postgres ## Install all Kamaji DataStores with multiple drivers, and different tiers.
+datastore-nats: helm
+	$(HELM) repo add nats https://nats-io.github.io/k8s/helm/charts/
+	$(HELM) repo update
+	$(MAKE) NAME=bronze _datastore-nats
+	$(MAKE) NAME=silver _datastore-nats
+	$(MAKE) NAME=gold _datastore-nats
+
+datastores: datastore-mysql datastore-etcd datastore-postgres datastore-nats ## Install all Kamaji DataStores with multiple drivers, and different tiers.
 
 ##@ Build
 
