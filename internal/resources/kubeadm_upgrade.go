@@ -70,7 +70,7 @@ func (k *KubernetesUpgrade) CreateOrUpdate(ctx context.Context, tenantControlPla
 		return controllerutil.OperationResultNone, errors.Wrap(err, "cannot create REST client required for Kubernetes upgrade plan")
 	}
 
-	versionGetter := kamajiupgrade.NewKamajiKubeVersionGetter(clientSet)
+	versionGetter := kamajiupgrade.NewKamajiKubeVersionGetter(clientSet, tenantControlPlane.Status.Kubernetes.Version.Version)
 
 	if _, err = upgrade.GetAvailableUpgrades(versionGetter, false, false, clientSet, &printers.Discard{}); err != nil {
 		return controllerutil.OperationResultNone, errors.Wrap(err, "cannot retrieve available Upgrades for Kubernetes upgrade plan")

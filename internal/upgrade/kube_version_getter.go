@@ -16,12 +16,13 @@ import (
 
 type kamajiKubeVersionGetter struct {
 	upgrade.VersionGetter
+	Version string
 }
 
-func NewKamajiKubeVersionGetter(restClient kubernetes.Interface) upgrade.VersionGetter {
+func NewKamajiKubeVersionGetter(restClient kubernetes.Interface, version string) upgrade.VersionGetter {
 	kubeVersionGetter := upgrade.NewOfflineVersionGetter(upgrade.NewKubeVersionGetter(restClient), KubeadmVersion)
 
-	return &kamajiKubeVersionGetter{VersionGetter: kubeVersionGetter}
+	return &kamajiKubeVersionGetter{VersionGetter: kubeVersionGetter, Version: version}
 }
 
 func (k kamajiKubeVersionGetter) ClusterVersion() (string, *versionutil.Version, error) {
@@ -50,4 +51,10 @@ func (k kamajiKubeVersionGetter) VersionFromCILabel(ciVersionLabel, description 
 
 func (k kamajiKubeVersionGetter) KubeletVersions() (map[string][]string, error) {
 	return k.VersionGetter.KubeletVersions()
+}
+
+func (k kamajiKubeVersionGetter) ComponentVersions(string) (map[string][]string, error) {
+	return map[string][]string{
+		k.Version: {"kamaji"},
+	}, nil
 }
