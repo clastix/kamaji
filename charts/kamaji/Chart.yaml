@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: v0.5.0
+appVersion: v0.5.1
 description: Kamaji is the Hosted Control Plane Manager for Kubernetes.
 home: https://github.com/clastix/kamaji
 icon: https://github.com/clastix/kamaji/raw/master/assets/logo-colored.png
@@ -17,7 +17,7 @@ name: kamaji
 sources:
 - https://github.com/clastix/kamaji
 type: application
-version: 0.15.2
+version: 0.15.3
 annotations:
   catalog.cattle.io/certified: partner
   catalog.cattle.io/release-name: kamaji
