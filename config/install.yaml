@@ -7858,7 +7858,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.serviceAccountName
-        image: clastix/kamaji:v0.5.0
+        image: clastix/kamaji:v0.5.1
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
