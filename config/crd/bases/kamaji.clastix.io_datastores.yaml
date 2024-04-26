@@ -274,7 +274,6 @@ spec:
             required:
             - driver
             - endpoints
-            - tlsConfig
             type: object
           status:
             description: DataStoreStatus defines the observed state of DataStore.

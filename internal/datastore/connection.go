@@ -21,14 +21,20 @@ func NewStorageConnection(ctx context.Context, client client.Client, ds kamajiv1
 
 	switch ds.Spec.Driver {
 	case kamajiv1alpha1.KineMySQLDriver:
-		cc.TLSConfig.ServerName = cc.Endpoints[0].Host
+
+		if ds.Spec.TLSConfig != nil {
+			cc.TLSConfig.ServerName = cc.Endpoints[0].Host
+		}
+
 		cc.Parameters = map[string][]string{
 			"multiStatements": {"true"},
 		}
 
 		return NewMySQLConnection(*cc)
 	case kamajiv1alpha1.KinePostgreSQLDriver:
-		cc.TLSConfig.ServerName = cc.Endpoints[0].Host
+		if ds.Spec.TLSConfig != nil {
+			cc.TLSConfig.ServerName = cc.Endpoints[0].Host
+		}
 
 		return NewPostgreSQLConnection(*cc)
 	case kamajiv1alpha1.EtcdDriver:

@@ -1,0 +1,17 @@
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: DataStore
+metadata:
+  name: nats-notls
+spec:
+  driver: NATS
+  endpoints:
+    - notls-nats.nats-system.svc:4222
+  basicAuth:
+    username:
+      content: YWRtaW4=
+    password:
+      secretReference:
+        name: nats-notls-config
+        namespace: nats-system
+        keyPath: password
+

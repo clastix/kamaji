@@ -1,0 +1,14 @@
+config:
+  merge:
+    accounts:
+      private:
+        jetstream: enabled
+        users:
+        - {user: admin, password: "password", permissions: {subscribe: [">"], publish: [">"]}}
+  cluster:
+    enabled: no
+  jetstream:
+    enabled: true
+    fileStore:
+      pvc:
+        size: 32Mi

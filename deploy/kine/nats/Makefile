@@ -31,7 +31,9 @@ nats-secret:
 		--dry-run=client -o yaml | kubectl apply -f -
 
 nats-deployment:
-	@NAME=$(NAME) envsubst < $(ROOT_DIR)/values.yaml | $(HELM) upgrade --install $(NAME) nats/nats --create-namespace -n nats-system -f -
+	@VALUES_FILE=$(if $(findstring notls,$(NAME)),values-notls.yaml,values.yaml); \
+	NAME=$(NAME) envsubst < $(ROOT_DIR)/$$VALUES_FILE | $(HELM) upgrade --install $(NAME) nats/nats --create-namespace -n nats-system -f -
+
 
 nats-destroy:
 	@NAME=$(NAME) envsubst < $(ROOT_DIR)/nats.yaml | kubectl -n $(NAMESPACE) delete --ignore-not-found -f -
