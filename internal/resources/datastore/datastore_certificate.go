@@ -78,6 +78,11 @@ func (r *Certificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantCo
 
 func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
+
+		if r.DataStore.Spec.TLSConfig == nil {
+			return nil
+		}
+
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
 		ca, err := r.DataStore.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, r.Client)

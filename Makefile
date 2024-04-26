@@ -151,6 +151,7 @@ datastore-nats: helm
 	$(MAKE) NAME=bronze _datastore-nats
 	$(MAKE) NAME=silver _datastore-nats
 	$(MAKE) NAME=gold _datastore-nats
+	$(MAKE) NAME=notls _datastore-nats
 
 datastores: datastore-mysql datastore-etcd datastore-postgres datastore-nats ## Install all Kamaji DataStores with multiple drivers, and different tiers.
 
