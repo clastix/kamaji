@@ -525,8 +525,10 @@ func (in *DataStoreSpec) DeepCopyInto(out *DataStoreSpec) {
 		*out = new(BasicAuth)
 		(*in).DeepCopyInto(*out)
 	}
-	if (in.TLSConfig) != nil {
-		in.TLSConfig.DeepCopyInto(out.TLSConfig)
+	if in.TLSConfig != nil {
+		in, out := &in.TLSConfig, &out.TLSConfig
+		*out = new(TLSConfig)
+		(*in).DeepCopyInto(*out)
 	}
 }
 
