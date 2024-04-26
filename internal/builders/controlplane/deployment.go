@@ -833,9 +833,16 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 	podSpec.InitContainers[index].Name = kineInitContainerName
 	podSpec.InitContainers[index].Image = d.KineContainerImage
 	podSpec.InitContainers[index].Command = []string{"sh"}
-	podSpec.InitContainers[index].Args = []string{
-		"-c",
-		"cp /kine/*.* /certs && chmod -R 600 /certs/*.*",
+	if d.DataStore.Spec.TLSConfig != nil {
+		podSpec.InitContainers[index].Args = []string{
+			"-c",
+			"cp /kine/*.* /certs && chmod -R 600 /certs/*.*",
+		}
+	} else {
+		podSpec.InitContainers[index].Args = []string{
+			"-c",
+			"echo ok",
+		}
 	}
 	podSpec.InitContainers[index].VolumeMounts = []corev1.VolumeMount{
 		{
@@ -872,9 +879,15 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 		args["--endpoint"] = "nats://$(DB_USER):$(DB_PASSWORD)@$(DB_CONNECTION_STRING)?bucket=$(DB_SCHEMA)"
 	}
 
-	args["--ca-file"] = "/certs/ca.crt"
-	args["--cert-file"] = "/certs/server.crt"
-	args["--key-file"] = "/certs/server.key"
+	if d.DataStore.Spec.TLSConfig != nil {
+		args["--ca-file"] = "/certs/ca.crt"
+		args["--cert-file"] = "/certs/server.crt"
+		args["--key-file"] = "/certs/server.key"
+	} else {
+		delete(args, "--ca-file")
+		delete(args, "--cert-file")
+		delete(args, "--key-file")
+	}
 
 	podSpec.Containers[index].Name = kineContainerName
 	podSpec.Containers[index].Image = d.KineContainerImage

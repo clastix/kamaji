@@ -34,7 +34,7 @@ type DataStoreSpec struct {
 	// This value is optional.
 	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
 	// Defines the TLS/SSL configuration required to connect to the data store in a secure way.
-	TLSConfig TLSConfig `json:"tlsConfig"`
+	TLSConfig *TLSConfig `json:"tlsConfig"`
 }
 
 // TLSConfig contains the information used to connect to the data store using a secured connection.
