@@ -43,20 +43,22 @@ func (d *DatastoreUsedSecret) ExtractValue() client.IndexerFunc {
 			}
 		}
 
-		if ds.Spec.TLSConfig.CertificateAuthority.Certificate.SecretRef != nil {
-			res = append(res, d.namespacedName(*ds.Spec.TLSConfig.CertificateAuthority.Certificate.SecretRef))
-		}
+		if ds.Spec.TLSConfig != nil {
+			if ds.Spec.TLSConfig.CertificateAuthority.Certificate.SecretRef != nil {
+				res = append(res, d.namespacedName(*ds.Spec.TLSConfig.CertificateAuthority.Certificate.SecretRef))
+			}
 
-		if ds.Spec.TLSConfig.CertificateAuthority.PrivateKey != nil && ds.Spec.TLSConfig.CertificateAuthority.PrivateKey.SecretRef != nil {
-			res = append(res, d.namespacedName(*ds.Spec.TLSConfig.CertificateAuthority.PrivateKey.SecretRef))
-		}
+			if ds.Spec.TLSConfig.CertificateAuthority.PrivateKey != nil && ds.Spec.TLSConfig.CertificateAuthority.PrivateKey.SecretRef != nil {
+				res = append(res, d.namespacedName(*ds.Spec.TLSConfig.CertificateAuthority.PrivateKey.SecretRef))
+			}
 
-		if ds.Spec.TLSConfig.ClientCertificate.Certificate.SecretRef != nil {
-			res = append(res, d.namespacedName(*ds.Spec.TLSConfig.ClientCertificate.Certificate.SecretRef))
-		}
+			if ds.Spec.TLSConfig.ClientCertificate.Certificate.SecretRef != nil {
+				res = append(res, d.namespacedName(*ds.Spec.TLSConfig.ClientCertificate.Certificate.SecretRef))
+			}
 
-		if ds.Spec.TLSConfig.ClientCertificate.PrivateKey.SecretRef != nil {
-			res = append(res, d.namespacedName(*ds.Spec.TLSConfig.ClientCertificate.PrivateKey.SecretRef))
+			if ds.Spec.TLSConfig.ClientCertificate.PrivateKey.SecretRef != nil {
+				res = append(res, d.namespacedName(*ds.Spec.TLSConfig.ClientCertificate.PrivateKey.SecretRef))
+			}
 		}
 
 		return res
