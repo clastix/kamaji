@@ -43,7 +43,7 @@ type TLSConfig struct {
 	// The key reference is required since etcd authentication is based on certificates, and Kamaji is responsible in creating this.
 	CertificateAuthority CertKeyPair `json:"certificateAuthority"`
 	// Specifies the SSL/TLS key and private key pair used to connect to the data store.
-	ClientCertificate ClientCertificate `json:"clientCertificate"`
+	ClientCertificate *ClientCertificate `json:"clientCertificate"`
 }
 
 type ClientCertificate struct {
