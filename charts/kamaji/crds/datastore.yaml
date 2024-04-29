@@ -256,7 +256,6 @@ spec:
                       type: object
                   required:
                     - certificateAuthority
-                    - clientCertificate
                   type: object
               required:
                 - driver
