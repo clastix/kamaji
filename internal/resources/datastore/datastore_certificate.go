@@ -78,7 +78,6 @@ func (r *Certificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantCo
 
 func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-
 		if r.DataStore.Spec.TLSConfig == nil {
 			return nil
 		}

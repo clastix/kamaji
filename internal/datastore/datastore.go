@@ -36,7 +36,6 @@ type ConnectionConfig struct {
 }
 
 func NewConnectionConfig(ctx context.Context, client client.Client, ds kamajiv1alpha1.DataStore) (*ConnectionConfig, error) {
-
 	var tlsConfig *tls.Config
 
 	if ds.Spec.TLSConfig != nil {
@@ -56,7 +55,6 @@ func NewConnectionConfig(ctx context.Context, client client.Client, ds kamajiv1a
 	}
 
 	if ds.Spec.TLSConfig != nil && ds.Spec.TLSConfig.ClientCertificate != nil {
-
 		crt, err := ds.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, client)
 		if err != nil {
 			return nil, err
