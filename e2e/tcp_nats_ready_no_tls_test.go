@@ -18,7 +18,7 @@ var _ = Describe("Deploy a TenantControlPlane resource with the NATS driver with
 	// Fill TenantControlPlane object
 	tcp := &kamajiv1alpha1.TenantControlPlane{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nats",
+			Name:      "nats-notls",
 			Namespace: "default",
 		},
 		Spec: kamajiv1alpha1.TenantControlPlaneSpec{

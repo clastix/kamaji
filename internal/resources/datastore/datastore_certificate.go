@@ -136,26 +136,31 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 			var crtBytes, keyBytes []byte
 			// For the SQL drivers we just need to copy the certificate, since the basic authentication is used
 			// to connect to the desired schema and database.
-			if crtBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, r.Client); err != nil {
-				logger.Error(err, "unable to retrieve certificate content")
 
-				return err
+			if r.DataStore.Spec.TLSConfig.ClientCertificate != nil {
+				if crtBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, r.Client); err != nil {
+					logger.Error(err, "unable to retrieve certificate content")
+
+					return err
+				}
+
+				crt = bytes.NewBuffer(crtBytes)
+
+				if keyBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, r.Client); err != nil {
+					logger.Error(err, "unable to retrieve private key content")
+
+					return err
+				}
+				key = bytes.NewBuffer(keyBytes)
 			}
-
-			crt = bytes.NewBuffer(crtBytes)
-
-			if keyBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, r.Client); err != nil {
-				logger.Error(err, "unable to retrieve private key content")
-
-				return err
-			}
-			key = bytes.NewBuffer(keyBytes)
 		default:
 			return fmt.Errorf("unrecognized driver for Certificate generation")
 		}
 
-		r.resource.Data["server.crt"] = crt.Bytes()
-		r.resource.Data["server.key"] = key.Bytes()
+		if r.DataStore.Spec.TLSConfig.ClientCertificate != nil {
+			r.resource.Data["server.crt"] = crt.Bytes()
+			r.resource.Data["server.key"] = key.Bytes()
+		}
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
