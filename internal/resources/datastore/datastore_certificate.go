@@ -78,88 +78,92 @@ func (r *Certificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantCo
 
 func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		if r.DataStore.Spec.TLSConfig == nil {
-			return nil
-		}
 
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
-		ca, err := r.DataStore.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, r.Client)
-		if err != nil {
-			logger.Error(err, "cannot retrieve CA certificate content")
+		if r.DataStore.Spec.TLSConfig != nil {
 
-			return err
-		}
+			ca, err := r.DataStore.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, r.Client)
+			if err != nil {
+				logger.Error(err, "cannot retrieve CA certificate content")
 
-		r.resource.Data["ca.crt"] = ca
+				return err
+			}
 
-		r.resource.SetLabels(utilities.MergeMaps(
-			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
-			map[string]string{
-				constants.ControllerLabelResource: "x509",
-			},
-		))
+			r.resource.Data["ca.crt"] = ca
 
-		if err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
-			logger.Error(err, "cannot set controller reference", "resource", r.GetName())
+			r.resource.SetLabels(utilities.MergeMaps(
+				utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
+				map[string]string{
+					constants.ControllerLabelResource: "x509",
+				},
+			))
 
-			return err
-		}
+			if err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
+				logger.Error(err, "cannot set controller reference", "resource", r.GetName())
 
-		if utilities.GetObjectChecksum(r.resource) == utilities.CalculateMapChecksum(r.resource.Data) {
-			if r.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
-				if isValid, _ := crypto.IsValidCertificateKeyPairBytes(r.resource.Data["server.crt"], r.resource.Data["server.key"]); isValid {
-					return nil
+				return err
+			}
+
+			if utilities.GetObjectChecksum(r.resource) == utilities.CalculateMapChecksum(r.resource.Data) {
+				if r.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
+					if isValid, _ := crypto.IsValidCertificateKeyPairBytes(r.resource.Data["server.crt"], r.resource.Data["server.key"]); isValid {
+						return nil
+					}
 				}
 			}
-		}
 
-		var crt, key *bytes.Buffer
+			var crt, key *bytes.Buffer
 
-		switch r.DataStore.Spec.Driver {
-		case kamajiv1alpha1.EtcdDriver:
-			var privateKey []byte
-			// When dealing with the etcd storage we cannot use the basic authentication, thus the generation of a
-			// certificate used for authentication is mandatory, along with the CA private key.
-			if privateKey, err = r.DataStore.Spec.TLSConfig.CertificateAuthority.PrivateKey.GetContent(ctx, r.Client); err != nil {
-				logger.Error(err, "unable to retrieve CA private key content")
+			switch r.DataStore.Spec.Driver {
+			case kamajiv1alpha1.EtcdDriver:
+				var privateKey []byte
+				// When dealing with the etcd storage we cannot use the basic authentication, thus the generation of a
+				// certificate used for authentication is mandatory, along with the CA private key.
+				if privateKey, err = r.DataStore.Spec.TLSConfig.CertificateAuthority.PrivateKey.GetContent(ctx, r.Client); err != nil {
+					logger.Error(err, "unable to retrieve CA private key content")
 
-				return err
+					return err
+				}
+
+				if crt, key, err = crypto.GenerateCertificatePrivateKeyPair(crypto.NewCertificateTemplate(tenantControlPlane.Status.Storage.Setup.User), ca, privateKey); err != nil {
+					logger.Error(err, "unable to generate certificate and private key")
+
+					return err
+				}
+			case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver, kamajiv1alpha1.KineNatsDriver:
+				var crtBytes, keyBytes []byte
+				// For the SQL drivers we just need to copy the certificate, since the basic authentication is used
+				// to connect to the desired schema and database.
+
+				if r.DataStore.Spec.TLSConfig.ClientCertificate != nil {
+					if crtBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, r.Client); err != nil {
+						logger.Error(err, "unable to retrieve certificate content")
+
+						return err
+					}
+
+					crt = bytes.NewBuffer(crtBytes)
+
+					if keyBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, r.Client); err != nil {
+						logger.Error(err, "unable to retrieve private key content")
+
+						return err
+					}
+					key = bytes.NewBuffer(keyBytes)
+				}
+			default:
+				return fmt.Errorf("unrecognized driver for Certificate generation")
 			}
-
-			if crt, key, err = crypto.GenerateCertificatePrivateKeyPair(crypto.NewCertificateTemplate(tenantControlPlane.Status.Storage.Setup.User), ca, privateKey); err != nil {
-				logger.Error(err, "unable to generate certificate and private key")
-
-				return err
-			}
-		case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver, kamajiv1alpha1.KineNatsDriver:
-			var crtBytes, keyBytes []byte
-			// For the SQL drivers we just need to copy the certificate, since the basic authentication is used
-			// to connect to the desired schema and database.
 
 			if r.DataStore.Spec.TLSConfig.ClientCertificate != nil {
-				if crtBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, r.Client); err != nil {
-					logger.Error(err, "unable to retrieve certificate content")
-
-					return err
-				}
-
-				crt = bytes.NewBuffer(crtBytes)
-
-				if keyBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, r.Client); err != nil {
-					logger.Error(err, "unable to retrieve private key content")
-
-					return err
-				}
-				key = bytes.NewBuffer(keyBytes)
+				r.resource.Data["server.crt"] = crt.Bytes()
+				r.resource.Data["server.key"] = key.Bytes()
 			}
-		default:
-			return fmt.Errorf("unrecognized driver for Certificate generation")
-		}
 
-		if r.DataStore.Spec.TLSConfig.ClientCertificate != nil {
-			r.resource.Data["server.crt"] = crt.Bytes()
-			r.resource.Data["server.key"] = key.Bytes()
+		} else {
+			// set r.resource.Data to empty to allow switching from TLS to non-tls
+			r.resource.Data = map[string][]byte{}
 		}
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
