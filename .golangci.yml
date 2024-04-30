@@ -38,6 +38,7 @@ linters:
     - dupl
     - cyclop
     - gocognit
+    - nestif
     # deprecated linters
     - deadcode
     - golint

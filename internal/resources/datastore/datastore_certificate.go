@@ -78,11 +78,9 @@ func (r *Certificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantCo
 
 func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
 		if r.DataStore.Spec.TLSConfig != nil {
-
 			ca, err := r.DataStore.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, r.Client)
 			if err != nil {
 				logger.Error(err, "cannot retrieve CA certificate content")
@@ -160,7 +158,6 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 				r.resource.Data["server.crt"] = crt.Bytes()
 				r.resource.Data["server.key"] = key.Bytes()
 			}
-
 		} else {
 			// set r.resource.Data to empty to allow switching from TLS to non-tls
 			r.resource.Data = map[string][]byte{}
