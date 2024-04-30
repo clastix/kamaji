@@ -37,6 +37,7 @@ linters:
     - funlen
     - dupl
     - cyclop
+    - gocognit
     # deprecated linters
     - deadcode
     - golint
