@@ -823,52 +823,61 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 
 		return
 	}
-	// Ensuring the init container required for kine is present:
-	// a chmod is required for kine in order to read the certificates to connect to the secured datastore.
-	found, index := utilities.HasNamedContainer(podSpec.InitContainers, kineInitContainerName)
-	if !found {
-		index = len(podSpec.InitContainers)
-		podSpec.InitContainers = append(podSpec.InitContainers, corev1.Container{})
-	}
 
-	podSpec.InitContainers[index].Name = kineInitContainerName
-	podSpec.InitContainers[index].Image = d.KineContainerImage
-	podSpec.InitContainers[index].Command = []string{"sh"}
+	// Building kine arguments, taking in consideration the user-space ones if provided.
+	args := map[string]string{}
+
 	if d.DataStore.Spec.TLSConfig != nil {
+		// Ensuring the init container required for kine is present:
+		// a chmod is required for kine in order to read the certificates to connect to the secured datastore.
+		found, index := utilities.HasNamedContainer(podSpec.InitContainers, kineInitContainerName)
+		if !found {
+			index = len(podSpec.InitContainers)
+			podSpec.InitContainers = append(podSpec.InitContainers, corev1.Container{})
+		}
+
+		podSpec.InitContainers[index].Name = kineInitContainerName
+		podSpec.InitContainers[index].Image = d.KineContainerImage
+		podSpec.InitContainers[index].Command = []string{"sh"}
+
 		podSpec.InitContainers[index].Args = []string{
 			"-c",
 			"cp /kine/*.* /certs && chmod -R 600 /certs/*.*",
 		}
-	} else {
-		podSpec.InitContainers[index].Args = []string{
-			"-c",
-			"echo ok",
+
+		podSpec.InitContainers[index].VolumeMounts = []corev1.VolumeMount{
+			{
+				Name:      dataStoreCertsVolumeName,
+				ReadOnly:  true,
+				MountPath: "/kine",
+			},
+			{
+				Name:      kineVolumeCertName,
+				MountPath: "/certs",
+				ReadOnly:  false,
+			},
 		}
+
+		args["--ca-file"] = "/certs/ca.crt"
+		args["--cert-file"] = "/certs/server.crt"
+		args["--key-file"] = "/certs/server.key"
 	}
-	podSpec.InitContainers[index].VolumeMounts = []corev1.VolumeMount{
-		{
-			Name:      dataStoreCertsVolumeName,
-			ReadOnly:  true,
-			MountPath: "/kine",
-		},
-		{
-			Name:      kineVolumeCertName,
-			MountPath: "/certs",
-			ReadOnly:  false,
-		},
-	}
+
 	// Kine is expecting an additional container, and it must be removed before proceeding with the additional one
 	// in order to make this function idempotent.
-	found, index = utilities.HasNamedContainer(podSpec.Containers, kineContainerName)
+	found, index := utilities.HasNamedContainer(podSpec.Containers, kineContainerName)
 	if !found {
 		index = len(podSpec.Containers)
 		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
 	}
-	// Building kine arguments, taking in consideration the user-space ones if provided.
-	args := map[string]string{}
 
 	if tcp.Spec.ControlPlane.Deployment.ExtraArgs != nil {
-		args = utilities.ArgsFromSliceToMap(tcp.Spec.ControlPlane.Deployment.ExtraArgs.Kine)
+		utilArgs := utilities.ArgsFromSliceToMap(tcp.Spec.ControlPlane.Deployment.ExtraArgs.Kine)
+
+		// Merging the user-space arguments with the Kamaji ones.
+		for k, v := range utilArgs {
+			args[k] = v
+		}
 	}
 
 	switch d.DataStore.Spec.Driver {
@@ -878,16 +887,6 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 		args["--endpoint"] = "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_CONNECTION_STRING)/$(DB_SCHEMA)"
 	case kamajiv1alpha1.KineNatsDriver:
 		args["--endpoint"] = "nats://$(DB_USER):$(DB_PASSWORD)@$(DB_CONNECTION_STRING)?bucket=$(DB_SCHEMA)"
-	}
-
-	if d.DataStore.Spec.TLSConfig != nil {
-		args["--ca-file"] = "/certs/ca.crt"
-		args["--cert-file"] = "/certs/server.crt"
-		args["--key-file"] = "/certs/server.key"
-	} else {
-		delete(args, "--ca-file")
-		delete(args, "--cert-file")
-		delete(args, "--key-file")
 	}
 
 	podSpec.Containers[index].Name = kineContainerName
