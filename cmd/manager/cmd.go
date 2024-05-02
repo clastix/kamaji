@@ -197,6 +197,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				},
 				routes.DataStoreValidate{}: {
 					handlers.DataStoreValidation{Client: mgr.GetClient()},
+					handlers.DatastoreNatsValidation{},
 				},
 				routes.DataStoreSecrets{}: {
 					handlers.DataStoreSecretValidation{Client: mgr.GetClient()},
