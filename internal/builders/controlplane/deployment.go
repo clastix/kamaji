@@ -805,7 +805,10 @@ func (d Deployment) removeKineContainers(podSpec *corev1.PodSpec) {
 
 		podSpec.Containers = containers
 	}
-	// Removing the kine init-container, if present
+	d.removeKineInitContainers(podSpec)
+}
+
+func (d Deployment) removeKineInitContainers(podSpec *corev1.PodSpec) {
 	if found, index := utilities.HasNamedContainer(podSpec.InitContainers, kineInitContainerName); found {
 		var initContainers []corev1.Container
 
@@ -859,8 +862,14 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 		}
 
 		args["--ca-file"] = "/certs/ca.crt"
-		args["--cert-file"] = "/certs/server.crt"
-		args["--key-file"] = "/certs/server.key"
+
+		if d.DataStore.Spec.TLSConfig.ClientCertificate != nil {
+			args["--cert-file"] = "/certs/server.crt"
+			args["--key-file"] = "/certs/server.key"
+		}
+	} else {
+		// if no TLS configuration is provided, the kine container must be removed.
+		d.removeKineInitContainers(podSpec)
 	}
 
 	// Kine is expecting an additional container, and it must be removed before proceeding with the additional one
