@@ -14,13 +14,7 @@ func ArgsFromSliceToMap(args []string) (m map[string]string) {
 	m = make(map[string]string)
 
 	for _, arg := range args {
-		parts := strings.SplitN(arg, "=", 2)
-
-		flag, value := parts[0], ""
-
-		if len(parts) > 1 {
-			value = parts[1]
-		}
+		flag, value, _ := strings.Cut(arg, "=")
 
 		m[flag] = value
 	}
