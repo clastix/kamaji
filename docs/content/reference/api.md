@@ -13446,12 +13446,88 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityagenttolerationsindex">tolerations</a></b></td>
+        <td>[]object</td>
+        <td>
+          Tolerations for the deployed agent.
+Can be customized to start the konnectivity-agent even if the nodes are not ready or tainted.<br/>
+          <br/>
+            <i>Default</i>: [map[key:CriticalAddonsOnly operator:Exists]]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>version</b></td>
         <td>string</td>
         <td>
           Version for Konnectivity agent.<br/>
           <br/>
             <i>Default</i>: v0.0.32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TenantControlPlane.spec.addons.konnectivity.agent.tolerations[index]
+
+
+
+The pod this Toleration is attached to tolerates any taint that matches
+the triple <key,value,effect> using the matching operator <operator>.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>effect</b></td>
+        <td>string</td>
+        <td>
+          Effect indicates the taint effect to match. Empty means match all taint effects.
+When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key is the taint key that the toleration applies to. Empty means match all taint keys.
+If the key is empty, operator must be Exists; this combination means to match all values and all keys.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Operator represents a key's relationship to the value.
+Valid operators are Exists and Equal. Defaults to Equal.
+Exists is equivalent to wildcard for value, so that a pod can
+tolerate all taints of a particular category.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>tolerationSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TolerationSeconds represents the period of time the toleration (which must be
+of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+it is not set, which means tolerate the taint forever (do not evict). Zero and
+negative values will be treated as 0 (evict immediately) by the system.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value is the taint value the toleration matches to.
+If the operator is Exists, the value should be empty, otherwise just a regular string.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
