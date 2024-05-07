@@ -220,8 +220,12 @@ type KonnectivityAgentSpec struct {
 	Image string `json:"image,omitempty"`
 	// Version for Konnectivity agent.
 	// +kubebuilder:default=v0.0.32
-	Version   string    `json:"version,omitempty"`
-	ExtraArgs ExtraArgs `json:"extraArgs,omitempty"`
+	Version string `json:"version,omitempty"`
+	// Tolerations for the deployed agent.
+	// Can be customized to start the konnectivity-agent even if the nodes are not ready or tainted.
+	// +kubebuilder:default={{key: "CriticalAddonsOnly", operator: "Exists"}}
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	ExtraArgs   ExtraArgs           `json:"extraArgs,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.
