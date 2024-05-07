@@ -868,7 +868,7 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 			args["--key-file"] = "/certs/server.key"
 		}
 	} else {
-		// if no TLS configuration is provided, the kine container must be removed.
+		// if no TLS configuration is provided, the kine initContainer must be removed.
 		d.removeKineInitContainers(podSpec)
 	}
 
