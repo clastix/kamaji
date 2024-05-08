@@ -5,7 +5,6 @@ metadata:
   labels:
     tenant.clastix.io: k8s-126
 spec:
-  dataStore: default
   controlPlane:
     deployment:
       replicas: 2
