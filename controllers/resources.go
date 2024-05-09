@@ -205,6 +205,9 @@ func getKubeconfigResources(c client.Client, tcpReconcilerConfig TenantControlPl
 
 func getKubernetesStorageResources(c client.Client, dbConnection datastore.Connection, datastore kamajiv1alpha1.DataStore) []resources.Resource {
 	return []resources.Resource{
+		&ds.MultiTenancy{
+			DataStore: datastore,
+		},
 		&ds.Config{
 			Client:     c,
 			ConnString: dbConnection.GetConnectionString(),
