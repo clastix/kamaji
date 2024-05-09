@@ -69,7 +69,9 @@ From the main view, clicking on a Tenant Control Plane row will bring you to the
 ![Console Tenant Control Plane View](../images/console-tcp-view.png)
 
 ### Working with Datastore
-From the menu bar on the left, clicking on the Datastores item, you can access the list of provisioned Datastores. It shows a summary about datastores, including name and the used driver, i.e. etcd, mysql, and postgresql.
+
+From the menu bar on the left, clicking on the Datastores item, you can access the list of provisioned Datastores.
+It shows a summary about datastores, including name and the used driver, i.e. `etcd`, `MySQL`, `PostgreSQL`, and `NATS`.
 
 ![Console Datastore List](../images/console-ds-list.png)
 

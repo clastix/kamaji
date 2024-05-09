@@ -1,6 +1,7 @@
 # Datastore Migration
 
-On the Management Cluster, you can deploy one or more multi-tenant datastores as `etcd`, `PostgreSQL`, and `MySQL` to save the state of the Tenant Clusters. A Tenant Control Plane can be migrated from a datastore to another one without service disruption or without complex and error prone backup & restore procedures.
+On the Management Cluster, you can deploy one or more multi-tenant datastores as `etcd`, `PostgreSQL`, `MySQL`, and `NATS` to save the state of the Tenant Clusters.
+A Tenant Control Plane can be migrated from a datastore to another one without service disruption or without complex and error-prone backup & restore procedures.
 
 This guide will assist you to live migrate Tenant's data from a datastore to another one having the same `etcd` driver.
 
@@ -80,7 +81,7 @@ helm install dedicated clastix/kamaji-etcd -n dedicated --create-namespace --set
 You should end up with a new datastore `dedicated` provided by an `etcd` cluster:
 
 ```yaml
-kubectl get datastore dedicated -o yaml
+# kubectl get datastore dedicated -o yaml
 apiVersion: kamaji.clastix.io/v1alpha1
 kind: DataStore
 metadata:

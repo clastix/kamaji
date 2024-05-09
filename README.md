@@ -53,7 +53,7 @@ The state is managed by the `Datastore` API, a cluster-scoped resource which can
 - **Managing core addons**: Kamaji allows configuring automatically `kube-proxy`, `CoreDNS`, and `konnectivity`, with automatic remediation in case of user errors (e.g.: deleting the `CoreDNS` deployment).
 - **Auto Healing**: the `TenantControlPlane` objects in the management cluster are tracked by Kamaji, in case of deletion of those, everything is created in an idempotent way.
 - **Datastore multi-tenancy**: optionally, Kamaji allows running multiple Control Planes on the same _Datastore_ instance leveraging on the multi-tenancy of each driver, decreasing operations and optimizing costs.
-- **Overcoming `etcd` limitations**: optionally, Kamaji allows using a different _Datastore_ thanks to [`kine`](https://github.com/k3s-io/kine) by supporting `MySQL` or `PostgreSQL` as an alternative.
+- **Overcoming `etcd` limitations**: optionally, Kamaji allows using a different _Datastore_ thanks to [`kine`](https://github.com/k3s-io/kine) by supporting `MySQL`, `PostgreSQL`, or `NATS` as an alternative.
 - **Simplifying mixed-networks setup**: thanks to [`Konnectivity`](https://kubernetes.io/docs/tasks/extend-kubernetes/setup-konnectivity/),
   the Tenant Control Plane is connected to the worker nodes hosted in a different network, overcoming the no-NAT availability when dealing with nodes with a non routable IP address
   (e.g.: worker nodes in a different infrastructure).
@@ -104,7 +104,7 @@ Since Kamaji is just focusing on the Control Plane a [Kamaji's Cluster API Contr
 - [x] Dynamic address on Load Balancer
 - [x] Zero Downtime Tenant Control Plane upgrade
 - [x] [Join worker nodes from anywhere thanks to Konnectivity](https://kamaji.clastix.io/concepts/#konnectivity)
-- [x] [Alternative datastore MySQL and PostgreSQL](https://kamaji.clastix.io/guides/alternative-datastore/)
+- [x] [Alternative datastore MySQL, PostgreSQL, NATS](https://kamaji.clastix.io/guides/alternative-datastore/)
 - [x] [Pool of multiple datastores](https://kamaji.clastix.io/concepts/#datastores)
 - [x] [Seamless migration between datastores](https://kamaji.clastix.io/guides/datastore-migration/)
 - [ ] Automatic assignment to a datastore
