@@ -84,6 +84,10 @@ func (d DataStoreValidation) validateBasicAuth(ctx context.Context, ds kamajiv1a
 }
 
 func (d DataStoreValidation) validateTLSConfig(ctx context.Context, ds kamajiv1alpha1.DataStore) error {
+	if ds.Spec.TLSConfig == nil && ds.Spec.Driver != kamajiv1alpha1.EtcdDriver {
+		return nil
+	}
+
 	if err := d.validateContentReference(ctx, ds.Spec.TLSConfig.CertificateAuthority.Certificate); err != nil {
 		return fmt.Errorf("CA certificate is not valid, %w", err)
 	}

@@ -36,29 +36,41 @@ type ConnectionConfig struct {
 }
 
 func NewConnectionConfig(ctx context.Context, client client.Client, ds kamajiv1alpha1.DataStore) (*ConnectionConfig, error) {
-	ca, err := ds.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, client)
-	if err != nil {
-		return nil, err
+	var tlsConfig *tls.Config
+
+	if ds.Spec.TLSConfig != nil {
+		ca, err := ds.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, client)
+		if err != nil {
+			return nil, err
+		}
+
+		rootCAs := x509.NewCertPool()
+		if ok := rootCAs.AppendCertsFromPEM(ca); !ok {
+			return nil, fmt.Errorf("error create root CA for the DB connector")
+		}
+
+		tlsConfig = &tls.Config{
+			RootCAs: rootCAs,
+		}
 	}
 
-	crt, err := ds.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, client)
-	if err != nil {
-		return nil, err
-	}
+	if ds.Spec.TLSConfig != nil && ds.Spec.TLSConfig.ClientCertificate != nil {
+		crt, err := ds.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, client)
+		if err != nil {
+			return nil, err
+		}
 
-	key, err := ds.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, client)
-	if err != nil {
-		return nil, err
-	}
+		key, err := ds.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, client)
+		if err != nil {
+			return nil, err
+		}
 
-	rootCAs := x509.NewCertPool()
-	if ok := rootCAs.AppendCertsFromPEM(ca); !ok {
-		return nil, fmt.Errorf("error create root CA for the DB connector")
-	}
+		certificate, err := tls.X509KeyPair(crt, key)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot retrieve x.509 key pair from the Kine Secret")
+		}
 
-	certificate, err := tls.X509KeyPair(crt, key)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot retrieve x.509 key pair from the Kine Secret")
+		tlsConfig.Certificates = []tls.Certificate{certificate}
 	}
 
 	var user, password string
@@ -99,10 +111,7 @@ func NewConnectionConfig(ctx context.Context, client client.Client, ds kamajiv1a
 		User:      user,
 		Password:  password,
 		Endpoints: eps,
-		TLSConfig: &tls.Config{
-			RootCAs:      rootCAs,
-			Certificates: []tls.Certificate{certificate},
-		},
+		TLSConfig: tlsConfig,
 	}, nil
 }
 

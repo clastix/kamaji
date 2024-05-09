@@ -34,7 +34,8 @@ type DataStoreSpec struct {
 	// This value is optional.
 	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
 	// Defines the TLS/SSL configuration required to connect to the data store in a secure way.
-	TLSConfig TLSConfig `json:"tlsConfig"`
+	// This value is optional.
+	TLSConfig *TLSConfig `json:"tlsConfig,omitempty"`
 }
 
 // TLSConfig contains the information used to connect to the data store using a secured connection.
@@ -43,7 +44,7 @@ type TLSConfig struct {
 	// The key reference is required since etcd authentication is based on certificates, and Kamaji is responsible in creating this.
 	CertificateAuthority CertKeyPair `json:"certificateAuthority"`
 	// Specifies the SSL/TLS key and private key pair used to connect to the data store.
-	ClientCertificate ClientCertificate `json:"clientCertificate"`
+	ClientCertificate *ClientCertificate `json:"clientCertificate,omitempty"`
 }
 
 type ClientCertificate struct {

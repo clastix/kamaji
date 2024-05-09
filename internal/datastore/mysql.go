@@ -112,12 +112,14 @@ func NewMySQLConnection(config ConnectionConfig) (Connection, error) {
 
 	tlsKey := "mysql"
 
-	if err = mysql.RegisterTLSConfig(tlsKey, config.TLSConfig); err != nil {
-		return nil, err
+	if config.TLSConfig != nil {
+		if err = mysql.RegisterTLSConfig(tlsKey, config.TLSConfig); err != nil {
+			return nil, err
+		}
+		mysqlConfig.TLSConfig = tlsKey
 	}
 
 	mysqlConfig.DBName = config.DBName
-	mysqlConfig.TLSConfig = tlsKey
 	parsedDSN := mysqlConfig.FormatDSN()
 
 	db, err := sql.Open("mysql", parsedDSN)

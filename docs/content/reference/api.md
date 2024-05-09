@@ -101,18 +101,207 @@ No need for protocol, just bare IP/FQDN and port.<br/>
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b><a href="#datastorespectlsconfig">tlsConfig</a></b></td>
-        <td>object</td>
-        <td>
-          Defines the TLS/SSL configuration required to connect to the data store in a secure way.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b><a href="#datastorespecbasicauth">basicAuth</a></b></td>
         <td>object</td>
         <td>
           In case of authentication enabled for the given data store, specifies the username and password pair.
 This value is optional.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#datastorespectlsconfig">tlsConfig</a></b></td>
+        <td>object</td>
+        <td>
+          Defines the TLS/SSL configuration required to connect to the data store in a secure way.
+This value is optional.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### DataStore.spec.basicAuth
+
+
+
+In case of authentication enabled for the given data store, specifies the username and password pair.
+This value is optional.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#datastorespecbasicauthpassword">password</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#datastorespecbasicauthusername">username</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### DataStore.spec.basicAuth.password
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>content</b></td>
+        <td>string</td>
+        <td>
+          Bare content of the file, base64 encoded.
+It has precedence over the SecretReference value.<br/>
+          <br/>
+            <i>Format</i>: byte<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#datastorespecbasicauthpasswordsecretreference">secretReference</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### DataStore.spec.basicAuth.password.secretReference
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keyPath</b></td>
+        <td>string</td>
+        <td>
+          Name of the key for the given Secret reference where the content is stored.
+This value is mandatory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is unique within a namespace to reference a secret resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          namespace defines the space within which the secret name must be unique.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### DataStore.spec.basicAuth.username
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>content</b></td>
+        <td>string</td>
+        <td>
+          Bare content of the file, base64 encoded.
+It has precedence over the SecretReference value.<br/>
+          <br/>
+            <i>Format</i>: byte<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#datastorespecbasicauthusernamesecretreference">secretReference</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### DataStore.spec.basicAuth.username.secretReference
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keyPath</b></td>
+        <td>string</td>
+        <td>
+          Name of the key for the given Secret reference where the content is stored.
+This value is mandatory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is unique within a namespace to reference a secret resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          namespace defines the space within which the secret name must be unique.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -124,6 +313,7 @@ This value is optional.<br/>
 
 
 Defines the TLS/SSL configuration required to connect to the data store in a secure way.
+This value is optional.
 
 <table>
     <thead>
@@ -148,7 +338,7 @@ The key reference is required since etcd authentication is based on certificates
         <td>
           Specifies the SSL/TLS key and private key pair used to connect to the data store.<br/>
         </td>
-        <td>true</td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -488,194 +678,6 @@ It has precedence over the SecretReference value.<br/>
 
 
 ### DataStore.spec.tlsConfig.clientCertificate.privateKey.secretReference
-
-
-
-
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>keyPath</b></td>
-        <td>string</td>
-        <td>
-          Name of the key for the given Secret reference where the content is stored.
-This value is mandatory.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          name is unique within a namespace to reference a secret resource.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>namespace</b></td>
-        <td>string</td>
-        <td>
-          namespace defines the space within which the secret name must be unique.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### DataStore.spec.basicAuth
-
-
-
-In case of authentication enabled for the given data store, specifies the username and password pair.
-This value is optional.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#datastorespecbasicauthpassword">password</a></b></td>
-        <td>object</td>
-        <td>
-          <br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b><a href="#datastorespecbasicauthusername">username</a></b></td>
-        <td>object</td>
-        <td>
-          <br/>
-        </td>
-        <td>true</td>
-      </tr></tbody>
-</table>
-
-
-### DataStore.spec.basicAuth.password
-
-
-
-
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>content</b></td>
-        <td>string</td>
-        <td>
-          Bare content of the file, base64 encoded.
-It has precedence over the SecretReference value.<br/>
-          <br/>
-            <i>Format</i>: byte<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#datastorespecbasicauthpasswordsecretreference">secretReference</a></b></td>
-        <td>object</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### DataStore.spec.basicAuth.password.secretReference
-
-
-
-
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>keyPath</b></td>
-        <td>string</td>
-        <td>
-          Name of the key for the given Secret reference where the content is stored.
-This value is mandatory.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          name is unique within a namespace to reference a secret resource.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>namespace</b></td>
-        <td>string</td>
-        <td>
-          namespace defines the space within which the secret name must be unique.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### DataStore.spec.basicAuth.username
-
-
-
-
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>content</b></td>
-        <td>string</td>
-        <td>
-          Bare content of the file, base64 encoded.
-It has precedence over the SecretReference value.<br/>
-          <br/>
-            <i>Format</i>: byte<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#datastorespecbasicauthusernamesecretreference">secretReference</a></b></td>
-        <td>object</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### DataStore.spec.basicAuth.username.secretReference
 
 
 
