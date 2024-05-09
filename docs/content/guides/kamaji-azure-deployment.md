@@ -125,7 +125,7 @@ helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
 ```
 
 !!! note "A managed datastore is highly recommended in production"
-     The [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides the code to setup a multi-tenant `etcd` running as StatefulSet made of three replicas. Optionally, Kamaji offers support for a more robust storage system, as `MySQL` or `PostgreSQL` compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
+     The [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides the code to setup a multi-tenant `etcd` running as StatefulSet made of three replicas. Optionally, Kamaji offers support for a more robust storage system, as `MySQL`, `PostgreSQL`, or `NATS` compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
 
 ## Create Tenant Cluster
 

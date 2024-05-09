@@ -1,81 +1,28 @@
 # Use Alternative Datastores
 
-Kamaji offers the possibility of having a different storage system than `etcd` thanks to [kine](https://github.com/k3s-io/kine) integration. One of the implementations is [PostgreSQL](https://www.postgresql.org/).
+Kamaji offers the possibility of having a different storage system than `etcd` thanks to [kine](https://github.com/k3s-io/kine) integration.
 
-## Install the datastore
+## Installing Drivers
 
-On the Management Cluster, install one of the alternative supported datastore:
+The following `make` recipes help you to setup alternative `Datastore` resources.
 
-- **MySQL** install it with command:
+> The default settings are not production grade:
+> the following scripts are just used to test the Kamaji usage of different drivers.
 
-    `$ make -C deploy/kine/mysql mariadb`
+On the Management Cluster, you can use the following commands:
 
-- **PostgreSQL** install it with command:
+- **MySQL**: `$ make -C deploy/kine/mysql mariadb`
 
-    `$ make -C deploy/kine/postgresql postgresql`
+- **PostgreSQL**: `$ make -C deploy/kine/postgresql postgresql`
 
-- **NATS**
+- **NATS**: `$ make -C deploy/kine/nats nats`
 
-*Note: NATS SUPPORT IS EXPERIMENTAL: Currently multi-tenancy is NOT supported when using NATS as an alternative datastore*
-
-Currently, only username/password auth is supported.
-
-```bash
-cat << EOF > values-nats.yaml
-config:
-  merge:
-    accounts:
-      private:
-        jetstream: enabled
-        users:
-        - {user: admin, password: "password", permissions: {subscribe: [">"], publish: [">"]}}
-  cluster:
-    enabled: no
-  nats:
-    tls:
-      enabled: true
-      secretName: nats-config
-      cert: server.crt
-      key: server.key
-  jetstream:
-    enabled: true
-    fileStore:
-      pvc:
-        size: 32Mi
-
-EOF
-```
-
-```bash
-  helm repo add nats https://nats-io.github.io/k8s/helm/charts/
-
-  helm install nats/nats \
-  -f values-nats.yaml
-  --namespace nats-system \
-  --create-namespace
-```
-
-
-## Install Cert Manager
-
-As prerequisite for Kamaji, install the Cert Manager
-
-```bash
-helm repo add jetstack https://charts.jetstack.io
-helm repo update
-helm install \
-  cert-manager jetstack/cert-manager \
-  --namespace cert-manager \
-  --create-namespace \
-  --version v1.11.0 \
-  --set installCRDs=true
-```
-
-## Install Kamaji
+## Defining a default Datastore upon Kamaji installation
 
 Use Helm to install the Kamaji Operator and make sure it uses a datastore with the proper driver `datastore.driver=<MySQL|PostgreSQL|NATS>`.
+Please refer to the Chart available values for more information on supported options.
 
-For example, with a PostreSQL datastore installed:
+For example, with a PostgreSQL datastore installed:
 
 ```bash
 helm install kamaji charts/kamaji -n kamaji-system --create-namespace \
@@ -102,4 +49,19 @@ helm install kamaji charts/kamaji -n kamaji-system --create-namespace \
   --set datastore.tlsConfig.clientCertificate.privateKey.keyPath=tls.key
 ```
 
-Once installed, you will able to create Tenant Control Planes using an alternative datastore.
+Once installed, you will be able to create Tenant Control Planes using an alternative datastore.
+
+## Defining specific Datastore per Tenant Control Plane
+
+Each `TenantControlPlane` can refer to a specific `Datastore` thanks to the `/spec/dataStore` field.
+This allows you to implement your preferred sharding or pooling strategy.
+
+When the said key is omitted, Kamaji will use the default datastore configured with its CLI argument `--datastore`.
+
+## NATS considerations
+
+The NATS support is still experimental, mostly because multi-tenancy is **NOT** supported.
+
+> A `NATS` based DataStore can host one and only one Tenant Control Plane.
+> When a `TenantControlPlane` is referring to a NATS `DataStore` already used by another instance,
+> reconciliation will fail and blocked.

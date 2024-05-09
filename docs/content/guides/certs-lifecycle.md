@@ -99,7 +99,7 @@ The rotation will occur the day before their expiration.
 > Nota Bene:
 >
 > Kamaji is responsible for creating the `etcd` client certificate, and the generation of a new one will occur.
-> For other Datastore drivers, such as MySQL or PostgreSQL, the referenced Secret will always be deleted by the Controller to trigger the rotation:
+> For other Datastore drivers, such as MySQL, PostgreSQL, or NATS, the referenced Secret will always be deleted by the Controller to trigger the rotation:
 > the PKI management, since it's offloaded externally, must provide the renewed certificates.
 
 ## Certificate Authority rotation
