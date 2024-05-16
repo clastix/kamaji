@@ -7,6 +7,7 @@ Feel free to open a Pull-Request to get yours listed.
 
 | Type | Name | Since | Website | Use-Case |
 |:-|:-|:-|:-|:-|
+| End-user | Sicuro Tech Lab | 2024 | [link](https://sicurotechlab.it/) | Sicuro Tech Lab offers cloud infrastructure for Web Agencies and uses kamaji to provide managed k8s services. |
 | R&D | TIM | 2024 | [link](https://www.gruppotim.it) | TIM is an Italian telecommunications company using Kamaji for experimental research and development purposes. |
 | End-user | KINX | 2024 | [link](https://kinx.net/?lang=en) | KINX is an Internet infrastructure service provider and will use kamaji for its new [Managed Kubernetes Service](https://kinx.net/service/cloud/kubernetes/intro/?lang=en). |
 | End-user | sevensphere | 2023 | [link](https://www.sevensphere.io) | Sevensphere provides consulting services for end-user companies / cloud providers and uses Kamaji for designing cloud/on-premises Kubernetes-as-a-Service platform. |
