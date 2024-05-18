@@ -132,7 +132,7 @@ datastore-postgres:
 	$(MAKE) NAME=gold _datastore-postgres
 
 _datastore-etcd:
-	$(HELM) upgrade --install etcd-$(NAME) clastix/kamaji-etcd --create-namespace -n etcd-system --set datastore.enabled=true
+	$(HELM) upgrade --install etcd-$(NAME) clastix/kamaji-etcd --create-namespace -n etcd-system --set datastore.enabled=true --set fullnameOverride=etcd-$(NAME)
 
 _datastore-nats:
 	$(MAKE) NAME=$(NAME) NAMESPACE=nats-system -C deploy/kine/nats nats
