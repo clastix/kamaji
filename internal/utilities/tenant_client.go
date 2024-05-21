@@ -60,7 +60,7 @@ func GetRESTClientConfig(ctx context.Context, client client.Client, tenantContro
 	}
 
 	config := &restclient.Config{
-		Host: fmt.Sprintf("https://%s.%s.svc.cluster.local:%d", tenantControlPlane.GetName(), tenantControlPlane.GetNamespace(), tenantControlPlane.Spec.NetworkProfile.Port),
+		Host: fmt.Sprintf("https://%s.%s.svc:%d", tenantControlPlane.GetName(), tenantControlPlane.GetNamespace(), tenantControlPlane.Spec.NetworkProfile.Port),
 		TLSClientConfig: restclient.TLSClientConfig{
 			CAData:   kubeconfig.Clusters[0].Cluster.CertificateAuthorityData,
 			CertData: kubeconfig.AuthInfos[0].AuthInfo.ClientCertificateData,
