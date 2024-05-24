@@ -266,7 +266,7 @@ type TenantControlPlaneSpec struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.controlPlane.deployment.replicas,statuspath=.status.kubernetesResources.deployment.replicas,selectorpath=.status.kubernetesResources.deployment.selector
-// +kubebuilder:resource:shortName=tcp
+// +kubebuilder:resource:categories=kamaji,shortName=tcp
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.kubernetes.version",description="Kubernetes version"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.kubernetesResources.version.status",description="Status"
 // +kubebuilder:printcolumn:name="Control-Plane endpoint",type="string",JSONPath=".status.controlPlaneEndpoint",description="Tenant Control Plane Endpoint (API server)"
