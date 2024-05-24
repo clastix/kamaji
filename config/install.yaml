@@ -309,6 +309,8 @@ spec:
       - v1
   group: kamaji.clastix.io
   names:
+    categories:
+    - kamaji
     kind: TenantControlPlane
     listKind: TenantControlPlaneList
     plural: tenantcontrolplanes
