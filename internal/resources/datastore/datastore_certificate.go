@@ -46,7 +46,6 @@ func (r *Certificate) Define(_ context.Context, tenantControlPlane *kamajiv1alph
 			Name:      r.getPrefixedName(tenantControlPlane),
 			Namespace: tenantControlPlane.GetNamespace(),
 		},
-		Data: map[string][]byte{},
 	}
 
 	return nil
@@ -86,6 +85,10 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 				logger.Error(err, "cannot retrieve CA certificate content")
 
 				return err
+			}
+
+			if r.resource.Data == nil {
+				r.resource.Data = map[string][]byte{}
 			}
 
 			r.resource.Data["ca.crt"] = ca
