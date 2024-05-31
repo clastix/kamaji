@@ -1,9 +1,9 @@
 name: docker-ci
 
-on:
-  push:
-    tags:        
-      - "v*"
+on: {}
+  #push:
+  #  tags:        
+  #    - "v*"
 
 jobs:
   docker-ci:
