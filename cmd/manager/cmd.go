@@ -194,6 +194,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 							Scheme: *mgr.GetScheme(),
 						},
 					},
+					handlers.TenantControlPlaneServiceCIDR{},
 				},
 				routes.DataStoreValidate{}: {
 					handlers.DataStoreValidation{Client: mgr.GetClient()},
