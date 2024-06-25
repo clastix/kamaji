@@ -302,7 +302,7 @@ func (m *Manager) SetupWithManager(mgr manager.Manager) error {
 	m.sootMap = make(map[string]sootItem)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
-		WatchesRawSource(&source.Channel{Source: m.sootManagerErrChan}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(source.Channel(m.sootManagerErrChan, &handler.EnqueueRequestForObject{})).
 		For(&kamajiv1alpha1.TenantControlPlane{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			obj := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 			// status is required to understand if we have to start or stop the soot manager

@@ -80,7 +80,7 @@ func (k *KonnectivityAgent) SetupWithManager(mgr manager.Manager) error {
 		For(&appsv1.DaemonSet{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == konnectivity.AgentName && object.GetNamespace() == konnectivity.AgentNamespace
 		}))).
-		WatchesRawSource(source.Kind(mgr.GetCache(), &corev1.ServiceAccount{}), handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
+		Watches(&corev1.ServiceAccount{}, handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
 			if object.GetName() == konnectivity.AgentName && object.GetNamespace() == konnectivity.AgentNamespace {
 				return []reconcile.Request{
 					{
@@ -94,7 +94,7 @@ func (k *KonnectivityAgent) SetupWithManager(mgr manager.Manager) error {
 
 			return nil
 		})).
-		WatchesRawSource(source.Kind(mgr.GetCache(), &v1.ClusterRoleBinding{}), handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
+		Watches(&v1.ClusterRoleBinding{}, handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
 			if object.GetName() == konnectivity.CertCommonName {
 				return []reconcile.Request{
 					{
@@ -107,6 +107,6 @@ func (k *KonnectivityAgent) SetupWithManager(mgr manager.Manager) error {
 
 			return nil
 		})).
-		WatchesRawSource(&source.Channel{Source: k.TriggerChannel}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(source.Channel(k.TriggerChannel, &handler.EnqueueRequestForObject{})).
 		Complete(k)
 }

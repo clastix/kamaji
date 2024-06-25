@@ -79,7 +79,7 @@ func (c *CoreDNS) SetupWithManager(mgr manager.Manager) error {
 		For(&rbacv1.ClusterRoleBinding{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == kubeadm.CoreDNSClusterRoleBindingName
 		}))).
-		WatchesRawSource(&source.Channel{Source: c.TriggerChannel}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(source.Channel(c.TriggerChannel, &handler.EnqueueRequestForObject{})).
 		Owns(&rbacv1.ClusterRole{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).
