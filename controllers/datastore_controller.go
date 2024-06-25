@@ -19,7 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
@@ -98,7 +97,7 @@ func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
 		For(&kamajiv1alpha1.DataStore{}, builder.WithPredicates(
 			predicate.ResourceVersionChangedPredicate{},
 		)).
-		WatchesRawSource(source.Kind(mgr.GetCache(), &kamajiv1alpha1.TenantControlPlane{}), handler.Funcs{
+		Watches(&kamajiv1alpha1.TenantControlPlane{}, handler.Funcs{
 			CreateFunc: func(_ context.Context, createEvent event.CreateEvent, limitingInterface workqueue.RateLimitingInterface) {
 				enqueueFn(createEvent.Object.(*kamajiv1alpha1.TenantControlPlane), limitingInterface)
 			},
