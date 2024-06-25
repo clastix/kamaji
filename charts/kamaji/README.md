@@ -1,6 +1,6 @@
 # kamaji
 
-![Version: 0.16.1](https://img.shields.io/badge/Version-0.16.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.6.1](https://img.shields.io/badge/AppVersion-v0.6.1-informational?style=flat-square)
+![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.6.1](https://img.shields.io/badge/AppVersion-v0.6.1-informational?style=flat-square)
 
 Kamaji is the Hosted Control Plane Manager for Kubernetes.
 
@@ -134,6 +134,7 @@ Here the values you can override:
 | serviceAccount.create | bool | `true` |  |
 | serviceAccount.name | string | `"kamaji-controller-manager"` |  |
 | serviceMonitor.enabled | bool | `false` | Toggle the ServiceMonitor true if you have Prometheus Operator installed and configured |
+| telemetry | object | `{"disabled":false}` | Disable the analytics traces collection |
 | temporaryDirectoryPath | string | `"/tmp/kamaji"` | Directory which will be used to work with temporary files. (default "/tmp/kamaji") |
 | tolerations | list | `[]` | Kubernetes node taints that the Kamaji controller pods would tolerate |
 

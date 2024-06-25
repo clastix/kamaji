@@ -307,7 +307,7 @@ env:
 
 .PHONY: e2e
 e2e: env load helm ginkgo cert-manager ## Create a KinD cluster, install Kamaji on it and run the test suite.
-	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.pullPolicy=Never"
+	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.pullPolicy=Never" --set "telemetry.disabled=true"
 	$(MAKE) datastores
 	$(GINKGO) -v ./e2e
 
