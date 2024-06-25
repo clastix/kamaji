@@ -76,4 +76,5 @@ nav:
   - reference/conformance.md
   - reference/versioning.md
   - reference/api.md
+- 'Telemetry': telemetry.md
 - 'Contribute': contribute.md
