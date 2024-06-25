@@ -107,7 +107,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				HealthProbeBindAddress:  healthProbeBindAddress,
 				LeaderElection:          leaderElect,
 				LeaderElectionNamespace: managerNamespace,
-				LeaderElectionID:        "799b98bc.clastix.io",
+				LeaderElectionID:        "kamaji.clastix.io",
 				NewCache: func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
 					opts.SyncPeriod = &cacheResyncPeriod
 
