@@ -220,3 +220,8 @@ cfssl:
   image:
     repository: cfssl/cfssl
     tag: latest
+
+# -- Disable the analytics traces collection
+telemetry:
+  disabled: false 
+  
