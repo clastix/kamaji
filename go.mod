@@ -7,18 +7,19 @@ toolchain go1.22.1
 require (
 	github.com/JamesStewy/go-mysqldump v0.2.2
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/go-logr/logr v1.4.1
+	github.com/clastix/kamaji-telemetry v1.0.0
+	github.com/go-logr/logr v1.4.2
 	github.com/go-pg/pg/v10 v10.10.6
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/go-cmp v0.6.0
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.6.0
 	github.com/json-iterator/go v1.1.12
 	github.com/juju/mutex/v2 v2.0.0
 	github.com/nats-io/nats.go v1.34.1
 	github.com/onsi/ginkgo/v2 v2.17.1
 	github.com/onsi/gomega v1.32.0
 	github.com/pkg/errors v0.9.1
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.10.1
 	github.com/testcontainers/testcontainers-go v0.13.0
@@ -35,7 +36,7 @@ require (
 	k8s.io/kubelet v0.0.0
 	k8s.io/kubernetes v1.30.2
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
-	sigs.k8s.io/controller-runtime v0.17.1-0.20240416095710-67b27f27e514
+	sigs.k8s.io/controller-runtime v0.18.4
 )
 
 require (
