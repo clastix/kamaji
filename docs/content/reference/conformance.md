@@ -13,6 +13,7 @@ All the _“Tenant Clusters”_ built with Kamaji are CNCF conformant:
 - [v1.27](https://github.com/cncf/k8s-conformance/pull/2786)
 - [v1.28](https://github.com/cncf/k8s-conformance/pull/2785)
 - [v1.29](https://github.com/cncf/k8s-conformance/pull/3273)
+- [v1.30](https://github.com/cncf/k8s-conformance/pull/3274)
 
 <p align="left" style="padding: 6px 6px">
   <img src="https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/certified-kubernetes/versionless/color/certified-kubernetes-color.png" width="100" />
