@@ -13,4 +13,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: clastix/kamaji
-  newTag: v0.6.1
+  newTag: v1.0.0
