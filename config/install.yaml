@@ -8214,6 +8214,27 @@ webhooks:
     service:
       name: kamaji-webhook-service
       namespace: kamaji-system
+      path: /telemetry
+  failurePolicy: Ignore
+  name: telemetry.kamaji.clastix.io
+  rules:
+  - apiGroups:
+    - kamaji.clastix.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - tenantcontrolplanes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: kamaji-webhook-service
+      namespace: kamaji-system
       path: /validate-kamaji-clastix-io-v1alpha1-datastore
   failurePolicy: Fail
   name: vdatastore.kb.io
