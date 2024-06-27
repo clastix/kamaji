@@ -3,7 +3,7 @@ linters-settings:
     sections:
       - standard
       - default
-      - prefix(github.com/clastix/kamaji)
+      - prefix(github.com/clastix/kamaji/)
   goheader:
     template: |-
       Copyright 2022 Clastix Labs

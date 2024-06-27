@@ -7,10 +7,12 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	goRuntime "runtime"
 	"time"
 
+	telemetryclient "github.com/clastix/kamaji-telemetry/pkg/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -53,6 +55,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		webhookCABundle            []byte
 		migrateJobImage            string
 		maxConcurrentReconciles    int
+		disableTelemetry           bool
 
 		webhookCAPath string
 	)
@@ -95,8 +98,14 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			setupLog.Info(fmt.Sprintf("Build date: %s", internal.BuildTime))
 			setupLog.Info(fmt.Sprintf("Go Version: %s", goRuntime.Version()))
 			setupLog.Info(fmt.Sprintf("Go OS/Arch: %s/%s", goRuntime.GOOS, goRuntime.GOARCH))
+			setupLog.Info(fmt.Sprintf("Telemetry enabled: %t", !disableTelemetry))
 
-			mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+			telemetryClient := telemetryclient.New(http.Client{Timeout: 5 * time.Second}, "https://telemetry.clastix.io")
+			if disableTelemetry {
+				telemetryClient = telemetryclient.NewNewOp()
+			}
+
+			ctrlOpts := ctrl.Options{
 				Scheme: scheme,
 				Metrics: metricsserver.Options{
 					BindAddress: metricsBindAddress,
@@ -113,7 +122,9 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 
 					return cache.New(config, opts)
 				},
-			})
+			}
+
+			mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrlOpts)
 			if err != nil {
 				setupLog.Error(err, "unable to start manager")
 
@@ -150,6 +161,29 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				setupLog.Error(err, "unable to create controller", "controller", "Namespace")
 
 				return err
+			}
+
+			k8sVersion, versionErr := cmdutils.KubernetesVersion(mgr.GetConfig())
+			if versionErr != nil {
+				setupLog.Error(err, "unable to get kubernetes version")
+
+				k8sVersion = "Unknown"
+			}
+
+			if !disableTelemetry {
+				err = mgr.Add(&controllers.TelemetryController{
+					Client:                  mgr.GetClient(),
+					KubernetesVersion:       k8sVersion,
+					KamajiVersion:           internal.GitTag,
+					TelemetryClient:         telemetryClient,
+					LeaderElectionNamespace: ctrlOpts.LeaderElectionNamespace,
+					LeaderElectionID:        ctrlOpts.LeaderElectionID,
+				})
+				if err != nil {
+					setupLog.Error(err, "unable to create controller", "controller", "TelemetryController")
+
+					return err
+				}
 			}
 
 			if err = (&controllers.CertificateLifecycle{Channel: certChannel}).SetupWithManager(mgr); err != nil {
@@ -195,6 +229,14 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 						},
 					},
 					handlers.TenantControlPlaneServiceCIDR{},
+				},
+				routes.TenantControlPlaneTelemetry{}: {
+					handlers.TenantControlPlaneTelemetry{
+						Enabled:           !disableTelemetry,
+						TelemetryClient:   telemetryClient,
+						KamajiVersion:     internal.GitTag,
+						KubernetesVersion: k8sVersion,
+					},
 				},
 				routes.DataStoreValidate{}: {
 					handlers.DataStoreValidation{Client: mgr.GetClient()},
@@ -265,6 +307,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	cmd.Flags().StringVar(&webhookCAPath, "webhook-ca-path", "/tmp/k8s-webhook-server/serving-certs/ca.crt", "Path to the Manager webhook server CA, required for the TenantControlPlane migration jobs.")
 	cmd.Flags().DurationVar(&controllerReconcileTimeout, "controller-reconcile-timeout", 30*time.Second, "The reconciliation request timeout before the controller withdraw the external resource calls, such as dealing with the Datastore, or the Tenant Control Plane API endpoint.")
 	cmd.Flags().DurationVar(&cacheResyncPeriod, "cache-resync-period", 10*time.Hour, "The controller-runtime.Manager cache resync period.")
+	cmd.Flags().BoolVar(&disableTelemetry, "disable-telemetry", false, "Disable the analytics traces collection.")
 
 	cobra.OnInitialize(func() {
 		viper.AutomaticEnv()
