@@ -5,7 +5,8 @@ package resources
 
 import (
 	"context"
-	"fmt"
+	"net"
+	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -74,7 +75,7 @@ func (r *KubeadmConfigResource) getControlPlaneEndpoint(ingress *kamajiv1alpha1.
 		address, port = utilities.GetControlPlaneAddressAndPortFromHostname(ingress.Hostname, port)
 	}
 
-	return fmt.Sprintf("%s:%d", address, port)
+	return net.JoinHostPort(address, strconv.FormatInt(int64(port), 10))
 }
 
 func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
