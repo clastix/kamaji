@@ -23,7 +23,7 @@ type ConnectionEndpoint struct {
 }
 
 func (r ConnectionEndpoint) String() string {
-	return fmt.Sprintf("%s:%d", r.Host, r.Port)
+	return net.JoinHostPort(r.Host, strconv.FormatInt(int64(r.Port), 10))
 }
 
 type ConnectionConfig struct {

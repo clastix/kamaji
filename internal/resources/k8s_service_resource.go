@@ -5,7 +5,8 @@ package resources
 
 import (
 	"context"
-	"fmt"
+	"net"
+	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,8 +54,7 @@ func (r *KubernetesServiceResource) UpdateTenantControlPlaneStatus(ctx context.C
 
 		return err
 	}
-
-	tenantControlPlane.Status.ControlPlaneEndpoint = fmt.Sprintf("%s:%d", address, tenantControlPlane.Spec.NetworkProfile.Port)
+	tenantControlPlane.Status.ControlPlaneEndpoint = net.JoinHostPort(address, strconv.FormatInt(int64(tenantControlPlane.Spec.NetworkProfile.Port), 10))
 
 	return nil
 }
