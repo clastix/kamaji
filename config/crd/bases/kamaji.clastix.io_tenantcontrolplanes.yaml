@@ -95,7 +95,7 @@ spec:
                       agent:
                         default:
                           image: registry.k8s.io/kas-network-proxy/proxy-agent
-                          version: v0.0.32
+                          version: v0.28.6
                         properties:
                           extraArgs:
                             description: |-
@@ -156,7 +156,7 @@ spec:
                               type: object
                             type: array
                           version:
-                            default: v0.0.32
+                            default: v0.28.6
                             description: Version for Konnectivity agent.
                             type: string
                         type: object
@@ -164,7 +164,7 @@ spec:
                         default:
                           image: registry.k8s.io/kas-network-proxy/proxy-server
                           port: 8132
-                          version: v0.0.32
+                          version: v0.28.6
                         properties:
                           extraArgs:
                             description: |-
@@ -243,7 +243,7 @@ spec:
                                 type: object
                             type: object
                           version:
-                            default: v0.0.32
+                            default: v0.28.6
                             description: Container image version of the Konnectivity
                               server.
                             type: string

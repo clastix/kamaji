@@ -13509,7 +13509,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent version:v0.0.32]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent version:v0.28.6]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13518,7 +13518,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-server port:8132 version:v0.0.32]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-server port:8132 version:v0.28.6]<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13575,7 +13575,7 @@ Can be customized to start the konnectivity-agent even if the nodes are not read
         <td>
           Version for Konnectivity agent.<br/>
           <br/>
-            <i>Default</i>: v0.0.32<br/>
+            <i>Default</i>: v0.28.6<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13704,7 +13704,7 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         <td>
           Container image version of the Konnectivity server.<br/>
           <br/>
-            <i>Default</i>: v0.0.32<br/>
+            <i>Default</i>: v0.28.6<br/>
         </td>
         <td>false</td>
       </tr></tbody>

@@ -204,7 +204,7 @@ type KonnectivityServerSpec struct {
 	// The port which Konnectivity server is listening to.
 	Port int32 `json:"port"`
 	// Container image version of the Konnectivity server.
-	// +kubebuilder:default=v0.0.32
+	// +kubebuilder:default=v0.28.6
 	Version string `json:"version,omitempty"`
 	// Container image used by the Konnectivity server.
 	// +kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-server
@@ -219,7 +219,7 @@ type KonnectivityAgentSpec struct {
 	// +kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-agent
 	Image string `json:"image,omitempty"`
 	// Version for Konnectivity agent.
-	// +kubebuilder:default=v0.0.32
+	// +kubebuilder:default=v0.28.6
 	Version string `json:"version,omitempty"`
 	// Tolerations for the deployed agent.
 	// Can be customized to start the konnectivity-agent even if the nodes are not ready or tainted.
@@ -230,9 +230,9 @@ type KonnectivityAgentSpec struct {
 
 // KonnectivitySpec defines the spec for Konnectivity.
 type KonnectivitySpec struct {
-	// +kubebuilder:default={version:"v0.0.32",image:"registry.k8s.io/kas-network-proxy/proxy-server",port:8132}
+	// +kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-server",port:8132}
 	KonnectivityServerSpec KonnectivityServerSpec `json:"server,omitempty"`
-	// +kubebuilder:default={version:"v0.0.32",image:"registry.k8s.io/kas-network-proxy/proxy-agent"}
+	// +kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-agent"}
 	KonnectivityAgentSpec KonnectivityAgentSpec `json:"agent,omitempty"`
 }
 
