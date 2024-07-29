@@ -30,20 +30,49 @@ func (r *KubernetesIngressResource) ShouldStatusBeUpdated(_ context.Context, tcp
 	case tcp.Spec.ControlPlane.Ingress == nil && tcp.Status.Kubernetes.Ingress == nil:
 		// No update in case of no ingress in spec, neither in status.
 		return false
-	case tcp.Spec.ControlPlane.Ingress != nil && tcp.Status.Kubernetes.Ingress == nil,
-		// Must be updated when TCP is using an Ingress, and status is not tracking it
-		// or
-		// Must be updated when the status is referring to an Ingress, although spec doesn't.
-		tcp.Spec.ControlPlane.Ingress == nil && tcp.Status.Kubernetes.Ingress != nil:
+	case tcp.Spec.ControlPlane.Ingress != nil && tcp.Status.Kubernetes.Ingress == nil, // TCP is using an Ingress, Status not tracking it
+		tcp.Spec.ControlPlane.Ingress == nil && tcp.Status.Kubernetes.Ingress != nil: // Status tracks an Ingress, Spec doesn't
 		return true
-	case len(r.resource.Status.LoadBalancer.Ingress) > 0 && tcp.Status.Kubernetes.Ingress == nil || tcp.Status.Kubernetes.Ingress.LoadBalancer.Ingress == nil:
-		// Must be updated since missing the Ingress status
-		return true
-	case r.resource.Status.LoadBalancer.Ingress[0].IP != tcp.Status.Kubernetes.Ingress.LoadBalancer.Ingress[0].IP:
-		// Must bne updated, Ingress load balancer IP is slightly different
+	case len(tcp.Status.Kubernetes.Ingress.IngressStatus.LoadBalancer.Ingress) != len(r.resource.Status.LoadBalancer.Ingress):
+		// Mismatch count of tracked LoadBalancer Ingress
 		return true
 	default:
-		return tcp.Status.Kubernetes.Ingress.Name != r.resource.GetName() || tcp.Status.Kubernetes.Ingress.Namespace != r.resource.GetNamespace()
+		statusIngress := tcp.Status.Kubernetes.Ingress.IngressStatus.LoadBalancer.Ingress
+
+		for i, ingress := range r.resource.Status.LoadBalancer.Ingress {
+			if ingress.IP != statusIngress[i].IP {
+				return true
+			}
+
+			if len(ingress.Ports) != len(statusIngress[i].Ports) {
+				return true
+			}
+
+			for p, port := range ingress.Ports {
+				if port.Port != statusIngress[i].Ports[p].Port {
+					return true
+				}
+
+				if port.Protocol != statusIngress[i].Ports[p].Protocol {
+					return true
+				}
+
+				if port.Error == nil && statusIngress[i].Ports[p].Error != nil ||
+					port.Error != nil && statusIngress[i].Ports[p].Error == nil {
+					return true
+				}
+
+				if port.Error == nil && statusIngress[i].Ports[p].Error == nil {
+					continue
+				}
+
+				if *port.Error != *statusIngress[i].Ports[p].Error {
+					return true
+				}
+			}
+		}
+
+		return false
 	}
 }
 
