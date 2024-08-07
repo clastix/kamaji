@@ -61,7 +61,7 @@ spec:
             - --peer-cert-file=/etc/etcd/pki/peer.pem
             - --peer-key-file=/etc/etcd/pki/peer-key.pem
             - --auto-compaction-mode=periodic
-            - --auto-compaction-retention= {{ .Values.etcd.compactionInterval }}
+            - --auto-compaction-retention=5m
             - --snapshot-count=10000
             - --quota-backend-bytes=8589934592
             - --v=8
