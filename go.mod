@@ -15,7 +15,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/json-iterator/go v1.1.12
 	github.com/juju/mutex/v2 v2.0.0
-	github.com/nats-io/nats.go v1.34.1
+	github.com/nats-io/nats.go v1.36.0
 	github.com/onsi/ginkgo/v2 v2.17.1
 	github.com/onsi/gomega v1.32.0
 	github.com/pkg/errors v0.9.1
