@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/resources/utils"
@@ -75,7 +76,7 @@ func (c *CoreDNS) Define(context.Context, *kamajiv1alpha1.TenantControlPlane) er
 }
 
 func (c *CoreDNS) ShouldCleanup(tcp *kamajiv1alpha1.TenantControlPlane) bool {
-	return tcp.Spec.Addons.CoreDNS == nil
+	return tcp.Spec.Addons.CoreDNS == nil && tcp.Status.Addons.CoreDNS.Enabled
 }
 
 func (c *CoreDNS) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -91,6 +92,25 @@ func (c *CoreDNS) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControl
 	var deleted bool
 
 	for _, obj := range []client.Object{c.serviceAccount, c.clusterRoleBinding, c.clusterRole, c.service, c.configMap, c.deployment} {
+		objectKey := client.ObjectKeyFromObject(obj)
+
+		logger.Info("Checking if object exists to be removed ", "obj", objectKey.String(), "kind", obj.GetObjectKind().GroupVersionKind().String())
+		if err := tenantClient.Get(ctx, objectKey, obj); err != nil {
+			if k8serrors.IsNotFound(err) {
+				logger.Error(err, "object does not exist")
+				logger.Info("Object doest not exist", "obj", objectKey.String(), "kind", obj.GetObjectKind().GroupVersionKind().String())
+
+				continue
+			}
+		}
+
+		// Don't delete resource if it is not managed by Kamaji
+		if _, ok := obj.GetLabels()[constants.ProjectNameLabelKey]; !ok {
+			logger.Info("Object exists but not managed by Kamaji, not deleting", "obj", objectKey.String(), "kind", obj.GetObjectKind().GroupVersionKind().String())
+
+			continue
+		}
+		logger.Info("Deleting object managed by Kamaji", "obj", objectKey.String(), "kind", obj.GetObjectKind().GroupVersionKind().String())
 		if err = tenantClient.Delete(ctx, obj); err != nil {
 			if k8serrors.IsNotFound(err) {
 				continue
@@ -244,6 +264,9 @@ func (c *CoreDNS) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Tenan
 func (c *CoreDNS) mutateClusterRoleBinding(ctx context.Context, tenantClient client.Client) (controllerutil.OperationResult, error) {
 	crb := &rbacv1.ClusterRoleBinding{}
 	crb.SetName(c.clusterRoleBinding.GetName())
+	labels := crb.GetLabels()
+	labels[constants.ProjectNameLabelKey] = constants.ProjectNameLabelValue
+	crb.SetLabels(labels)
 
 	defer func() {
 		c.clusterRoleBinding.SetUID(crb.GetUID())
@@ -263,6 +286,9 @@ func (c *CoreDNS) mutateDeployment(ctx context.Context, tenantClient client.Clie
 	d := &appsv1.Deployment{}
 	d.SetName(c.deployment.GetName())
 	d.SetNamespace(c.deployment.GetNamespace())
+	labels := d.GetLabels()
+	labels[constants.ProjectNameLabelKey] = constants.ProjectNameLabelValue
+	d.SetLabels(labels)
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, d, func() error {
 		d.SetLabels(c.deployment.GetLabels())
@@ -347,6 +373,9 @@ func (c *CoreDNS) mutateConfigMap(ctx context.Context, tenantClient client.Clien
 	cm := &corev1.ConfigMap{}
 	cm.SetName(c.configMap.GetName())
 	cm.SetNamespace(c.configMap.GetNamespace())
+	labels := cm.GetLabels()
+	labels[constants.ProjectNameLabelKey] = constants.ProjectNameLabelValue
+	cm.SetLabels(labels)
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, cm, func() error {
 		cm.SetLabels(c.configMap.GetLabels())
@@ -361,6 +390,9 @@ func (c *CoreDNS) mutateService(ctx context.Context, tenantClient client.Client)
 	svc := &corev1.Service{}
 	svc.SetName(c.service.GetName())
 	svc.SetNamespace(c.service.GetNamespace())
+	labels := svc.GetLabels()
+	labels[constants.ProjectNameLabelKey] = constants.ProjectNameLabelValue
+	svc.SetLabels(labels)
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, svc, func() error {
 		svc.SetLabels(c.service.GetLabels())
@@ -378,6 +410,9 @@ func (c *CoreDNS) mutateClusterRole(ctx context.Context, tenantClient client.Cli
 	cr := &rbacv1.ClusterRole{}
 	cr.SetName(c.clusterRole.GetName())
 	cr.SetNamespace(c.clusterRole.GetNamespace())
+	labels := cr.GetLabels()
+	labels[constants.ProjectNameLabelKey] = constants.ProjectNameLabelValue
+	cr.SetLabels(labels)
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, cr, func() error {
 		cr.SetLabels(c.clusterRole.GetLabels())
@@ -392,6 +427,9 @@ func (c *CoreDNS) mutateServiceAccount(ctx context.Context, tenantClient client.
 	sa := &corev1.ServiceAccount{}
 	sa.SetName(c.serviceAccount.GetName())
 	sa.SetNamespace(c.serviceAccount.GetNamespace())
+	labels := sa.GetLabels()
+	labels[constants.ProjectNameLabelKey] = constants.ProjectNameLabelValue
+	sa.SetLabels(labels)
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, sa, func() error {
 		sa.SetLabels(c.serviceAccount.GetLabels())
