@@ -1,0 +1,20 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: daily
+    rebase-strategy: disabled
+    commit-message:
+      prefix: "feat(deps)"
+    groups:
+      arrow:
+        patterns:
+          - "k8s.io*"
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+    rebase-strategy: disabled
+    commit-message:
+      prefix: "chore(ci)"
