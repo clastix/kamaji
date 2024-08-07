@@ -32,9 +32,9 @@ require (
 	k8s.io/apiserver v0.30.2
 	k8s.io/client-go v0.30.2
 	k8s.io/cluster-bootstrap v0.0.0
-	k8s.io/klog/v2 v2.120.1
+	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubelet v0.0.0
-	k8s.io/kubernetes v1.30.2
+	k8s.io/kubernetes v1.30.3
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	sigs.k8s.io/controller-runtime v0.18.4
 )
