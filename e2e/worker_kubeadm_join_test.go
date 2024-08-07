@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/testcontainers/testcontainers-go"
@@ -73,9 +75,17 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 
 		workerContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: testcontainers.ContainerRequest{
+				HostConfigModifier: func(config *container.HostConfig) {
+					config.Mounts = []mount.Mount{
+						{
+							Type:   mount.TypeBind,
+							Source: "/lib/modules",
+							Target: "/lib/modules",
+						},
+					}
+				},
 				Name:       fmt.Sprintf("%s-worker-node", tcp.GetName()),
 				Image:      fmt.Sprintf("kindest/node:%s", tcp.Spec.Kubernetes.Version),
-				Mounts:     testcontainers.ContainerMounts{testcontainers.BindMount("/lib/modules", "/lib/modules")},
 				Networks:   []string{"kind"},
 				Privileged: true,
 			},
@@ -135,7 +145,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 		By("executing the command in the worker node", func() {
 			cmds := append(strings.Split(strings.TrimSpace(joinCommandBuffer.String()), " "), "--ignore-preflight-errors", "SystemVerification")
 
-			exitCode, err := workerContainer.Exec(ctx, cmds)
+			exitCode, _, err := workerContainer.Exec(ctx, cmds)
 			Expect(exitCode).To(Equal(0))
 			Expect(err).ToNot(HaveOccurred())
 		})
