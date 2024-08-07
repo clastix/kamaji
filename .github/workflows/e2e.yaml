@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/e2e.yml'
       - 'api/**'
+      - 'charts/kamaji/**'
       - 'controllers/**'
       - 'e2e/*'
       - 'Dockerfile'
@@ -19,6 +20,7 @@ on:
     paths:
       - '.github/workflows/e2e.yml'
       - 'api/**'
+      - 'charts/kamaji/**'
       - 'controllers/**'
       - 'e2e/*'
       - 'Dockerfile'
