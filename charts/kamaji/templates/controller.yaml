@@ -33,7 +33,11 @@ spec:
         - --leader-elect
         - --metrics-bind-address={{ .Values.metricsBindAddress }}
         - --tmp-directory={{ .Values.temporaryDirectoryPath }}
-        - --datastore={{ include "datastore.fullname" . }}
+        {{- if .Values.etcd.deploy }}
+        - --datastore={{ (index .Values "kamaji-etcd" "datastore").name }}
+        {{- else }}
+        - --datastore={{ required ".Values.etcd.datastoreName is required when etcd sub-chart is enabled!" .Values.etcd.datastoreName }}
+        {{- end }}
         {{- if .Values.telemetry.disabled }}
         - --disable-telemetry
         {{- end }}
