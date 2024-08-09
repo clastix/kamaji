@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/resources/utils"
@@ -75,7 +76,7 @@ func (c *CoreDNS) Define(context.Context, *kamajiv1alpha1.TenantControlPlane) er
 }
 
 func (c *CoreDNS) ShouldCleanup(tcp *kamajiv1alpha1.TenantControlPlane) bool {
-	return tcp.Spec.Addons.CoreDNS == nil
+	return tcp.Spec.Addons.CoreDNS == nil && tcp.Status.Addons.CoreDNS.Enabled
 }
 
 func (c *CoreDNS) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -91,6 +92,16 @@ func (c *CoreDNS) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControl
 	var deleted bool
 
 	for _, obj := range []client.Object{c.serviceAccount, c.clusterRoleBinding, c.clusterRole, c.service, c.configMap, c.deployment} {
+		if err := tenantClient.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
+			if k8serrors.IsNotFound(err) {
+				continue
+			}
+
+			// Don't delete resource if it is not managed by Kamaji
+			if _, ok := obj.GetLabels()[constants.ProjectNameLabelKey]; !ok {
+				continue
+			}
+		}
 		if err = tenantClient.Delete(ctx, obj); err != nil {
 			if k8serrors.IsNotFound(err) {
 				continue
@@ -244,6 +255,9 @@ func (c *CoreDNS) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Tenan
 func (c *CoreDNS) mutateClusterRoleBinding(ctx context.Context, tenantClient client.Client) (controllerutil.OperationResult, error) {
 	crb := &rbacv1.ClusterRoleBinding{}
 	crb.SetName(c.clusterRoleBinding.GetName())
+	labels := crb.GetLabels()
+	labels[constants.ProjectNameLabelKey] = constants.ProjectNameLabelValue
+	crb.SetLabels(labels)
 
 	defer func() {
 		c.clusterRoleBinding.SetUID(crb.GetUID())
