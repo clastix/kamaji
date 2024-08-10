@@ -92,10 +92,10 @@ affinity: {}
 temporaryDirectoryPath: "/tmp/kamaji"
 
 loggingDevel:
-  # -- (string) Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false)
+  # -- Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false)
   enable: false
 
-# -- (string) Specify the default DataStore name for the Kamaji instance.
+# -- Specify the default DataStore name for the Kamaji instance.
 defaultDatastoreName: default
 
 kamaji-etcd:

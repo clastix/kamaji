@@ -83,7 +83,7 @@ Here the values you can override:
 | kamaji-etcd.deploy | bool | `true` |  |
 | kamaji-etcd.fullnameOverride | string | `"kamaji-etcd"` |  |
 | livenessProbe | object | `{"httpGet":{"path":"/healthz","port":"healthcheck"},"initialDelaySeconds":15,"periodSeconds":20}` | The livenessProbe for the controller container |
-| loggingDevel.enable | string | `false` | Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false) |
+| loggingDevel.enable | bool | `false` | Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false) |
 | metricsBindAddress | string | `":8080"` | The address the metric endpoint binds to. (default ":8080") |
 | nameOverride | string | `""` |  |
 | nodeSelector | object | `{}` | Kubernetes node selector rules to schedule Kamaji controller |
