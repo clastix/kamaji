@@ -95,19 +95,17 @@ loggingDevel:
   # -- (string) Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false)
   enable: false
 
-etcd:
-  # -- (bool) Enable the creation of a local etcd instance as a default Datastore using the kamaji-etcd chart by CLASTIX. (default=true)
-  deploy: true
-  # -- (string) If the creation of an etcd instance is disabled, specify the default DataStore name for the Kamaji instance.
-  datastoreName: kamaji-etcd
+# -- (string) Specify the default DataStore name for the Kamaji instance.
+defaultDatastoreName: default
 
 kamaji-etcd:
+  deploy: true
   fullnameOverride: kamaji-etcd
   datastore:
     enabled: true
-    name: "default"
+    name: default
 
 # -- Disable the analytics traces collection
 telemetry:
-  disabled: false 
+  disabled: false
   

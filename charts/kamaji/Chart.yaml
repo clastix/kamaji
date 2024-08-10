@@ -21,7 +21,7 @@ version: 2.0.0
 dependencies:
 - name: kamaji-etcd
   repository: https://clastix.github.io/charts
-  version: 0.7.0
+  version: ">=0.7.0"
   condition: kamaji-etcd.deploy
 annotations:
   catalog.cattle.io/certified: partner
