@@ -25,6 +25,10 @@ jobs:
       - uses: azure/setup-helm@v1
         with:
           version: 3.3.4
+      - name: Building dependencies
+        run: |-
+          helm repo add clastix https://clastix.github.io/charts 
+          helm dependency build ./charts/kamaji
       - name: Linting Chart
         run: helm lint ./charts/kamaji
   release:

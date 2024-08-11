@@ -1,0 +1,6 @@
+dependencies:
+- name: kamaji-etcd
+  repository: https://clastix.github.io/charts
+  version: 0.7.0
+digest: sha256:f04e6647b87e590b69b986df93d7060f866670d83ff2988fcdb896f440d1ab72
+generated: "2024-08-10T18:12:21.800380631+02:00"
