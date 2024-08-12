@@ -26,7 +26,7 @@ For example, with a PostgreSQL datastore installed:
 
 ```bash
 helm install kamaji charts/kamaji -n kamaji-system --create-namespace \
-  --set etcd.deploy=false \
+  --set kamaji-etcd.deploy=false \
   --set datastore.driver=PostgreSQL \
   --set datastore.endpoints[0]=postgres-default-rw.kamaji-system.svc:5432 \
   --set datastore.basicAuth.usernameSecret.name=postgres-default-superuser \

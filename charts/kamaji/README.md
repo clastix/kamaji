@@ -22,7 +22,7 @@ Kubernetes: `>=1.21.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
-| https://clastix.github.io/charts | kamaji-etcd | 0.7.0 |
+| https://clastix.github.io/charts | kamaji-etcd | >=0.7.0 |
 
 [Kamaji](https://github.com/clastix/kamaji) requires a [multi-tenant `etcd`](https://github.com/clastix/kamaji-internal/blob/master/deploy/getting-started-with-kamaji.md#setup-internal-multi-tenant-etcd) cluster.
 This Helm Chart starting from v0.1.1 provides the installation of an internal `etcd` in order to streamline the local test. If you'd like to use an externally managed etcd instance, you can specify the overrides and by setting the value `etcd.deploy=false`.
@@ -70,8 +70,7 @@ Here the values you can override:
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | Kubernetes affinity rules to apply to Kamaji controller pods |
-| etcd.datastoreName | string | `"kamaji-etcd"` | (string) If the creation of an etcd instance is disabled, specify the default DataStore name for the Kamaji instance. |
-| etcd.deploy | bool | `true` | (bool) Enable the creation of a local etcd instance as a default Datastore using the kamaji-etcd chart by CLASTIX. (default=true) |
+| defaultDatastoreName | string | `"default"` | Specify the default DataStore name for the Kamaji instance. |
 | extraArgs | list | `[]` | A list of extra arguments to add to the kamaji controller default ones |
 | fullnameOverride | string | `""` |  |
 | healthProbeBindAddress | string | `":8081"` | The address the probe endpoint binds to. (default ":8081") |
@@ -81,10 +80,11 @@ Here the values you can override:
 | imagePullSecrets | list | `[]` |  |
 | kamaji-etcd.datastore.enabled | bool | `true` |  |
 | kamaji-etcd.datastore.name | string | `"default"` |  |
+| kamaji-etcd.deploy | bool | `true` |  |
 | kamaji-etcd.fullnameOverride | string | `"kamaji-etcd"` |  |
 | livenessProbe | object | `{"httpGet":{"path":"/healthz","port":"healthcheck"},"initialDelaySeconds":15,"periodSeconds":20}` | The livenessProbe for the controller container |
-| loggingDevel.enable | bool | `false` | (string) Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false) |
-| metricsBindAddress | string | `":8080"` | (string) The address the metric endpoint binds to. (default ":8080") |
+| loggingDevel.enable | bool | `false` | Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false) |
+| metricsBindAddress | string | `":8080"` | The address the metric endpoint binds to. (default ":8080") |
 | nameOverride | string | `""` |  |
 | nodeSelector | object | `{}` | Kubernetes node selector rules to schedule Kamaji controller |
 | podAnnotations | object | `{}` | The annotations to apply to the Kamaji controller pods. |

@@ -38,7 +38,7 @@ readinessProbe:
   initialDelaySeconds: 5
   periodSeconds: 10
 
-# -- (string) The address the metric endpoint binds to. (default ":8080")
+# -- The address the metric endpoint binds to. (default ":8080")
 metricsBindAddress: ":8080"
 
 imagePullSecrets: []
@@ -92,22 +92,20 @@ affinity: {}
 temporaryDirectoryPath: "/tmp/kamaji"
 
 loggingDevel:
-  # -- (string) Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false)
+  # -- Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false)
   enable: false
 
-etcd:
-  # -- (bool) Enable the creation of a local etcd instance as a default Datastore using the kamaji-etcd chart by CLASTIX. (default=true)
-  deploy: true
-  # -- (string) If the creation of an etcd instance is disabled, specify the default DataStore name for the Kamaji instance.
-  datastoreName: kamaji-etcd
+# -- Specify the default DataStore name for the Kamaji instance.
+defaultDatastoreName: default
 
 kamaji-etcd:
+  deploy: true
   fullnameOverride: kamaji-etcd
   datastore:
     enabled: true
-    name: "default"
+    name: default
 
 # -- Disable the analytics traces collection
 telemetry:
-  disabled: false 
+  disabled: false
   
