@@ -16,13 +16,6 @@ import (
 	"github.com/clastix/kamaji/internal/datastore/errors"
 )
 
-const (
-	// rangeEnd is the key following the last key of the range.
-	// If rangeEnd is ‘\0’, the range is all keys greater than or equal to the key argument
-	// source: https://etcd.io/docs/v3.5/learning/api/
-	rangeEnd = "\\0"
-)
-
 func NewETCDConnection(config ConnectionConfig) (Connection, error) {
 	endpoints := make([]string, 0, len(config.Endpoints))
 
@@ -68,7 +61,8 @@ func (e *EtcdClient) GrantPrivileges(ctx context.Context, user, dbName string) e
 
 	permission := etcdclient.PermissionType(authpb.READWRITE)
 	key := e.buildKey(dbName)
-	if _, err := e.Client.RoleGrantPermission(ctx, user, key, rangeEnd, permission); err != nil {
+
+	if _, err := e.Client.RoleGrantPermission(ctx, user, key, etcdclient.GetPrefixRangeEnd(key), permission); err != nil {
 		return errors.NewGrantPrivilegesError(err)
 	}
 
@@ -170,6 +164,13 @@ func (e *EtcdClient) Driver() string {
 	return string(kamajiv1alpha1.EtcdDriver)
 }
 
+// buildKey adds slashes to the beginning and end of the key. This ensures that the range
+// end for etcd RBAC is calculated using the entire key prefix, not only the key name. If
+// the range end was calculated e.g. for `/cp-a`, the result would be `/cp-b`, which also
+// includes `/cp-aa` (etcd uses lexicographic ordering on key ranges for RBAC). Using
+// `/cp-a/` as the input for the range end calculation results in `/cp-a0`, which doesn't
+// allow for any other potential control plane key prefixes to be located within the range.
+// For more information, see also https://etcd.io/docs/v3.3/learning/api/#key-ranges
 func (e *EtcdClient) buildKey(key string) string {
 	return fmt.Sprintf("/%s/", key)
 }
@@ -181,7 +182,9 @@ func (e *EtcdClient) Migrate(ctx context.Context, tcp kamajiv1alpha1.TenantContr
 		return err
 	}
 
-	response, err := e.Client.Get(ctx, e.buildKey(fmt.Sprintf("%s_%s", tcp.GetNamespace(), tcp.GetName())), etcdclient.WithRange(rangeEnd))
+	key := e.buildKey(fmt.Sprintf("%s_%s", tcp.GetNamespace(), tcp.GetName()))
+
+	response, err := e.Client.Get(ctx, key, etcdclient.WithPrefix())
 	if err != nil {
 		return err
 	}
