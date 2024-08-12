@@ -188,7 +188,8 @@ helm upgrade kamaji clastix/kamaji -n kamaji-system
 If the Kamaji controller images are stored in a private registry that requires authentication, the migration job will fail because it does not use any `ImagePullSecret` by default. You need to attach your registry secret to the `kamaji-controller-manager` service account, which is used by the migration job. You can do this with the following command:
 
 ```shell
-kubectl -n kamaji-system patch serviceaccount kamaji-controller-manager -p '{"imagePullSecrets": [{"name": "myregistry-credentials"}]}'
+kubectl -n kamaji-system patch serviceaccount kamaji-controller-manager \
+        -p '{"imagePullSecrets": [{"name": "myregistry-credentials"}]}'
 ```
 
 This command patches the kamaji-controller-manager service account to include your registry secret, allowing the migration job to pull images from the private registry successfully.
