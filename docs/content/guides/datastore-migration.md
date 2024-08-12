@@ -173,3 +173,24 @@ After a while, depending on the amount of data to migrate, the Tenant Control Pl
 
 ## Post migration
 After migrating data to the new datastore, complete the migration procedure by restarting the `kubelet.service` on all the tenant worker nodes.
+
+## Troubleshooting
+
+### Migration Job Image Version
+When migrating between datastores, the Kamaji controller automatically creates a migration job to transfer data from the source to the destination datastore. By default, this job uses the same image version as the running Kamaji controller. If you need to use a different image version for the migration job, you can specify it by passing extra arguments to the controller:
+
+```shell
+helm upgrade kamaji clastix/kamaji -n kamaji-system 
+--set extraArgs[0]=--migrate-image=custom/kamaji:version`
+```
+
+### Handling Private Registry Images
+If the Kamaji controller images are stored in a private registry that requires authentication, the migration job will fail because it does not use any `ImagePullSecret` by default. You need to attach your registry secret to the `kamaji-controller-manager` service account, which is used by the migration job. You can do this with the following command:
+
+```shell
+kubectl -n kamaji-system patch serviceaccount kamaji-controller-manager \
+        -p '{"imagePullSecrets": [{"name": "myregistry-credentials"}]}'
+```
+
+This command patches the kamaji-controller-manager service account to include your registry secret, allowing the migration job to pull images from the private registry successfully.
+
