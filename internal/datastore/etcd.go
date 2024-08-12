@@ -182,9 +182,7 @@ func (e *EtcdClient) Migrate(ctx context.Context, tcp kamajiv1alpha1.TenantContr
 		return err
 	}
 
-	key := e.buildKey(fmt.Sprintf("%s_%s", tcp.GetNamespace(), tcp.GetName()))
-
-	response, err := e.Client.Get(ctx, key, etcdclient.WithPrefix())
+	response, err := e.Client.Get(ctx, e.buildKey(tcp.Status.Storage.Setup.Schema), etcdclient.WithPrefix())
 	if err != nil {
 		return err
 	}
