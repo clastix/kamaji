@@ -61,22 +61,36 @@ func (in *TenantControlPlane) DeclaredControlPlaneAddress(ctx context.Context, c
 			return "", kamajierrors.NonExposedLoadBalancerError{}
 		}
 
-		for _, lb := range loadBalancerStatus.Ingress {
-			if ip := lb.IP; len(ip) > 0 {
-				return ip, nil
-			}
-			if hostname := lb.Hostname; len(hostname) > 0 {
-				// Resolve hostname to IP address
-				ips, err := net.LookupIP(hostname)
-				if err != nil {
-					return "", errors.Wrap(err, "cannot resolve LoadBalancer hostname to IP")
-				}
-				if len(ips) > 0 {
-					return ips[0].String(), nil
-				}
-			}
-		}
+		return getLoadBalancerAddress(loadBalancerStatus.Ingress)
 	}
 
+	return "", kamajierrors.MissingValidIPError{}
+}
+
+// getLoadBalancerAddress extracts the IP address from LoadBalancer ingress.
+// It also checks and rejects hostname usage for LoadBalancer ingress.
+//
+// Reasons for not supporting hostnames:
+// - DNS resolution can differ across environments, leading to inconsistent behavior.
+// - It may cause connectivity problems between Kubernetes components.
+// - The DNS resolution could change over time, potentially breaking cluster-to-API-server connections.
+//
+// Recommended solutions:
+// - Use a static IP address to ensure stable and predictable communication within the cluster.
+// - If a hostname is necessary, consider setting up a Virtual IP (VIP) for the given hostname.
+// - Alternatively, use an external load balancer that can provide a stable IP address.
+//
+// Note: Implementing L7 routing with the API Server requires a deep understanding of the implications.
+// Users should be aware of the complexities involved, including potential issues with TLS passthrough
+// for client-based certificate authentication in Ingress expositions.
+func getLoadBalancerAddress(ingress []corev1.LoadBalancerIngress) (string, error) {
+	for _, lb := range ingress {
+		if ip := lb.IP; len(ip) > 0 {
+			return ip, nil
+		}
+		if hostname := lb.Hostname; len(hostname) > 0 {
+			return "", fmt.Errorf("hostname not supported for LoadBalancer ingress: use static IP instead")
+		}
+	}
 	return "", kamajierrors.MissingValidIPError{}
 }
