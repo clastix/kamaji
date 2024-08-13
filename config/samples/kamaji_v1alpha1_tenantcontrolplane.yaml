@@ -1,9 +1,9 @@
 apiVersion: kamaji.clastix.io/v1alpha1
 kind: TenantControlPlane
 metadata:
-  name: k8s-126
+  name: k8s-130
   labels:
-    tenant.clastix.io: k8s-126
+    tenant.clastix.io: k8s-130
 spec:
   controlPlane:
     deployment:
@@ -11,7 +11,7 @@ spec:
     service:
       serviceType: LoadBalancer
   kubernetes:
-    version: "v1.26.0"
+    version: "v1.30.0"
     kubelet:
       cgroupfs: systemd
   networkProfile:

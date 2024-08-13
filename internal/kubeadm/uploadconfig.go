@@ -17,7 +17,7 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/uploadconfig"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 	"k8s.io/kubernetes/pkg/apis/rbac"
-	pointer "k8s.io/utils/ptr"
+	kubeletv1beta1 "k8s.io/kubernetes/pkg/kubelet/apis/config/v1beta1"
 
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -72,58 +72,23 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) ([]
 }
 
 func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration) ([]byte, error) {
-	zeroDuration := metav1.Duration{Duration: 0}
+	var kc kubelettypes.KubeletConfiguration
 
-	kc := kubelettypes.KubeletConfiguration{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "KubeletConfiguration",
-			APIVersion: "kubelet.config.k8s.io/v1beta1",
-		},
-		Authentication: kubelettypes.KubeletAuthentication{
-			Anonymous: kubelettypes.KubeletAnonymousAuthentication{
-				Enabled: pointer.To(false),
-			},
-			Webhook: kubelettypes.KubeletWebhookAuthentication{
-				Enabled:  pointer.To(true),
-				CacheTTL: zeroDuration,
-			},
-			X509: kubelettypes.KubeletX509Authentication{
-				ClientCAFile: "/etc/kubernetes/pki/ca.crt",
-			},
-		},
-		Authorization: kubelettypes.KubeletAuthorization{
-			Mode: kubelettypes.KubeletAuthorizationModeWebhook,
-			Webhook: kubelettypes.KubeletWebhookAuthorization{
-				CacheAuthorizedTTL:   zeroDuration,
-				CacheUnauthorizedTTL: zeroDuration,
-			},
-		},
-		CgroupDriver:              kubeletConfiguration.TenantControlPlaneCgroupDriver,
-		ClusterDNS:                kubeletConfiguration.TenantControlPlaneDNSServiceIPs,
-		ClusterDomain:             kubeletConfiguration.TenantControlPlaneDomain,
-		CPUManagerReconcilePeriod: zeroDuration,
-		EvictionHard: map[string]string{
-			"imagefs.available": "0%",
-			"nodefs.available":  "0%",
-			"nodefs.inodesFree": "0%",
-		},
-		EvictionPressureTransitionPeriod: zeroDuration,
-		FileCheckFrequency:               zeroDuration,
-		HealthzBindAddress:               "127.0.0.1",
-		HealthzPort:                      pointer.To(int32(10248)),
-		HTTPCheckFrequency:               zeroDuration,
-		ImageGCHighThresholdPercent:      pointer.To(int32(100)),
-		NodeStatusUpdateFrequency:        zeroDuration,
-		NodeStatusReportFrequency:        zeroDuration,
-		RotateCertificates:               true,
-		RuntimeRequestTimeout:            zeroDuration,
-		ShutdownGracePeriod:              zeroDuration,
-		ShutdownGracePeriodCriticalPods:  zeroDuration,
-		StaticPodPath:                    "/etc/kubernetes/manifests",
-		StreamingConnectionIdleTimeout:   zeroDuration,
-		SyncFrequency:                    zeroDuration,
-		VolumeStatsAggPeriod:             zeroDuration,
-	}
+	kubeletv1beta1.SetDefaults_KubeletConfiguration(&kc)
+
+	kc.APIVersion = kubeletv1beta1.SchemeGroupVersion.String()
+	kc.Kind = "KubeletConfiguration"
+	kc.Authentication.X509.ClientCAFile = "/etc/kubernetes/pki/ca.crt"
+	kc.CgroupDriver = kubeletConfiguration.TenantControlPlaneCgroupDriver
+	kc.ClusterDNS = kubeletConfiguration.TenantControlPlaneDNSServiceIPs
+	kc.ClusterDomain = kubeletConfiguration.TenantControlPlaneDomain
+	kc.RotateCertificates = true
+	kc.StaticPodPath = "/etc/kubernetes/manifests"
+	// TODO(prometherion): drop support of <= v1.27 TCP versions
+	// a numeric value is required due to strict marshaling
+	// kubeadm <= v1.27 has a different type for FlushFrequency
+	// https://github.com/kubernetes/component-base/blob/55b3ab0db0081303695d641b9b43d560bf3f7a65/logs/api/v1/types.go#L42-L45
+	kc.Logging.FlushFrequency.SerializeAsString = false
 
 	return utilities.EncodeToYaml(&kc)
 }
