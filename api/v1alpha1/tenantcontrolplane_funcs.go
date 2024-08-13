@@ -92,5 +92,6 @@ func getLoadBalancerAddress(ingress []corev1.LoadBalancerIngress) (string, error
 			return "", fmt.Errorf("hostname not supported for LoadBalancer ingress: use static IP instead")
 		}
 	}
+
 	return "", kamajierrors.MissingValidIPError{}
 }
