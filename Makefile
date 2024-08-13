@@ -170,6 +170,12 @@ BUILD_DATE      ?= $$(git log -1 --format="%at" | xargs -I{} date -d @{} +%Y-%m-
 get_version:
 	@echo -n v$(VERSION)
 
+fmt: ## Run go fmt against code.
+	go fmt ./...
+
+vet: ## Run go vet against code.
+	go vet ./..
+
 build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
