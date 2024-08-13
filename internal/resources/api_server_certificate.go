@@ -128,9 +128,8 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 
 		config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
 		if err != nil {
-			logger.Error(err, "cannot retrieve kubeadm configuration")
-
-			return err
+			logger.Error(err, "cannot generate certificate and private key in api server certificate", "details", err.Error())
+			return fmt.Errorf("failed to generate certificate and private key: %w", err)
 		}
 
 		ca := kubeadm.CertificatePrivateKeyPair{
