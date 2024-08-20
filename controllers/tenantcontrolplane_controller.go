@@ -227,16 +227,16 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 	r.clock = clock.RealClock{}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		WatchesRawSource(source.Channel(r.CertificateChan, handler.Funcs{GenericFunc: func(_ context.Context, genericEvent event.GenericEvent, limitingInterface workqueue.RateLimitingInterface) {
-			limitingInterface.AddRateLimited(ctrl.Request{
+		WatchesRawSource(source.Channel(r.CertificateChan, handler.Funcs{GenericFunc: func(_ context.Context, genericEvent event.TypedGenericEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+			w.AddRateLimited(ctrl.Request{
 				NamespacedName: k8stypes.NamespacedName{
 					Namespace: genericEvent.Object.GetNamespace(),
 					Name:      genericEvent.Object.GetName(),
 				},
 			})
 		}})).
-		WatchesRawSource(source.Channel(r.TriggerChan, handler.Funcs{GenericFunc: func(_ context.Context, genericEvent event.GenericEvent, limitingInterface workqueue.RateLimitingInterface) {
-			limitingInterface.AddRateLimited(ctrl.Request{
+		WatchesRawSource(source.Channel(r.TriggerChan, handler.Funcs{GenericFunc: func(_ context.Context, genericEvent event.TypedGenericEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+			w.AddRateLimited(ctrl.Request{
 				NamespacedName: k8stypes.NamespacedName{
 					Namespace: genericEvent.Object.GetNamespace(),
 					Name:      genericEvent.Object.GetName(),
