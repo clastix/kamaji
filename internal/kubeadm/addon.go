@@ -36,7 +36,7 @@ func AddCoreDNS(client kubernetes.Interface, config *Configuration) ([]byte, err
 	}
 
 	b := bytes.NewBuffer([]byte{})
-	if err := dns.EnsureDNSAddon(&config.InitConfiguration.ClusterConfiguration, client, b, true); err != nil {
+	if err := dns.EnsureDNSAddon(&config.InitConfiguration.ClusterConfiguration, client, "", b, true); err != nil {
 		return nil, err
 	}
 

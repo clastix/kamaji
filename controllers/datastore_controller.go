@@ -83,7 +83,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 }
 
 func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
-	enqueueFn := func(tcp *kamajiv1alpha1.TenantControlPlane, limitingInterface workqueue.RateLimitingInterface) {
+	enqueueFn := func(tcp *kamajiv1alpha1.TenantControlPlane, limitingInterface workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 		if dataStoreName := tcp.Status.Storage.DataStoreName; len(dataStoreName) > 0 {
 			limitingInterface.AddRateLimited(reconcile.Request{
 				NamespacedName: k8stypes.NamespacedName{
@@ -98,15 +98,15 @@ func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
 			predicate.ResourceVersionChangedPredicate{},
 		)).
 		Watches(&kamajiv1alpha1.TenantControlPlane{}, handler.Funcs{
-			CreateFunc: func(_ context.Context, createEvent event.CreateEvent, limitingInterface workqueue.RateLimitingInterface) {
-				enqueueFn(createEvent.Object.(*kamajiv1alpha1.TenantControlPlane), limitingInterface)
+			CreateFunc: func(_ context.Context, createEvent event.TypedCreateEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+				enqueueFn(createEvent.Object.(*kamajiv1alpha1.TenantControlPlane), w)
 			},
-			UpdateFunc: func(_ context.Context, updateEvent event.UpdateEvent, limitingInterface workqueue.RateLimitingInterface) {
-				enqueueFn(updateEvent.ObjectOld.(*kamajiv1alpha1.TenantControlPlane), limitingInterface)
-				enqueueFn(updateEvent.ObjectNew.(*kamajiv1alpha1.TenantControlPlane), limitingInterface)
+			UpdateFunc: func(ctx context.Context, updateEvent event.TypedUpdateEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+				enqueueFn(updateEvent.ObjectOld.(*kamajiv1alpha1.TenantControlPlane), w)
+				enqueueFn(updateEvent.ObjectNew.(*kamajiv1alpha1.TenantControlPlane), w)
 			},
-			DeleteFunc: func(_ context.Context, deleteEvent event.DeleteEvent, limitingInterface workqueue.RateLimitingInterface) {
-				enqueueFn(deleteEvent.Object.(*kamajiv1alpha1.TenantControlPlane), limitingInterface)
+			DeleteFunc: func(_ context.Context, deleteEvent event.TypedDeleteEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+				enqueueFn(deleteEvent.Object.(*kamajiv1alpha1.TenantControlPlane), w)
 			},
 		}).
 		Complete(r)

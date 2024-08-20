@@ -4,6 +4,7 @@
 package webhook
 
 import (
+	"k8s.io/utils/ptr"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -22,7 +23,7 @@ func Register(mgr controllerruntime.Manager, routes map[webhookroutes.Route][]we
 	for route, handlers := range routes {
 		srv.Register(route.GetPath(), &webhook.Admission{
 			Handler:      chainer.Handler(route.GetObject(), handlers...),
-			RecoverPanic: true,
+			RecoverPanic: ptr.To(true),
 		})
 	}
 
