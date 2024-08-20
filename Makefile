@@ -170,10 +170,10 @@ BUILD_DATE      ?= $$(git log -1 --format="%at" | xargs -I{} date -d @{} +%Y-%m-
 get_version:
 	@echo -n v$(VERSION)
 
-build: generate fmt vet ## Build manager binary.
+build: generate golint ## Build manager binary.
 	go build -o bin/manager main.go
 
-run: manifests generate fmt vet ## Run a controller from your host.
+run: manifests generate ## Run a controller from your host.
 	go run ./main.go
 
 docker-build: ## Build docker image with the manager.

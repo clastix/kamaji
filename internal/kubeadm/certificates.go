@@ -44,21 +44,32 @@ func GenerateCACertificatePrivateKeyPair(baseName string, config *Configuration)
 func GenerateCertificatePrivateKeyPair(baseName string, config *Configuration, ca CertificatePrivateKeyPair) (*CertificatePrivateKeyPair, error) {
 	defer deleteCertificateDirectory(config.InitConfiguration.CertificatesDir)
 
-	certificate, _ := cryptoKamaji.ParseCertificateBytes(ca.Certificate)
-	signer, _ := cryptoKamaji.ParsePrivateKeyBytes(ca.PrivateKey)
+	certificate, err := cryptoKamaji.ParseCertificateBytes(ca.Certificate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse CA certificate: %w", err)
+	}
+
+	signer, err := cryptoKamaji.ParsePrivateKeyBytes(ca.PrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse CA private key: %w", err)
+	}
 
 	kubeadmCert, err := getKubeadmCert(baseName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get kubeadm cert: %w", err)
 	}
 
 	if err = initPhaseFromCA(kubeadmCert, config, certificate, signer); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to initialize phase from CA: %w", err)
 	}
 
 	contents, err := readCertificateFiles(baseName, config.InitConfiguration.CertificatesDir, "crt", "key")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read certificate files: %w", err)
+	}
+
+	if len(contents) != 2 {
+		return nil, fmt.Errorf("unexpected number of certificate files: expected 2, got %d", len(contents))
 	}
 
 	certificatePrivateKeyPair := &CertificatePrivateKeyPair{
@@ -66,7 +77,7 @@ func GenerateCertificatePrivateKeyPair(baseName string, config *Configuration, c
 		PrivateKey:  contents[1],
 	}
 
-	return certificatePrivateKeyPair, err
+	return certificatePrivateKeyPair, nil
 }
 
 func getKubeadmCert(baseName string) (*certs.KubeadmCert, error) {
