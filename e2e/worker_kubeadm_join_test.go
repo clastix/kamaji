@@ -57,7 +57,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 					Port:    31443,
 				},
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
-					Version: "v1.25.3",
+					Version: "v1.29.0",
 					Kubelet: kamajiv1alpha1.KubeletSpec{
 						CGroupFS: "cgroupfs",
 					},
@@ -143,7 +143,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 		})
 
 		By("executing the command in the worker node", func() {
-			cmds := append(strings.Split(strings.TrimSpace(joinCommandBuffer.String()), " "), "--ignore-preflight-errors", "SystemVerification")
+			cmds := append(strings.Split(strings.TrimSpace(joinCommandBuffer.String()), " "), "--ignore-preflight-errors=SystemVerification")
 
 			exitCode, _, err := workerContainer.Exec(ctx, cmds)
 			Expect(exitCode).To(Equal(0))
