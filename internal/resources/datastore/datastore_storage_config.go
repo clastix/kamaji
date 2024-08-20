@@ -157,7 +157,7 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 
 		r.resource.Data = map[string][]byte{
 			"DB_CONNECTION_STRING": []byte(r.ConnString),
-			"DB_SCHEMA":            coalesceFn(tenantControlPlane.Status.Storage.Setup.Schema),
+			"DB_SCHEMA":            []byte(tenantControlPlane.Spec.DataStoreSchema),
 			"DB_USER":              username,
 			"DB_PASSWORD":          password,
 		}
