@@ -6,6 +6,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"gomodules.xyz/jsonpatch/v2"
@@ -36,9 +37,7 @@ func (t TenantControlPlaneDefaults) OnCreate(object runtime.Object) AdmissionRes
 			return operations, nil
 		}
 
-		if tcp.Spec.ControlPlane.Deployment.Replicas == nil {
-			tcp.Spec.ControlPlane.Deployment.Replicas = pointer.To(int32(2))
-		}
+		defaultUnsetFields(tcp)
 
 		return nil, nil
 	}
@@ -60,10 +59,19 @@ func (t TenantControlPlaneDefaults) OnUpdate(object runtime.Object, oldObject ru
 			return nil, fmt.Errorf("DataStore is a required field")
 		}
 
-		if newTCP.Spec.ControlPlane.Deployment.Replicas == nil {
-			newTCP.Spec.ControlPlane.Deployment.Replicas = pointer.To(int32(2))
-		}
+		defaultUnsetFields(newTCP)
 
 		return nil, nil
+	}
+}
+
+func defaultUnsetFields(tcp *kamajiv1alpha1.TenantControlPlane) {
+	if tcp.Spec.ControlPlane.Deployment.Replicas == nil {
+		tcp.Spec.ControlPlane.Deployment.Replicas = pointer.To(int32(2))
+	}
+
+	if tcp.Spec.DataStoreSchema == "" {
+		dss := strings.ReplaceAll(fmt.Sprintf("%s_%s", tcp.GetNamespace(), tcp.GetName()), "-", "_")
+		tcp.Spec.DataStoreSchema = dss
 	}
 }
