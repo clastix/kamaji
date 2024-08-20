@@ -45,5 +45,6 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get install -y golang-cfssl
+          sudo swapoff -a
       - name: e2e testing
         run: make e2e
