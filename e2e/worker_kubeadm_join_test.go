@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	kubeadmv1beta3 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
+	kubeadmv1beta4 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta4"
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd"
 	pointer "k8s.io/utils/ptr"
 
@@ -139,7 +139,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 			clientset, err := kubernetes.NewForConfig(config)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(cmd.RunCreateToken(joinCommandBuffer, clientset, "", &kubeadmv1beta3.InitConfiguration{}, true, "", kubeconfigFile.Name())).ToNot(HaveOccurred())
+			Expect(cmd.RunCreateToken(joinCommandBuffer, clientset, "", &kubeadmv1beta4.InitConfiguration{}, true, "", kubeconfigFile.Name())).ToNot(HaveOccurred())
 		})
 
 		By("executing the command in the worker node", func() {
