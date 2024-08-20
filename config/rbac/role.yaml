@@ -30,29 +30,7 @@ rules:
   - ""
   resources:
   - configmaps
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - secrets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - services
   verbs:
   - create
@@ -66,25 +44,6 @@ rules:
   - kamaji.clastix.io
   resources:
   - datastores
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - kamaji.clastix.io
-  resources:
-  - datastores/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - kamaji.clastix.io
-  resources:
   - tenantcontrolplanes
   verbs:
   - create
@@ -97,16 +56,17 @@ rules:
 - apiGroups:
   - kamaji.clastix.io
   resources:
-  - tenantcontrolplanes/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - kamaji.clastix.io
-  resources:
+  - datastores/status
   - tenantcontrolplanes/status
   verbs:
   - get
   - patch
+  - update
+- apiGroups:
+  - kamaji.clastix.io
+  resources:
+  - tenantcontrolplanes/finalizers
+  verbs:
   - update
 - apiGroups:
   - networking.k8s.io
