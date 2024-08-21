@@ -254,7 +254,7 @@ type AddonsSpec struct {
 type TenantControlPlaneSpec struct {
 	// DataStore allows to specify a DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
 	// This parameter is optional and acts as an override over the default one which is used by the Kamaji Operator.
-	// Migration from a different DataStore to another one is not supported, see: https://kamaji.clastix.io/guides/datastore-migration/
+	// Migration from a different DataStore to another one is supported, see: https://kamaji.clastix.io/guides/datastore-migration/
 	DataStore string `json:"dataStore,omitempty"`
 	// DataStoreSchema allows to specify the name of the database (for relational DataStores) or the key prefix (for etcd). This
 	// value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreSchema values are unique. It's up
