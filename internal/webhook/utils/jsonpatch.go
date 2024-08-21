@@ -10,18 +10,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func JSONPatch(obj client.Object, modifierFunc func()) ([]jsonpatch.Operation, error) {
-	original, err := json.Marshal(obj)
+func JSONPatch(original, modified client.Object) ([]jsonpatch.Operation, error) {
+	originalJSON, err := json.Marshal(original)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot marshal input object")
+		return nil, errors.Wrap(err, "cannot marshal original object")
 	}
 
-	modifierFunc()
-
-	patched, err := json.Marshal(obj)
+	modifiedJSON, err := json.Marshal(modified)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot marshal patched object")
+		return nil, errors.Wrap(err, "cannot marshal modified object")
 	}
 
-	return jsonpatch.CreatePatch(original, patched)
+	return jsonpatch.CreatePatch(originalJSON, modifiedJSON)
 }

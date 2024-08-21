@@ -24,22 +24,17 @@ type TenantControlPlaneDefaults struct {
 
 func (t TenantControlPlaneDefaults) OnCreate(object runtime.Object) AdmissionResponse {
 	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
-		tcp := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
+		original := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
-		if len(tcp.Spec.DataStore) == 0 {
-			operations, err := utils.JSONPatch(tcp, func() {
-				tcp.Spec.DataStore = t.DefaultDatastore
-			})
-			if err != nil {
-				return nil, errors.Wrap(err, "cannot create patch responses upon Tenant Control Plane creation")
-			}
+		defaulted := original.DeepCopy()
+		t.defaultUnsetFields(defaulted)
 
-			return operations, nil
+		operations, err := utils.JSONPatch(original, defaulted)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot create patch responses upon Tenant Control Plane creation")
 		}
 
-		defaultUnsetFields(tcp)
-
-		return nil, nil
+		return operations, nil
 	}
 }
 
@@ -48,29 +43,20 @@ func (t TenantControlPlaneDefaults) OnDelete(runtime.Object) AdmissionResponse {
 }
 
 func (t TenantControlPlaneDefaults) OnUpdate(object runtime.Object, oldObject runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
-		newTCP, oldTCP := object.(*kamajiv1alpha1.TenantControlPlane), oldObject.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
-
-		if oldTCP.Spec.DataStore == newTCP.Spec.DataStore {
-			return nil, nil
-		}
-
-		if len(newTCP.Spec.DataStore) == 0 {
-			return nil, fmt.Errorf("DataStore is a required field")
-		}
-
-		defaultUnsetFields(newTCP)
-
-		return nil, nil
-	}
+	// all immutability requirements are handled trough CEL annotations on the TenantControlPlaneSpec type
+	return utils.NilOp()
 }
 
-func defaultUnsetFields(tcp *kamajiv1alpha1.TenantControlPlane) {
+func (t TenantControlPlaneDefaults) defaultUnsetFields(tcp *kamajiv1alpha1.TenantControlPlane) {
+	if len(tcp.Spec.DataStore) == 0 {
+		tcp.Spec.DataStore = t.DefaultDatastore
+	}
+
 	if tcp.Spec.ControlPlane.Deployment.Replicas == nil {
 		tcp.Spec.ControlPlane.Deployment.Replicas = pointer.To(int32(2))
 	}
 
-	if tcp.Spec.DataStoreSchema == "" {
+	if len(tcp.Spec.DataStoreSchema) == 0 {
 		dss := strings.ReplaceAll(fmt.Sprintf("%s_%s", tcp.GetNamespace(), tcp.GetName()), "-", "_")
 		tcp.Spec.DataStoreSchema = dss
 	}
