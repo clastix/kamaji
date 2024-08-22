@@ -839,7 +839,17 @@ such as the number of Pod replicas, the Service resource, or the Ingress.<br/>
         <td>
           DataStore allows to specify a DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
 This parameter is optional and acts as an override over the default one which is used by the Kamaji Operator.
-Migration from a different DataStore to another one is not yet supported and the reconciliation will be blocked.<br/>
+Migration from a different DataStore to another one is supported, see: https://kamaji.clastix.io/guides/datastore-migration/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>dataStoreSchema</b></td>
+        <td>string</td>
+        <td>
+          DataStoreSchema allows to specify the name of the database (for relational DataStores) or the key prefix (for etcd). This
+value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreSchema values are unique. It's up
+to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
+DataStoreSchema by concatenating the namespace and name of the TenantControlPlane.<br/>
         </td>
         <td>false</td>
       </tr><tr>
