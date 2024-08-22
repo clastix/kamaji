@@ -42,7 +42,7 @@ func (t TenantControlPlaneDefaults) OnDelete(runtime.Object) AdmissionResponse {
 	return utils.NilOp()
 }
 
-func (t TenantControlPlaneDefaults) OnUpdate(object runtime.Object, oldObject runtime.Object) AdmissionResponse {
+func (t TenantControlPlaneDefaults) OnUpdate(runtime.Object, runtime.Object) AdmissionResponse {
 	// all immutability requirements are handled trough CEL annotations on the TenantControlPlaneSpec type
 	return utils.NilOp()
 }

@@ -1,3 +1,6 @@
+// Copyright 2022 Clastix Labs
+// SPDX-License-Identifier: Apache-2.0
+
 package handlers_test
 
 import (
@@ -69,7 +72,7 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 		It("should not issue any patches", func() {
 			ops, err := t.OnCreate(tcp)(ctx, admission.Request{})
 			Expect(err).ToNot(HaveOccurred())
-			Expect(ops).To(HaveLen(0))
+			Expect(ops).To(BeEmpty())
 		})
 	})
 })
