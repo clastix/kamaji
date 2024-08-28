@@ -18,21 +18,8 @@ Stable Release artifacts of Kamaji follow semantic versioning, whereby changes i
 
 | Kamaji | Management Cluster | Tenant Cluster       |
 |--------|--------------------|----------------------|
-| v0.3.0 | v1.22+             | [v1.21.0 .. v1.27.0] |
-| v0.3.1 | v1.22+             | [v1.21.0 .. v1.27.3] |
-| v0.3.2 | v1.22+             | [v1.21.0 .. v1.27.3] |
-| v0.3.3 | v1.22+             | [v1.21.0 .. v1.27.3] |
-| v0.3.4 | v1.22+             | [v1.21.0 .. v1.28.1] |
-| v0.3.5 | v1.22+             | [v1.21.0 .. v1.28.1] |
-| v0.3.5 | v1.22+             | [v1.21.0 .. v1.28.1] |
-| v0.4.0 | v1.22+             | [v1.21.0 .. v1.29.0] |
-| v0.4.1 | v1.22+             | [v1.21.0 .. v1.29.1] |
-| v0.4.2 | v1.22+             | [v1.21.0 .. v1.29.1] |
-| v0.5.0 | v1.22+             | [v1.21.0 .. v1.30.0] |
-| v0.6.0 | v1.22+             | [v1.21.0 .. v1.30.1] |
 | v1.0.0 | v1.22+             | [v1.21.0 .. v1.30.2] |
 
-As of July 2024 [Clastix Labs](https://github.com/clastix) organization does no longer provide stable release artifacts.
-Stable Release artefacts are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor.
+As of July 2024 [Clastix Labs](https://github.com/clastix) organization does no longer provide stable release artifacts. Stable Release artefacts are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor.
 
 > Learn more about [available subscription plans](https://clastix.io/support/) from CLASTIX.

@@ -13,7 +13,7 @@
 
 ### 🤔 What is Kamaji?
 
-**Kamaji** is a **Kubernetes Control Plane Manager** leveraging on the concept of [**Hosted Control Plane**](https://clastix.io/post/the-raise-of-hosted-control-plane-in-kubernetes/).
+**Kamaji** is the **Kubernetes Control Plane Manager** leveraging on the concept of [**Hosted Control Plane**](https://clastix.io/post/the-raise-of-hosted-control-plane-in-kubernetes/).
 
 Kamaji's approach is based on running the Kubernetes Control Plane components in Pods instead of dedicated machines.
 This allows operating Kubernetes clusters at scale, with a fraction of the operational burden.

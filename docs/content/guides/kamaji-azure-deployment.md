@@ -14,8 +14,7 @@ The guide requires:
 
   * [Prepare the bootstrap workspace](#prepare-the-bootstrap-workspace)
   * [Access Management Cluster](#access-management-cluster)
-  * [Install Cert Manager](#install-cert-manager)
-  * [Install Kamaji controller](#install-kamaji-controller)
+  * [Install Kamaji](#install-kamaji)
   * [Create Tenant Cluster](#create-tenant-cluster)
   * [Cleanup](#cleanup)
 
@@ -97,35 +96,9 @@ And check you can access:
 kubectl cluster-info
 ```
 
-## Install Cert Manager
+## Install Kamaji
 
-Kamaji takes advantage of the [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/), such as validating and mutating webhook configurations. These webhooks are secured by a TLS communication, and the certificates are managed by [`cert-manager`](https://cert-manager.io/), making it a prerequisite that must be installed:
-
-```bash
-helm repo add jetstack https://charts.jetstack.io
-helm repo update
-helm install \
-  cert-manager jetstack/cert-manager \
-  --namespace cert-manager \
-  --create-namespace \
-  --version v1.11.0 \
-  --set installCRDs=true
-```
-
-## Install Kamaji Controller
-
-Installing Kamaji via Helm charts is the preferred way. The Kamaji controller needs to access a Datastore in order to save data of the tenants' clusters. The Kamaji Helm Chart provides the installation of a basic unmanaged `etcd` as datastore, out of box. 
-
-Install Kamaji with `helm` using an unmanaged `etcd` as default datastore:
-
-```bash
-helm repo add clastix https://clastix.github.io/charts
-helm repo update
-helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
-```
-
-!!! note "A managed datastore is highly recommended in production"
-     The [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides the code to setup a multi-tenant `etcd` running as StatefulSet made of three replicas. Optionally, Kamaji offers support for a more robust storage system, as `MySQL`, `PostgreSQL`, or `NATS` compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
+Follow the [Getting Started](../getting-started.md) to install Cert Manager and the Kamaji Controller.
 
 ## Create Tenant Cluster
 
