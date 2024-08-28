@@ -20,6 +20,6 @@ Stable Release artifacts of Kamaji follow semantic versioning, whereby changes i
 |--------|--------------------|----------------------|
 | v1.0.0 | v1.22+             | [v1.21.0 .. v1.30.2] |
 
-As of July 2024 [Clastix Labs](https://github.com/clastix) organization does no longer provide stable release artifacts. Stable Release artefacts are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor.
+As of July 2024 [Clastix Labs](https://github.com/clastix) organization does no longer provide stable release artifacts. Stable Release artifacts are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor.
 
 > Learn more about [available subscription plans](https://clastix.io/support/) from CLASTIX.

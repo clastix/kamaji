@@ -89,7 +89,8 @@ Run the following commands to install latest edge release of Kamaji:
 ```bash
 git clone https://github.com/clastix/kamaji
 cd kamaji
-helm install kamaji charts/kamaji -n kamaji-system --create-namespace --set image.tag=latest
+helm install kamaji charts/kamaji -n kamaji-system --create-namespace \
+    --set image.tag=latest
 ```
 
 After installation, verify that Kamaji and its components are running:
@@ -270,6 +271,9 @@ And make sure it is `${TENANT_ADDR}:${TENANT_PORT}`.
 
 The Tenant Control Plane is made of pods running in the Kamaji Management Cluster. At this point, the Tenant Cluster has no worker nodes. So, the next step is to join some worker nodes to the Tenant Control Plane.
 
+!!! warning "Opening Ports"
+    To make sure worker nodes can join the Tenant Control Plane, you must allow incoming connections to: `${TENANT_ADDR}:${TENANT_PORT}` and `${TENANT_ADDR}:${TENANT_PROXY_PORT}`
+
 Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Refer to the [Cluster API guide](guides/cluster-api.md) to learn more about supported providers.
 
 An alternative approach for joining nodes is to use the `kubeadm` command on each node. Follow the related [documentation](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) in order to:
@@ -397,10 +401,11 @@ kubectl delete ValidatingWebhookConfiguration kamaji-validating-webhook-configur
 kubectl delete MutatingWebhookConfiguration kamaji-mutating-webhook-configuration
 ```
 
-And if still present, delete the datasore:
+And if still present, delete the datastore:
 
 ```bash
-kubectl patch datastore default --type='json' -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
+kubectl patch datastore default --type='json' \
+  -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
 
 kubectl delete datastore default
 ```
