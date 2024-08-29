@@ -109,7 +109,6 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 		}
 		d.job.Spec.Template.Spec.Containers[0].Name = "migrate"
 		d.job.Spec.Template.Spec.Containers[0].Image = d.MigrateImage
-		d.job.Spec.Template.Spec.Containers[0].Command = []string{"/kamaji"}
 		d.job.Spec.Template.Spec.Containers[0].Args = []string{
 			"migrate",
 			fmt.Sprintf("--tenant-control-plane=%s/%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName()),
