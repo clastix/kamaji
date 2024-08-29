@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 1.0.0
+VERSION ?= v1.0.0
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -33,10 +33,10 @@ IMAGE_TAG_BASE ?= clastix.io/operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
+BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:$(VERSION)
 
 # Image URL to use all building/pushing image targets
-IMG ?= clastix/kamaji:v$(VERSION)
+CONTAINER_REPOSITORY ?= docker.io/clastix/kamaji
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -49,6 +49,21 @@ endif
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
+
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+
+## Tool Binaries
+APIDOCS_GEN    ?= $(LOCALBIN)/crdoc
+CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+GINKGO         ?= $(LOCALBIN)/ginkgo
+GOLANGCI_LINT  ?= $(LOCALBIN)/golangci-lint
+HELM           ?= $(LOCALBIN)/helm
+KUSTOMIZE      ?= $(LOCALBIN)/kustomize
+KIND           ?= $(LOCALBIN)/kind
+KO             ?= $(LOCALBIN)/ko
 
 all: build
 
@@ -70,34 +85,43 @@ help: ## Display this help.
 
 ##@ Binary
 
+.PHONY: ko
+ko: $(HELM) ## Download ko locally if necessary.
+$(KO): $(LOCALBIN)
+	test -s $(LOCALBIN)/ko || GOBIN=$(LOCALBIN) go install github.com/google/ko@v0.14.1
+
 .PHONY: helm
-HELM = $(shell pwd)/bin/helm
-helm: ## Download helm locally if necessary.
-	$(call go-install-tool,$(HELM),helm.sh/helm/v3/cmd/helm@v3.9.0)
+helm: $(HELM) ## Download helm locally if necessary.
+$(HELM): $(LOCALBIN)
+	test -s $(LOCALBIN)/helm || GOBIN=$(LOCALBIN) go install helm.sh/helm/v3/cmd/helm@v3.9.0
 
-GINKGO = $(shell pwd)/bin/ginkgo
-ginkgo: ## Download ginkgo locally if necessary.
-	$(call go-install-tool,$(GINKGO),github.com/onsi/ginkgo/v2/ginkgo)
+.PHONY: ginkgo
+ginkgo: $(GINKGO) ## Download ginkgo locally if necessary.
+$(GINKGO): $(LOCALBIN)
+	test -s $(LOCALBIN)/ginkgo || GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo
 
-KIND = $(shell pwd)/bin/kind
-kind: ## Download kind locally if necessary.
-	$(call go-install-tool,$(KIND),sigs.k8s.io/kind/cmd/kind@v0.14.0)
+.PHONY: kind
+kind: $(KIND) ## Download kind locally if necessary.
+$(KIND): $(LOCALBIN)
+	test -s $(LOCALBIN)/kind || GOBIN=$(LOCALBIN) go install sigs.k8s.io/kind/cmd/kind@v0.14.0
 
-CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
-controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.16.1)
+.PHONY: controller-gen
+controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
+$(CONTROLLER_GEN): $(LOCALBIN)
+	test -s $(LOCALBIN)/controller-gen || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.16.1
 
-GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
-golangci-lint: ## Download golangci-lint locally if necessary.
-	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2)
+.PHONY: golangci-lint
+golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
+$(GOLANGCI_LINT): $(LOCALBIN)
+	test -s $(LOCALBIN)/golangci-lint || GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2
 
-KUSTOMIZE = $(shell pwd)/bin/kustomize
+.PHONY: apidocs-gen
+apidocs-gen: $(APIDOCS_GEN)  ## Download crdoc locally if necessary.
+$(APIDOCS_GEN): $(LOCALBIN)
+	test -s $(LOCALBIN)/crdoc || GOBIN=$(LOCALBIN) go install fybrik.io/crdoc@latest
+
 kustomize: ## Download kustomize locally if necessary.
 	$(call install-kustomize,$(KUSTOMIZE),3.8.7)
-
-APIDOCS_GEN = $(shell pwd)/bin/crdoc
-apidocs-gen: ## Download crdoc locally if necessary.
-	$(call go-install-tool,$(APIDOCS_GEN),fybrik.io/crdoc@latest)
 
 ##@ Development
 
@@ -159,33 +183,29 @@ datastores: datastore-mysql datastore-etcd datastore-postgres datastore-nats ## 
 
 # Get information about git current status
 GIT_HEAD_COMMIT ?= $$(git rev-parse --short HEAD)
-GIT_TAG_COMMIT  ?= $$(git rev-parse --short v$(VERSION))
+GIT_TAG_COMMIT  ?= $$(git rev-parse --short $(VERSION))
 GIT_MODIFIED_1  ?= $$(git diff $(GIT_HEAD_COMMIT) $(GIT_TAG_COMMIT) --quiet && echo "" || echo ".dev")
 GIT_MODIFIED_2  ?= $$(git diff --quiet && echo "" || echo ".dirty")
 GIT_MODIFIED    ?= $$(echo "$(GIT_MODIFIED_1)$(GIT_MODIFIED_2)")
 GIT_REPO        ?= $$(git config --get remote.origin.url)
 BUILD_DATE      ?= $$(git log -1 --format="%at" | xargs -I{} date -d @{} +%Y-%m-%dT%H:%M:%S)
 
-.PHONY: get_version
-get_version:
-	@echo -n v$(VERSION)
+LD_FLAGS ?= "-X github.com/clastix/kamaji/internal.GitCommit=$(GIT_HEAD_COMMIT) \
+             -X github.com/clastix/kamaji/internal.GitTag=$(VERSION) \
+             -X github.com/clastix/kamaji/internal.GitDirty=$(GIT_MODIFIED) \
+             -X github.com/clastix/kamaji/internal.BuildTime=$(BUILD_DATE) \
+             -X github.com/clastix/kamaji/internal.GitRepo=$(GIT_REPO)"
 
-build: generate golint ## Build manager binary.
-	go build -o bin/manager main.go
+KO_PUSH ?= false
+KO_LOCAL ?= true
 
 run: manifests generate ## Run a controller from your host.
 	go run ./main.go
 
-docker-build: ## Build docker image with the manager.
-	docker build -t ${IMG} . --build-arg GIT_HEAD_COMMIT=$(GIT_HEAD_COMMIT) \
-		--build-arg GIT_TAG_COMMIT=$(GIT_TAG_COMMIT) \
-		--build-arg GIT_MODIFIED=$(GIT_MODIFIED) \
-		--build-arg GIT_REPO=$(GIT_REPO) \
-		--build-arg GIT_LAST_TAG=v$(VERSION) \
-		--build-arg BUILD_DATE=$(BUILD_DATE)
-
-docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+build: $(KO)
+	LD_FLAGS=$(LD_FLAGS) \
+	KOCACHE=/tmp/ko-cache KO_DOCKER_REPO=${CONTAINER_REPOSITORY} \
+	$(KO) build ./ --bare --tags=$(VERSION) --local=$(KO_LOCAL) --push=$(KO_PUSH)
 
 ##@ Deployment
 
@@ -201,8 +221,8 @@ cert-manager:
 dev: generate manifests uninstall install rbac ## Full installation for development purposes
 	go fmt ./...
 
-load: docker-build kind
-	$(KIND) load docker-image --name kamaji ${IMG}
+load: kind build
+	$(KIND) load docker-image --name kamaji ${CONTAINER_REPOSITORY}:${VERSION}
 
 rbac: manifests kustomize ## Install RBAC into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/rbac | kubectl apply -f -
@@ -214,7 +234,7 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${CONTAINER_REPOSITORY}:${VERSION}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
@@ -289,16 +309,6 @@ bash ./install_kustomize.sh $(2) ;\
 }
 endef
 
-# go-install-tool will 'go install' any package $2 and install it to $1.
-PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
-define go-install-tool
-@[ -f $(1) ] || { \
-set -e ;\
-echo "Installing $(2)" ;\
-GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
-}
-endef
-
 .PHONY: env
 env:
 	@make -C deploy/kind kind ingress-nginx
@@ -315,5 +325,6 @@ e2e: env load helm ginkgo cert-manager ## Create a KinD cluster, install Kamaji 
 
 ##@ Document
 
+.PHONY: apidoc
 apidoc: apidocs-gen
 	$(APIDOCS_GEN) crdoc --resources config/crd/bases --output docs/content/reference/api.md --template docs/templates/reference-cr.tmpl

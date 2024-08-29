@@ -1,0 +1,28 @@
+name: Container image build
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  ko:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: "ko: install"
+        run: make ko
+      - name: "ko: login to quay.io container registry"
+        run: ./bin/ko login quay.io -u ${{ secrets.QUAY_IO_USERNAME }} -p ${{ secrets.QUAY_IO_TOKEN }}
+      - name: "ko: login to docker.io container registry"
+        run: ./bin/ko login docker.io -u ${{ secrets.DOCKER_IO_USERNAME }} -p ${{ secrets.DOCKER_IO_TOKEN }}
+      - name: "ko: build and push latest"
+        run: make VERSION=latest KO_LOCAL=false KO_PUSH=true build
+      - name: "ko: build and push tag"
+        run: make VERSION=${{ github.ref_name }} KO_LOCAL=false KO_PUSH=true build
+        if: startsWith(github.event.ref, 'refs/tags/v')
