@@ -86,7 +86,7 @@ help: ## Display this help.
 ##@ Binary
 
 .PHONY: ko
-ko: $(HELM) ## Download ko locally if necessary.
+ko: $(KO) ## Download ko locally if necessary.
 $(KO): $(LOCALBIN)
 	test -s $(LOCALBIN)/ko || GOBIN=$(LOCALBIN) go install github.com/google/ko@v0.14.1
 
