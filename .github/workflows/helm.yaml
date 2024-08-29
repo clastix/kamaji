@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
-      - uses: azure/setup-helm@v1
+      - uses: azure/setup-helm@v4
         with:
           version: 3.3.4
       - name: Building dependencies
