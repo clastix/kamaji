@@ -73,9 +73,7 @@ helm install \
 
 ## Install Kamaji Controller
 
-Installing Kamaji via Helm charts is the preferred way. The Kamaji controller needs to access a Datastore in order to save data of the tenants' clusters. The Kamaji Helm Chart provides the installation of a basic unmanaged `etcd` as datastore, out of box. 
-
-Install Kamaji with `helm` using an unmanaged `etcd` as default datastore:
+Installing Kamaji via Helm charts is the preferred way. Run the following commands to install a stable release of Kamaji:
 
 ```bash
 helm repo add clastix https://clastix.github.io/charts
@@ -83,23 +81,37 @@ helm repo update
 helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
 ```
 
-!!! note "A managed datastore is highly recommended in production"
-     The [kamaji-etcd](https://github.com/clastix/kamaji-etcd) project provides the code to setup a multi-tenant `etcd` running as StatefulSet made of three replicas. Optionally, Kamaji offers support for a more robust storage system, as `MySQL` or `PostgreSQL` compatible database, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
+!!! info "Stable Releases"
+    As of July 2024 [Clastix Labs](https://github.com/clastix) does no longer publish stable release artifacts. Stable releases are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor. 
 
-Now you should end up with a working Kamaji instance, including the default `datastore`:
+Run the following commands to install latest edge release of Kamaji:
+
+```bash
+git clone https://github.com/clastix/kamaji
+cd kamaji
+helm install kamaji charts/kamaji -n kamaji-system --create-namespace \
+    --set image.tag=latest
+```
+
+After installation, verify that Kamaji and its components are running:
+
+```bash
+kubectl -n kamaji-system get pods
+```
+
+Expected output:
 
 ```bash
 kubectl -n kamaji-system get pods
 NAME                         READY   STATUS      RESTARTS      AGE
-etcd-0                       1/1     Running     0             50s
-etcd-1                       1/1     Running     0             60s
-etcd-2                       1/1     Running     0             90s
+kamaji-etcd-0                1/1     Running     0             50s
+kamaji-etcd-1                1/1     Running     0             60s
+kamaji-etcd-2                1/1     Running     0             90s
 kamaji-7949578bfb-lj44p      1/1     Running     0             12s
 ```
 
-> An unsuccessful first installation could fail for several reasons, such as missing a `StorageClass`, or even for a trivial `Ctrl+C` during the installation phase.
->
-> See the [Cleanup](#cleanup) section before to retry an aborted installation. 
+!!! info "Kamaji Datastore"
+    Kamaji installs [kamaji-etcd](https://github.com/clastix/kamaji-etcd) as its default datastore, which is a multi-tenant `etcd`. Optionally, Kamaji offers support for other storage systems, as `PostgreSQL`, `MySQL` or `NATS`, thanks to the native [kine](https://github.com/k3s-io/kine) integration.
 
 ## Create Tenant Cluster
 
@@ -259,6 +271,9 @@ And make sure it is `${TENANT_ADDR}:${TENANT_PORT}`.
 
 The Tenant Control Plane is made of pods running in the Kamaji Management Cluster. At this point, the Tenant Cluster has no worker nodes. So, the next step is to join some worker nodes to the Tenant Control Plane.
 
+!!! warning "Opening Ports"
+    To make sure worker nodes can join the Tenant Control Plane, you must allow incoming connections to: `${TENANT_ADDR}:${TENANT_PORT}` and `${TENANT_ADDR}:${TENANT_PROXY_PORT}`
+
 Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Refer to the [Cluster API guide](guides/cluster-api.md) to learn more about supported providers.
 
 An alternative approach for joining nodes is to use the `kubeadm` command on each node. Follow the related [documentation](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) in order to:
@@ -384,6 +399,15 @@ In case of a broken installation, manually remove the hooks installed by Kamaji:
 ```bash
 kubectl delete ValidatingWebhookConfiguration kamaji-validating-webhook-configuration
 kubectl delete MutatingWebhookConfiguration kamaji-mutating-webhook-configuration
+```
+
+And if still present, delete the datastore:
+
+```bash
+kubectl patch datastore default --type='json' \
+  -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
+
+kubectl delete datastore default
 ```
 
 That's all folks!

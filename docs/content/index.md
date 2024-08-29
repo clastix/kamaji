@@ -1,6 +1,6 @@
 # Kamaji
 
-**Kamaji** is a **Kubernetes Control Plane Manager**. It operates Kubernetes at scale with a fraction of the operational burden.
+**Kamaji** is the **Kubernetes Control Plane Manager**. It operates Kubernetes at scale with a fraction of the operational burden.
 
 ## How it works
 Kamaji turns any Kubernetes cluster into a _“Management Cluster”_ to orchestrate other Kubernetes clusters called _“Tenant Clusters”_. Kamaji is special because the Control Plane components are running inside pods instead of dedicated machines. This solution makes running multiple Control Planes cheaper and easier to deploy and operate. 
