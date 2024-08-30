@@ -12,7 +12,7 @@ jobs:
     name: diff
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - run: make -C charts/kamaji docs
@@ -21,7 +21,7 @@ jobs:
   lint:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: azure/setup-helm@v4
         with:
           version: 3.3.4
@@ -35,7 +35,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/helm-v')
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Publish Helm chart
         uses: stefanprodan/helm-gh-pages@master
         with:
