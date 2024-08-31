@@ -210,10 +210,10 @@ build: $(KO)
 ##@ Deployment
 
 metallb:
-	kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
-	kubectl apply -f https://kind.sigs.k8s.io/examples/loadbalancer/metallb-config.yaml
-	echo ""
-	docker network inspect -f '{{.IPAM.Config}}' kind
+	kubectl apply -f "https://raw.githubusercontent.com/metallb/metallb/$$(curl "https://api.github.com/repos/metallb/metallb/releases/latest" | jq -r ".tag_name")/config/manifests/metallb-native.yaml"
+	kubectl wait pods -n metallb-system -l app=metallb,component=controller --for=condition=Ready --timeout=10m
+	kubectl wait pods -n metallb-system -l app=metallb,component=speaker --for=condition=Ready --timeout=2m
+	cat hack/metallb.yaml | sed -E "s|172.19|$$(docker network inspect -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}' kind | sed -E 's|^([0-9]+\.[0-9]+)\..*$$|\1|g')|g" | kubectl apply -f -
 
 cert-manager:
 	kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.10.1/cert-manager.yaml
