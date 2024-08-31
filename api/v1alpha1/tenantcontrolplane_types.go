@@ -18,18 +18,18 @@ type NetworkProfileSpec struct {
 	// ExternalIPs of the Kubernetes Service (only ClusterIP or NodePort)
 	AllowAddressAsExternalIP bool `json:"allowAddressAsExternalIP,omitempty"`
 	// Port where API server of will be exposed
-	// +kubebuilder:default=6443
+	//+kubebuilder:default=6443
 	Port int32 `json:"port,omitempty"`
 	// CertSANs sets extra Subject Alternative Names (SANs) for the API Server signing certificate.
 	// Use this field to add additional hostnames when exposing the Tenant Control Plane with third solutions.
 	CertSANs []string `json:"certSANs,omitempty"`
 	// Kubernetes Service
-	// +kubebuilder:default="10.96.0.0/16"
+	//+kubebuilder:default="10.96.0.0/16"
 	ServiceCIDR string `json:"serviceCidr,omitempty"`
 	// CIDR for Kubernetes Pods
-	// +kubebuilder:default="10.244.0.0/16"
+	//+kubebuilder:default="10.244.0.0/16"
 	PodCIDR string `json:"podCidr,omitempty"`
-	// +kubebuilder:default={"10.96.0.10"}
+	//+kubebuilder:default={"10.96.0.10"}
 	DNSServiceIPs []string `json:"dnsServiceIPs,omitempty"`
 }
 
@@ -47,8 +47,8 @@ const (
 type KubeletSpec struct {
 	// Ordered list of the preferred NodeAddressTypes to use for kubelet connections.
 	// Default to Hostname, InternalIP, ExternalIP.
-	// +kubebuilder:default={"Hostname","InternalIP","ExternalIP"}
-	// +kubebuilder:validation:MinItems=1
+	//+kubebuilder:default={"Hostname","InternalIP","ExternalIP"}
+	//+kubebuilder:validation:MinItems=1
 	PreferredAddressTypes []KubeletPreferredAddressType `json:"preferredAddressTypes,omitempty"`
 	// CGroupFS defines the  cgroup driver for Kubelet
 	// https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
@@ -63,7 +63,7 @@ type KubernetesSpec struct {
 
 	// List of enabled Admission Controllers for the Tenant cluster.
 	// Full reference available here: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers
-	// +kubebuilder:default=CertificateApproval;CertificateSigning;CertificateSubjectRestriction;DefaultIngressClass;DefaultStorageClass;DefaultTolerationSeconds;LimitRanger;MutatingAdmissionWebhook;NamespaceLifecycle;PersistentVolumeClaimResize;Priority;ResourceQuota;RuntimeClass;ServiceAccount;StorageObjectInUseProtection;TaintNodesByCondition;ValidatingAdmissionWebhook
+	//+kubebuilder:default=CertificateApproval;CertificateSigning;CertificateSubjectRestriction;DefaultIngressClass;DefaultStorageClass;DefaultTolerationSeconds;LimitRanger;MutatingAdmissionWebhook;NamespaceLifecycle;PersistentVolumeClaimResize;Priority;ResourceQuota;RuntimeClass;ServiceAccount;StorageObjectInUseProtection;TaintNodesByCondition;ValidatingAdmissionWebhook
 	AdmissionControllers AdmissionControllers `json:"admissionControllers,omitempty"`
 }
 
@@ -105,9 +105,9 @@ type ControlPlaneComponentsResources struct {
 type DeploymentSpec struct {
 	// RegistrySettings allows to override the default images for the given Tenant Control Plane instance.
 	// It could be used to point to a different container registry rather than the public one.
-	// +kubebuilder:default={registry:"registry.k8s.io",apiServerImage:"kube-apiserver",controllerManagerImage:"kube-controller-manager",schedulerImage:"kube-scheduler"}
+	//+kubebuilder:default={registry:"registry.k8s.io",apiServerImage:"kube-apiserver",controllerManagerImage:"kube-controller-manager",schedulerImage:"kube-scheduler"}
 	RegistrySettings RegistrySettings `json:"registrySettings,omitempty"`
-	// +kubebuilder:default=2
+	//+kubebuilder:default=2
 	Replicas *int32 `json:"replicas,omitempty"`
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
 	// Selector which must match a node's labels for the pod to be scheduled on that node.
@@ -121,7 +121,7 @@ type DeploymentSpec struct {
 	RuntimeClassName string `json:"runtimeClassName,omitempty"`
 	// Strategy describes how to replace existing pods with new ones for the given Tenant Control Plane.
 	// Default value is set to Rolling Update, with a blue/green strategy.
-	// +kubebuilder:default={type:"RollingUpdate",rollingUpdate:{maxUnavailable:0,maxSurge:"100%"}}
+	//+kubebuilder:default={type:"RollingUpdate",rollingUpdate:{maxUnavailable:0,maxSurge:"100%"}}
 	Strategy appsv1.DeploymentStrategy `json:"strategy,omitempty"`
 	// If specified, the Tenant Control Plane pod's tolerations.
 	// More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
@@ -153,7 +153,7 @@ type DeploymentSpec struct {
 	// AdditionalVolumeMounts allows to mount an additional volume into each component of the Control Plane
 	// (kube-apiserver, controller-manager, and scheduler).
 	AdditionalVolumeMounts *AdditionalVolumeMounts `json:"additionalVolumeMounts,omitempty"`
-	// +kubebuilder:default="default"
+	//+kubebuilder:default="default"
 	// ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
@@ -204,10 +204,10 @@ type KonnectivityServerSpec struct {
 	// The port which Konnectivity server is listening to.
 	Port int32 `json:"port"`
 	// Container image version of the Konnectivity server.
-	// +kubebuilder:default=v0.28.6
+	//+kubebuilder:default=v0.28.6
 	Version string `json:"version,omitempty"`
 	// Container image used by the Konnectivity server.
-	// +kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-server
+	//+kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-server
 	Image string `json:"image,omitempty"`
 	// Resources define the amount of CPU and memory to allocate to the Konnectivity server.
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
@@ -216,23 +216,23 @@ type KonnectivityServerSpec struct {
 
 type KonnectivityAgentSpec struct {
 	// AgentImage defines the container image for Konnectivity's agent.
-	// +kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-agent
+	//+kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-agent
 	Image string `json:"image,omitempty"`
 	// Version for Konnectivity agent.
-	// +kubebuilder:default=v0.28.6
+	//+kubebuilder:default=v0.28.6
 	Version string `json:"version,omitempty"`
 	// Tolerations for the deployed agent.
 	// Can be customized to start the konnectivity-agent even if the nodes are not ready or tainted.
-	// +kubebuilder:default={{key: "CriticalAddonsOnly", operator: "Exists"}}
+	//+kubebuilder:default={{key: "CriticalAddonsOnly", operator: "Exists"}}
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 	ExtraArgs   ExtraArgs           `json:"extraArgs,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.
 type KonnectivitySpec struct {
-	// +kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-server",port:8132}
+	//+kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-server",port:8132}
 	KonnectivityServerSpec KonnectivityServerSpec `json:"server,omitempty"`
-	// +kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-agent"}
+	//+kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-agent"}
 	KonnectivityAgentSpec KonnectivityAgentSpec `json:"agent,omitempty"`
 }
 
@@ -263,16 +263,17 @@ type TenantControlPlaneSpec struct {
 	Addons AddonsSpec `json:"addons,omitempty"`
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:subresource:scale:specpath=.spec.controlPlane.deployment.replicas,statuspath=.status.kubernetesResources.deployment.replicas,selectorpath=.status.kubernetesResources.deployment.selector
-// +kubebuilder:resource:categories=kamaji,shortName=tcp
-// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.kubernetes.version",description="Kubernetes version"
-// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.kubernetesResources.version.status",description="Status"
-// +kubebuilder:printcolumn:name="Control-Plane endpoint",type="string",JSONPath=".status.controlPlaneEndpoint",description="Tenant Control Plane Endpoint (API server)"
-// +kubebuilder:printcolumn:name="Kubeconfig",type="string",JSONPath=".status.kubeconfig.admin.secretName",description="Secret which contains admin kubeconfig"
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+//+kubebuilder:subresource:scale:specpath=.spec.controlPlane.deployment.replicas,statuspath=.status.kubernetesResources.deployment.replicas,selectorpath=.status.kubernetesResources.deployment.selector
+//+kubebuilder:resource:categories=kamaji,shortName=tcp
+//+kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.kubernetes.version",description="Kubernetes version"
+//+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.kubernetesResources.version.status",description="Status"
+//+kubebuilder:printcolumn:name="Control-Plane endpoint",type="string",JSONPath=".status.controlPlaneEndpoint",description="Tenant Control Plane Endpoint (API server)"
+//+kubebuilder:printcolumn:name="Kubeconfig",type="string",JSONPath=".status.kubeconfig.admin.secretName",description="Secret which contains admin kubeconfig"
 //+kubebuilder:printcolumn:name="Datastore",type="string",JSONPath=".status.storage.dataStoreName",description="DataStore actually used"
-// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Age"
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Age"
+//+kubebuilder:metadata:annotations={"cert-manager.io/inject-ca-from=kamaji-system/kamaji-serving-cert"}
 
 // TenantControlPlane is the Schema for the tenantcontrolplanes API.
 type TenantControlPlane struct {
