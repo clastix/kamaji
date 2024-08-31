@@ -207,7 +207,7 @@ build: $(KO)
 	KOCACHE=/tmp/ko-cache KO_DOCKER_REPO=${CONTAINER_REPOSITORY} \
 	$(KO) build ./ --bare --tags=$(VERSION) --local=$(KO_LOCAL) --push=$(KO_PUSH)
 
-##@ Deployment
+##@ Development
 
 metallb:
 	kubectl apply -f "https://raw.githubusercontent.com/metallb/metallb/$$(curl "https://api.github.com/repos/metallb/metallb/releases/latest" | jq -r ".tag_name")/config/manifests/metallb-native.yaml"
@@ -216,10 +216,8 @@ metallb:
 	cat hack/metallb.yaml | sed -E "s|172.19|$$(docker network inspect -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}' kind | sed -E 's|^([0-9]+\.[0-9]+)\..*$$|\1|g')|g" | kubectl apply -f -
 
 cert-manager:
-	kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.10.1/cert-manager.yaml
-
-dev: generate manifests uninstall install rbac ## Full installation for development purposes
-	go fmt ./...
+	$(HELM) repo add bitnami https://charts.bitnami.com/bitnami
+	$(HELM) upgrade --install cert-manager bitnami/cert-manager --namespace certmanager-system --create-namespace --set "installCRDs=true"
 
 load: kind build
 	$(KIND) load docker-image --name kamaji ${CONTAINER_REPOSITORY}:${VERSION}
