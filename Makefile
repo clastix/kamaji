@@ -227,4 +227,4 @@ e2e: env build load helm ginkgo cert-manager ## Create a KinD cluster, install K
 
 .PHONY: apidoc
 apidoc: apidocs-gen
-	$(APIDOCS_GEN) crdoc --resources config/crd/bases --output docs/content/reference/api.md --template docs/templates/reference-cr.tmpl
+	$(APIDOCS_GEN) crdoc --resources charts/kamaji/crds --output docs/content/reference/api.md --template docs/templates/reference-cr.tmpl

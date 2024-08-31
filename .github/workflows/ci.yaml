@@ -14,8 +14,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
-          check-latest: true
+          go-version-file: go.mod
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6.1.0
         with:
@@ -31,12 +30,11 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
-          check-latest: true
-      - run: make yaml-installation-file
-      - name: Checking if YAML installer file is not aligned
+          go-version-file: go.mod
+      - run: make manifests
+      - name: Checking if generated manifests are not aligned
         run: if [[ $(git diff | wc -l) -gt 0 ]]; then echo ">>> Untracked generated files have not been committed" && git --no-pager diff && exit 1; fi
-      - name: Checking if YAML installer generated untracked files
+      - name: Checking if missing untracked files for generated manifests
         run: test -z "$(git ls-files --others --exclude-standard 2> /dev/null)"
       - name: Checking if source code is not formatted
         run: test -z "$(git diff 2> /dev/null)"
