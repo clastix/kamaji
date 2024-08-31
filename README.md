@@ -148,7 +148,7 @@ In case of **✨ Feature Requests** please use the [Discussion's Feature Request
 
 ### 📝 License
 
-The Kamaji Cluster API Control Plane provider is licensed under Apache 2.0.
+Kamaji is licensed under Apache 2.0.
 The code is provided as-is with no warranties.
 
 ### 🛟 Commercial Support
