@@ -4,15 +4,15 @@
 package v1alpha1
 
 type RegistrySettings struct {
-	// +kubebuilder:default="registry.k8s.io"
+	//+kubebuilder:default="registry.k8s.io"
 	Registry string `json:"registry,omitempty"`
 	// The tag to append to all the Control Plane container images.
 	// Optional.
 	TagSuffix string `json:"tagSuffix,omitempty"`
-	// +kubebuilder:default="kube-apiserver"
+	//+kubebuilder:default="kube-apiserver"
 	APIServerImage string `json:"apiServerImage,omitempty"`
-	// +kubebuilder:default="kube-controller-manager"
+	//+kubebuilder:default="kube-controller-manager"
 	ControllerManagerImage string `json:"controllerManagerImage,omitempty"`
-	// +kubebuilder:default="kube-scheduler"
+	//+kubebuilder:default="kube-scheduler"
 	SchedulerImage string `json:"schedulerImage,omitempty"`
 }

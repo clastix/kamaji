@@ -198,7 +198,7 @@ var (
 type KubernetesVersion struct {
 	// Version is the running Kubernetes version of the Tenant Control Plane.
 	Version string `json:"version,omitempty"`
-	// +kubebuilder:default=Provisioning
+	//+kubebuilder:default=Provisioning
 	// Status returns the current status of the Kubernetes version, such as its provisioning state, or completed upgrade.
 	Status *KubernetesVersionStatus `json:"status,omitempty"`
 }

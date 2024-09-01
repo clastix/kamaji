@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=etcd;MySQL;PostgreSQL;NATS
+//+kubebuilder:validation:Enum=etcd;MySQL;PostgreSQL;NATS
 
 type Driver string
 
@@ -19,7 +19,7 @@ var (
 	KineNatsDriver       Driver = "NATS"
 )
 
-// +kubebuilder:validation:MinItems=1
+//+kubebuilder:validation:MinItems=1
 
 type Endpoints []string
 
@@ -91,6 +91,7 @@ type DataStoreStatus struct {
 //+kubebuilder:resource:scope=Cluster
 //+kubebuilder:printcolumn:name="Driver",type="string",JSONPath=".spec.driver",description="Kamaji data store driver"
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Age"
+//+kubebuilder:metadata:annotations={"cert-manager.io/inject-ca-from=kamaji-system/kamaji-serving-cert"}
 
 // DataStore is the Schema for the datastores API.
 type DataStore struct {
