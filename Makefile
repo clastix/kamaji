@@ -121,8 +121,13 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 golint: golangci-lint ## Linting the code according to the styling guide.
 	$(GOLANGCI_LINT) run -c .golangci.yml
 
-test:
-	go test ./... -coverprofile cover.out
+.PHONY: test
+test: ## Run unit tests (all tests except E2E).
+	@go test \
+		./api/... \
+		./cmd/... \
+		./internal/... \
+		-coverprofile cover.out
 
 _datastore-mysql:
 	$(MAKE) NAME=$(NAME) -C deploy/kine/mysql mariadb
