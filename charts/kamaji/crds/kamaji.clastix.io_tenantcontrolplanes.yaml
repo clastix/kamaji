@@ -6415,8 +6415,18 @@ spec:
                   description: |-
                     DataStore allows to specify a DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
                     This parameter is optional and acts as an override over the default one which is used by the Kamaji Operator.
-                    Migration from a different DataStore to another one is not yet supported and the reconciliation will be blocked.
+                    Migration from a different DataStore to another one is supported, see: https://kamaji.clastix.io/guides/datastore-migration/
                   type: string
+                dataStoreSchema:
+                  description: |-
+                    DataStoreSchema allows to specify the name of the database (for relational DataStores) or the key prefix (for etcd). This
+                    value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreSchema values are unique. It's up
+                    to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
+                    DataStoreSchema by concatenating the namespace and name of the TenantControlPlane.
+                  type: string
+                  x-kubernetes-validations:
+                    - message: changing the dataStoreSchema is not supported
+                      rule: self == oldSelf
                 kubernetes:
                   description: Kubernetes specification for tenant control plane
                   properties:
@@ -6563,6 +6573,11 @@ spec:
                 - controlPlane
                 - kubernetes
               type: object
+              x-kubernetes-validations:
+                - message: unsetting the dataStore is not supported
+                  rule: '!has(oldSelf.dataStore) || has(self.dataStore)'
+                - message: unsetting the dataStoreSchema is not supported
+                  rule: '!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)'
             status:
               description: TenantControlPlaneStatus defines the observed state of TenantControlPlane.
               properties:
