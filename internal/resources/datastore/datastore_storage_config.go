@@ -157,15 +157,15 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 
 		var dataStoreSchema string
 		switch {
-		case len(tenantControlPlane.Spec.DataStoreSchema) > 0:
-			// for new TCPs, the spec field will have been provided by the user
-			// or defaulted by the defaulting webhook
-			dataStoreSchema = tenantControlPlane.Spec.DataStoreSchema
 		case len(tenantControlPlane.Status.Storage.Setup.Schema) > 0:
 			// for existing TCPs, the dataStoreSchema will be adopted from the status,
 			// as the mutating webhook only takes care of TCP creations, not updates
 			dataStoreSchema = tenantControlPlane.Status.Storage.Setup.Schema
 			tenantControlPlane.Spec.DataStoreSchema = dataStoreSchema
+		case len(tenantControlPlane.Spec.DataStoreSchema) > 0:
+			// for new TCPs, the spec field will have been provided by the user
+			// or defaulted by the defaulting webhook
+			dataStoreSchema = tenantControlPlane.Spec.DataStoreSchema
 		default:
 			// this can only happen on TCP creations when the webhook is not installed
 			return fmt.Errorf("cannot build datastore storage config, schema name must either exist in Spec or Status")
