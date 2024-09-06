@@ -16,6 +16,8 @@ Feel free to open a Pull-Request to get yours listed.
 | Vendor | Netsons | 2023 | [link](https://www.netsons.com) | Netsons is an Italian hosting and cloud provider and uses Kamaji in its [Managed Kubernetes](https://www.netsons.com/kubernetes) offering. |
 | Vendor | Aknostic | 2023 | [link](https://aknostic.com) | Aknostic is a cloud-native consultancy company using Kamaji to build a Kubernetes based PaaS. |
 | R&D | Orange | 2024 | [link](https://gitlab.com/Orange-OpenSource/kanod) | Orange is a French telecommunications company using Kamaji for experimental research purpose, with Kanod research solution. |
+| Vendor | Qumulus | 2024 | [link](https://www.qumulus.io) | Qumulus is a cloud provider and plans to use Kamaji for it's hosted Kubernetes service |
+ 
 
 ### Adopter Types
 
