@@ -94,23 +94,16 @@ func (c *CoreDNS) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControl
 	for _, obj := range []client.Object{c.serviceAccount, c.clusterRoleBinding, c.clusterRole, c.service, c.configMap, c.deployment} {
 		objectKey := client.ObjectKeyFromObject(obj)
 
-		logger.Info("Checking if object exists to be removed ", "obj", objectKey.String(), "kind", obj.GetObjectKind().GroupVersionKind().String())
-		if err := tenantClient.Get(ctx, objectKey, obj); err != nil {
+		if err = tenantClient.Get(ctx, objectKey, obj); err != nil {
 			if k8serrors.IsNotFound(err) {
-				logger.Error(err, "object does not exist")
-				logger.Info("Object doest not exist", "obj", objectKey.String(), "kind", obj.GetObjectKind().GroupVersionKind().String())
-
 				continue
 			}
 		}
-
 		// Don't delete resource if it is not managed by Kamaji
-		if _, ok := obj.GetLabels()[constants.ProjectNameLabelKey]; !ok {
-			logger.Info("Object exists but not managed by Kamaji, not deleting", "obj", objectKey.String(), "kind", obj.GetObjectKind().GroupVersionKind().String())
-
+		if labels := obj.GetLabels(); labels == nil || labels[constants.ProjectNameLabelKey] != constants.ProjectNameLabelValue {
 			continue
 		}
-		logger.Info("Deleting object managed by Kamaji", "obj", objectKey.String(), "kind", obj.GetObjectKind().GroupVersionKind().String())
+
 		if err = tenantClient.Delete(ctx, obj); err != nil {
 			if k8serrors.IsNotFound(err) {
 				continue
@@ -118,7 +111,8 @@ func (c *CoreDNS) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControl
 
 			return false, err
 		}
-		deleted = deleted || err == nil
+
+		deleted = true
 	}
 
 	return deleted, nil
@@ -126,6 +120,10 @@ func (c *CoreDNS) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControl
 
 func (c *CoreDNS) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	logger := log.FromContext(ctx, "addon", c.GetName())
+
+	if tcp.Spec.Addons.CoreDNS == nil {
+		return controllerutil.OperationResultNone, nil
+	}
 
 	tenantClient, err := utilities.GetTenantClient(ctx, c.Client, tcp)
 	if err != nil {
@@ -237,26 +235,32 @@ func (c *CoreDNS) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Tenan
 	if err = utilities.DecodeFromYAML(string(parts[1]), c.deployment); err != nil {
 		return errors.Wrap(err, "unable to decode Deployment manifest")
 	}
+	setKamajiManagedLabels(c.deployment)
 
 	if err = utilities.DecodeFromYAML(string(parts[2]), c.configMap); err != nil {
 		return errors.Wrap(err, "unable to decode ConfigMap manifest")
 	}
+	setKamajiManagedLabels(c.configMap)
 
 	if err = utilities.DecodeFromYAML(string(parts[3]), c.service); err != nil {
 		return errors.Wrap(err, "unable to decode Service manifest")
 	}
+	setKamajiManagedLabels(c.service)
 
 	if err = utilities.DecodeFromYAML(string(parts[4]), c.clusterRole); err != nil {
 		return errors.Wrap(err, "unable to decode ClusterRole manifest")
 	}
+	setKamajiManagedLabels(c.clusterRole)
 
 	if err = utilities.DecodeFromYAML(string(parts[5]), c.clusterRoleBinding); err != nil {
 		return errors.Wrap(err, "unable to decode ClusterRoleBinding manifest")
 	}
+	setKamajiManagedLabels(c.clusterRoleBinding)
 
 	if err = utilities.DecodeFromYAML(string(parts[6]), c.serviceAccount); err != nil {
 		return errors.Wrap(err, "unable to decode ServiceAccount manifest")
 	}
+	setKamajiManagedLabels(c.serviceAccount)
 
 	return nil
 }
@@ -264,17 +268,14 @@ func (c *CoreDNS) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Tenan
 func (c *CoreDNS) mutateClusterRoleBinding(ctx context.Context, tenantClient client.Client) (controllerutil.OperationResult, error) {
 	crb := &rbacv1.ClusterRoleBinding{}
 	crb.SetName(c.clusterRoleBinding.GetName())
-	labels := crb.GetLabels()
-	labels[constants.ProjectNameLabelKey] = constants.ProjectNameLabelValue
-	crb.SetLabels(labels)
 
 	defer func() {
 		c.clusterRoleBinding.SetUID(crb.GetUID())
 	}()
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, crb, func() error {
-		crb.SetLabels(c.clusterRoleBinding.GetLabels())
-		crb.SetAnnotations(c.clusterRoleBinding.GetAnnotations())
+		crb.SetLabels(utilities.MergeMaps(crb.GetLabels(), c.clusterRoleBinding.GetLabels()))
+		crb.SetAnnotations(utilities.MergeMaps(crb.GetAnnotations(), c.clusterRoleBinding.GetAnnotations()))
 		crb.Subjects = c.clusterRoleBinding.Subjects
 		crb.RoleRef = c.clusterRoleBinding.RoleRef
 
@@ -286,16 +287,13 @@ func (c *CoreDNS) mutateDeployment(ctx context.Context, tenantClient client.Clie
 	d := &appsv1.Deployment{}
 	d.SetName(c.deployment.GetName())
 	d.SetNamespace(c.deployment.GetNamespace())
-	labels := d.GetLabels()
-	labels[constants.ProjectNameLabelKey] = constants.ProjectNameLabelValue
-	d.SetLabels(labels)
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, d, func() error {
-		d.SetLabels(c.deployment.GetLabels())
+		d.SetLabels(utilities.MergeMaps(d.GetLabels(), c.deployment.GetLabels()))
 		d.SetAnnotations(utilities.MergeMaps(d.GetAnnotations(), c.deployment.GetAnnotations()))
 		d.Spec.Replicas = c.deployment.Spec.Replicas
 		d.Spec.Selector = c.deployment.Spec.Selector
-		d.Spec.Template.ObjectMeta.SetLabels(c.deployment.Spec.Template.ObjectMeta.GetLabels())
+		d.Spec.Template.Labels = c.deployment.Spec.Selector.MatchLabels
 		if len(d.Spec.Template.Spec.Volumes) != 1 {
 			d.Spec.Template.Spec.Volumes = make([]corev1.Volume, 1)
 		}
@@ -373,12 +371,9 @@ func (c *CoreDNS) mutateConfigMap(ctx context.Context, tenantClient client.Clien
 	cm := &corev1.ConfigMap{}
 	cm.SetName(c.configMap.GetName())
 	cm.SetNamespace(c.configMap.GetNamespace())
-	labels := cm.GetLabels()
-	labels[constants.ProjectNameLabelKey] = constants.ProjectNameLabelValue
-	cm.SetLabels(labels)
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, cm, func() error {
-		cm.SetLabels(c.configMap.GetLabels())
+		cm.SetLabels(utilities.MergeMaps(cm.GetLabels(), c.configMap.GetLabels()))
 		cm.SetAnnotations(utilities.MergeMaps(cm.GetAnnotations(), c.configMap.GetAnnotations()))
 		cm.Data = c.configMap.Data
 
@@ -390,12 +385,9 @@ func (c *CoreDNS) mutateService(ctx context.Context, tenantClient client.Client)
 	svc := &corev1.Service{}
 	svc.SetName(c.service.GetName())
 	svc.SetNamespace(c.service.GetNamespace())
-	labels := svc.GetLabels()
-	labels[constants.ProjectNameLabelKey] = constants.ProjectNameLabelValue
-	svc.SetLabels(labels)
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, svc, func() error {
-		svc.SetLabels(c.service.GetLabels())
+		svc.SetLabels(utilities.MergeMaps(svc.GetLabels(), c.service.GetLabels()))
 		svc.SetAnnotations(utilities.MergeMaps(svc.GetAnnotations(), c.service.GetAnnotations()))
 
 		svc.Spec.Ports = c.service.Spec.Ports
@@ -410,12 +402,9 @@ func (c *CoreDNS) mutateClusterRole(ctx context.Context, tenantClient client.Cli
 	cr := &rbacv1.ClusterRole{}
 	cr.SetName(c.clusterRole.GetName())
 	cr.SetNamespace(c.clusterRole.GetNamespace())
-	labels := cr.GetLabels()
-	labels[constants.ProjectNameLabelKey] = constants.ProjectNameLabelValue
-	cr.SetLabels(labels)
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, cr, func() error {
-		cr.SetLabels(c.clusterRole.GetLabels())
+		cr.SetLabels(utilities.MergeMaps(cr.GetLabels(), c.clusterRole.GetLabels()))
 		cr.SetAnnotations(utilities.MergeMaps(cr.GetAnnotations(), c.clusterRole.GetAnnotations()))
 		cr.Rules = c.clusterRole.Rules
 
@@ -427,12 +416,9 @@ func (c *CoreDNS) mutateServiceAccount(ctx context.Context, tenantClient client.
 	sa := &corev1.ServiceAccount{}
 	sa.SetName(c.serviceAccount.GetName())
 	sa.SetNamespace(c.serviceAccount.GetNamespace())
-	labels := sa.GetLabels()
-	labels[constants.ProjectNameLabelKey] = constants.ProjectNameLabelValue
-	sa.SetLabels(labels)
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, sa, func() error {
-		sa.SetLabels(c.serviceAccount.GetLabels())
+		sa.SetLabels(utilities.MergeMaps(sa.GetLabels(), c.serviceAccount.GetLabels()))
 		sa.SetAnnotations(utilities.MergeMaps(sa.GetAnnotations(), c.serviceAccount.GetAnnotations()))
 
 		return controllerutil.SetControllerReference(c.clusterRoleBinding, sa, tenantClient.Scheme())
