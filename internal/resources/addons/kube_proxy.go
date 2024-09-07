@@ -13,12 +13,14 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/resources/utils"
@@ -77,7 +79,7 @@ func (k *KubeProxy) Define(context.Context, *kamajiv1alpha1.TenantControlPlane) 
 }
 
 func (k *KubeProxy) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.KubeProxy == nil
+	return tenantControlPlane.Spec.Addons.KubeProxy == nil && tenantControlPlane.Status.Addons.KubeProxy.Enabled
 }
 
 func (k *KubeProxy) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -93,6 +95,17 @@ func (k *KubeProxy) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantContr
 	var deleted bool
 
 	for _, obj := range []client.Object{k.serviceAccount, k.clusterRoleBinding, k.role, k.roleBinding, k.configMap, k.daemonSet} {
+		if err = tenantClient.Get(ctx, types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
+			if k8serrors.IsNotFound(err) {
+				continue
+			}
+		}
+		// Skipping deletion:
+		// the kubeproxy addons is not managed by Kamaji.
+		if labels := obj.GetLabels(); labels == nil || labels[constants.ProjectNameLabelKey] != constants.ProjectNameLabelValue {
+			continue
+		}
+
 		if err = tenantClient.Delete(ctx, obj); err != nil {
 			if k8serrors.IsNotFound(err) {
 				continue
@@ -100,13 +113,18 @@ func (k *KubeProxy) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantContr
 
 			return false, err
 		}
-		deleted = deleted || err == nil
+
+		deleted = true
 	}
 
 	return deleted, nil
 }
 
 func (k *KubeProxy) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	if tcp.Spec.Addons.KubeProxy == nil {
+		return controllerutil.OperationResultNone, nil
+	}
+
 	logger := log.FromContext(ctx, "addon", k.GetName())
 
 	tenantClient, err := utilities.GetTenantClient(ctx, k.Client, tcp)
@@ -201,8 +219,8 @@ func (k *KubeProxy) mutateClusterRoleBinding(ctx context.Context, tenantClient c
 	}()
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, crb, func() error {
-		crb.SetLabels(k.clusterRoleBinding.GetLabels())
-		crb.SetAnnotations(k.clusterRoleBinding.GetAnnotations())
+		crb.SetLabels(utilities.MergeMaps(crb.GetLabels(), k.clusterRoleBinding.GetLabels()))
+		crb.SetAnnotations(utilities.MergeMaps(crb.GetAnnotations(), k.clusterRoleBinding.GetAnnotations()))
 		crb.Subjects = k.clusterRoleBinding.Subjects
 		crb.RoleRef = k.clusterRoleBinding.RoleRef
 
@@ -216,8 +234,8 @@ func (k *KubeProxy) mutateServiceAccount(ctx context.Context, tenantClient clien
 	sa.SetNamespace(k.serviceAccount.GetNamespace())
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, sa, func() error {
-		sa.SetLabels(k.serviceAccount.GetLabels())
-		sa.SetAnnotations(k.serviceAccount.GetAnnotations())
+		sa.SetLabels(utilities.MergeMaps(sa.GetLabels(), k.serviceAccount.GetLabels()))
+		sa.SetAnnotations(utilities.MergeMaps(sa.GetAnnotations(), k.serviceAccount.GetAnnotations()))
 
 		return controllerutil.SetControllerReference(k.clusterRoleBinding, sa, tenantClient.Scheme())
 	})
@@ -229,8 +247,8 @@ func (k *KubeProxy) mutateRole(ctx context.Context, tenantClient client.Client) 
 	r.SetNamespace(k.role.GetNamespace())
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, r, func() error {
-		r.SetLabels(k.role.GetLabels())
-		r.SetAnnotations(k.role.GetAnnotations())
+		r.SetLabels(utilities.MergeMaps(r.GetLabels(), k.role.GetLabels()))
+		r.SetAnnotations(utilities.MergeMaps(r.GetAnnotations(), k.role.GetAnnotations()))
 		r.Rules = k.role.Rules
 
 		return controllerutil.SetControllerReference(k.clusterRoleBinding, r, tenantClient.Scheme())
@@ -243,8 +261,8 @@ func (k *KubeProxy) mutateRoleBinding(ctx context.Context, tenantClient client.C
 	rb.SetNamespace(k.roleBinding.GetNamespace())
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, rb, func() error {
-		rb.SetLabels(k.roleBinding.GetLabels())
-		rb.SetAnnotations(k.roleBinding.GetAnnotations())
+		rb.SetLabels(utilities.MergeMaps(rb.GetLabels(), k.roleBinding.GetLabels()))
+		rb.SetAnnotations(utilities.MergeMaps(rb.GetAnnotations(), k.roleBinding.GetAnnotations()))
 		if len(rb.Subjects) == 0 {
 			rb.Subjects = make([]rbacv1.Subject, 1)
 		}
@@ -263,8 +281,8 @@ func (k *KubeProxy) mutateConfigMap(ctx context.Context, tenantClient client.Cli
 	cm.SetNamespace(k.configMap.GetNamespace())
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, cm, func() error {
-		cm.SetLabels(k.configMap.GetLabels())
-		cm.SetAnnotations(k.configMap.GetAnnotations())
+		cm.SetLabels(utilities.MergeMaps(cm.GetLabels(), k.configMap.GetLabels()))
+		cm.SetAnnotations(utilities.MergeMaps(cm.GetAnnotations(), k.configMap.GetAnnotations()))
 		cm.Data = k.configMap.Data
 
 		return nil
@@ -277,7 +295,7 @@ func (k *KubeProxy) mutateDaemonSet(ctx context.Context, tenantClient client.Cli
 	ds.SetNamespace(k.daemonSet.GetNamespace())
 
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, ds, func() error {
-		ds.SetLabels(k.daemonSet.GetLabels())
+		ds.SetLabels(utilities.MergeMaps(ds.GetLabels(), k.daemonSet.GetLabels()))
 		ds.SetAnnotations(utilities.MergeMaps(ds.GetAnnotations(), k.daemonSet.GetAnnotations()))
 		ds.Spec.Selector = k.daemonSet.Spec.Selector
 		if len(ds.Spec.Template.Spec.Volumes) != 3 {
@@ -379,26 +397,32 @@ func (k *KubeProxy) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Ten
 	if err = utilities.DecodeFromYAML(string(parts[1]), k.serviceAccount); err != nil {
 		return errors.Wrap(err, "unable to decode ServiceAccount manifest")
 	}
+	setKamajiManagedLabels(k.serviceAccount)
 
 	if err = utilities.DecodeFromYAML(string(parts[2]), k.clusterRoleBinding); err != nil {
 		return errors.Wrap(err, "unable to decode ClusterRoleBinding manifest")
 	}
+	setKamajiManagedLabels(k.clusterRoleBinding)
 
 	if err = utilities.DecodeFromYAML(string(parts[3]), k.role); err != nil {
 		return errors.Wrap(err, "unable to decode Role manifest")
 	}
+	setKamajiManagedLabels(k.role)
 
 	if err = utilities.DecodeFromYAML(string(parts[4]), k.roleBinding); err != nil {
 		return errors.Wrap(err, "unable to decode RoleBinding manifest")
 	}
+	setKamajiManagedLabels(k.roleBinding)
 
 	if err = utilities.DecodeFromYAML(string(parts[5]), k.configMap); err != nil {
 		return errors.Wrap(err, "unable to decode ConfigMap manifest")
 	}
+	setKamajiManagedLabels(k.configMap)
 
 	if err = utilities.DecodeFromYAML(string(parts[6]), k.daemonSet); err != nil {
 		return errors.Wrap(err, "unable to decode DaemonSet manifest")
 	}
+	setKamajiManagedLabels(k.daemonSet)
 
 	return nil
 }
