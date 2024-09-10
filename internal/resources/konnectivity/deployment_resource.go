@@ -27,9 +27,8 @@ type KubernetesDeploymentResource struct {
 
 func (r *KubernetesDeploymentResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	switch {
-	case tenantControlPlane.Spec.Addons.Konnectivity == nil && tenantControlPlane.Status.Addons.Konnectivity.Enabled:
-		fallthrough
-	case tenantControlPlane.Spec.Addons.Konnectivity != nil && !tenantControlPlane.Status.Addons.Konnectivity.Enabled:
+	case tenantControlPlane.Spec.Addons.Konnectivity == nil && tenantControlPlane.Status.Addons.Konnectivity.Enabled,
+		tenantControlPlane.Spec.Addons.Konnectivity != nil && !tenantControlPlane.Status.Addons.Konnectivity.Enabled:
 		return true
 	default:
 		return false
@@ -94,6 +93,10 @@ func (r *KubernetesDeploymentResource) mutate(_ context.Context, tenantControlPl
 }
 
 func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	if tenantControlPlane.Spec.Addons.Konnectivity == nil {
+		return controllerutil.OperationResultNone, nil
+	}
+
 	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 

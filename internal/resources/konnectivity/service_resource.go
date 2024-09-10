@@ -24,25 +24,24 @@ type ServiceResource struct {
 }
 
 func (r *ServiceResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	if tenantControlPlane.Status.Addons.Konnectivity.Service.Name != r.resource.GetName() {
+	if tenantControlPlane.Spec.Addons.Konnectivity == nil &&
+		tenantControlPlane.Status.Addons.Konnectivity.Service.Port == 0 &&
+		tenantControlPlane.Status.Addons.Konnectivity.Service.Name == "" &&
+		tenantControlPlane.Status.Addons.Konnectivity.Service.Namespace == "" &&
+		len(tenantControlPlane.Status.Addons.Konnectivity.Service.ServiceStatus.Conditions) == 0 &&
+		len(tenantControlPlane.Status.Addons.Konnectivity.Service.ServiceStatus.LoadBalancer.Ingress) == 0 {
+		return false
+	}
+
+	if tenantControlPlane.Status.Addons.Konnectivity.Service.Name != r.resource.GetName() ||
+		tenantControlPlane.Status.Addons.Konnectivity.Service.Namespace != r.resource.GetNamespace() ||
+		len(r.resource.Spec.Ports) > 0 && tenantControlPlane.Status.Addons.Konnectivity.Service.Port != r.resource.Spec.Ports[1].Port ||
+		len(r.resource.Spec.Ports) == 0 && tenantControlPlane.Status.Addons.Konnectivity.Service.Port > 0 ||
+		len(r.resource.Status.Conditions) != len(tenantControlPlane.Status.Addons.Konnectivity.Service.Conditions) {
 		return true
 	}
 
-	if tenantControlPlane.Status.Addons.Konnectivity.Service.Namespace != r.resource.GetNamespace() {
-		return true
-	}
-
-	if tenantControlPlane.Status.Addons.Konnectivity.Service.Port != r.resource.Spec.Ports[1].Port {
-		return true
-	}
-
-	if len(r.resource.Status.Conditions) != len(tenantControlPlane.Status.Addons.Konnectivity.Service.Conditions) {
-		return true
-	}
-
-	resourceIngresses := tenantControlPlane.Status.Addons.Konnectivity.Service.LoadBalancer.Ingress
-	statusIngresses := r.resource.Status.LoadBalancer.Ingress
-
+	resourceIngresses, statusIngresses := tenantControlPlane.Status.Addons.Konnectivity.Service.LoadBalancer.Ingress, r.resource.Status.LoadBalancer.Ingress
 	if len(resourceIngresses) != len(statusIngresses) {
 		return true
 	}
@@ -68,7 +67,7 @@ func (r *ServiceResource) ShouldStatusBeUpdated(_ context.Context, tenantControl
 }
 
 func (r *ServiceResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity == nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil && tenantControlPlane.Status.Addons.Konnectivity.Enabled
 }
 
 func (r *ServiceResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -100,16 +99,14 @@ func (r *ServiceResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantC
 }
 
 func (r *ServiceResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	tenantControlPlane.Status.Addons.Konnectivity.Service = kamajiv1alpha1.KubernetesServiceStatus{}
+
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Service.Name = r.resource.GetName()
 		tenantControlPlane.Status.Addons.Konnectivity.Service.Namespace = r.resource.GetNamespace()
 		tenantControlPlane.Status.Addons.Konnectivity.Service.Port = r.resource.Spec.Ports[1].Port
 		tenantControlPlane.Status.Addons.Konnectivity.Service.ServiceStatus = r.resource.Status
-
-		return nil
 	}
-
-	tenantControlPlane.Status.Addons.Konnectivity.Service = kamajiv1alpha1.KubernetesServiceStatus{}
 
 	return nil
 }
@@ -126,6 +123,10 @@ func (r *ServiceResource) Define(_ context.Context, tenantControlPlane *kamajiv1
 }
 
 func (r *ServiceResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	if tenantControlPlane.Spec.Addons.Konnectivity == nil {
+		return controllerutil.OperationResultNone, nil
+	}
+
 	return controllerutil.CreateOrUpdate(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
@@ -141,7 +142,7 @@ func (r *ServiceResource) mutate(_ context.Context, tenantControlPlane *kamajiv1
 		r.resource.Spec.Ports[1].Name = "konnectivity-server"
 		r.resource.Spec.Ports[1].Protocol = corev1.ProtocolTCP
 		r.resource.Spec.Ports[1].Port = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port
-		r.resource.Spec.Ports[1].TargetPort = intstr.FromInt(int(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port))
+		r.resource.Spec.Ports[1].TargetPort = intstr.FromInt32(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port)
 		if tenantControlPlane.Spec.ControlPlane.Service.ServiceType == kamajiv1alpha1.ServiceTypeNodePort {
 			r.resource.Spec.Ports[1].NodePort = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port
 		}

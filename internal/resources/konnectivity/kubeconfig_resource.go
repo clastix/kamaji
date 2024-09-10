@@ -33,14 +33,15 @@ func (r *KubeconfigResource) ShouldStatusBeUpdated(_ context.Context, tenantCont
 }
 
 func (r *KubeconfigResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity == nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil && tenantControlPlane.Status.Addons.Konnectivity.Enabled
 }
 
 func (r *KubeconfigResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
+
 	if err := r.Client.Delete(ctx, r.resource); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			logger.Error(err, "cannot delete the requested resourece")
+			logger.Error(err, "cannot delete the requested resource")
 
 			return false, err
 		}
@@ -63,6 +64,10 @@ func (r *KubeconfigResource) Define(_ context.Context, tenantControlPlane *kamaj
 }
 
 func (r *KubeconfigResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	if tenantControlPlane.Spec.Addons.Konnectivity == nil {
+		return controllerutil.OperationResultNone, nil
+	}
+
 	return controllerutil.CreateOrUpdate(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
@@ -71,15 +76,13 @@ func (r *KubeconfigResource) GetName() string {
 }
 
 func (r *KubeconfigResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig = kamajiv1alpha1.KubeconfigStatus{}
+
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.LastUpdate = metav1.Now()
 		tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.SecretName = r.resource.GetName()
 		tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum = utilities.GetObjectChecksum(r.resource)
-
-		return nil
 	}
-
-	tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig = kamajiv1alpha1.KubeconfigStatus{}
 
 	return nil
 }
@@ -89,6 +92,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
 		r.resource.SetLabels(utilities.MergeMaps(
+			r.resource.GetLabels(),
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
 				constants.ControllerLabelResource: "kubeconfig",

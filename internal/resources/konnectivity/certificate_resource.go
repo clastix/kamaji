@@ -34,7 +34,7 @@ func (r *CertificateResource) ShouldStatusBeUpdated(_ context.Context, tenantCon
 }
 
 func (r *CertificateResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity == nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil && tenantControlPlane.Status.Addons.Konnectivity.Enabled
 }
 
 func (r *CertificateResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -65,6 +65,10 @@ func (r *CertificateResource) Define(_ context.Context, tenantControlPlane *kama
 }
 
 func (r *CertificateResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	if tenantControlPlane.Spec.Addons.Konnectivity == nil {
+		return controllerutil.OperationResultNone, nil
+	}
+
 	return controllerutil.CreateOrUpdate(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
@@ -73,15 +77,13 @@ func (r *CertificateResource) GetName() string {
 }
 
 func (r *CertificateResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	tenantControlPlane.Status.Addons.Konnectivity.Certificate = kamajiv1alpha1.CertificatePrivateKeyPairStatus{}
+
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Certificate.LastUpdate = metav1.Now()
 		tenantControlPlane.Status.Addons.Konnectivity.Certificate.SecretName = r.resource.GetName()
 		tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum = utilities.GetObjectChecksum(r.resource)
-
-		return nil
 	}
-
-	tenantControlPlane.Status.Addons.Konnectivity.Certificate = kamajiv1alpha1.CertificatePrivateKeyPairStatus{}
 
 	return nil
 }
@@ -91,6 +93,7 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
 		r.resource.SetLabels(utilities.MergeMaps(
+			r.resource.GetLabels(),
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
 				constants.ControllerLabelResource: "x509",

@@ -23,6 +23,7 @@ import (
 	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/resources"
+	addon_utils "github.com/clastix/kamaji/internal/resources/addons/utils"
 	"github.com/clastix/kamaji/internal/resources/utils"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -397,32 +398,32 @@ func (k *KubeProxy) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Ten
 	if err = utilities.DecodeFromYAML(string(parts[1]), k.serviceAccount); err != nil {
 		return errors.Wrap(err, "unable to decode ServiceAccount manifest")
 	}
-	setKamajiManagedLabels(k.serviceAccount)
+	addon_utils.SetKamajiManagedLabels(k.serviceAccount)
 
 	if err = utilities.DecodeFromYAML(string(parts[2]), k.clusterRoleBinding); err != nil {
 		return errors.Wrap(err, "unable to decode ClusterRoleBinding manifest")
 	}
-	setKamajiManagedLabels(k.clusterRoleBinding)
+	addon_utils.SetKamajiManagedLabels(k.clusterRoleBinding)
 
 	if err = utilities.DecodeFromYAML(string(parts[3]), k.role); err != nil {
 		return errors.Wrap(err, "unable to decode Role manifest")
 	}
-	setKamajiManagedLabels(k.role)
+	addon_utils.SetKamajiManagedLabels(k.role)
 
 	if err = utilities.DecodeFromYAML(string(parts[4]), k.roleBinding); err != nil {
 		return errors.Wrap(err, "unable to decode RoleBinding manifest")
 	}
-	setKamajiManagedLabels(k.roleBinding)
+	addon_utils.SetKamajiManagedLabels(k.roleBinding)
 
 	if err = utilities.DecodeFromYAML(string(parts[5]), k.configMap); err != nil {
 		return errors.Wrap(err, "unable to decode ConfigMap manifest")
 	}
-	setKamajiManagedLabels(k.configMap)
+	addon_utils.SetKamajiManagedLabels(k.configMap)
 
 	if err = utilities.DecodeFromYAML(string(parts[6]), k.daemonSet); err != nil {
 		return errors.Wrap(err, "unable to decode DaemonSet manifest")
 	}
-	setKamajiManagedLabels(k.daemonSet)
+	addon_utils.SetKamajiManagedLabels(k.daemonSet)
 
 	return nil
 }
