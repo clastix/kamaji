@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -27,16 +28,31 @@ type Agent struct {
 	tenantClient client.Client
 }
 
-func (r *Agent) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity == nil && len(tenantControlPlane.Status.Addons.Konnectivity.Agent.Namespace) == 0
+func (r *Agent) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
+	return tcp.Spec.Addons.Konnectivity == nil && (tcp.Status.Addons.Konnectivity.Agent.Namespace != "" || tcp.Status.Addons.Konnectivity.Agent.Name != "") ||
+		tcp.Spec.Addons.Konnectivity != nil && (tcp.Status.Addons.Konnectivity.Agent.Namespace != r.resource.Namespace || tcp.Status.Addons.Konnectivity.Agent.Name != r.resource.Name)
 }
 
 func (r *Agent) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity == nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil && tenantControlPlane.Status.Addons.Konnectivity.Enabled
 }
 
 func (r *Agent) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
+
+	if err := r.tenantClient.Get(ctx, client.ObjectKeyFromObject(r.resource), r.resource); err != nil {
+		if k8serrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		logger.Error(err, "cannot retrieve the requested resource for deletion")
+
+		return false, err
+	}
+
+	if labels := r.resource.GetLabels(); labels == nil || labels[constants.ProjectNameLabelKey] != constants.ProjectNameLabelValue {
+		return false, nil
+	}
 
 	if err := r.tenantClient.Delete(ctx, r.resource); err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -83,17 +99,15 @@ func (r *Agent) GetName() string {
 }
 
 func (r *Agent) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	tenantControlPlane.Status.Addons.Konnectivity.Agent = kamajiv1alpha1.ExternalKubernetesObjectStatus{}
+
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Agent = kamajiv1alpha1.ExternalKubernetesObjectStatus{
 			Name:       r.resource.GetName(),
 			Namespace:  r.resource.GetNamespace(),
 			LastUpdate: metav1.Now(),
 		}
-
-		return nil
 	}
-
-	tenantControlPlane.Status.Addons.Konnectivity.Agent = kamajiv1alpha1.ExternalKubernetesObjectStatus{}
 
 	return nil
 }
@@ -109,7 +123,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			return err
 		}
 
-		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
+		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
 		if r.resource.Spec.Selector == nil {
 			r.resource.Spec.Selector = &metav1.LabelSelector{}

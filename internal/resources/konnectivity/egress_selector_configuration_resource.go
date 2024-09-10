@@ -36,7 +36,7 @@ func (r *EgressSelectorConfigurationResource) Define(_ context.Context, tenantCo
 }
 
 func (r *EgressSelectorConfigurationResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity == nil
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil && tenantControlPlane.Status.Addons.Konnectivity.Enabled
 }
 
 func (r *EgressSelectorConfigurationResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -56,6 +56,10 @@ func (r *EgressSelectorConfigurationResource) CleanUp(ctx context.Context, _ *ka
 }
 
 func (r *EgressSelectorConfigurationResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	if tenantControlPlane.Spec.Addons.Konnectivity == nil {
+		return controllerutil.OperationResultNone, nil
+	}
+
 	return controllerutil.CreateOrUpdate(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
@@ -68,14 +72,12 @@ func (r *EgressSelectorConfigurationResource) ShouldStatusBeUpdated(_ context.Co
 }
 
 func (r *EgressSelectorConfigurationResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	tenantControlPlane.Status.Addons.Konnectivity.ConfigMap = kamajiv1alpha1.KonnectivityConfigMap{}
+
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Name = r.resource.GetName()
 		tenantControlPlane.Status.Addons.Konnectivity.ConfigMap.Checksum = utilities.GetObjectChecksum(r.resource)
-
-		return nil
 	}
-
-	tenantControlPlane.Status.Addons.Konnectivity.ConfigMap = kamajiv1alpha1.KonnectivityConfigMap{}
 
 	return nil
 }

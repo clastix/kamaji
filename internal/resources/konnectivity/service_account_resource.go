@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -24,16 +25,31 @@ type ServiceAccountResource struct {
 	tenantClient client.Client
 }
 
-func (r *ServiceAccountResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return len(tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount.Name) == 0 && len(tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount.Namespace) == 0
+func (r *ServiceAccountResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
+	return tcp.Spec.Addons.Konnectivity == nil && len(tcp.Status.Addons.Konnectivity.ServiceAccount.Name) > 0 && len(tcp.Status.Addons.Konnectivity.ServiceAccount.Namespace) > 0 ||
+		tcp.Spec.Addons.Konnectivity != nil && tcp.Status.Addons.Konnectivity.ServiceAccount.Name == "" && tcp.Status.Addons.Konnectivity.ServiceAccount.Namespace == ""
 }
 
 func (r *ServiceAccountResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Spec.Addons.Konnectivity == nil && len(tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount.Name) > 0
+	return tenantControlPlane.Spec.Addons.Konnectivity == nil && tenantControlPlane.Status.Addons.Konnectivity.Enabled
 }
 
 func (r *ServiceAccountResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
+
+	if err := r.tenantClient.Get(ctx, client.ObjectKeyFromObject(r.resource), r.resource); err != nil {
+		if k8serrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		logger.Error(err, "cannot retrieve the requested resource for deletion")
+
+		return false, err
+	}
+
+	if labels := r.resource.GetLabels(); labels == nil || labels[constants.ProjectNameLabelKey] != constants.ProjectNameLabelValue {
+		return false, nil
+	}
 
 	if err := r.tenantClient.Delete(ctx, r.resource); err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -68,11 +84,11 @@ func (r *ServiceAccountResource) Define(ctx context.Context, tenantControlPlane 
 }
 
 func (r *ServiceAccountResource) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	if tcp.Spec.Addons.Konnectivity != nil {
-		return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(tcp))
+	if tcp.Spec.Addons.Konnectivity == nil {
+		return controllerutil.OperationResultNone, nil
 	}
 
-	return controllerutil.OperationResultNone, nil
+	return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(tcp))
 }
 
 func (r *ServiceAccountResource) GetName() string {
@@ -80,23 +96,21 @@ func (r *ServiceAccountResource) GetName() string {
 }
 
 func (r *ServiceAccountResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount = kamajiv1alpha1.ExternalKubernetesObjectStatus{}
+
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount = kamajiv1alpha1.ExternalKubernetesObjectStatus{
 			Name:      r.resource.GetName(),
 			Namespace: r.resource.GetNamespace(),
 		}
-
-		return nil
 	}
-
-	tenantControlPlane.Status.Addons.Konnectivity.ServiceAccount = kamajiv1alpha1.ExternalKubernetesObjectStatus{}
 
 	return nil
 }
 
 func (r *ServiceAccountResource) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
+		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
 		return nil
 	}
