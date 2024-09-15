@@ -35,7 +35,7 @@ require (
 	k8s.io/cluster-bootstrap v0.0.0
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubelet v0.0.0
-	k8s.io/kubernetes v1.31.0
+	k8s.io/kubernetes v1.31.1
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	sigs.k8s.io/controller-runtime v0.19.0
 )
@@ -57,7 +57,7 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/coredns/caddy v1.1.1 // indirect
-	github.com/coredns/corefile-migration v1.0.21 // indirect
+	github.com/coredns/corefile-migration v1.0.23 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cpuguy83/dockercfg v0.3.1 // indirect
