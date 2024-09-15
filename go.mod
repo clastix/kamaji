@@ -25,7 +25,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/testcontainers/testcontainers-go v0.33.0
 	go.etcd.io/etcd/api/v3 v3.5.16
-	go.etcd.io/etcd/client/v3 v3.5.15
+	go.etcd.io/etcd/client/v3 v3.5.16
 	go.uber.org/automaxprocs v1.5.3
 	gomodules.xyz/jsonpatch/v2 v2.4.0
 	k8s.io/api v0.31.0
@@ -149,7 +149,7 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
-	go.etcd.io/etcd/client/pkg/v3 v3.5.15 // indirect
+	go.etcd.io/etcd/client/pkg/v3 v3.5.16 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.53.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.53.0 // indirect
 	go.opentelemetry.io/otel v1.28.0 // indirect
