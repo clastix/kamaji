@@ -21,8 +21,8 @@ jobs:
         run: ./bin/ko login quay.io -u ${{ secrets.QUAY_IO_USERNAME }} -p ${{ secrets.QUAY_IO_TOKEN }}
       - name: "ko: login to docker.io container registry"
         run: ./bin/ko login docker.io -u ${{ secrets.DOCKER_IO_USERNAME }} -p ${{ secrets.DOCKER_IO_TOKEN }}
-      - name: "ko: build and push latest"
-        run: make VERSION=latest KO_LOCAL=false KO_PUSH=true build
       - name: "ko: build and push tag"
         run: make VERSION=${{ github.ref_name }} KO_LOCAL=false KO_PUSH=true build
-        if: startsWith(github.event.ref, 'refs/tags/v') || startsWith(github.event.ref, 'refs/tags/edge')
+        if: startsWith(github.event.ref, 'v') || startsWith(github.event.ref, 'edge')
+      - name: "ko: build and push latest"
+        run: make VERSION=latest KO_LOCAL=false KO_PUSH=true build
