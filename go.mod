@@ -8,7 +8,7 @@ require (
 	github.com/JamesStewy/go-mysqldump v0.2.2
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/clastix/kamaji-telemetry v1.0.0
-	github.com/docker/docker v27.2.1+incompatible
+	github.com/docker/docker v27.3.0+incompatible
 	github.com/go-logr/logr v1.4.2
 	github.com/go-pg/pg/v10 v10.13.0
 	github.com/go-sql-driver/mysql v1.8.1
