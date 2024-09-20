@@ -25,4 +25,4 @@ jobs:
         run: make VERSION=latest KO_LOCAL=false KO_PUSH=true build
       - name: "ko: build and push tag"
         run: make VERSION=${{ github.ref_name }} KO_LOCAL=false KO_PUSH=true build
-        if: startsWith(github.event.ref, 'refs/tags/v')
+        if: startsWith(github.event.ref, 'refs/tags/v') || startsWith(github.event.ref, 'refs/tags/edge')
