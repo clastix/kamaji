@@ -25,7 +25,7 @@ jobs:
       - name: "ko: login to docker.io container registry"
         run: ./bin/ko login docker.io -u ${{ secrets.DOCKER_IO_USERNAME }} -p ${{ secrets.DOCKER_IO_TOKEN }}
       - name: "ko: build and push tag"
-        run: make VERSION=${{ github.ref }} KO_LOCAL=false KO_PUSH=true build
+        run: make VERSION=${{ github.ref_name }} KO_LOCAL=false KO_PUSH=true build
         if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/edge-')
       - name: "ko: build and push latest"
         run: make VERSION=latest KO_LOCAL=false KO_PUSH=true build
