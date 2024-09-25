@@ -839,7 +839,8 @@ such as the number of Pod replicas, the Service resource, or the Ingress.<br/>
         <td>
           DataStore allows to specify a DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
 This parameter is optional and acts as an override over the default one which is used by the Kamaji Operator.
-Migration from a different DataStore to another one is supported, see: https://kamaji.clastix.io/guides/datastore-migration/<br/>
+Migration from one DataStore to another backed by the same Driver is possible. See: https://kamaji.clastix.io/guides/datastore-migration/
+Migration from one DataStore to another backed by a different Driver is not supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
