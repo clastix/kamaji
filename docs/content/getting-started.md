@@ -235,7 +235,7 @@ The `kubeconfig` required to access the Tenant Control Plane is stored in a secr
 
 ```bash
 kubectl get secrets -n ${TENANT_NAMESPACE} ${TENANT_NAME}-admin-kubeconfig -o json \
-  | jq -r '.data["admin.conf"]' \
+  | jq -r '.data["super-admin.conf"]' \
   | base64 --decode \
   > ${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig
 ```
