@@ -6,6 +6,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"gomodules.xyz/jsonpatch/v2"
@@ -23,24 +24,17 @@ type TenantControlPlaneDefaults struct {
 
 func (t TenantControlPlaneDefaults) OnCreate(object runtime.Object) AdmissionResponse {
 	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
-		tcp := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
+		original := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
-		if len(tcp.Spec.DataStore) == 0 {
-			operations, err := utils.JSONPatch(tcp, func() {
-				tcp.Spec.DataStore = t.DefaultDatastore
-			})
-			if err != nil {
-				return nil, errors.Wrap(err, "cannot create patch responses upon Tenant Control Plane creation")
-			}
+		defaulted := original.DeepCopy()
+		t.defaultUnsetFields(defaulted)
 
-			return operations, nil
+		operations, err := utils.JSONPatch(original, defaulted)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot create patch responses upon Tenant Control Plane creation")
 		}
 
-		if tcp.Spec.ControlPlane.Deployment.Replicas == nil {
-			tcp.Spec.ControlPlane.Deployment.Replicas = pointer.To(int32(2))
-		}
-
-		return nil, nil
+		return operations, nil
 	}
 }
 
@@ -48,22 +42,22 @@ func (t TenantControlPlaneDefaults) OnDelete(runtime.Object) AdmissionResponse {
 	return utils.NilOp()
 }
 
-func (t TenantControlPlaneDefaults) OnUpdate(object runtime.Object, oldObject runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
-		newTCP, oldTCP := object.(*kamajiv1alpha1.TenantControlPlane), oldObject.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
+func (t TenantControlPlaneDefaults) OnUpdate(runtime.Object, runtime.Object) AdmissionResponse {
+	// all immutability requirements are handled trough CEL annotations on the TenantControlPlaneSpec type
+	return utils.NilOp()
+}
 
-		if oldTCP.Spec.DataStore == newTCP.Spec.DataStore {
-			return nil, nil
-		}
+func (t TenantControlPlaneDefaults) defaultUnsetFields(tcp *kamajiv1alpha1.TenantControlPlane) {
+	if len(tcp.Spec.DataStore) == 0 {
+		tcp.Spec.DataStore = t.DefaultDatastore
+	}
 
-		if len(newTCP.Spec.DataStore) == 0 {
-			return nil, fmt.Errorf("DataStore is a required field")
-		}
+	if tcp.Spec.ControlPlane.Deployment.Replicas == nil {
+		tcp.Spec.ControlPlane.Deployment.Replicas = pointer.To(int32(2))
+	}
 
-		if newTCP.Spec.ControlPlane.Deployment.Replicas == nil {
-			newTCP.Spec.ControlPlane.Deployment.Replicas = pointer.To(int32(2))
-		}
-
-		return nil, nil
+	if len(tcp.Spec.DataStoreSchema) == 0 {
+		dss := strings.ReplaceAll(fmt.Sprintf("%s_%s", tcp.GetNamespace(), tcp.GetName()), "-", "_")
+		tcp.Spec.DataStoreSchema = dss
 	}
 }
