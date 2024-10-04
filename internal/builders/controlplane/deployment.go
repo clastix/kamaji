@@ -36,6 +36,9 @@ const (
 	usrLocalShareCaCertificateVolumeName  = "usr-local-share-ca-certificates"
 	schedulerKubeconfigVolumeName         = "scheduler-kubeconfig"
 	controllerManagerKubeconfigVolumeName = "controller-manager-kubeconfig"
+	kineUDSVolume                         = "kine-uds"
+	kineUDSFolder                         = "/uds"
+	kineUDSPath                           = kineUDSFolder + "/kine"
 	dataStoreCertsVolumeName              = "kine-config"
 	kineVolumeCertName                    = "kine-certs"
 )
@@ -632,6 +635,16 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 
 	volumeMounts := d.initVolumeMounts(kubernetesPKIVolumeName, podSpec.Containers[index].VolumeMounts, extraVolumeMounts...)
 
+	if d.DataStore.Spec.Driver == kamajiv1alpha1.KineMySQLDriver ||
+		d.DataStore.Spec.Driver == kamajiv1alpha1.KinePostgreSQLDriver ||
+		d.DataStore.Spec.Driver == kamajiv1alpha1.KineNatsDriver {
+		d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
+			Name:      kineUDSVolume,
+			ReadOnly:  false,
+			MountPath: kineUDSFolder,
+		})
+	}
+
 	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
 		Name:      kubernetesPKIVolumeName,
 		ReadOnly:  true,
@@ -711,7 +724,7 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 
 	switch d.DataStore.Spec.Driver {
 	case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver, kamajiv1alpha1.KineNatsDriver:
-		desiredArgs["--etcd-servers"] = "http://127.0.0.1:2379"
+		desiredArgs["--etcd-servers"] = "unix://" + kineUDSPath
 	case kamajiv1alpha1.EtcdDriver:
 		httpsEndpoints := make([]string, 0, len(d.DataStore.Spec.Endpoints))
 
@@ -751,7 +764,7 @@ func (d Deployment) secretProjection(secretName, certKeyName, keyName string) *c
 }
 
 func (d Deployment) removeKineVolumes(podSpec *corev1.PodSpec) {
-	for _, volumeName := range []string{kineVolumeCertName, dataStoreCertsVolumeName} {
+	for _, volumeName := range []string{kineVolumeCertName, dataStoreCertsVolumeName, kineUDSVolume} {
 		if found, index := utilities.HasNamedVolume(podSpec.Volumes, volumeName); found {
 			var volumes []corev1.Volume
 
@@ -768,7 +781,20 @@ func (d Deployment) buildKineVolume(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.
 		return
 	}
 
-	found, index := utilities.HasNamedVolume(podSpec.Volumes, dataStoreCertsVolumeName)
+	found, index := utilities.HasNamedVolume(podSpec.Volumes, kineUDSVolume)
+	if !found {
+		index = len(podSpec.Volumes)
+		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
+	}
+
+	podSpec.Volumes[index].Name = kineUDSVolume
+	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+		EmptyDir: &corev1.EmptyDirVolumeSource{
+			Medium: "Memory",
+		},
+	}
+
+	found, index = utilities.HasNamedVolume(podSpec.Volumes, dataStoreCertsVolumeName)
 	if !found {
 		index = len(podSpec.Volumes)
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
@@ -829,6 +855,8 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 
 	// Building kine arguments, taking in consideration the user-space ones if provided.
 	args := map[string]string{}
+
+	args["--listen-address"] = "unix://" + kineUDSPath
 
 	if d.DataStore.Spec.TLSConfig != nil {
 		// Ensuring the init container required for kine is present:
@@ -906,6 +934,11 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 		{
 			Name:      kineVolumeCertName,
 			MountPath: "/certs",
+			ReadOnly:  false,
+		},
+		{
+			Name:      kineUDSVolume,
+			MountPath: kineUDSFolder,
 			ReadOnly:  false,
 		},
 	}
