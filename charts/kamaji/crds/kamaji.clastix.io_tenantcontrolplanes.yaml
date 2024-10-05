@@ -6550,6 +6550,14 @@ spec:
                       items:
                         type: string
                       type: array
+                    clusterDomain:
+                      default: cluster.local
+                      description: The default domain name used for DNS resolution within the cluster.
+                      pattern: .*\..*
+                      type: string
+                      x-kubernetes-validations:
+                        - message: changing the cluster domain is not supported
+                          rule: self == oldSelf
                     dnsServiceIPs:
                       default:
                         - 10.96.0.10
