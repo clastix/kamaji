@@ -14,6 +14,11 @@ type NetworkProfileSpec struct {
 	// Address where API server of will be exposed.
 	// In case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.
 	Address string `json:"address,omitempty"`
+	// The default domain name used for DNS resolution within the cluster.
+	//+kubebuilder:default="cluster.local"
+	//+kubebuilder:validation:XValidation:rule="self == oldSelf",message="changing the cluster domain is not supported"
+	//+kubebuilder:validation:Pattern=.*\..*
+	ClusterDomain string `json:"clusterDomain,omitempty"`
 	// AllowAddressAsExternalIP will include tenantControlPlane.Spec.NetworkProfile.Address in the section of
 	// ExternalIPs of the Kubernetes Service (only ClusterIP or NodePort)
 	AllowAddressAsExternalIP bool `json:"allowAddressAsExternalIP,omitempty"`
