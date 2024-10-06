@@ -92,17 +92,18 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
 
 		params := kubeadm.Parameters{
-			TenantControlPlaneAddress:     address,
-			TenantControlPlanePort:        port,
-			TenantControlPlaneName:        tenantControlPlane.GetName(),
-			TenantControlPlaneNamespace:   tenantControlPlane.GetNamespace(),
-			TenantControlPlaneEndpoint:    r.getControlPlaneEndpoint(tenantControlPlane.Spec.ControlPlane.Ingress, address, port),
-			TenantControlPlaneCertSANs:    tenantControlPlane.Spec.NetworkProfile.CertSANs,
-			TenantControlPlanePodCIDR:     tenantControlPlane.Spec.NetworkProfile.PodCIDR,
-			TenantControlPlaneServiceCIDR: tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
-			TenantControlPlaneVersion:     tenantControlPlane.Spec.Kubernetes.Version,
-			ETCDs:                         r.ETCDs,
-			CertificatesDir:               r.TmpDirectory,
+			TenantControlPlaneAddress:       address,
+			TenantControlPlanePort:          port,
+			TenantControlPlaneName:          tenantControlPlane.GetName(),
+			TenantControlPlaneNamespace:     tenantControlPlane.GetNamespace(),
+			TenantControlPlaneEndpoint:      r.getControlPlaneEndpoint(tenantControlPlane.Spec.ControlPlane.Ingress, address, port),
+			TenantControlPlaneCertSANs:      tenantControlPlane.Spec.NetworkProfile.CertSANs,
+			TenantControlPlaneClusterDomain: tenantControlPlane.Spec.NetworkProfile.ClusterDomain,
+			TenantControlPlanePodCIDR:       tenantControlPlane.Spec.NetworkProfile.PodCIDR,
+			TenantControlPlaneServiceCIDR:   tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
+			TenantControlPlaneVersion:       tenantControlPlane.Spec.Kubernetes.Version,
+			ETCDs:                           r.ETCDs,
+			CertificatesDir:                 r.TmpDirectory,
 		}
 
 		config, err := kubeadm.CreateKubeadmInitConfiguration(params)

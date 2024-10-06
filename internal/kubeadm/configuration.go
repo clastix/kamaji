@@ -50,7 +50,7 @@ func CreateKubeadmInitConfiguration(params Parameters) (*Configuration, error) {
 		},
 	}
 	conf.Networking = kubeadmapi.Networking{
-		DNSDomain:     "cluster.local",
+		DNSDomain:     params.TenantControlPlaneClusterDomain,
 		PodSubnet:     params.TenantControlPlanePodCIDR,
 		ServiceSubnet: params.TenantControlPlaneServiceCIDR,
 	}

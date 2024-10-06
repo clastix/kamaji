@@ -13925,6 +13925,15 @@ Use this field to add additional hostnames when exposing the Tenant Control Plan
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>clusterDomain</b></td>
+        <td>string</td>
+        <td>
+          The default domain name used for DNS resolution within the cluster.<br/>
+          <br/>
+            <i>Default</i>: cluster.local<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>dnsServiceIPs</b></td>
         <td>[]string</td>
         <td>

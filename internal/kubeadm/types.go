@@ -32,22 +32,23 @@ func (c *Configuration) Checksum() string {
 }
 
 type Parameters struct {
-	TenantControlPlaneName         string
-	TenantControlPlaneNamespace    string
-	TenantControlPlaneEndpoint     string
-	TenantControlPlaneAddress      string
-	TenantControlPlaneCertSANs     []string
-	TenantControlPlanePort         int32
-	TenantControlPlanePodCIDR      string
-	TenantControlPlaneServiceCIDR  string
-	TenantDNSServiceIPs            []string
-	TenantControlPlaneVersion      string
-	TenantControlPlaneCGroupDriver string
-	ETCDs                          []string
-	CertificatesDir                string
-	KubeconfigDir                  string
-	KubeProxyOptions               *AddonOptions
-	CoreDNSOptions                 *AddonOptions
+	TenantControlPlaneName          string
+	TenantControlPlaneNamespace     string
+	TenantControlPlaneEndpoint      string
+	TenantControlPlaneAddress       string
+	TenantControlPlaneCertSANs      []string
+	TenantControlPlanePort          int32
+	TenantControlPlaneClusterDomain string
+	TenantControlPlanePodCIDR       string
+	TenantControlPlaneServiceCIDR   string
+	TenantDNSServiceIPs             []string
+	TenantControlPlaneVersion       string
+	TenantControlPlaneCGroupDriver  string
+	ETCDs                           []string
+	CertificatesDir                 string
+	KubeconfigDir                   string
+	KubeProxyOptions                *AddonOptions
+	CoreDNSOptions                  *AddonOptions
 }
 
 type AddonOptions struct {
