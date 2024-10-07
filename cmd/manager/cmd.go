@@ -72,7 +72,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			klog.SetOutput(io.Discard)
 			klog.LogToStderr(false)
 
-			if err = cmdutils.CheckFlags(cmd.Flags(), []string{"kine-image", "datastore", "migrate-image", "tmp-directory", "pod-namespace", "webhook-service-name", "serviceaccount-name", "webhook-ca-path"}...); err != nil {
+			if err = cmdutils.CheckFlags(cmd.Flags(), []string{"kine-image", "migrate-image", "tmp-directory", "pod-namespace", "webhook-service-name", "serviceaccount-name", "webhook-ca-path"}...); err != nil {
 				return err
 			}
 

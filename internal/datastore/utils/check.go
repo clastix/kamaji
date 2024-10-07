@@ -18,6 +18,10 @@ import (
 
 // CheckExists ensures that the default Datastore exists before starting the manager.
 func CheckExists(ctx context.Context, scheme *runtime.Scheme, datastoreName string) error {
+	if datastoreName == "" {
+		return nil
+	}
+
 	ctrlClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
 	if err != nil {
 		return fmt.Errorf("unable to create controlerruntime.Client: %w", err)
