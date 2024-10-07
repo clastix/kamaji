@@ -122,6 +122,12 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Retrieving the DataStore to use for the current reconciliation
 	ds, err := r.dataStore(ctx, tenantControlPlane)
 	if err != nil {
+		if errors.Is(err, ErrMissingDataStore) {
+			log.Info(err.Error())
+
+			return ctrl.Result{Requeue: true}, nil
+		}
+
 		log.Error(err, "cannot retrieve the DataStore for the given instance")
 
 		return ctrl.Result{}, err
@@ -300,18 +306,23 @@ func (r *TenantControlPlaneReconciler) RemoveFinalizer(ctx context.Context, tena
 	return r.Client.Update(ctx, tenantControlPlane)
 }
 
+var ErrMissingDataStore = errors.New("the Tenant Control Plane doesn't have a DataStore assigned, and Kamaji is running with no default DataStore fallback")
+
 // dataStore retrieves the override DataStore for the given Tenant Control Plane if specified,
 // otherwise fallback to the default one specified in the Kamaji setup.
 func (r *TenantControlPlaneReconciler) dataStore(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*kamajiv1alpha1.DataStore, error) {
-	dataStoreName := tenantControlPlane.Spec.DataStore
-	if len(dataStoreName) == 0 {
-		dataStoreName = r.Config.DefaultDataStoreName
+	if tenantControlPlane.Spec.DataStore == "" && r.Config.DefaultDataStoreName == "" {
+		return nil, ErrMissingDataStore
 	}
 
-	ds := &kamajiv1alpha1.DataStore{}
-	if err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: dataStoreName}, ds); err != nil {
+	if tenantControlPlane.Spec.DataStore == "" {
+		tenantControlPlane.Spec.DataStore = r.Config.DefaultDataStoreName
+	}
+
+	var ds kamajiv1alpha1.DataStore
+	if err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: tenantControlPlane.Spec.DataStore}, &ds); err != nil {
 		return nil, errors.Wrap(err, "cannot retrieve *kamajiv1alpha.DataStore object")
 	}
 
-	return ds, nil
+	return &ds, nil
 }

@@ -64,7 +64,7 @@ func (t TenantControlPlaneDefaults) OnUpdate(runtime.Object, runtime.Object) Adm
 }
 
 func (t TenantControlPlaneDefaults) defaultUnsetFields(tcp *kamajiv1alpha1.TenantControlPlane) {
-	if len(tcp.Spec.DataStore) == 0 {
+	if len(tcp.Spec.DataStore) == 0 && t.DefaultDatastore != "" {
 		tcp.Spec.DataStore = t.DefaultDatastore
 	}
 
