@@ -257,8 +257,10 @@ type AddonsSpec struct {
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStore) || has(self.dataStore)", message="unsetting the dataStore is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"
 type TenantControlPlaneSpec struct {
-	// DataStore allows to specify a DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
-	// This parameter is optional and acts as an override over the default one which is used by the Kamaji Operator.
+	// DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
+	// When Kamaji runs with the default DataStore flag, all empty values will inherit the default value.
+	// By leaving it empty and running Kamaji with no default DataStore flag, it is possible to achieve automatic assignment to a specific DataStore object.
+	//
 	// Migration from one DataStore to another backed by the same Driver is possible. See: https://kamaji.clastix.io/guides/datastore-migration/
 	// Migration from one DataStore to another backed by a different Driver is not supported.
 	DataStore string `json:"dataStore,omitempty"`

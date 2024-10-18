@@ -1017,7 +1017,7 @@ func (d Deployment) templateLabels(ctx context.Context, tenantControlPlane *kama
 		"component.kamaji.clastix.io/front-proxy-client-certificate":        hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.FrontProxyClient.SecretName),
 		"component.kamaji.clastix.io/service-account":                       hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.SA.SecretName),
 		"component.kamaji.clastix.io/scheduler-kubeconfig":                  hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.KubeConfig.Scheduler.SecretName),
-		"component.kamaji.clastix.io/datastore":                             tenantControlPlane.Spec.DataStore,
+		"component.kamaji.clastix.io/datastore":                             tenantControlPlane.Status.Storage.DataStoreName,
 	}
 
 	return labels
