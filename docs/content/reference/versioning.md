@@ -10,16 +10,19 @@ Edge Release artifacts are published on a monthly basis as part of the open sour
 
 Edge Release artifacts contain the code in from the main branch at the point in time when they were cut. This means they always have the latest features and fixes, and have undergone automated testing as well as maintainer code review. Edge Releases may involve partial features that are later modified or backed out. They may also involve breaking changes, of course, we do our best to avoid this. Edge Releases are generally considered production ready, and the project will mark specific releases as “_not recommended_” if bugs are discovered after release.
 
+| Kamaji      | Management Cluster | Tenant Cluster       |
+|-------------|--------------------|----------------------|
+| edge-24.9.2 | v1.22+             | [v1.28.0 .. v1.31.1] |
+
+
 Using Edge Release artifacts and reporting bugs helps us ensure a rapid pace of development and is a great way to help maintainers. We publish edge release guidance as part of the release notes and strive to always provide production-ready artifacts.
 
 ### Stable Releases
 
-Stable Release artifacts of Kamaji follow semantic versioning, whereby changes in major version denote large feature additions and possible breaking changes and changes in minor versions denote safe upgrades without breaking changes.
+Stable Release artifacts of Kamaji follow semantic versioning, whereby changes in major version denote large feature additions and possible breaking changes and changes in minor versions denote safe upgrades without breaking changes. As of July 2024 [Clastix Labs](https://github.com/clastix) organization does no longer provide stable release artifacts. Latest stable release available is:
 
 | Kamaji | Management Cluster | Tenant Cluster       |
 |--------|--------------------|----------------------|
 | v1.0.0 | v1.22+             | [v1.21.0 .. v1.30.2] |
 
-As of July 2024 [Clastix Labs](https://github.com/clastix) organization does no longer provide stable release artifacts. Stable Release artifacts are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor.
-
-> Learn more about [available subscription plans](https://clastix.io/support/) from CLASTIX.
+Stable Release artifacts are offered now on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor. Learn more about [available subscription plans](https://clastix.io/support/) provided by CLASTIX.
