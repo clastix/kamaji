@@ -77,4 +77,7 @@ nav:
   - reference/versioning.md
   - reference/api.md
 - 'Telemetry': telemetry.md
+- 'Enterprise Addons':
+  - enterprise-addons/index.md
+  - enterprise-addons/ingress.md
 - 'Contribute': contribute.md
