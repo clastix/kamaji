@@ -62,7 +62,7 @@ func (e *EtcdClient) GrantPrivileges(ctx context.Context, user, dbName string) e
 	permission := etcdclient.PermissionType(authpb.READWRITE)
 	key := e.buildKey(dbName)
 
-	if _, err := e.Client.RoleGrantPermission(ctx, user, key, etcdclient.GetPrefixRangeEnd(key), permission); err != nil {
+	if _, err := e.Client.RoleGrantPermission(ctx, dbName, key, etcdclient.GetPrefixRangeEnd(key), permission); err != nil {
 		return errors.NewGrantPrivilegesError(err)
 	}
 
