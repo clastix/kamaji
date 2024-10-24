@@ -5,6 +5,20 @@
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
 VERSION ?= v1.0.0
 
+# ENVTEST_K8S_VERSION specifies the Kubernetes version to be used 
+# during testing with the envtest environment. This ensures that 
+# the tests run against the correct API and behavior for the 
+# specific Kubernetes release being targeted (v1.31.0 in this case).
+ENVTEST_K8S_VERSION = 1.31.0
+
+# ENVTEST_VERSION defines the version of the setup-envtest binary 
+# used to manage and download the Kubernetes binaries (like etcd, 
+# kube-apiserver, and kubectl) required for testing. This version 
+# ensures compatibility with the selected Kubernetes version and 
+# must align closely with recent releases (release-0.19 is chosen here).
+# Mismatches between these versions could result in compatibility issues.
+ENVTEST_VERSION ?= release-0.19
+
 # Image URL to use all building/pushing image targets
 CONTAINER_REPOSITORY ?= docker.io/clastix/kamaji
 
@@ -34,6 +48,7 @@ HELM           ?= $(LOCALBIN)/helm
 KIND           ?= $(LOCALBIN)/kind
 KO             ?= $(LOCALBIN)/ko
 YQ             ?= $(LOCALBIN)/yq
+ENVTEST        ?= $(LOCALBIN)/setup-envtest
 
 all: build
 
@@ -95,6 +110,11 @@ apidocs-gen: $(APIDOCS_GEN)  ## Download crdoc locally if necessary.
 $(APIDOCS_GEN): $(LOCALBIN)
 	test -s $(LOCALBIN)/crdoc || GOBIN=$(LOCALBIN) go install fybrik.io/crdoc@latest
 
+.PHONY: envtest
+envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
+$(ENVTEST): $(LOCALBIN)
+	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(ENVTEST_VERSION)
+
 ##@ Development
 
 rbac: controller-gen yq
@@ -121,9 +141,10 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 golint: golangci-lint ## Linting the code according to the styling guide.
 	$(GOLANGCI_LINT) run -c .golangci.yml
 
+## Run unit tests (all tests except E2E).
 .PHONY: test
-test: ## Run unit tests (all tests except E2E).
-	@go test \
+test: envtest ginkgo
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -v --trace \
 		./api/... \
 		./cmd/... \
 		./internal/... \
