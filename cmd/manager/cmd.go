@@ -229,6 +229,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 						},
 					},
 					handlers.TenantControlPlaneServiceCIDR{},
+					handlers.TenantControlPlaneLoadBalancerSourceRanges{},
 				},
 				routes.TenantControlPlaneTelemetry{}: {
 					handlers.TenantControlPlaneTelemetry{

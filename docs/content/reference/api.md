@@ -782,7 +782,7 @@ TenantControlPlane is the Schema for the tenantcontrolplanes API.
         <td><b><a href="#tenantcontrolplanespec">spec</a></b></td>
         <td>object</td>
         <td>
-          TenantControlPlaneSpec defines the desired state of TenantControlPlane.<br/>
+          <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -800,7 +800,7 @@ TenantControlPlane is the Schema for the tenantcontrolplanes API.
 
 
 
-TenantControlPlaneSpec defines the desired state of TenantControlPlane.
+
 
 <table>
     <thead>
@@ -13940,6 +13940,19 @@ Use this field to add additional hostnames when exposing the Tenant Control Plan
           <br/>
           <br/>
             <i>Default</i>: [10.96.0.10]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>loadBalancerSourceRanges</b></td>
+        <td>[]string</td>
+        <td>
+          LoadBalancerSourceRanges restricts the IP ranges that can access
+the LoadBalancer type Service. This field defines a list of IP
+address ranges (in CIDR format) that are allowed to access the service.
+If left empty, the service will allow traffic from all IP ranges (0.0.0.0/0).
+This feature is useful for restricting access to API servers or services
+to specific networks for security purposes.
+Example: {"192.168.1.0/24", "10.0.0.0/8"}<br/>
         </td>
         <td>false</td>
       </tr><tr>
