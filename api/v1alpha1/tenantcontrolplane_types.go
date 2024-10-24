@@ -11,6 +11,14 @@ import (
 
 // NetworkProfileSpec defines the desired state of NetworkProfile.
 type NetworkProfileSpec struct {
+	// LoadBalancerSourceRanges restricts the IP ranges that can access
+	// the LoadBalancer type Service. This field defines a list of IP
+	// address ranges (in CIDR format) that are allowed to access the service.
+	// If left empty, the service will allow traffic from all IP ranges (0.0.0.0/0).
+	// This feature is useful for restricting access to API servers or services
+	// to specific networks for security purposes.
+	// Example: {"192.168.1.0/24", "10.0.0.0/8"}
+	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty"`
 	// Address where API server of will be exposed.
 	// In case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.
 	Address string `json:"address,omitempty"`
@@ -256,6 +264,8 @@ type AddonsSpec struct {
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStore) || has(self.dataStore)", message="unsetting the dataStore is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"
+// +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == 'LoadBalancer')", message="LoadBalancer source ranges are supported only with LoadBalancer service type"
+
 type TenantControlPlaneSpec struct {
 	// DataStore allows to specify a DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
 	// This parameter is optional and acts as an override over the default one which is used by the Kamaji Operator.
