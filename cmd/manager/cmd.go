@@ -41,21 +41,22 @@ import (
 func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	// CLI flags
 	var (
-		metricsBindAddress         string
-		healthProbeBindAddress     string
-		leaderElect                bool
-		tmpDirectory               string
-		kineImage                  string
-		controllerReconcileTimeout time.Duration
-		cacheResyncPeriod          time.Duration
-		datastore                  string
-		managerNamespace           string
-		managerServiceAccountName  string
-		managerServiceName         string
-		webhookCABundle            []byte
-		migrateJobImage            string
-		maxConcurrentReconciles    int
-		disableTelemetry           bool
+		metricsBindAddress            string
+		healthProbeBindAddress        string
+		leaderElect                   bool
+		tmpDirectory                  string
+		kineImage                     string
+		controllerReconcileTimeout    time.Duration
+		cacheResyncPeriod             time.Duration
+		datastore                     string
+		managerNamespace              string
+		managerServiceAccountName     string
+		managerServiceName            string
+		webhookCABundle               []byte
+		migrateJobImage               string
+		maxConcurrentReconciles       int
+		disableTelemetry              bool
+		certificateExpirationDeadline time.Duration
 
 		webhookCAPath string
 	)
@@ -74,6 +75,10 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 
 			if err = cmdutils.CheckFlags(cmd.Flags(), []string{"kine-image", "datastore", "migrate-image", "tmp-directory", "pod-namespace", "webhook-service-name", "serviceaccount-name", "webhook-ca-path"}...); err != nil {
 				return err
+			}
+
+			if certificateExpirationDeadline < 24*time.Hour {
+				return fmt.Errorf("certificate expiration deadline must be at least 24 hours")
 			}
 
 			if webhookCABundle, err = os.ReadFile(webhookCAPath); err != nil {
@@ -186,7 +191,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				}
 			}
 
-			if err = (&controllers.CertificateLifecycle{Channel: certChannel}).SetupWithManager(mgr); err != nil {
+			if err = (&controllers.CertificateLifecycle{Channel: certChannel, Deadline: certificateExpirationDeadline}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "CertificateLifecycle")
 
 				return err
@@ -309,6 +314,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	cmd.Flags().DurationVar(&controllerReconcileTimeout, "controller-reconcile-timeout", 30*time.Second, "The reconciliation request timeout before the controller withdraw the external resource calls, such as dealing with the Datastore, or the Tenant Control Plane API endpoint.")
 	cmd.Flags().DurationVar(&cacheResyncPeriod, "cache-resync-period", 10*time.Hour, "The controller-runtime.Manager cache resync period.")
 	cmd.Flags().BoolVar(&disableTelemetry, "disable-telemetry", false, "Disable the analytics traces collection.")
+	cmd.Flags().DurationVar(&certificateExpirationDeadline, "certificate-expiration-deadline", 24*time.Hour, "Define the deadline upon certificate expiration to start the renewal process, cannot be less than a 24 hours.")
 
 	cobra.OnInitialize(func() {
 		viper.AutomaticEnv()
