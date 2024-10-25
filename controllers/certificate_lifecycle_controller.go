@@ -30,8 +30,10 @@ import (
 )
 
 type CertificateLifecycle struct {
-	Channel CertificateChannel
-	client  client.Client
+	Channel  CertificateChannel
+	Deadline time.Duration
+
+	client client.Client
 }
 
 func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -76,7 +78,7 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 		return reconcile.Result{}, nil
 	}
 
-	deadline := time.Now().AddDate(0, 0, 1)
+	deadline := time.Now().Add(s.Deadline)
 
 	if deadline.After(crt.NotAfter) {
 		logger.Info("certificate near expiration, must be rotated")

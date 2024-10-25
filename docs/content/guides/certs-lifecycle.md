@@ -94,7 +94,10 @@ k8s-126-576c775b5d-jmvlm   4/4     Running   0          50s
 The Kamaji operator will run a controller which processes all the Secrets to determine their expiration, both for the `kubeconfig`, as well as for the certificates.
 
 The controller, named `CertificateLifecycle`, will extract the certificates from the _Secret_ objects notifying the `TenantControlPlaneReconciler` controller which will start a new certificate rotation.
-The rotation will occur the day before their expiration. 
+By default, the rotation will occur the day before their expiration.
+
+This rotation deadline can be dynamically configured using the Kamaji CLI flag `--certificate-expiration-deadline` using the Go _Duration_ syntax:
+e.g.: set the value `7d` to trigger the renewal a week before the effective expiration date.
 
 > Nota Bene:
 >
