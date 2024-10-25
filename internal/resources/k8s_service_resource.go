@@ -102,7 +102,9 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 		switch tenantControlPlane.Spec.ControlPlane.Service.ServiceType {
 		case kamajiv1alpha1.ServiceTypeLoadBalancer:
 			r.resource.Spec.Type = corev1.ServiceTypeLoadBalancer
-
+			if len(tenantControlPlane.Spec.NetworkProfile.LoadBalancerSourceRanges) > 0 {
+				r.resource.Spec.LoadBalancerSourceRanges = tenantControlPlane.Spec.NetworkProfile.LoadBalancerSourceRanges
+			}
 			if len(address) > 0 {
 				r.resource.Spec.LoadBalancerIP = address
 			}
