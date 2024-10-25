@@ -245,7 +245,7 @@ env:
 e2e: env build load helm ginkgo cert-manager ## Create a KinD cluster, install Kamaji on it and run the test suite.
 	$(HELM) repo add clastix https://clastix.github.io/charts
 	$(HELM) dependency build ./charts/kamaji
-	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.pullPolicy=Never" --set "telemetry.disabled=true"
+	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true"
 	$(MAKE) datastores
 	$(GINKGO) -v ./e2e
 
