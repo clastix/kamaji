@@ -13937,9 +13937,10 @@ Use this field to add additional hostnames when exposing the Tenant Control Plan
         <td><b>dnsServiceIPs</b></td>
         <td>[]string</td>
         <td>
-          <br/>
-          <br/>
-            <i>Default</i>: [10.96.0.10]<br/>
+          The DNS Service for internal resolution, it must match the Service CIDR.
+In case of an empty value, it is automatically computed according to the Service CIDR, e.g.:
+Service CIDR 10.96.0.0/16, the resulting DNS Service IP will be 10.96.0.10 for IPv4,
+for IPv6 from the CIDR 2001:db8:abcd::/64 the resulting DNS Service IP will be 2001:db8:abcd::10.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13959,7 +13960,7 @@ Example: {"192.168.1.0/24", "10.0.0.0/8"}<br/>
         <td><b>podCidr</b></td>
         <td>string</td>
         <td>
-          CIDR for Kubernetes Pods<br/>
+          CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.<br/>
           <br/>
             <i>Default</i>: 10.244.0.0/16<br/>
         </td>
@@ -13978,7 +13979,7 @@ Example: {"192.168.1.0/24", "10.0.0.0/8"}<br/>
         <td><b>serviceCidr</b></td>
         <td>string</td>
         <td>
-          Kubernetes Service<br/>
+          CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.<br/>
           <br/>
             <i>Default</i>: 10.96.0.0/16<br/>
         </td>
