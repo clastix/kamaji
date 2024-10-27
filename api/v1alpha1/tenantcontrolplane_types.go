@@ -36,13 +36,16 @@ type NetworkProfileSpec struct {
 	// CertSANs sets extra Subject Alternative Names (SANs) for the API Server signing certificate.
 	// Use this field to add additional hostnames when exposing the Tenant Control Plane with third solutions.
 	CertSANs []string `json:"certSANs,omitempty"`
-	// Kubernetes Service
+	// CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.
 	//+kubebuilder:default="10.96.0.0/16"
 	ServiceCIDR string `json:"serviceCidr,omitempty"`
-	// CIDR for Kubernetes Pods
+	// CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.
 	//+kubebuilder:default="10.244.0.0/16"
 	PodCIDR string `json:"podCidr,omitempty"`
-	//+kubebuilder:default={"10.96.0.10"}
+	// The DNS Service for internal resolution, it must match the Service CIDR.
+	// In case of an empty value, it is automatically computed according to the Service CIDR, e.g.:
+	// Service CIDR 10.96.0.0/16, the resulting DNS Service IP will be 10.96.0.10 for IPv4,
+	// for IPv6 from the CIDR 2001:db8:abcd::/64 the resulting DNS Service IP will be 2001:db8:abcd::10.
 	DNSServiceIPs []string `json:"dnsServiceIPs,omitempty"`
 }
 

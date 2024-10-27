@@ -6,6 +6,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -28,6 +29,21 @@ func (t TenantControlPlaneDefaults) OnCreate(object runtime.Object) AdmissionRes
 
 		defaulted := original.DeepCopy()
 		t.defaultUnsetFields(defaulted)
+
+		if len(defaulted.Spec.NetworkProfile.DNSServiceIPs) == 0 {
+			ip, _, err := net.ParseCIDR(defaulted.Spec.NetworkProfile.ServiceCIDR)
+			if err != nil {
+				return nil, errors.Wrap(err, "cannot define resulting DNS Service IP")
+			}
+			switch {
+			case ip.To4() != nil:
+				ip[len(ip)-1] += 10
+			case ip.To16() != nil:
+				ip[len(ip)-1] += 16
+			}
+
+			defaulted.Spec.NetworkProfile.DNSServiceIPs = []string{ip.String()}
+		}
 
 		operations, err := utils.JSONPatch(original, defaulted)
 		if err != nil {

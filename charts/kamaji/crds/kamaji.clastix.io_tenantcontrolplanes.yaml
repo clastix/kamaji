@@ -6558,8 +6558,11 @@ spec:
                         - message: changing the cluster domain is not supported
                           rule: self == oldSelf
                     dnsServiceIPs:
-                      default:
-                        - 10.96.0.10
+                      description: |-
+                        The DNS Service for internal resolution, it must match the Service CIDR.
+                        In case of an empty value, it is automatically computed according to the Service CIDR, e.g.:
+                        Service CIDR 10.96.0.0/16, the resulting DNS Service IP will be 10.96.0.10 for IPv4,
+                        for IPv6 from the CIDR 2001:db8:abcd::/64 the resulting DNS Service IP will be 2001:db8:abcd::10.
                       items:
                         type: string
                       type: array
@@ -6577,7 +6580,7 @@ spec:
                       type: array
                     podCidr:
                       default: 10.244.0.0/16
-                      description: CIDR for Kubernetes Pods
+                      description: 'CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.'
                       type: string
                     port:
                       default: 6443
@@ -6586,7 +6589,7 @@ spec:
                       type: integer
                     serviceCidr:
                       default: 10.96.0.0/16
-                      description: Kubernetes Service
+                      description: 'CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.'
                       type: string
                   type: object
               required:
