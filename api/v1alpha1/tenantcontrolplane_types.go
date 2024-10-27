@@ -19,6 +19,11 @@ type NetworkProfileSpec struct {
 	// to specific networks for security purposes.
 	// Example: {"192.168.1.0/24", "10.0.0.0/8"}
 	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty"`
+	// Specify the LoadBalancer class in case of multiple load balancer implementations.
+	// Field supported only for Tenant Control Plane instances exposed using a LoadBalancer Service.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:XValidation:rule="oldSelf == '' || oldSelf == self",message="LoadBalancerClass can not be changed once set"
+	LoadBalancerClass *string `json:"loadBalancerClass,omitempty"`
 	// Address where API server of will be exposed.
 	// In case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.
 	Address string `json:"address,omitempty"`
@@ -268,6 +273,8 @@ type AddonsSpec struct {
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStore) || has(self.dataStore)", message="unsetting the dataStore is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == 'LoadBalancer')", message="LoadBalancer source ranges are supported only with LoadBalancer service type"
+// +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == 'LoadBalancer'", message="LoadBalancerClass is supported only with LoadBalancer service type"
+// +kubebuilder:validation:XValidation:rule="oldSelf.controlPlane.service.serviceType != self.controlPlane.service.serviceType || (!has(oldSelf.networkProfile.loadBalancerClass) && has(self.networkProfile.loadBalancerClass))",message="LoadBalancerClass can not be unset"
 
 type TenantControlPlaneSpec struct {
 	// DataStore allows to specify a DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
