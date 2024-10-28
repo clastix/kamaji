@@ -13944,6 +13944,14 @@ for IPv6 from the CIDR 2001:db8:abcd::/64 the resulting DNS Service IP will be 2
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>loadBalancerClass</b></td>
+        <td>string</td>
+        <td>
+          Specify the LoadBalancer class in case of multiple load balancer implementations.
+Field supported only for Tenant Control Plane instances exposed using a LoadBalancer Service.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>loadBalancerSourceRanges</b></td>
         <td>[]string</td>
         <td>
