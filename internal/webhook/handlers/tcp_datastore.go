@@ -26,7 +26,11 @@ func (t TenantControlPlaneDataStore) OnCreate(object runtime.Object) AdmissionRe
 	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
-		return nil, t.check(ctx, tcp.Spec.DataStore)
+		if tcp.Spec.DataStore != "" {
+			return nil, t.check(ctx, tcp.Spec.DataStore)
+		}
+
+		return nil, nil
 	}
 }
 
@@ -38,7 +42,11 @@ func (t TenantControlPlaneDataStore) OnUpdate(object runtime.Object, _ runtime.O
 	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
-		return nil, t.check(ctx, tcp.Spec.DataStore)
+		if tcp.Spec.DataStore != "" {
+			return nil, t.check(ctx, tcp.Spec.DataStore)
+		}
+
+		return nil, nil
 	}
 }
 
