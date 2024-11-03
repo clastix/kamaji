@@ -6617,7 +6617,7 @@ spec:
                 - message: LoadBalancerClass is supported only with LoadBalancer service type
                   rule: '!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == ''LoadBalancer'''
                 - message: LoadBalancerClass can not be unset
-                  rule: oldSelf.controlPlane.service.serviceType != self.controlPlane.service.serviceType || (!has(oldSelf.networkProfile.loadBalancerClass) && has(self.networkProfile.loadBalancerClass))
+                  rule: oldSelf.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType == 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer' && (has(oldSelf.networkProfile.loadBalancerClass) && has(self.networkProfile.loadBalancerClass) || !has(oldSelf.networkProfile.loadBalancerClass) && has(self.networkProfile.loadBalancerClass)))
             status:
               description: TenantControlPlaneStatus defines the observed state of TenantControlPlane.
               properties:
