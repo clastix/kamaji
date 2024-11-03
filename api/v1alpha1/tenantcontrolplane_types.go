@@ -274,7 +274,7 @@ type AddonsSpec struct {
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == 'LoadBalancer')", message="LoadBalancer source ranges are supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == 'LoadBalancer'", message="LoadBalancerClass is supported only with LoadBalancer service type"
-// +kubebuilder:validation:XValidation:rule="oldSelf.controlPlane.service.serviceType != self.controlPlane.service.serviceType || (!has(oldSelf.networkProfile.loadBalancerClass) && has(self.networkProfile.loadBalancerClass))",message="LoadBalancerClass can not be unset"
+// +kubebuilder:validation:XValidation:rule="oldSelf.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType == 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer' && (has(oldSelf.networkProfile.loadBalancerClass) && has(self.networkProfile.loadBalancerClass) || !has(oldSelf.networkProfile.loadBalancerClass) && has(self.networkProfile.loadBalancerClass)))",message="LoadBalancerClass can not be unset"
 
 type TenantControlPlaneSpec struct {
 	// DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
