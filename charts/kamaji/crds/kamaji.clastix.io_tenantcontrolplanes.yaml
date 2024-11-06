@@ -6575,8 +6575,8 @@ spec:
                       minLength: 1
                       type: string
                       x-kubernetes-validations:
-                        - message: LoadBalancerClass can not be changed once set
-                          rule: oldSelf == '' || oldSelf == self
+                        - message: LoadBalancerClass is immutable
+                          rule: self == oldSelf
                     loadBalancerSourceRanges:
                       description: |-
                         LoadBalancerSourceRanges restricts the IP ranges that can access
@@ -6616,8 +6616,8 @@ spec:
                   rule: '!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == ''LoadBalancer'')'
                 - message: LoadBalancerClass is supported only with LoadBalancer service type
                   rule: '!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == ''LoadBalancer'''
-                - message: LoadBalancerClass can not be unset
-                  rule: oldSelf.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType == 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer' && (has(oldSelf.networkProfile.loadBalancerClass) && has(self.networkProfile.loadBalancerClass) || !has(oldSelf.networkProfile.loadBalancerClass) && has(self.networkProfile.loadBalancerClass)))
+                - message: LoadBalancerClass cannot be set or unset at runtime
+                  rule: self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)
             status:
               description: TenantControlPlaneStatus defines the observed state of TenantControlPlane.
               properties:
