@@ -12,6 +12,7 @@ Feel free to open a Pull-Request to get yours listed.
 | End-user | KINX | 2024 | [link](https://kinx.net/?lang=en) | KINX is an Internet infrastructure service provider and will use kamaji for its new [Managed Kubernetes Service](https://kinx.net/service/cloud/kubernetes/intro/?lang=en). |
 | Vendor | Netsons | 2023 | [link](https://www.netsons.com) | Netsons is an Italian hosting and cloud provider and uses Kamaji in its [Managed Kubernetes](https://www.netsons.com/kubernetes) offering. |
 | R&D | Orange | 2024 | [link](https://gitlab.com/Orange-OpenSource/kanod) | Orange is a French telecommunications company using Kamaji for experimental research purpose, with Kanod research solution. |
+| Vendor | Platform9 | 2024 | [link](https://elasticmachinepool.com) | Platform9 uses Kamaji in its offering - Elastic Machine Pool, which is a tool for optimizing the cost of running kubernetes clusters in EKS. |
 | Vendor | Qumulus | 2024 | [link](https://www.qumulus.io) | Qumulus is a cloud provider and plans to use Kamaji for it's hosted Kubernetes service |
 | End-user | sevensphere | 2023 | [link](https://www.sevensphere.io) | Sevensphere provides consulting services for end-user companies / cloud providers and uses Kamaji for designing cloud/on-premises Kubernetes-as-a-Service platform. |
 | End-user | Sicuro Tech Lab | 2024 | [link](https://sicurotechlab.it/) | Sicuro Tech Lab offers cloud infrastructure for Web Agencies and uses kamaji to provide managed k8s services. |
