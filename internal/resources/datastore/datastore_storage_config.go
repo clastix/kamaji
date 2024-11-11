@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -47,16 +48,12 @@ func (r *Config) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (b
 func (r *Config) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.getPrefixedName(tenantControlPlane),
+			Name:      utilities.AddTenantPrefix(r.GetName(), tenantControlPlane),
 			Namespace: tenantControlPlane.GetNamespace(),
 		},
 	}
 
 	return nil
-}
-
-func (r *Config) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
 }
 
 func (r *Config) GetClient() client.Client {
@@ -67,28 +64,32 @@ func (r *Config) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv
 	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
+// Delete doesn't perform any deletion process: the Secret object has owner relationship
+// with the TenantControlPlane object, which has been previously deleted.
 func (r *Config) Delete(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) error {
 	secret := r.resource.DeepCopy()
 
-	if err := r.Client.Get(ctx, types.NamespacedName{Name: r.resource.Name, Namespace: r.resource.Namespace}, secret); err != nil {
-		if kubeerrors.IsNotFound(err) {
-			return nil
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if err := r.Client.Get(ctx, types.NamespacedName{Name: r.resource.Name, Namespace: r.resource.Namespace}, secret); err != nil {
+			if kubeerrors.IsNotFound(err) {
+				return nil
+			}
+
+			return errors.Wrap(err, "cannot retrieve the DataStore Secret for removal")
 		}
 
-		return errors.Wrap(err, "cannot retrieve the DataStore Secret for removal")
-	}
+		secret.SetFinalizers(nil)
 
-	secret.SetFinalizers(nil)
+		if err := r.Client.Update(ctx, secret); err != nil {
+			if kubeerrors.IsNotFound(err) {
+				return nil
+			}
 
-	if err := r.Client.Update(ctx, secret); err != nil {
-		if kubeerrors.IsNotFound(err) {
-			return nil
+			return errors.Wrap(err, "cannot remove DataStore Secret finalizers")
 		}
 
-		return errors.Wrap(err, "cannot remove DataStore Secret finalizers")
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func (r *Config) GetName() string {
