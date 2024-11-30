@@ -13,9 +13,11 @@ import (
 	"fmt"
 	"math/big"
 	mathrand "math/rand"
+	"net"
 	"time"
 
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // CheckPublicAndPrivateKeyValidity checks if the given bytes for the private and public keys are valid.
@@ -35,6 +37,39 @@ func CheckPublicAndPrivateKeyValidity(publicKey []byte, privateKey []byte) (bool
 	}
 
 	return checkPublicKeys(privKey.PublicKey, *pubKey), nil
+}
+
+// CheckCertificateSAN checks if the Kubernetes API Server certificate matches the SAN stored in the kubeadm:
+// it must check both IPs and DNS names, and returns a false if the required entry isn't available.
+// In case of removal of entries, this function returns true nevertheless to avoid reloading a Control Plane uselessly.
+func CheckCertificateSAN(certificateBytes []byte, certSANs []string) (bool, error) {
+	crt, err := ParseCertificateBytes(certificateBytes)
+	if err != nil {
+		return false, err
+	}
+
+	ips := sets.New[string]()
+	for _, ip := range crt.IPAddresses {
+		ips.Insert(ip.String())
+	}
+
+	dns := sets.New[string](crt.DNSNames...)
+
+	for _, e := range certSANs {
+		if ip := net.ParseIP(e); ip != nil {
+			if !ips.Has(ip.String()) {
+				return false, nil
+			}
+
+			continue
+		}
+
+		if !dns.Has(e) {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 // CheckCertificateAndPrivateKeyPairValidity checks if the certificate and private key pair are valid.
