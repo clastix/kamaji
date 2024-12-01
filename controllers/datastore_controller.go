@@ -101,7 +101,7 @@ func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
 			CreateFunc: func(_ context.Context, createEvent event.TypedCreateEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				enqueueFn(createEvent.Object.(*kamajiv1alpha1.TenantControlPlane), w)
 			},
-			UpdateFunc: func(ctx context.Context, updateEvent event.TypedUpdateEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+			UpdateFunc: func(_ context.Context, updateEvent event.TypedUpdateEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				enqueueFn(updateEvent.ObjectOld.(*kamajiv1alpha1.TenantControlPlane), w)
 				enqueueFn(updateEvent.ObjectNew.(*kamajiv1alpha1.TenantControlPlane), w)
 			},

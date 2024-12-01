@@ -54,7 +54,7 @@ func (t TenantControlPlaneDeployment) shouldTriggerCheck(newTCP, oldTCP kamajiv1
 }
 
 func (t TenantControlPlaneDeployment) OnUpdate(newObject runtime.Object, oldObject runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(ctx context.Context, _ admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp, previousTCP := newObject.(*kamajiv1alpha1.TenantControlPlane), oldObject.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
 		if !t.shouldTriggerCheck(*tcp, *previousTCP) {

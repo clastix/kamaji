@@ -31,7 +31,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		Use:          "migrate",
 		Short:        "Migrate the data of a TenantControlPlane to another compatible DataStore",
 		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(*cobra.Command, []string) error {
 			ctx, cancelFn := context.WithTimeout(context.Background(), timeout)
 			defer cancelFn()
 

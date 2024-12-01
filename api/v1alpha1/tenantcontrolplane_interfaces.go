@@ -8,5 +8,5 @@ package v1alpha1
 // +kubebuilder:object:generate=false
 type KubeadmConfigChecksumDependant interface {
 	GetChecksum() string
-	SetChecksum(string)
+	SetChecksum(checksum string)
 }

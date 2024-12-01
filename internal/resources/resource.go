@@ -21,19 +21,19 @@ const (
 )
 
 type Resource interface {
-	Define(context.Context, *kamajiv1alpha1.TenantControlPlane) error
-	ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool
-	CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error)
-	CreateOrUpdate(context.Context, *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error)
+	Define(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error
+	ShouldCleanup(tcp *kamajiv1alpha1.TenantControlPlane) bool
+	CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (bool, error)
+	CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error)
 	GetName() string
-	ShouldStatusBeUpdated(context.Context, *kamajiv1alpha1.TenantControlPlane) bool
-	UpdateTenantControlPlaneStatus(context.Context, *kamajiv1alpha1.TenantControlPlane) error
+	ShouldStatusBeUpdated(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool
+	UpdateTenantControlPlaneStatus(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error
 }
 
 type DeletableResource interface {
 	GetName() string
-	Define(context.Context, *kamajiv1alpha1.TenantControlPlane) error
-	Delete(context.Context, *kamajiv1alpha1.TenantControlPlane) error
+	Define(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error
+	Delete(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error
 }
 
 type KubeadmResource interface {
@@ -45,9 +45,9 @@ type KubeadmPhaseResource interface {
 	Resource
 	KubeadmResource
 	GetClient() client.Client
-	GetKubeadmFunction(context.Context, *kamajiv1alpha1.TenantControlPlane) (func(clientset.Interface, *kubeadm.Configuration) ([]byte, error), error)
-	GetStatus(*kamajiv1alpha1.TenantControlPlane) (kamajiv1alpha1.KubeadmConfigChecksumDependant, error)
-	SetKubeadmConfigChecksum(string)
+	GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (func(clientset.Interface, *kubeadm.Configuration) ([]byte, error), error)
+	GetStatus(tcp *kamajiv1alpha1.TenantControlPlane) (kamajiv1alpha1.KubeadmConfigChecksumDependant, error)
+	SetKubeadmConfigChecksum(checksum string)
 	GetWatchedObject() client.Object
 	GetPredicateFunc() func(obj client.Object) bool
 }

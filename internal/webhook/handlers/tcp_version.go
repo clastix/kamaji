@@ -22,7 +22,7 @@ import (
 type TenantControlPlaneVersion struct{}
 
 func (t TenantControlPlaneVersion) OnCreate(object runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(context.Context, admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
 		ver, err := semver.New(t.normalizeKubernetesVersion(tcp.Spec.Kubernetes.Version))
@@ -56,7 +56,7 @@ func (t TenantControlPlaneVersion) OnDelete(runtime.Object) AdmissionResponse {
 }
 
 func (t TenantControlPlaneVersion) OnUpdate(object runtime.Object, oldObject runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(context.Context, admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		newTCP, oldTCP := object.(*kamajiv1alpha1.TenantControlPlane), oldObject.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
 		oldVer, oldErr := semver.Make(t.normalizeKubernetesVersion(oldTCP.Spec.Kubernetes.Version))

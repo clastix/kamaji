@@ -23,7 +23,7 @@ type TenantControlPlaneDataStore struct {
 }
 
 func (t TenantControlPlaneDataStore) OnCreate(object runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(ctx context.Context, _ admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
 		if tcp.Spec.DataStore != "" {
@@ -39,7 +39,7 @@ func (t TenantControlPlaneDataStore) OnDelete(runtime.Object) AdmissionResponse 
 }
 
 func (t TenantControlPlaneDataStore) OnUpdate(object runtime.Object, _ runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(ctx context.Context, _ admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
 		if tcp.Spec.DataStore != "" {

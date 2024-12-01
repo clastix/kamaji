@@ -20,7 +20,7 @@ import (
 type TenantControlPlaneName struct{}
 
 func (t TenantControlPlaneName) OnCreate(object runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(context.Context, admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
 		if errs := validation.IsDNS1035Label(tcp.Name); len(errs) > 0 {
