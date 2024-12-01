@@ -28,7 +28,7 @@ var _ = Describe("DatastoreStorageConfig", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = context.Background()
+		ctx = context.Background() //nolint:fatcontext
 
 		tcp = &kamajiv1alpha1.TenantControlPlane{
 			ObjectMeta: metav1.ObjectMeta{

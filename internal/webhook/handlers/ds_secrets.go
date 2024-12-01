@@ -33,7 +33,7 @@ func (d DataStoreSecretValidation) OnDelete(runtime.Object) AdmissionResponse {
 }
 
 func (d DataStoreSecretValidation) OnUpdate(object runtime.Object, _ runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(ctx context.Context, _ admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		secret := object.(*corev1.Secret) //nolint:forcetypeassert
 
 		dsList := &kamajiv1alpha1.DataStoreList{}

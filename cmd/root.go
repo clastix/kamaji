@@ -18,7 +18,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	return &cobra.Command{
 		Use:   "kamaji",
 		Short: "Build and operate Kubernetes at scale with a fraction of operational burden.",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		PersistentPreRun: func(*cobra.Command, []string) {
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(kamajiv1alpha1.AddToScheme(scheme))
 			utilruntime.Must(appsv1.RegisterDefaults(scheme))

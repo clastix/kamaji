@@ -14,7 +14,7 @@ import (
 type AdmissionResponse func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error)
 
 type Handler interface {
-	OnCreate(runtime.Object) AdmissionResponse
-	OnDelete(runtime.Object) AdmissionResponse
+	OnCreate(obj runtime.Object) AdmissionResponse
+	OnDelete(obj runtime.Object) AdmissionResponse
 	OnUpdate(newObject runtime.Object, prevObject runtime.Object) AdmissionResponse
 }

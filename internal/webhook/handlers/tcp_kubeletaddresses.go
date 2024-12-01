@@ -19,7 +19,7 @@ import (
 type TenantControlPlaneKubeletAddresses struct{}
 
 func (t TenantControlPlaneKubeletAddresses) OnCreate(object runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(context.Context, admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
 		return nil, t.validatePreferredKubeletAddressTypes(tcp.Spec.Kubernetes.Kubelet.PreferredAddressTypes)
@@ -31,7 +31,7 @@ func (t TenantControlPlaneKubeletAddresses) OnDelete(runtime.Object) AdmissionRe
 }
 
 func (t TenantControlPlaneKubeletAddresses) OnUpdate(object runtime.Object, _ runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(context.Context, admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
 		return nil, t.validatePreferredKubeletAddressTypes(tcp.Spec.Kubernetes.Kubelet.PreferredAddressTypes)

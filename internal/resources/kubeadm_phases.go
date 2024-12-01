@@ -229,7 +229,7 @@ func (r *KubeadmPhase) UpdateTenantControlPlaneStatus(ctx context.Context, tenan
 func (r *KubeadmPhase) GetStatus(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (kamajiv1alpha1.KubeadmConfigChecksumDependant, error) {
 	switch r.Phase {
 	case PhaseUploadConfigKubeadm, PhaseUploadConfigKubelet, PhaseClusterAdminRBAC:
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	case PhaseBootstrapToken:
 		return &tenantControlPlane.Status.KubeadmPhase.BootstrapToken, nil
 	default:
