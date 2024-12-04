@@ -1,7 +1,7 @@
 // Copyright 2022 Clastix Labs
 // SPDX-License-Identifier: Apache-2.0
 
-package cmd
+package kamaji
 
 import (
 	"github.com/spf13/cobra"

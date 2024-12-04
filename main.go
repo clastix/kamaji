@@ -8,15 +8,15 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/clastix/kamaji/cmd"
-	"github.com/clastix/kamaji/cmd/manager"
-	"github.com/clastix/kamaji/cmd/migrate"
+	"github.com/clastix/kamaji/cmd/kamaji"
+	"github.com/clastix/kamaji/cmd/kamaji/manager"
+	"github.com/clastix/kamaji/cmd/kamaji/migrate"
 )
 
 func main() {
 	scheme := runtime.NewScheme()
 
-	root, mgr, migrator := cmd.NewCmd(scheme), manager.NewCmd(scheme), migrate.NewCmd(scheme)
+	root, mgr, migrator := kamaji.NewCmd(scheme), manager.NewCmd(scheme), migrate.NewCmd(scheme)
 	root.AddCommand(mgr)
 	root.AddCommand(migrator)
 

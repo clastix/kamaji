@@ -26,7 +26,7 @@ import (
 	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	cmdutils "github.com/clastix/kamaji/cmd/utils"
+	cmdutils "github.com/clastix/kamaji/cmd/kamaji/utils"
 	"github.com/clastix/kamaji/controllers"
 	"github.com/clastix/kamaji/controllers/soot"
 	"github.com/clastix/kamaji/internal"
