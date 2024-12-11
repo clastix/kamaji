@@ -10,9 +10,9 @@ Edge Release artifacts are published on a monthly basis as part of the open sour
 
 Edge Release artifacts contain the code in from the main branch at the point in time when they were cut. This means they always have the latest features and fixes, and have undergone automated testing as well as maintainer code review. Edge Releases may involve partial features that are later modified or backed out. They may also involve breaking changes, of course, we do our best to avoid this. Edge Releases are generally considered production ready, and the project will mark specific releases as “_not recommended_” if bugs are discovered after release.
 
-| Kamaji      | Management Cluster | Tenant Cluster       |
-|-------------|--------------------|----------------------|
-| edge-24.9.2 | v1.22+             | [v1.28.0 .. v1.31.1] |
+| Kamaji       | Management Cluster | Tenant Cluster       |
+|--------------|--------------------|----------------------|
+| edge-24.12.1 | v1.22+             | [v1.29.0 .. v1.31.4] |
 
 
 Using Edge Release artifacts and reporting bugs helps us ensure a rapid pace of development and is a great way to help maintainers. We publish edge release guidance as part of the release notes and strive to always provide production-ready artifacts.
