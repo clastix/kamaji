@@ -8,6 +8,7 @@ Feel free to open a Pull-Request to get yours listed.
 | Type | Name | Since | Website | Use-Case |
 |:-|:-|:-|:-|:-|
 | Vendor | Aknostic | 2023 | [link](https://aknostic.com) | Aknostic is a cloud-native consultancy company using Kamaji to build a Kubernetes based PaaS. |
+| R&D | Aruba | 2024 | [link](https://www.aruba.it/home.aspx) | Aruba Cloud is an Italian Cloud Service Provider evaluating Kamaji to build and offer [Managed Kubernetes Service](https://my.arubacloud.com). |
 | Vendor | DCloud | 2024 | [link](https://dcloud.co.id) | DCloud is an Indonesian Cloud Provider using Kamaji to build and offer [Managed Kubernetes Service](https://dcloud.co.id/dkubes.html). |
 | End-user | KINX | 2024 | [link](https://kinx.net/?lang=en) | KINX is an Internet infrastructure service provider and will use kamaji for its new [Managed Kubernetes Service](https://kinx.net/service/cloud/kubernetes/intro/?lang=en). |
 | Vendor | Netsons | 2023 | [link](https://www.netsons.com) | Netsons is an Italian hosting and cloud provider and uses Kamaji in its [Managed Kubernetes](https://www.netsons.com/kubernetes) offering. |
@@ -19,7 +20,7 @@ Feel free to open a Pull-Request to get yours listed.
 | Vendor | Sovereign Cloud Stack | 2024 | [link](https://sovereigncloudstack.org) | Sovereign Cloud Stack develops a standardized cloud platform and uses Kamaji in there Kubernetes-as-a-Service reference implementation |
 | R&D | TIM | 2024 | [link](https://www.gruppotim.it) | TIM is an Italian telecommunications company using Kamaji for experimental research and development purposes. |
 | Vendor | Ænix | 2023 | [link](https://aenix.io/) | Ænix provides consulting services for cloud providers and uses Kamaji for running Kubernetes-as-a-Service in free PaaS platform [Cozystack](https://cozystack.io). |
- 
+
 
 ### Adopter Types
 
