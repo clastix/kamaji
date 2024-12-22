@@ -8,7 +8,7 @@ require (
 	github.com/clastix/kamaji-telemetry v1.0.0
 	github.com/docker/docker v27.4.0+incompatible
 	github.com/go-logr/logr v1.4.2
-	github.com/go-pg/pg/v10 v10.13.0
+	github.com/go-pg/pg/v10 v10.14.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
@@ -162,7 +162,7 @@ require (
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
-	golang.org/x/crypto v0.30.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/net v0.32.0 // indirect
 	golang.org/x/oauth2 v0.21.0 // indirect
