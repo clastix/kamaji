@@ -12,6 +12,7 @@ Feel free to open a Pull-Request to get yours listed.
 | Vendor | DCloud | 2024 | [link](https://dcloud.co.id) | DCloud is an Indonesian Cloud Provider using Kamaji to build and offer [Managed Kubernetes Service](https://dcloud.co.id/dkubes.html). |
 | End-user | KINX | 2024 | [link](https://kinx.net/?lang=en) | KINX is an Internet infrastructure service provider and will use kamaji for its new [Managed Kubernetes Service](https://kinx.net/service/cloud/kubernetes/intro/?lang=en). |
 | Vendor | Netsons | 2023 | [link](https://www.netsons.com) | Netsons is an Italian hosting and cloud provider and uses Kamaji in its [Managed Kubernetes](https://www.netsons.com/kubernetes) offering. |
+| Vendor | NVIDIA | 2024 | [link](https://github.com/NVIDIA/doca-platform) | DOCA Platform Framework manages provisioning and service orchestration for NVIDIA Bluefield DPUs. |
 | R&D | Orange | 2024 | [link](https://gitlab.com/Orange-OpenSource/kanod) | Orange is a French telecommunications company using Kamaji for experimental research purpose, with Kanod research solution. |
 | Vendor | Platform9 | 2024 | [link](https://elasticmachinepool.com) | Platform9 uses Kamaji in its offering - Elastic Machine Pool, which is a tool for optimizing the cost of running kubernetes clusters in EKS. |
 | Vendor | Qumulus | 2024 | [link](https://www.qumulus.io) | Qumulus is a cloud provider and plans to use Kamaji for it's hosted Kubernetes service |
