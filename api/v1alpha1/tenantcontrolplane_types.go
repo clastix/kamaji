@@ -27,6 +27,9 @@ type NetworkProfileSpec struct {
 	// Address where API server of will be exposed.
 	// In case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.
 	Address string `json:"address,omitempty"`
+	// AdvertiseAdress is the address that will be advertise by the API server inside the cluster.
+	// If not set, will be set to the address assigned to the Tenant Control Plane.
+	AdvertiseAdress *string `json:"advertiseAdress,omitempty"`
 	// The default domain name used for DNS resolution within the cluster.
 	//+kubebuilder:default="cluster.local"
 	//+kubebuilder:validation:XValidation:rule="self == oldSelf",message="changing the cluster domain is not supported"

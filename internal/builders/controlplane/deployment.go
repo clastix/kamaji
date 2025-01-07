@@ -60,7 +60,12 @@ type Deployment struct {
 }
 
 func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, tenantControlPlane kamajiv1alpha1.TenantControlPlane) {
-	address, _, _ := tenantControlPlane.AssignedControlPlaneAddress()
+	var advertiseAddress string
+	if tenantControlPlane.Spec.NetworkProfile.AdvertiseAdress != nil {
+		advertiseAddress = *tenantControlPlane.Spec.NetworkProfile.AdvertiseAdress
+	} else {
+		advertiseAddress, _, _ = tenantControlPlane.AssignedControlPlaneAddress()
+	}
 
 	d.setLabels(deployment, utilities.MergeMaps(utilities.KamajiLabels(tenantControlPlane.GetName(), "deployment"), tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Labels))
 	d.setAnnotations(deployment, utilities.MergeMaps(deployment.Annotations, tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Annotations))
@@ -77,15 +82,15 @@ func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, te
 	d.resetKubeAPIServerFlags(deployment, tenantControlPlane)
 	d.setInitContainers(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setAdditionalContainers(&deployment.Spec.Template.Spec, tenantControlPlane)
-	d.setContainers(&deployment.Spec.Template.Spec, tenantControlPlane, address)
+	d.setContainers(&deployment.Spec.Template.Spec, tenantControlPlane, advertiseAddress)
 	d.setAdditionalVolumes(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setVolumes(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setServiceAccount(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.Client.Scheme().Default(deployment)
 }
 
-func (d Deployment) setContainers(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane, address string) {
-	d.buildKubeAPIServer(podSpec, tcp, address)
+func (d Deployment) setContainers(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane, advertiseAddress string) {
+	d.buildKubeAPIServer(podSpec, tcp, advertiseAddress)
 	d.buildScheduler(podSpec, tcp)
 	d.buildControllerManager(podSpec, tcp)
 	d.buildKine(podSpec, tcp)
@@ -570,14 +575,14 @@ func (d Deployment) initVolumeMounts(firstSystemVolumeMountName string, actual [
 	return volumeMounts
 }
 
-func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPlane kamajiv1alpha1.TenantControlPlane, address string) {
+func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPlane kamajiv1alpha1.TenantControlPlane, advertiseAddress string) {
 	found, index := utilities.HasNamedContainer(podSpec.Containers, apiServerContainerName)
 	if !found {
 		index = len(podSpec.Containers)
 		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
 	}
 
-	args := d.buildKubeAPIServerCommand(tenantControlPlane, address, utilities.ArgsFromSliceToMap(podSpec.Containers[index].Args))
+	args := d.buildKubeAPIServerCommand(tenantControlPlane, advertiseAddress, utilities.ArgsFromSliceToMap(podSpec.Containers[index].Args))
 
 	podSpec.Containers[index].Name = apiServerContainerName
 	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
@@ -683,7 +688,7 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 	}
 }
 
-func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.TenantControlPlane, address string, current map[string]string) map[string]string {
+func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.TenantControlPlane, advertiseAddress string, current map[string]string) map[string]string {
 	var extraArgs map[string]string
 
 	if tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs != nil {
@@ -699,7 +704,7 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 	desiredArgs := map[string]string{
 		"--allow-privileged":                   "true",
 		"--authorization-mode":                 "Node,RBAC",
-		"--advertise-address":                  address,
+		"--advertise-address":                  advertiseAddress,
 		"--client-ca-file":                     path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
 		"--enable-admission-plugins":           strings.Join(tenantControlPlane.Spec.Kubernetes.AdmissionControllers.ToSlice(), ","),
 		"--enable-bootstrap-token-auth":        "true",
