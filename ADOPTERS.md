@@ -21,7 +21,7 @@ Feel free to open a Pull-Request to get yours listed.
 | Vendor | Sovereign Cloud Stack | 2024 | [link](https://sovereigncloudstack.org) | Sovereign Cloud Stack develops a standardized cloud platform and uses Kamaji in there Kubernetes-as-a-Service reference implementation |
 | R&D | TIM | 2024 | [link](https://www.gruppotim.it) | TIM is an Italian telecommunications company using Kamaji for experimental research and development purposes. |
 | Vendor | Ænix | 2023 | [link](https://aenix.io/) | Ænix provides consulting services for cloud providers and uses Kamaji for running Kubernetes-as-a-Service in free PaaS platform [Cozystack](https://cozystack.io). |
-
+| End-user | Rackspace | 2024 | [link](https://spot.rackspace.com/) | Rackspace Spot uses Kamaji to manage our instances, offering fully-managed kubernetes infrastructure, auctioned in an open market. |
 
 ### Adopter Types
 
