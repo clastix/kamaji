@@ -5,6 +5,7 @@ package crypto
 
 import (
 	"bytes"
+	"crypto"
 	cryptorand "crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -36,7 +37,7 @@ func CheckPublicAndPrivateKeyValidity(publicKey []byte, privateKey []byte) (bool
 		return false, err
 	}
 
-	return checkPublicKeys(privKey.PublicKey, *pubKey), nil
+	return checkPublicKeys(pubKey, privKey), nil
 }
 
 // CheckCertificateSAN checks if the Kubernetes API Server certificate matches the SAN stored in the kubeadm:
@@ -114,10 +115,19 @@ func ParseCertificateBytes(content []byte) (*x509.Certificate, error) {
 }
 
 // ParsePrivateKeyBytes takes the private key bytes returning an RSA private key by parsing it.
-func ParsePrivateKeyBytes(content []byte) (*rsa.PrivateKey, error) {
+func ParsePrivateKeyBytes(content []byte) (crypto.Signer, error) {
 	pemContent, _ := pem.Decode(content)
 	if pemContent == nil {
 		return nil, fmt.Errorf("no right PEM block")
+	}
+
+	if pemContent.Type == "EC PRIVATE KEY" {
+		privateKey, err := x509.ParseECPrivateKey(pemContent.Bytes)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot parse EC Private Key")
+		}
+
+		return privateKey, nil
 	}
 
 	privateKey, err := x509.ParsePKCS1PrivateKey(pemContent.Bytes)
@@ -163,7 +173,7 @@ func IsValidCertificateKeyPairBytes(certificateBytes []byte, privateKeyBytes []b
 	switch {
 	case !checkCertificateValidity(*crt):
 		return false, nil
-	case !checkPublicKeys(*crt.PublicKey.(*rsa.PublicKey), key.PublicKey): //nolint:forcetypeassert
+	case !checkPublicKeys(crt.PublicKey, key):
 		return false, nil
 	default:
 		return true, nil
@@ -196,7 +206,7 @@ func VerifyCertificate(cert, ca []byte, usages ...x509.ExtKeyUsage) (bool, error
 	return len(chains) > 0, err
 }
 
-func generateCertificateKeyPairBytes(template *x509.Certificate, caCert *x509.Certificate, caKey *rsa.PrivateKey) (*bytes.Buffer, *bytes.Buffer, error) {
+func generateCertificateKeyPairBytes(template *x509.Certificate, caCert *x509.Certificate, caKey crypto.Signer) (*bytes.Buffer, *bytes.Buffer, error) {
 	certPrivKey, err := rsa.GenerateKey(cryptorand.Reader, 2048)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "cannot generate an RSA key")
@@ -236,11 +246,12 @@ func checkCertificateValidity(cert x509.Certificate) bool {
 	return notAfter && notBefore
 }
 
-func checkPublicKeys(a rsa.PublicKey, b rsa.PublicKey) bool {
-	isN := a.N.Cmp(b.N) == 0
-	isE := a.E == b.E
+func checkPublicKeys(a crypto.PublicKey, b crypto.Signer) bool {
+	if key, ok := a.(interface{ Equal(k crypto.PublicKey) bool }); ok {
+		return key.Equal(b.Public())
+	}
 
-	return isN && isE
+	return false
 }
 
 // NewCertificateTemplate returns the template that must be used to generate a certificate,
