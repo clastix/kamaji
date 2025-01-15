@@ -229,8 +229,8 @@ metallb:
 	cat hack/metallb.yaml | sed -E "s|172.19|$$(docker network inspect -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}' kind | sed -E 's|^([0-9]+\.[0-9]+)\..*$$|\1|g')|g" | kubectl apply -f -
 
 cert-manager:
-	$(HELM) repo add bitnami https://charts.bitnami.com/bitnami
-	$(HELM) upgrade --install cert-manager bitnami/cert-manager --namespace certmanager-system --create-namespace --set "installCRDs=true"
+	$(HELM) repo add jetstack https://charts.jetstack.io
+	$(HELM) upgrade --install cert-manager jetstack/cert-manager --namespace certmanager-system --create-namespace --set "installCRDs=true"
 
 load: kind
 	$(KIND) load docker-image --name kamaji ${CONTAINER_REPOSITORY}:${VERSION}
