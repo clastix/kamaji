@@ -1110,6 +1110,11 @@ func (in *NetworkProfileSpec) DeepCopyInto(out *NetworkProfileSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.LoadBalancerClass != nil {
+		in, out := &in.LoadBalancerClass, &out.LoadBalancerClass
+		*out = new(string)
+		**out = **in
+	}
 	if in.CertSANs != nil {
 		in, out := &in.CertSANs, &out.CertSANs
 		*out = make([]string, len(*in))
