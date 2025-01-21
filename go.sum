@@ -103,8 +103,8 @@ github.com/go-openapi/jsonreference v0.20.2/go.mod h1:Bl1zwGIM8/wsvqjsOQLJ/SH+En
 github.com/go-openapi/swag v0.22.3/go.mod h1:UzaqsxGiab7freDnrUUra0MwWfN/q7tE4j+VcZ0yl14=
 github.com/go-openapi/swag v0.22.4 h1:QLMzNJnMGPRNDCbySlcj1x01tzU8/9LTTL9hZZZogBU=
 github.com/go-openapi/swag v0.22.4/go.mod h1:UzaqsxGiab7freDnrUUra0MwWfN/q7tE4j+VcZ0yl14=
-github.com/go-pg/pg/v10 v10.13.0 h1:xMagDE57VP8Y2KvIf9PvrsOAIjX62XqaKmfEzB0c5eU=
-github.com/go-pg/pg/v10 v10.13.0/go.mod h1:IXp9Ok9JNNW9yWedbQxxvKUv84XhoH5+tGd+68y+zDs=
+github.com/go-pg/pg/v10 v10.14.0 h1:giXuPsJaWjzwzFJTxy39eBgGE44jpqH1jwv0uI3kBUU=
+github.com/go-pg/pg/v10 v10.14.0/go.mod h1:6kizZh54FveJxw9XZdNg07x7DDBWNsQrSiJS04MLwO8=
 github.com/go-pg/zerochecker v0.2.0 h1:pp7f72c3DobMWOb2ErtZsnrPaSvHd2W4o9//8HtF4mU=
 github.com/go-pg/zerochecker v0.2.0/go.mod h1:NJZ4wKL0NmTtz0GKCoJ8kym6Xn/EQzXRl2OnAe7MmDo=
 github.com/go-sql-driver/mysql v1.8.1 h1:LedoTUt/eveggdHS9qUFC1EFSa8bU2+1pZjSRpvNJ1Y=

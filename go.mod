@@ -8,7 +8,7 @@ require (
 	github.com/clastix/kamaji-telemetry v1.0.0
 	github.com/docker/docker v27.5.0+incompatible
 	github.com/go-logr/logr v1.4.2
-	github.com/go-pg/pg/v10 v10.13.0
+	github.com/go-pg/pg/v10 v10.14.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
