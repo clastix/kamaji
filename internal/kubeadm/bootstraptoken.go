@@ -23,7 +23,7 @@ func BootstrapToken(client kubernetes.Interface, config *Configuration) error {
 		return errors.Wrap(err, "error updating or creating token")
 	}
 
-	if err := node.AllowBoostrapTokensToGetNodes(client); err != nil {
+	if err := node.AllowBootstrapTokensToGetNodes(client); err != nil {
 		return errors.Wrap(err, "error allowing bootstrap tokens to get Nodes")
 	}
 
