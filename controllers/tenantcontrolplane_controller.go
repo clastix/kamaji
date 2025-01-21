@@ -199,6 +199,12 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 
 		if err = utils.UpdateStatus(ctx, r.Client, tenantControlPlane, resource); err != nil {
+			if kamajierrors.ShouldReconcileErrorBeIgnored(err) {
+				log.V(1).Info("sentinel error, enqueuing back request", "error", err.Error())
+
+				return ctrl.Result{Requeue: true}, nil
+			}
+
 			log.Error(err, "update of the resource failed", "resource", resource.GetName())
 
 			return ctrl.Result{}, err
