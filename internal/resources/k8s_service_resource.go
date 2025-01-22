@@ -14,7 +14,6 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -42,8 +41,6 @@ func (r *KubernetesServiceResource) CleanUp(context.Context, *kamajiv1alpha1.Ten
 }
 
 func (r *KubernetesServiceResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	logger := log.FromContext(ctx, "resource", r.GetName())
-
 	tenantControlPlane.Status.Kubernetes.Service.ServiceStatus = r.resource.Status
 	tenantControlPlane.Status.Kubernetes.Service.Name = r.resource.GetName()
 	tenantControlPlane.Status.Kubernetes.Service.Namespace = r.resource.GetNamespace()
@@ -51,8 +48,6 @@ func (r *KubernetesServiceResource) UpdateTenantControlPlaneStatus(ctx context.C
 
 	address, err := tenantControlPlane.DeclaredControlPlaneAddress(ctx, r.Client)
 	if err != nil {
-		logger.Error(err, "cannot retrieve Tenant Control Plane address")
-
 		return err
 	}
 	tenantControlPlane.Status.ControlPlaneEndpoint = net.JoinHostPort(address, strconv.FormatInt(int64(tenantControlPlane.Spec.NetworkProfile.Port), 10))
