@@ -20,7 +20,7 @@ jobs:
         with:
           version: v1.62.2
           only-new-issues: false
-          args: --timeout 5m --config .golangci.yml
+          args: --config .golangci.yml
   diff:
     name: diff
     runs-on: ubuntu-22.04
