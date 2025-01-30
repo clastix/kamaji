@@ -1,6 +1,7 @@
 // Copyright 2022 Clastix Labs
 // SPDX-License-Identifier: Apache-2.0
 
+//nolint:ginkgolinter
 package e2e
 
 import (

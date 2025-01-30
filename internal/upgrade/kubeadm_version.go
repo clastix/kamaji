@@ -4,5 +4,5 @@
 package upgrade
 
 const (
-	KubeadmVersion = "v1.31.2"
+	KubeadmVersion = "v1.31.4"
 )

@@ -84,6 +84,14 @@ func (r *APIServerCertificate) UpdateTenantControlPlaneStatus(_ context.Context,
 func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
+		// The Kubeadm configuration must be retrieved in advance:
+		// this is required to check also the certificate SAN
+		config, kadmErr := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
+		if kadmErr != nil {
+			logger.Error(kadmErr, "cannot retrieve stored kubeadm configuration", "err", kadmErr.Error())
+
+			return fmt.Errorf("failed to generate certificate and private key: %w", kadmErr)
+		}
 		// Retrieving the TenantControlPlane CA:
 		// this is required to trigger a new generation in case of Certificate Authority rotation.
 		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
@@ -121,16 +129,14 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.APIServerCertAndKeyBaseName, err.Error()))
 			}
 
-			if isCAValid && isCertValid {
+			dnsNamesMatches, dnsErr := crypto.CheckCertificateSAN(r.resource.Data[kubeadmconstants.APIServerCertName], config.InitConfiguration.APIServer.CertSANs)
+			if dnsErr != nil {
+				logger.Info(fmt.Sprintf("%s SAN check returned an error: %s", kubeadmconstants.APIServerCertAndKeyBaseName, err.Error()))
+			}
+
+			if isCAValid && isCertValid && dnsNamesMatches {
 				return nil
 			}
-		}
-
-		config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
-		if err != nil {
-			logger.Error(err, "cannot generate certificate and private key in api server certificate", "details", err.Error())
-
-			return fmt.Errorf("failed to generate certificate and private key: %w", err)
 		}
 
 		ca := kubeadm.CertificatePrivateKeyPair{

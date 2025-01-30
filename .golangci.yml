@@ -1,4 +1,11 @@
 linters-settings:
+  revive:
+    rules:
+      - name: dot-imports
+        arguments:
+          - allowedPackages:
+              - "github.com/onsi/ginkgo/v2"
+              - "github.com/onsi/gomega"
   gci:
     sections:
       - standard
@@ -13,16 +20,14 @@ linters:
   disable:
     - depguard
     - wrapcheck
-    - gomnd
-    - scopelint
+    - mnd
     - varnamelen
     - testpackage
     - tagliatelle
     - paralleltest
     - ireturn
-    - goerr113
+    - err113
     - gochecknoglobals
-    - exhaustivestruct
     - wsl
     - exhaustive
     - nosprintfhostport
@@ -39,13 +44,7 @@ linters:
     - cyclop
     - gocognit
     - nestif
+    - perfsprint
     # deprecated linters
-    - deadcode
-    - golint
-    - interfacer
-    - structcheck
-    - varcheck
-    - nosnakecase
-    - ifshort
-    - maligned
+    - exportloopref
   enable-all: true

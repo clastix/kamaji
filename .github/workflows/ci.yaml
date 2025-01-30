@@ -16,9 +16,9 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6.1.1
+        uses: golangci/golangci-lint-action@v6.2.0
         with:
-          version: v1.54.2
+          version: v1.62.2
           only-new-issues: false
           args: --timeout 5m --config .golangci.yml
   diff:

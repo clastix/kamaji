@@ -25,7 +25,7 @@ type DataStoreValidation struct {
 }
 
 func (d DataStoreValidation) OnCreate(object runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(ctx context.Context, _ admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		ds := object.(*kamajiv1alpha1.DataStore) //nolint:forcetypeassert
 
 		return nil, d.validate(ctx, *ds)
@@ -33,7 +33,7 @@ func (d DataStoreValidation) OnCreate(object runtime.Object) AdmissionResponse {
 }
 
 func (d DataStoreValidation) OnDelete(object runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(ctx context.Context, _ admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		ds := object.(*kamajiv1alpha1.DataStore) //nolint:forcetypeassert
 
 		tcpList := &kamajiv1alpha1.TenantControlPlaneList{}
@@ -50,7 +50,7 @@ func (d DataStoreValidation) OnDelete(object runtime.Object) AdmissionResponse {
 }
 
 func (d DataStoreValidation) OnUpdate(object runtime.Object, oldObj runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(ctx context.Context, _ admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		newDs, oldDs := object.(*kamajiv1alpha1.DataStore), oldObj.(*kamajiv1alpha1.DataStore) //nolint:forcetypeassert
 
 		if oldDs.Spec.Driver != newDs.Spec.Driver {

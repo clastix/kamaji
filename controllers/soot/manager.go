@@ -182,7 +182,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		Metrics: metricsserver.Options{
 			BindAddress: "0",
 		},
-		NewClient: func(config *rest.Config, options client.Options) (client.Client, error) {
+		NewClient: func(config *rest.Config, _ client.Options) (client.Client, error) {
 			return client.New(config, client.Options{
 				Scheme: m.client.Scheme(),
 			})

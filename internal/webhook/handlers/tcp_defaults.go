@@ -24,7 +24,7 @@ type TenantControlPlaneDefaults struct {
 }
 
 func (t TenantControlPlaneDefaults) OnCreate(object runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(context.Context, admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		original := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
 		defaulted := original.DeepCopy()

@@ -68,7 +68,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		Short:         "Start the Kamaji Kubernetes Operator",
 		SilenceErrors: false,
 		SilenceUsage:  true,
-		PreRunE: func(cmd *cobra.Command, args []string) (err error) {
+		PreRunE: func(cmd *cobra.Command, _ []string) (err error) {
 			// Avoid to pollute Kamaji stdout with useless details by the underlying klog implementations
 			klog.SetOutput(io.Discard)
 			klog.LogToStderr(false)
@@ -95,7 +95,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 
 			return nil
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(*cobra.Command, []string) error {
 			setupLog := ctrl.Log.WithName("setup")
 
 			setupLog.Info(fmt.Sprintf("Kamaji version %s %s%s", internal.GitTag, internal.GitCommit, internal.GitDirty))

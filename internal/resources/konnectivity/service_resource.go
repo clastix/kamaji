@@ -46,7 +46,7 @@ func (r *ServiceResource) ShouldStatusBeUpdated(_ context.Context, tenantControl
 		return true
 	}
 
-	for i := 0; i < len(resourceIngresses); i++ {
+	for i := range resourceIngresses {
 		if resourceIngresses[i].Hostname != statusIngresses[i].Hostname ||
 			resourceIngresses[i].IP != statusIngresses[i].IP ||
 			len(resourceIngresses[i].Ports) != len(statusIngresses[i].Ports) {
@@ -55,7 +55,7 @@ func (r *ServiceResource) ShouldStatusBeUpdated(_ context.Context, tenantControl
 
 		resourcePorts := resourceIngresses[i].Ports
 		statusPorts := statusIngresses[i].Ports
-		for j := 0; j < len(resourcePorts); j++ {
+		for j := range resourcePorts {
 			if resourcePorts[j].Port != statusPorts[j].Port ||
 				resourcePorts[j].Protocol != statusPorts[j].Protocol {
 				return true

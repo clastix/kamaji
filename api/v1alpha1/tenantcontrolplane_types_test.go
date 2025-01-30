@@ -19,7 +19,7 @@ var _ = Describe("Cluster controller", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = context.Background()
+		ctx = context.Background() //nolint:fatcontext
 		tcp = &TenantControlPlane{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "tcp",

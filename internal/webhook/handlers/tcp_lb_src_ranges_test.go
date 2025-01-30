@@ -31,7 +31,7 @@ var _ = Describe("TCP LoadBalancer Source Ranges Webhook", func() {
 			},
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{},
 		}
-		ctx = context.Background()
+		ctx = context.Background() //nolint:fatcontext
 	})
 
 	It("allows creation when valid CIDR ranges are provided", func() {

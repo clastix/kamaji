@@ -103,7 +103,7 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
 $(GOLANGCI_LINT): $(LOCALBIN)
-	test -s $(LOCALBIN)/golangci-lint || GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2
+	test -s $(LOCALBIN)/golangci-lint || GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.2
 
 .PHONY: apidocs-gen
 apidocs-gen: $(APIDOCS_GEN)  ## Download crdoc locally if necessary.
@@ -229,8 +229,8 @@ metallb:
 	cat hack/metallb.yaml | sed -E "s|172.19|$$(docker network inspect -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}' kind | sed -E 's|^([0-9]+\.[0-9]+)\..*$$|\1|g')|g" | kubectl apply -f -
 
 cert-manager:
-	$(HELM) repo add bitnami https://charts.bitnami.com/bitnami
-	$(HELM) upgrade --install cert-manager bitnami/cert-manager --namespace certmanager-system --create-namespace --set "installCRDs=true"
+	$(HELM) repo add jetstack https://charts.jetstack.io
+	$(HELM) upgrade --install cert-manager jetstack/cert-manager --namespace certmanager-system --create-namespace --set "installCRDs=true"
 
 load: kind
 	$(KIND) load docker-image --name kamaji ${CONTAINER_REPOSITORY}:${VERSION}

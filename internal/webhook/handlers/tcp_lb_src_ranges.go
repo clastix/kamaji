@@ -46,7 +46,7 @@ func (t TenantControlPlaneLoadBalancerSourceRanges) OnDelete(runtime.Object) Adm
 }
 
 func (t TenantControlPlaneLoadBalancerSourceRanges) OnUpdate(object runtime.Object, _ runtime.Object) AdmissionResponse {
-	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+	return func(context.Context, admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
 		if err := t.handle(tcp); err != nil {
