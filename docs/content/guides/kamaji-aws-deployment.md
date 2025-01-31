@@ -138,12 +138,17 @@ And check you can access:
 ```bash
 aws eks update-kubeconfig --region ${KAMAJI_REGION} --name ${KAMAJI_CLUSTER}
 kubectl cluster-info
+# make ebs as a default storage class
+kubectl patch storageclass standard -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+
 ```
 ### Add route 53 domain 
 In order to easily access to tenant clusters , it is recommended to create a route53 domain or use an existing one if exists
 
 ```bash
+# for within VPC
 aws route53 create-hosted-zone --name "$TENANT_DOMAIN" --caller-reference $(date +%s) --vpc "VPCRegion=$KAMAJI_REGION,VPCId=$KAMAJI_VPC_ID"
+
 ```
 ## Install Kamaji
 
@@ -173,7 +178,10 @@ Setting externalDNS allows to update your DNS records dynamically from an annota
 
 helm repo add external-dns https://kubernetes-sigs.github.io/external-dns/
 helm repo update
-helm install my-external-dns external-dns/external-dns --version 1.15.1
+helm install external-dns external-dns/external-dns \
+  --namespace external-dns \
+  --create-namespace \
+  --version 1.15.1
 ```
 ## Install Kamaji Controller
 
@@ -190,13 +198,19 @@ helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
 ### Tenant Control Plane
 With Kamaji on EKS, the tenant control plane is accessible:
 
+- from management cluster through a `ClusterIP` service
 - from tenant worker nodes through an internal loadbalancer
 - from tenant admin user through an external loadbalancer responding to `https://${TENANT_NAME}.${TENANT_NAME}.${TENANT_DOMAIN}:443`
 
 Create a tenant control plane of example:
 
 ```yaml
-cat > ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml <<EOF
+cat > ${TENANT_NAMESPACE}-${TENANT_NAME}-2.yaml <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${TENANT_NAMESPACE}
+---
 apiVersion: kamaji.clastix.io/v1alpha1
 kind: TenantControlPlane
 metadata:
@@ -208,7 +222,7 @@ spec:
   dataStore: default
   controlPlane:
     deployment:
-      replicas: 3
+      replicas: 1
       additionalMetadata:
         labels:
           tenant.clastix.io: ${TENANT_NAME}
@@ -237,7 +251,11 @@ spec:
         labels:
           tenant.clastix.io: ${TENANT_NAME}
         annotations:
-          service.beta.kubernetes.io/AWS-load-balancer-internal: "true"
+            service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+            service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+            service.beta.kubernetes.io/aws-load-balancer-subnets: PUBLIC_SUBNET
+            service.beta.kubernetes.io/aws-load-balancer-type: nlb
+            external-dns.alpha.kubernetes.io/hostname: ${TENANT_NAME}.${TENANT_DOMAIN}
       serviceType: LoadBalancer
   kubernetes:
     version: ${TENANT_VERSION}
@@ -247,6 +265,7 @@ spec:
       - ResourceQuota
       - LimitRanger
   networkProfile:
+    address: <PUBLIC IP>
     port: ${TENANT_PORT}
     certSANs:
     - ${TENANT_NAME}.${TENANT_DOMAIN}
@@ -265,40 +284,26 @@ spec:
             cpu: 100m
             memory: 128Mi
           limits: {}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ${TENANT_NAME}-public
-  namespace: ${TENANT_NAMESPACE}
-  annotations:
-    service.beta.kubernetes.io/AWS-dns-label-name: ${TENANT_NAME}
-spec:
-  ports:
-  - port: 443
-    protocol: TCP
-    targetPort: ${TENANT_PORT}
-  selector:
-    kamaji.clastix.io/name: ${TENANT_NAME}
-  type: LoadBalancer
 EOF
 
-kubectl -n ${TENANT_NAMESPACE} apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
+kubectl -n ${TENANT_NAMESPACE} apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}.yaml
 ```
 
 Make sure:
 
-- the following annotation: `service.beta.kubernetes.io/AWS-load-balancer-internal=true` is set on the `tcp` service. It tells AWS to expose the service within an internal loadbalancer.
+- the following annotation: `external-dns.alpha.kubernetes.io/hostname` is set to create the dns record. It tells AWS to expose the Tenant Control Plane with public domain name: `${TENANT_NAME}.${TENANT_DOMAIN}`.
 
-- the following annotation: `service.beta.kubernetes.io/AWS-dns-label-name=${TENANT_NAME}` is set the public loadbalancer service. It tells AWS to expose the Tenant Control Plane with public domain name: `${TENANT_NAME}.${TENANT_DOMAIN}`.
+> Since AWS load Balancer does not support setting LoadBalancerIP, you will get the folowing warning on the service created for the control plane tenant `Error syncing load balancer: failed to ensure load balancer: LoadBalancerIP cannot be specified for AWS ELB`. you can ignore it for now.
 
 ### Working with Tenant Control Plane
 
 Check the access to the Tenant Control Plane:
 
+> if the domain you used is a private route53 domain make sure to map the public IP of the LB to ${TENANT_NAME}.${TENANT_DOMAIN} in your `/etc/hosts`. otherwise kubectl will fail checking ssl certificates
+
 ```bash
-curl -k https://${TENANT_NAME}.${KAMAJI_REGION}.cloudapp.AWS.com/healthz
-curl -k https://${TENANT_NAME}.${KAMAJI_REGION}.cloudapp.AWS.com/version
+curl -k https://${TENANT_NAME}.${TENANT_DOMAIN}/healthz
+curl -k https://${TENANT_NAME}.${TENANT_DOMAIN}/version
 ```
 
 Let's retrieve the `kubeconfig` in order to work with it:
@@ -311,7 +316,7 @@ kubectl get secrets -n ${TENANT_NAMESPACE} ${TENANT_NAME}-admin-kubeconfig -o js
 
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig config \
   set-cluster ${TENANT_NAME} \
-  --server https://${TENANT_NAME}.${KAMAJI_REGION}.cloudapp.AWS.com
+  --server https://${TENANT_NAME}.${TENANT_DOMAIN}
 ```
 
 and let's check it out:
@@ -319,8 +324,8 @@ and let's check it out:
 ```
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get svc
 
-NAMESPACE     NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)     AGE
-default       kubernetes   ClusterIP   10.32.0.1    <none>        443/TCP     6m
+NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   38h
 ```
 
 Check out how the Tenant Control Plane advertises itself:
@@ -328,90 +333,88 @@ Check out how the Tenant Control Plane advertises itself:
 ```
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get ep
 
-NAME         ENDPOINTS           AGE
-kubernetes   10.240.0.100:6443   57m
+NAME         ENDPOINTS            AGE
+kubernetes   172.20.251.60:6443   38h
 ```
 
-### Join worker nodes
+## Join worker nodes
 
 The Tenant Control Plane is made of pods running in the Kamaji Management Cluster. At this point, the Tenant Cluster has no worker nodes. So, the next step is to join some worker nodes to the Tenant Control Plane.
 
-Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Currently, a Cluster API `ControlPlane` provider for AWS is not yet available: check the road-map on the [official repository](https://github.com/clastix/cluster-api-control-plane-provider-kamaji). 
+Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Currently, a Cluster API `ControlPlane` provider for AWS is available: check the [official documentation](https://github.com/clastix/cluster-api-control-plane-provider-kamaji/blob/master/docs/providers-aws.md). 
 
 An alternative approach to create and join worker nodes in AWS is to manually create the VMs, turn them into Kubernetes worker nodes and then join through the `kubeadm` command.
 
-Create an AWS VM Stateful Set to host worker nodes
+### Create the kubeadm join command
 
-```bash
-az network vnet subnet create \
-   --resource-group $KAMAJI_RG \
-   --name $TENANT_SUBNET_NAME \
-   --vnet-name $KAMAJI_VNET_NAME \
-   --address-prefixes $TENANT_SUBNET_ADDRESS
-
-az vmss create \
-   --name $TENANT_VMSS \
-   --resource-group $KAMAJI_RG \
-   --image $TENANT_VM_IMAGE \
-   --vnet-name $KAMAJI_VNET_NAME \
-   --subnet $TENANT_SUBNET_NAME \
-   --computer-name-prefix $TENANT_NAME- \
-   --load-balancer "" \
-   --instance-count 0
-
-az vmss update \
-   --resource-group $KAMAJI_RG \
-   --name $TENANT_VMSS \
-   --set virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].enableIPForwarding=true
-
-az vmss scale \
-   --resource-group $KAMAJI_RG \
-   --name $TENANT_VMSS \
-   --new-capacity 3
-```
-
-Once all the machines are ready, follow the related [documentation](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) in order to:
-
-- install `containerd` as container runtime
-- install `crictl`, the command line for working with `containerd`
-- install `kubectl`, `kubelet`, and `kubeadm` in the desired version
-
-After the installation is complete on all the nodes, store the entire command of joining in a variable:
-
+Run the following command to get the `kubeadm` join command that will be used on the worker tenant nodes:
 ```bash
 TENANT_ADDR=$(kubectl -n ${TENANT_NAMESPACE} get svc ${TENANT_NAME} -o json | jq -r ."spec.loadBalancerIP")
-JOIN_CMD=$(echo "sudo kubeadm join ${TENANT_ADDR}:6443 ")$(kubeadm --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig token create --print-join-command |cut -d" " -f4-)
+JOIN_CMD=$(echo "sudo kubeadm join ${TENANT_ADDR}:6443 ")$(kubeadm --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig token create --ttl 0 --print-join-command |cut -d" " -f4-)
 ```
 
-Use a loop to log in to and run the join command on each node:
+> setting `--ttl=0` on the `kubeadm token create` will guarantee that the token will never expires and can be used every time.
+
+### create tenant worker nodes ASG
+
+Create an AWS autoscaling group to host tenant worker nodes:
 
 ```bash
-VMIDS=($(az vmss list-instances \
-   --resource-group $KAMAJI_RG \
-   --name $TENANT_VMSS \
-   --query [].instanceId \
-   --output tsv))
+aws ec2 create-subnet --vpc-id $KAMAJI_VPC_ID --cidr-block $TENANT_SUBNET_ADDRESS --availability-zone ${KAMAJI_REGION}a
 
-for i in ${!VMIDS[@]}; do
-  VMID=${VMIDS[$i]}
-  az vmss run-command create \
-	  --name join-tenant-control-plane \
-	  --vmss-name  $TENANT_VMSS \
-	  --resource-group $KAMAJI_RG \
-	  --instance-id ${VMID} \
-	  --script "${JOIN_CMD}"
-done
+export TENANT_SUBNET_ID=$(aws ec2 describe-subnets --filter "Name=vpc-id,Values=$KAMAJI_VPC_ID" --filter "Name=cidr-block,Values=$TENANT_SUBNET_ADDRESS"  --query "Subnets[0].SubnetId" --output text)
+
+USER_DATA=$(cat <<EOF
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates software-properties-common curl gpg
+mkdir -p -m 755 /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+curl -fsSL https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.30/deb/ /" | sudo tee /etc/apt/sources.list.d/cri-o.list
+sudo apt-get update
+sudo apt-get install -y cri-o kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+sudo systemctl start crio.service
+sudo swapoff -a
+sudo modprobe br_netfilter
+sudo sysctl -w net.ipv4.ip_forward=1
+$JOIN_CMD
+EOF
+)
+USER_DATA_ENCODED=$(echo "$USER_DATA" | base64)
+
+LAUNCH_TEMPLATE_ID=$(aws ec2 create-launch-template \
+  --launch-template-name "$LAUNCH_TEMPLATE_NAME" \
+  --version-description "Initial version" \
+  --launch-template-data "{
+    \"ImageId\": \"$UBUNTU_AMI_ID\",
+    \"InstanceType\": \"$TENANT_VM_SIZE\",
+    \"SecurityGroupIds\": [\"$SECURITY_GROUP_ID\"],
+    \"UserData\": \"$USER_DATA_ENCODED\"
+  }" \
+  --query 'LaunchTemplate.LaunchTemplateId' --output text)
+
+  aws autoscaling create-auto-scaling-group \
+  --auto-scaling-group-name "$TENANT_ASG_NAME" \
+  --launch-template "LaunchTemplateId=$LAUNCH_TEMPLATE_ID,Version=1" \
+  --min-size $TENANT_ASG_MIN_SIZE \
+  --max-size $TENANT_ASG_MAX_SIZE \
+  --desired-capacity $TENANT_ASG_DESIRED_CAPACITY \
+  --vpc-zone-identifier "$TENANT_SUBNET_ID" \
+
 ```
+
+> Note: we're using the `userdata` in order to bootstrap the worker nodes. You can follow the [documentation](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) for manual bootstrapping
 
 Checking the nodes:
 
 ```bash
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get nodes
 
-NAME               STATUS     ROLES    AGE    VERSION
-tenant-00-000000   NotReady   <none>   112s   v1.25.0
-tenant-00-000002   NotReady   <none>   92s    v1.25.0
-tenant-00-000003   NotReady   <none>   71s    v1.25.0
+NAME           STATUS     ROLES    AGE   VERSION
+ip-10-0-1-49   NotReady   <none>   56m   v1.30.9
 ```
 
 The cluster needs a [CNI](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/) plugin to get the nodes ready. In this guide, we are going to install [calico](https://projectcalico.docs.tigera.io/about/about-calico), but feel free to use one of your taste.
@@ -440,16 +443,14 @@ And after a while, nodes will be ready
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get nodes 
 
 NAME               STATUS   ROLES    AGE     VERSION
-tenant-00-000000   Ready    <none>   3m38s   v1.25.0
-tenant-00-000002   Ready    <none>   3m18s   v1.25.0
-tenant-00-000003   Ready    <none>   2m57s   v1.25.0
+ip-10-0-1-49       Ready    <none>   56m     v1.30.9
 ```
 
 ## Cleanup
 To get rid of the Kamaji infrastructure, remove the RESOURCE_GROUP:
 
 ```
-az group delete --name $KAMAJI_RG --yes --no-wait
+TODO
 ```
 
 That's all folks!
