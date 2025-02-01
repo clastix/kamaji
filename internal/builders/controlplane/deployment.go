@@ -31,7 +31,6 @@ import (
 const (
 	kubernetesPKIVolumeName               = "etc-kubernetes-pki"
 	caCertificatesVolumeName              = "etc-ca-certificates"
-	sslCertsVolumeName                    = "etc-ssl-certs"
 	usrShareCACertificatesVolumeName      = "usr-share-ca-certificates"
 	usrLocalShareCaCertificateVolumeName  = "usr-local-share-ca-certificates"
 	schedulerKubeconfigVolumeName         = "scheduler-kubeconfig"
@@ -162,7 +161,6 @@ func (d Deployment) setVolumes(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenan
 	for _, fn := range []func(*corev1.PodSpec, kamajiv1alpha1.TenantControlPlane){
 		d.buildPKIVolume,
 		d.buildCAVolume,
-		d.buildSSLCertsVolume,
 		d.buildShareCAVolume,
 		d.buildLocalShareCAVolume,
 		d.buildSchedulerVolume,
@@ -242,22 +240,6 @@ func (d Deployment) buildCAVolume(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Te
 	}
 
 	podSpec.Volumes[index].Name = caCertificatesVolumeName
-	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
-		Secret: &corev1.SecretVolumeSource{
-			SecretName:  tcp.Status.Certificates.CA.SecretName,
-			DefaultMode: pointer.To(int32(420)),
-		},
-	}
-}
-
-func (d Deployment) buildSSLCertsVolume(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
-	found, index := utilities.HasNamedVolume(podSpec.Volumes, sslCertsVolumeName)
-	if !found {
-		index = len(podSpec.Volumes)
-		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{})
-	}
-
-	podSpec.Volumes[index].Name = sslCertsVolumeName
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.Certificates.CA.SecretName,
@@ -522,11 +504,6 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		MountPath: "/etc/ca-certificates",
 	})
 	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
-		Name:      sslCertsVolumeName,
-		ReadOnly:  true,
-		MountPath: "/etc/ssl/certs",
-	})
-	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
 		Name:      usrShareCACertificatesVolumeName,
 		ReadOnly:  true,
 		MountPath: "/usr/share/ca-certificates",
@@ -654,11 +631,6 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 		Name:      caCertificatesVolumeName,
 		ReadOnly:  true,
 		MountPath: "/etc/ca-certificates",
-	})
-	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
-		Name:      sslCertsVolumeName,
-		ReadOnly:  true,
-		MountPath: "/etc/ssl/certs",
 	})
 	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
 		Name:      usrShareCACertificatesVolumeName,
