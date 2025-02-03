@@ -47,54 +47,21 @@ In Kamaji, a Management Cluster is a regular Kubernetes cluster which hosts zero
 
 Throughout the following instructions, shell variables are used to indicate values that you should adjust to your own AWS environment:
 
-### Create networks
-
-In this section, we will create the required VPC and the associated subnets that will host the EKS cluster. We will also create the EIP (Elastic IPs) that will be used as IPs for tenant cluster
-
-```bash
-source kamaji-AWS.env
-# create vpc
-aws ec2 create-vpc --cidr-block $KAMAJI_VPC_CIDR --region $KAMAJI_REGION 
-# retreive subnet
-export KAMAJI_VPC_ID=$(aws ec2 describe-vpcs --filters "Name=cidr-block,Values=$KAMAJI_VPC_CIDR" --query "Vpcs[0].VpcId" --output text)
-# create subnets
-aws ec2 create-subnet --vpc-id $KAMAJI_VPC_ID --cidr-block $KAMAJI_SUBNET1_ADDRESS --availability-zone ${KAMAJI_REGION}a
-aws ec2 create-subnet --vpc-id $KAMAJI_VPC_ID --cidr-block $KAMAJI_SUBNET2_ADDRESS --availability-zone ${KAMAJI_REGION}b
-# retreive subnets
-export KAMAJI_SUBNET1_ID=$(aws ec2 describe-subnets --filter "Name=vpc-id,Values=$KAMAJI_VPC_ID" --filter "Name=cidr-block,Values=$KAMAJI_SUBNET1_ADDRESS"  --query "Subnets[0].SubnetId" --output text)
-export KAMAJI_SUBNET2_ID=$(aws ec2 describe-subnets --filter "Name=vpc-id,Values=$KAMAJI_VPC_ID" --filter "Name=cidr-block,Values=$KAMAJI_SUBNET2_ADDRESS"  --query "Subnets[0].SubnetId" --output text)
-
-
-export IGW_ID=$(aws ec2 create-internet-gateway --query "InternetGateway.InternetGatewayId" --output text)
-aws ec2 attach-internet-gateway --vpc-id $KAMAJI_VPC_ID --internet-gateway-id $IGW_ID
-
-# create nat gateway and attach it to the VPC
-
-export EIP_ALLOCATION_ID=$(aws ec2 allocate-address --query 'AllocationId' --output text)
-
-NAT_GATEWAY_ID=$(aws ec2 create-nat-gateway \
-  --subnet-id $KAMAJI_SUBNET1_ID \
-  --allocation-id $EIP_ALLOCATION_ID \
-  --query 'NatGateway.NatGatewayId' \
-  --output text)
-
-aws ec2 wait nat-gateway-available --nat-gateway-ids $NAT_GATEWAY_ID
-
-PRIVATE_ROUTE_TABLE_ID=$(aws ec2 describe-route-tables \
-   --filters "Name=vpc-id,Values=$KAMAJI_VPC_ID" \
-  --query "RouteTables[*].RouteTableId" \
-  --output text)
-
-aws ec2 create-route \
-  --route-table-id $PRIVATE_ROUTE_TABLE_ID \
-  --destination-cidr-block 0.0.0.0/0 \
-  --nat-gateway-id $NAT_GATEWAY_ID
-
-  
-
-```
 ### create EKS cluster
-Once the cluster formation succeeds, get credentials to access the cluster as admin
+
+In order to create quickly an EKS cluster, we will use `eksctl` provided by AWS. `eksctl` is a simple CLI tool for creating and managing clusters on EKS
+
+`eksctl` will provision for you: 
+- A dedicated VPC on `192.168.0.0/16` CIDR
+- 3 private subnets and 3 public subnets in 3 different availability zones
+- NAT Gateway for the private subnets, An internet gateway for the public ones
+- the required route tables to associate the subnets with the IGW and the NAT gateways
+- Provision the EKS cluster
+- Provision worker nodes and associate them to your cluster
+- Optionally creates the required IAM policies for your addons and attach them to the node
+- Optionally adds the eks addons to your cluster
+
+For our use case, we will create an EKS cluster with the following configuration:
 
 ```bash
 cat >eks-cluster.yaml <<EOF
@@ -104,33 +71,36 @@ kind: ClusterConfig
 metadata:
   name: ${KAMAJI_CLUSTER}
   region: ${KAMAJI_REGION}
-
+  version: ${KAMAJI_CLUSTER_VERSION}
+iam:
+  withOIDC: true
 vpc:
-  subnets:
-    private:
-      ${KAMAJI_REGION}a: { id: $KAMAJI_SUBNET1_ID }
-      ${KAMAJI_REGION}b: { id: $KAMAJI_SUBNET2_ID }
-
   clusterEndpoints:
     privateAccess: true
     publicAccess: true
-
 managedNodeGroups:
   - name: ${KAMAJI_NODE_NG}
     labels: { role: workers }
     instanceType: ${KAMAJI_NODE_TYPE}
     desiredCapacity: 1
     privateNetworking: true
+    availabilityZones: [${KAMAJI_AZ}]
     iam:
       withAddonPolicies:
         certManager: true
         ebs: true
         externalDNS: true
+addons:
+- name: aws-ebs-csi-driver
 EOF
 
 eks create cluster -f eks-cluster.yaml
 
 ```
+Please note : 
+- the `aws-ebs-csi-driver` addon is required to use EBS volumes as persistent volumes . This will be mainly used to store the tenant control plane data using default data store `etcd`.
+- We created a node group with 1 node in one availability zone to simplify the setup. 
+
 ### Access to the management cluster
 
 And check you can access:
@@ -139,7 +109,7 @@ And check you can access:
 aws eks update-kubeconfig --region ${KAMAJI_REGION} --name ${KAMAJI_CLUSTER}
 kubectl cluster-info
 # make ebs as a default storage class
-kubectl patch storageclass standard -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 
 ```
 ### Add route 53 domain 
@@ -154,7 +124,7 @@ aws route53 create-hosted-zone --name "$TENANT_DOMAIN" --caller-reference $(date
 
 Follow the [Getting Started](../getting-started.md) to install Cert Manager and the Kamaji Controller.
 
-## Install Cert Manager
+### Install Cert Manager
 
 Kamaji takes advantage of the [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/), such as validating and mutating webhook configurations. These webhooks are secured by a TLS communication, and the certificates are managed by [`cert-manager`](https://cert-manager.io/), making it a prerequisite that must be installed:
 
@@ -195,17 +165,27 @@ helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
 
 ## Create Tenant Cluster
 
+Now that our management cluster is up and running, we can create a Tenant Cluster. A Tenant Cluster is a Kubernetes cluster that is managed by Kamaji. 
+
 ### Tenant Control Plane
-With Kamaji on EKS, the tenant control plane is accessible:
 
-- from management cluster through a `ClusterIP` service
-- from tenant worker nodes through an internal loadbalancer
-- from tenant admin user through an external loadbalancer responding to `https://${TENANT_NAME}.${TENANT_NAME}.${TENANT_DOMAIN}:443`
+A tenant cluster are made of a `Tenant Control Plane` and an arbitrary number of worker nodes. The `Tenant Control Plane` is a Kubernetes cluster that is managed by Kamaji and is responsible for running the Tenant's workloads.
 
-Create a tenant control plane of example:
+Before creating a Tenant Control Plane, you need to define some variables:
+
+```bash
+export KAMAJI_VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=$KAMAJI_VPC_NAME" --query "Vpcs[0].VpcId" --output text)
+export KAMAJI_PUBLIC_SUBNET_ID=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$KAMAJI_VPC_ID" --filters "Name=tag:Name,Values=$KAMAJI_PUBLIC_SUBNET_NAME" --query "Subnets[0].SubnetId" --output text)
+
+export TENANT_EIP_ID=$(aws ec2 allocate-address --query 'AllocationId' --output text)
+export TENANT_PUBLIC_IP=$(aws ec2 describe-addresses --allocation-ids $TENANT_EIP_ID --query 'Addresses[0].PublicIp' --output text)
+
+
+```
+On the next step, we will create a Tenant Control Plane with the following configuration:
 
 ```yaml
-cat > ${TENANT_NAMESPACE}-${TENANT_NAME}-2.yaml <<EOF
+cat > ${TENANT_NAMESPACE}-${TENANT_NAME}.yaml <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -223,6 +203,8 @@ spec:
   controlPlane:
     deployment:
       replicas: 1
+      nodeSelector:
+        topology.kubernetes.io/zone: ${KAMAJI_AZ}
       additionalMetadata:
         labels:
           tenant.clastix.io: ${TENANT_NAME}
@@ -253,7 +235,8 @@ spec:
         annotations:
             service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
             service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-            service.beta.kubernetes.io/aws-load-balancer-subnets: PUBLIC_SUBNET
+            service.beta.kubernetes.io/aws-load-balancer-subnets: ${KAMAJI_PUBLIC_SUBNET_ID}
+            service.beta.kubernetes.io/aws-load-balancer-eip-allocations: ${TENANT_EIP_ID}
             service.beta.kubernetes.io/aws-load-balancer-type: nlb
             external-dns.alpha.kubernetes.io/hostname: ${TENANT_NAME}.${TENANT_DOMAIN}
       serviceType: LoadBalancer
@@ -265,7 +248,7 @@ spec:
       - ResourceQuota
       - LimitRanger
   networkProfile:
-    address: <PUBLIC IP>
+    address: ${TENANT_PUBLIC_IP}
     port: ${TENANT_PORT}
     certSANs:
     - ${TENANT_NAME}.${TENANT_DOMAIN}
@@ -291,9 +274,12 @@ kubectl -n ${TENANT_NAMESPACE} apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}.yaml
 
 Make sure:
 
+- Tenant Control Plane will expose the API server using a public IP address through a network loadbalancer. 
+it is important to provide a static public IP address for the API server in order to make it reachable from the outside world.
+
 - the following annotation: `external-dns.alpha.kubernetes.io/hostname` is set to create the dns record. It tells AWS to expose the Tenant Control Plane with public domain name: `${TENANT_NAME}.${TENANT_DOMAIN}`.
 
-> Since AWS load Balancer does not support setting LoadBalancerIP, you will get the folowing warning on the service created for the control plane tenant `Error syncing load balancer: failed to ensure load balancer: LoadBalancerIP cannot be specified for AWS ELB`. you can ignore it for now.
+> Since AWS load Balancer does not support setting LoadBalancerIP, you will get the following warning on the service created for the control plane tenant `Error syncing load balancer: failed to ensure load balancer: LoadBalancerIP cannot be specified for AWS ELB`. you can ignore it for now.
 
 ### Working with Tenant Control Plane
 
@@ -302,8 +288,9 @@ Check the access to the Tenant Control Plane:
 > if the domain you used is a private route53 domain make sure to map the public IP of the LB to ${TENANT_NAME}.${TENANT_DOMAIN} in your `/etc/hosts`. otherwise kubectl will fail checking ssl certificates
 
 ```bash
-curl -k https://${TENANT_NAME}.${TENANT_DOMAIN}/healthz
-curl -k https://${TENANT_NAME}.${TENANT_DOMAIN}/version
+curl -k https://${TENANT_PUBLIC_IP}:${TENANT_PORT}/version
+curl -k https://${TENANT_NAME}.${TENANT_DOMAIN}:${TENANT_PORT}/healthz
+curl -k https://${TENANT_NAME}.${TENANT_DOMAIN}:${TENANT_PORT}/version
 ```
 
 Let's retrieve the `kubeconfig` in order to work with it:
@@ -316,7 +303,7 @@ kubectl get secrets -n ${TENANT_NAMESPACE} ${TENANT_NAME}-admin-kubeconfig -o js
 
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig config \
   set-cluster ${TENANT_NAME} \
-  --server https://${TENANT_NAME}.${TENANT_DOMAIN}
+  --server https://${TENANT_NAME}.${TENANT_DOMAIN}:${TENANT_PORT}
 ```
 
 and let's check it out:
@@ -333,8 +320,8 @@ Check out how the Tenant Control Plane advertises itself:
 ```
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get ep
 
-NAME         ENDPOINTS            AGE
-kubernetes   172.20.251.60:6443   38h
+NAME         ENDPOINTS          AGE
+kubernetes   13.37.33.12:6443   3m22s
 ```
 
 ## Join worker nodes
@@ -360,8 +347,7 @@ JOIN_CMD=$(echo "sudo kubeadm join ${TENANT_ADDR}:6443 ")$(kubeadm --kubeconfig=
 Create an AWS autoscaling group to host tenant worker nodes:
 
 ```bash
-aws ec2 create-subnet --vpc-id $KAMAJI_VPC_ID --cidr-block $TENANT_SUBNET_ADDRESS --availability-zone ${KAMAJI_REGION}a
-
+aws ec2 create-subnet --vpc-id $KAMAJI_VPC_ID --cidr-block $TENANT_SUBNET_ADDRESS --availability-zone ${KAMAJI_AZ} 
 export TENANT_SUBNET_ID=$(aws ec2 describe-subnets --filter "Name=vpc-id,Values=$KAMAJI_VPC_ID" --filter "Name=cidr-block,Values=$TENANT_SUBNET_ADDRESS"  --query "Subnets[0].SubnetId" --output text)
 
 USER_DATA=$(cat <<EOF
