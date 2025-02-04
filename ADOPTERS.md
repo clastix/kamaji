@@ -24,6 +24,7 @@ Feel free to open a Pull-Request to get yours listed.
 | Vendor | Ænix | 2023 | [link](https://aenix.io/) | Ænix provides consulting services for cloud providers and uses Kamaji for running Kubernetes-as-a-Service in free PaaS platform [Cozystack](https://cozystack.io). |
 | End-user | Rackspace | 2024 | [link](https://spot.rackspace.com/) | Rackspace Spot uses Kamaji to manage our instances, offering fully-managed kubernetes infrastructure, auctioned in an open market. |
 | R&D | IONOS Cloud | 2024 | [link](https://cloud.ionos.com/) | IONOS Cloud is a German Cloud Provider evaluating Kamaji for its [Managed Kubernetes platform](https://cloud.ionos.com/managed/kubernetes). |
+| Vendor | OVHCloud | 2025 | [link](https://www.ovhcloud.com/) | OVHCloud is an European Cloud Provider that will use Kamaji for it's Managed Kubernetes Service offer. |
 
 ### Adopter Types
 
