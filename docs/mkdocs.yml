@@ -55,7 +55,9 @@ markdown_extensions:
 # Generate navigation bar
 nav:
 - 'Kamaji': index.md
-- 'Getting started': getting-started.md
+- 'Getting started': 
+  - getting-started/getting-started.md
+  - getting-started/kind.md
 - 'Concepts': concepts.md
 - 'Guides':
   - guides/index.md
