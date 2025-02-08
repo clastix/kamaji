@@ -48,7 +48,7 @@ In Kamaji, a Management Cluster is a regular Kubernetes cluster which hosts zero
 
 Throughout the following instructions, shell variables are used to indicate values that you should adjust to your own AWS environment:
 
-### create EKS cluster
+### Create EKS cluster
 
 In order to create quickly an EKS cluster, we will use `eksctl` provided by AWS. `eksctl` is a simple CLI tool for creating and managing clusters on EKS
 
@@ -146,7 +146,7 @@ helm install \
   --set installCRDs=true
 ```
 
-### (optional) Install externalDNS
+### (optional) Install ExternalDNS
 
 Setting externalDNS allows to update your DNS records dynamically from an annotation that you add in the service within EKS. Run the following commands to install externalDNS helm chart:
 
@@ -316,7 +316,7 @@ kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig config \
 
 and let's check it out:
 
-```
+```bash
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get svc
 
 NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
@@ -325,7 +325,7 @@ kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   38h
 
 Check out how the Tenant Control Plane advertises itself:
 
-```
+```bash
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get ep
 
 NAME         ENDPOINTS          AGE
@@ -340,7 +340,7 @@ Kamaji does not provide any helper for creation of tenant worker nodes, instead 
 
 An alternative approach to create and join worker nodes in AWS is to manually create the VMs, turn them into Kubernetes worker nodes and then join through the `kubeadm` command.
 
-### generate kubeadm join command
+### Generate kubeadm join command
 
 To join the worker nodes to the Tenant Control Plane, you need to generate the `kubeadm join` command from the Management cluster:
 
@@ -351,7 +351,7 @@ JOIN_CMD=$(echo "sudo kubeadm join ${TENANT_ADDR}:6443 ")$(kubeadm --kubeconfig=
 
 > Setting `--ttl=0` on the `kubeadm token create` will guarantee that the token will never expires and can be used every time.
 
-### create tenant worker nodes
+### Create tenant worker nodes
 
 In this section, we will use AMI provided by CAPA (Cluster API Provider AWS) to create the worker nodes. Those AMIs are built using [image builder](https://github.com/kubernetes-sigs/image-builder/tree/main) and contains all the necessary components to join the cluster.
 
