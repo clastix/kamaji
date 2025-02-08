@@ -1,4 +1,5 @@
 # Setup Kamaji on aws
+
 This guide will lead you through the process of creating a working Kamaji setup on on AWS.
 
 The guide requires:
@@ -56,7 +57,7 @@ In order to create quickly an EKS cluster, we will use `eksctl` provided by AWS.
 - A dedicated VPC on `192.168.0.0/16` CIDR
 - 3 private subnets and 3 public subnets in 3 different availability zones
 - NAT Gateway for the private subnets, An internet gateway for the public ones
-- the required route tables to associate the subnets with the IGW and the NAT gateways
+- The required route tables to associate the subnets with the IGW and the NAT gateways
 - Provision the EKS cluster
 - Provision worker nodes and associate them to your cluster
 - Optionally creates the required IAM policies for your addons and attach them to the node
@@ -101,7 +102,7 @@ eks create cluster -f eks-cluster.yaml
 
 Please note :
 
-- the `aws-ebs-csi-driver` addon is required to use EBS volumes as persistent volumes . This will be mainly used to store the tenant control plane data using default data store `etcd`.
+- The `aws-ebs-csi-driver` addon is required to use EBS volumes as persistent volumes . This will be mainly used to store the tenant control plane data using default data store `etcd`.
 - We created a node group with 1 node in one availability zone to simplify the setup.
 
 ### Access to the management cluster
@@ -171,7 +172,7 @@ helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
 
 ## Create Tenant Cluster
 
-Now that our management cluster is up and running, we can create a Tenant Cluster. A Tenant Cluster is a Kubernetes cluster that is managed by Kamaji. 
+Now that our management cluster is up and running, we can create a Tenant Cluster. A Tenant Cluster is a Kubernetes cluster that is managed by Kamaji.
 
 ### Tenant Control Plane
 
@@ -281,10 +282,10 @@ kubectl -n ${TENANT_NAMESPACE} apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}.yaml
 
 Make sure:
 
-- Tenant Control Plane will expose the API server using a public IP address through a network loadbalancer. 
+- Tenant Control Plane will expose the API server using a public IP address through a network loadbalancer.
 it is important to provide a static public IP address for the API server in order to make it reachable from the outside world.
 
-- the following annotation: `external-dns.alpha.kubernetes.io/hostname` is set to create the dns record. It tells AWS to expose the Tenant Control Plane with public domain name: `${TENANT_NAME}.${TENANT_DOMAIN}`.
+- The following annotation: `external-dns.alpha.kubernetes.io/hostname` is set to create the dns record. It tells AWS to expose the Tenant Control Plane with public domain name: `${TENANT_NAME}.${TENANT_DOMAIN}`.
 
 > Since AWS load Balancer does not support setting LoadBalancerIP, you will get the following warning on the service created for the control plane tenant `Error syncing load balancer: failed to ensure load balancer: LoadBalancerIP cannot be specified for AWS ELB`. you can ignore it for now.
 
@@ -292,7 +293,7 @@ it is important to provide a static public IP address for the API server in orde
 
 Check the access to the Tenant Control Plane:
 
-> if the domain you used is a private route53 domain make sure to map the public IP of the LB to ${TENANT_NAME}.${TENANT_DOMAIN} in your `/etc/hosts`. otherwise kubectl will fail checking ssl certificates
+> If the domain you used is a private route53 domain make sure to map the public IP of the LB to ${TENANT_NAME}.${TENANT_DOMAIN} in your `/etc/hosts`. otherwise kubectl will fail checking ssl certificates
 
 ```bash
 curl -k https://${TENANT_PUBLIC_IP}:${TENANT_PORT}/version
@@ -339,15 +340,16 @@ Kamaji does not provide any helper for creation of tenant worker nodes, instead 
 
 An alternative approach to create and join worker nodes in AWS is to manually create the VMs, turn them into Kubernetes worker nodes and then join through the `kubeadm` command.
 
-### Create the kubeadm join command
+### generate kubeadm join command
 
-Run the following command to get the `kubeadm` join command that will be used on the worker tenant nodes:
+To join the worker nodes to the Tenant Control Plane, you need to generate the `kubeadm join` command from the Management cluster:
+
 ```bash
 TENANT_ADDR=$(kubectl -n ${TENANT_NAMESPACE} get svc ${TENANT_NAME} -o json | jq -r ."spec.loadBalancerIP")
 JOIN_CMD=$(echo "sudo kubeadm join ${TENANT_ADDR}:6443 ")$(kubeadm --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig token create --ttl 0 --print-join-command |cut -d" " -f4-)
 ```
 
-> setting `--ttl=0` on the `kubeadm token create` will guarantee that the token will never expires and can be used every time.
+> Setting `--ttl=0` on the `kubeadm token create` will guarantee that the token will never expires and can be used every time.
 
 ### create tenant worker nodes
 
@@ -369,10 +371,10 @@ aws ec2 run-instances --image-id $WORKER_AMI --instance-type "t2.medium" --user-
 
 ```
 
-> we have used user data to run the `kubeadm join` command on the instance boot. This will make sure that the worker node will join the cluster automatically.
+> We have used user data to run the `kubeadm join` command on the instance boot. This will make sure that the worker node will join the cluster automatically.
 
 
-> make sure to replace `<REPLACE_WITH_SG>` with the security group id that allows the worker nodes to communicate with the public IP of the tenant control plane
+> Make sure to replace `<REPLACE_WITH_SG>` with the security group id that allows the worker nodes to communicate with the public IP of the tenant control plane
 
 Checking the nodes in the Tenant Cluster:
 
