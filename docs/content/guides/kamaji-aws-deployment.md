@@ -16,6 +16,7 @@ The guide requires:
   * [Cleanup](#cleanup)
 
 ## Prepare the bootstrap workspace
+
 On the bootstrap machine, clone the repo and prepare the workspace directory:
 
 ```bash
@@ -26,11 +27,11 @@ cd kamaji/deploy
 We assume you have installed on the bootstrap machine:
 
 - [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
-- [kubeadm](https://kubernetes.io/docs/tasks/tools/#kubeadm)
 - [helm](https://helm.sh/docs/intro/install/)
 - [jq](https://stedolan.github.io/jq/)
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - [eksctl](https://eksctl.io/installation/)
+- [clusterawsadm](https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases)
 
 Make sure you have a valid AWS Account, and login to AWS:
 
@@ -40,8 +41,7 @@ Make sure you have a valid AWS Account, and login to AWS:
 aws configure
 ```
 
-
-## Create Management cluster 
+## Create Management cluster
 
 In Kamaji, a Management Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The Management Cluster acts as cockpit for all the Tenant clusters and implements Monitoring, Logging, and Governance of all the Kamaji setup, including all Tenant Clusters. For this guide, we're going to use an instance of AWS Kubernetes Service (EKS) as Management Cluster.
 
@@ -51,7 +51,8 @@ Throughout the following instructions, shell variables are used to indicate valu
 
 In order to create quickly an EKS cluster, we will use `eksctl` provided by AWS. `eksctl` is a simple CLI tool for creating and managing clusters on EKS
 
-`eksctl` will provision for you: 
+`eksctl` will provision for you:
+
 - A dedicated VPC on `192.168.0.0/16` CIDR
 - 3 private subnets and 3 public subnets in 3 different availability zones
 - NAT Gateway for the private subnets, An internet gateway for the public ones
@@ -97,9 +98,11 @@ EOF
 eks create cluster -f eks-cluster.yaml
 
 ```
-Please note : 
+
+Please note :
+
 - the `aws-ebs-csi-driver` addon is required to use EBS volumes as persistent volumes . This will be mainly used to store the tenant control plane data using default data store `etcd`.
-- We created a node group with 1 node in one availability zone to simplify the setup. 
+- We created a node group with 1 node in one availability zone to simplify the setup.
 
 ### Access to the management cluster
 
@@ -112,7 +115,9 @@ kubectl cluster-info
 kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 
 ```
-### Add route 53 domain 
+
+### (optional) Add route 53 domain
+
 In order to easily access to tenant clusters , it is recommended to create a route53 domain or use an existing one if exists
 
 ```bash
@@ -120,6 +125,7 @@ In order to easily access to tenant clusters , it is recommended to create a rou
 aws route53 create-hosted-zone --name "$TENANT_DOMAIN" --caller-reference $(date +%s) --vpc "VPCRegion=$KAMAJI_REGION,VPCId=$KAMAJI_VPC_ID"
 
 ```
+
 ## Install Kamaji
 
 Follow the [Getting Started](../getting-started.md) to install Cert Manager and the Kamaji Controller.
@@ -139,10 +145,9 @@ helm install \
   --set installCRDs=true
 ```
 
-### Install externalDNS
+### (optional) Install externalDNS
 
 Setting externalDNS allows to update your DNS records dynamically from an annotation that you add in the service within EKS. Run the following commands to install externalDNS helm chart:
-
 
 ```bash
 
@@ -153,6 +158,7 @@ helm install external-dns external-dns/external-dns \
   --create-namespace \
   --version 1.15.1
 ```
+
 ## Install Kamaji Controller
 
 Installing Kamaji via Helm charts is the preferred way. Run the following commands to install a stable release of Kamaji:
@@ -182,6 +188,7 @@ export TENANT_PUBLIC_IP=$(aws ec2 describe-addresses --allocation-ids $TENANT_EI
 
 
 ```
+
 On the next step, we will create a Tenant Control Plane with the following configuration:
 
 ```yaml
@@ -328,7 +335,7 @@ kubernetes   13.37.33.12:6443   3m22s
 
 The Tenant Control Plane is made of pods running in the Kamaji Management Cluster. At this point, the Tenant Cluster has no worker nodes. So, the next step is to join some worker nodes to the Tenant Control Plane.
 
-Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Currently, a Cluster API `ControlPlane` provider for AWS is available: check the [official documentation](https://github.com/clastix/cluster-api-control-plane-provider-kamaji/blob/master/docs/providers-aws.md). 
+Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Currently, a Cluster API `ControlPlane` provider for AWS is available: check the [official documentation](https://github.com/clastix/cluster-api-control-plane-provider-kamaji/blob/master/docs/providers-aws.md).
 
 An alternative approach to create and join worker nodes in AWS is to manually create the VMs, turn them into Kubernetes worker nodes and then join through the `kubeadm` command.
 
@@ -342,65 +349,38 @@ JOIN_CMD=$(echo "sudo kubeadm join ${TENANT_ADDR}:6443 ")$(kubeadm --kubeconfig=
 
 > setting `--ttl=0` on the `kubeadm token create` will guarantee that the token will never expires and can be used every time.
 
-### create tenant worker nodes ASG
+### create tenant worker nodes
 
-Create an AWS autoscaling group to host tenant worker nodes:
+In this section, we will use AMI provided by CAPA (Cluster API Provider AWS) to create the worker nodes. Those AMIs are built using [image builder](https://github.com/kubernetes-sigs/image-builder/tree/main) and contains all the necessary components to join the cluster.
 
 ```bash
-aws ec2 create-subnet --vpc-id $KAMAJI_VPC_ID --cidr-block $TENANT_SUBNET_ADDRESS --availability-zone ${KAMAJI_AZ} 
-export TENANT_SUBNET_ID=$(aws ec2 describe-subnets --filter "Name=vpc-id,Values=$KAMAJI_VPC_ID" --filter "Name=cidr-block,Values=$TENANT_SUBNET_ADDRESS"  --query "Subnets[0].SubnetId" --output text)
 
-USER_DATA=$(cat <<EOF
-sudo apt-get update
-sudo apt-get install -y apt-transport-https ca-certificates software-properties-common curl gpg
-mkdir -p -m 755 /etc/apt/keyrings
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
-curl -fsSL https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg
+export KAMAJI_PRIVATE_SUBNET_ID=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$KAMAJI_VPC_ID" --filters "Name=tag:Name,Values=$KAMAJI_PRIVATE_SUBNET_NAME" --query "Subnets[0].SubnetId" --output text)
 
-echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.30/deb/ /" | sudo tee /etc/apt/sources.list.d/cri-o.list
-sudo apt-get update
-sudo apt-get install -y cri-o kubelet kubeadm kubectl
-sudo apt-mark hold kubelet kubeadm kubectl
-sudo systemctl start crio.service
-sudo swapoff -a
-sudo modprobe br_netfilter
-sudo sysctl -w net.ipv4.ip_forward=1
+export WORKER_AMI=$(clusterawsadm ami list  --kubernetes-version=$TENANT_VERSION --os=ubuntu-24.04  --region=$KAMAJI_REGION -o json | jq -r .items[0].spec.imageID)
+
+cat <<EOF >> worker-user-data.sh
+#!/bin/bash
+
 $JOIN_CMD
 EOF
-)
-USER_DATA_ENCODED=$(echo "$USER_DATA" | base64)
 
-LAUNCH_TEMPLATE_ID=$(aws ec2 create-launch-template \
-  --launch-template-name "$LAUNCH_TEMPLATE_NAME" \
-  --version-description "Initial version" \
-  --launch-template-data "{
-    \"ImageId\": \"$UBUNTU_AMI_ID\",
-    \"InstanceType\": \"$TENANT_VM_SIZE\",
-    \"SecurityGroupIds\": [\"$SECURITY_GROUP_ID\"],
-    \"UserData\": \"$USER_DATA_ENCODED\"
-  }" \
-  --query 'LaunchTemplate.LaunchTemplateId' --output text)
-
-  aws autoscaling create-auto-scaling-group \
-  --auto-scaling-group-name "$TENANT_ASG_NAME" \
-  --launch-template "LaunchTemplateId=$LAUNCH_TEMPLATE_ID,Version=1" \
-  --min-size $TENANT_ASG_MIN_SIZE \
-  --max-size $TENANT_ASG_MAX_SIZE \
-  --desired-capacity $TENANT_ASG_DESIRED_CAPACITY \
-  --vpc-zone-identifier "$TENANT_SUBNET_ID" \
+aws ec2 run-instances --image-id $WORKER_AMI --instance-type "t2.medium" --user-data $(cat worker-user-data.sh | base64 -w0) --network-interfaces '{"SubnetId":'"'${KAMAJI_PRIVATE_SUBNET_ID}'"',"AssociatePublicIpAddress":false,"DeviceIndex":0,"Groups":["<REPLACE_WITH_SG>"]}' --count "1" 
 
 ```
 
-> Note: we're using the `userdata` in order to bootstrap the worker nodes. You can follow the [documentation](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) for manual bootstrapping
+> we have used user data to run the `kubeadm join` command on the instance boot. This will make sure that the worker node will join the cluster automatically.
 
-Checking the nodes:
+
+> make sure to replace `<REPLACE_WITH_SG>` with the security group id that allows the worker nodes to communicate with the public IP of the tenant control plane
+
+Checking the nodes in the Tenant Cluster:
 
 ```bash
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get nodes
 
-NAME           STATUS     ROLES    AGE   VERSION
-ip-10-0-1-49   NotReady   <none>   56m   v1.30.9
+NAME                STATUS     ROLES    AGE   VERSION
+ip-192-168-153-94   NotReady   <none>   56m   v1.30.2
 ```
 
 The cluster needs a [CNI](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/) plugin to get the nodes ready. In this guide, we are going to install [calico](https://projectcalico.docs.tigera.io/about/about-calico), but feel free to use one of your taste.
@@ -428,15 +408,17 @@ And after a while, nodes will be ready
 ```bash
 kubectl --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig get nodes 
 
-NAME               STATUS   ROLES    AGE     VERSION
-ip-10-0-1-49       Ready    <none>   56m     v1.30.9
+NAME                STATUS     ROLES    AGE   VERSION
+ip-192-168-153-94   Ready      <none>   59m   v1.30.2
 ```
 
 ## Cleanup
+
 To get rid of the Kamaji infrastructure, remove the RESOURCE_GROUP:
 
-```
-TODO
+```bash
+eksctl delete cluster -f eks-cluster.yaml
+
 ```
 
 That's all folks!
