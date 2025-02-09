@@ -30,10 +30,13 @@ This Helm Chart starting from v0.1.1 provides the installation of an internal `e
 > For production use an externally managed `etcd` is highly recommended, the `etcd` addon offered by this Chart is not considered production-grade.
 
 ## Install Kamaji
+To add the Clastix helm repository:
+
+        helm repo add clastix https://clastix.github.io/charts
 
 To install the Chart with the release name `kamaji`:
 
-        helm upgrade --install --namespace kamaji-system --create-namespace clastix/kamaji
+        helm upgrade --install --namespace kamaji-system --create-namespace kamaji clastix/kamaji
 
 Show the status:
 
