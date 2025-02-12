@@ -30,34 +30,22 @@ This Helm Chart starting from v0.1.1 provides the installation of an internal `e
 > For production use an externally managed `etcd` is highly recommended, the `etcd` addon offered by this Chart is not considered production-grade.
 
 ## Install Kamaji
-To add the Clastix helm repository:
-
-```bash
-helm repo add clastix https://clastix.github.io/charts
-```
 
 To install the Chart with the release name `kamaji`:
 
-```bash
-helm upgrade --install --namespace kamaji-system --create-namespace kamaji clastix/kamaji
-```
+        helm upgrade --install --namespace kamaji-system --create-namespace clastix/kamaji
 
 Show the status:
-```bash
-helm status kamaji -n kamaji-system
-```
+
+        helm status kamaji -n kamaji-system
 
 Upgrade the Chart
 
-```bash
-helm upgrade kamaji -n kamaji-system clastix/kamaji
-```
+        helm upgrade kamaji -n kamaji-system clastix/kamaji
 
 Uninstall the Chart
 
-```bash
-helm uninstall kamaji -n kamaji-system
-```
+        helm uninstall kamaji -n kamaji-system
 
 ## Customize the installation
 
@@ -67,17 +55,13 @@ The `--values` option is the preferred method because it allows you to keep your
 
 Specify your overrides file when you install the Chart:
 
-```bash
-helm upgrade kamaji --install --namespace kamaji-system --create-namespace clastix/kamaji --values myvalues.yaml
-```
+        helm upgrade kamaji --install --namespace kamaji-system --create-namespace clastix/kamaji --values myvalues.yaml
 
 The values in your overrides file `myvalues.yaml` will override their counterparts in the Chart's values.yaml file. Any values in `values.yaml` that weren’t overridden will keep their defaults.
 
 If you only need to make minor customizations, you can specify them on the command line by using the `--set` option. For example:
 
-```bash
-helm upgrade kamaji --install --namespace kamaji-system --create-namespace clastix/kamaji --set etcd.deploy=false
-```
+        helm upgrade kamaji --install --namespace kamaji-system --create-namespace clastix/kamaji --set etcd.deploy=false
 
 Here the values you can override:
 
