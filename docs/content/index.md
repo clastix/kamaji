@@ -14,7 +14,7 @@ View [Concepts](concepts.md) for a deeper understanding of principles behind Kam
 
 ## Getting started
 
-Please refer to the [Getting Started guide](getting-started.md) to deploy a minimal setup of Kamaji.
+Please refer to the [Getting Started guide](getting-started/index.md) to deploy a minimal setup of Kamaji.
 
 
 ## FAQs
