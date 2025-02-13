@@ -1,4 +1,4 @@
-# Setup Kamaji on aws
+# Setup Kamaji on AWS
 
 This guide will lead you through the process of creating a working Kamaji setup on on AWS.
 
