@@ -13465,6 +13465,7 @@ Kubernetes specification for tenant control plane
           List of enabled Admission Controllers for the Tenant cluster.
 Full reference available here: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers<br/>
           <br/>
+            <i>Enum</i>: AlwaysAdmit, AlwaysDeny, AlwaysPullImages, CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, DefaultStorageClass, DefaultTolerationSeconds, DenyEscalatingExec, DenyExecOnPrivileged, DenyServiceExternalIPs, EventRateLimit, ExtendedResourceToleration, ImagePolicyWebhook, LimitPodHardAntiAffinityTopology, LimitRanger, MutatingAdmissionWebhook, NamespaceAutoProvision, NamespaceExists, NamespaceLifecycle, NodeRestriction, OwnerReferencesPermissionEnforcement, PersistentVolumeClaimResize, PersistentVolumeLabel, PodNodeSelector, PodSecurity, PodSecurityPolicy, PodTolerationRestriction, Priority, ResourceQuota, RuntimeClass, SecurityContextDeny, ServiceAccount, StorageObjectInUseProtection, TaintNodesByCondition, ValidatingAdmissionWebhook<br/>
             <i>Default</i>: [CertificateApproval CertificateSigning CertificateSubjectRestriction DefaultIngressClass DefaultStorageClass DefaultTolerationSeconds LimitRanger MutatingAdmissionWebhook NamespaceLifecycle PersistentVolumeClaimResize Priority ResourceQuota RuntimeClass ServiceAccount StorageObjectInUseProtection TaintNodesByCondition ValidatingAdmissionWebhook]<br/>
         </td>
         <td>false</td>
@@ -13504,6 +13505,7 @@ https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-dri
           Ordered list of the preferred NodeAddressTypes to use for kubelet connections.
 Default to Hostname, InternalIP, ExternalIP.<br/>
           <br/>
+            <i>Enum</i>: Hostname, InternalIP, ExternalIP, InternalDNS, ExternalDNS<br/>
             <i>Default</i>: [Hostname InternalIP ExternalIP]<br/>
         </td>
         <td>false</td>
