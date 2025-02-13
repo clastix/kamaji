@@ -44,7 +44,7 @@ aws configure
 
 ## Create Management cluster
 
-In Kamaji, a Management Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The Management Cluster acts as cockpit for all the Tenant clusters and implements Monitoring, Logging, and Governance of all the Kamaji setup, including all Tenant Clusters. For this guide, we're going to use an instance of AWS Kubernetes Service (EKS) as Management Cluster.
+In Kamaji, a Management Cluster is a regular Kubernetes cluster which hosts zero to many Tenant Cluster Control Planes. The Management Cluster acts as a cockpit for all the Tenant clusters and implements monitoring, logging, and governance of all the Kamaji setups, including all Tenant Clusters. For this guide, we're going to use an instance of AWS Kubernetes Service (EKS) as a Management Cluster.
 
 Throughout the following instructions, shell variables are used to indicate values that you should adjust to your own AWS environment:
 
@@ -61,7 +61,7 @@ In order to create quickly an EKS cluster, we will use `eksctl` provided by AWS.
 - Provision the EKS cluster
 - Provision worker nodes and associate them to your cluster
 - Optionally creates the required IAM policies for your addons and attach them to the node
-- Optionally adds the eks addons to your cluster
+- Optionally, install the EKS add-ons to your cluster
 
 For our use case, we will create an EKS cluster with the following configuration:
 
@@ -102,7 +102,7 @@ eks create cluster -f eks-cluster.yaml
 
 Please note :
 
-- The `aws-ebs-csi-driver` addon is required to use EBS volumes as persistent volumes . This will be mainly used to store the tenant control plane data using default data store `etcd`.
+- The `aws-ebs-csi-driver` addon is required to use EBS volumes as persistent volumes. This will be mainly used to store the tenant control plane data using the _default_ `etcd` DataStore.
 - We created a node group with 1 node in one availability zone to simplify the setup.
 
 ### Access to the management cluster
@@ -119,7 +119,7 @@ kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.ku
 
 ### (optional) Add route 53 domain
 
-In order to easily access to tenant clusters , it is recommended to create a route53 domain or use an existing one if exists
+In order to easily access tenant clusters, it is recommended to create a Route53 domain or use an existing one if it exists
 
 ```bash
 # for within VPC
@@ -148,7 +148,7 @@ helm install \
 
 ### (optional) Install ExternalDNS
 
-Setting externalDNS allows to update your DNS records dynamically from an annotation that you add in the service within EKS. Run the following commands to install externalDNS helm chart:
+ExternalDNS allows updating your DNS records dynamically from an annotation that you add in the service within EKS. Run the following commands to install the ExternalDNS Helm chart:
 
 ```bash
 
@@ -170,13 +170,13 @@ helm repo update
 helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
 ```
 
-## Create Tenant Cluster
+## Create a Tenant Cluster
 
 Now that our management cluster is up and running, we can create a Tenant Cluster. A Tenant Cluster is a Kubernetes cluster that is managed by Kamaji.
 
 ### Tenant Control Plane
 
-A tenant cluster are made of a `Tenant Control Plane` and an arbitrary number of worker nodes. The `Tenant Control Plane` is a Kubernetes cluster that is managed by Kamaji and is responsible for running the Tenant's workloads.
+A tenant cluster is made of a `Tenant Control Plane` and an arbitrary number of worker nodes. The `Tenant Control Plane` is a Kubernetes Control Plane managed by Kamaji and responsible for running the Tenant's workloads.
 
 Before creating a Tenant Control Plane, you need to define some variables:
 
@@ -190,7 +190,7 @@ export TENANT_PUBLIC_IP=$(aws ec2 describe-addresses --allocation-ids $TENANT_EI
 
 ```
 
-On the next step, we will create a Tenant Control Plane with the following configuration:
+In the next step, we will create a Tenant Control Plane with the following configuration:
 
 ```yaml
 cat > ${TENANT_NAMESPACE}-${TENANT_NAME}.yaml <<EOF
@@ -282,10 +282,10 @@ kubectl -n ${TENANT_NAMESPACE} apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}.yaml
 
 Make sure:
 
-- Tenant Control Plane will expose the API server using a public IP address through a network loadbalancer.
+- Tenant Control Plane will expose the API server using a public IP address through a network load balancer.
 it is important to provide a static public IP address for the API server in order to make it reachable from the outside world.
 
-- The following annotation: `external-dns.alpha.kubernetes.io/hostname` is set to create the dns record. It tells AWS to expose the Tenant Control Plane with public domain name: `${TENANT_NAME}.${TENANT_DOMAIN}`.
+- The following annotation: `external-dns.alpha.kubernetes.io/hostname` is set to create the DNS record. It tells AWS to expose the Tenant Control Plane with a public domain name: `${TENANT_NAME}.${TENANT_DOMAIN}`.
 
 > Since AWS load Balancer does not support setting LoadBalancerIP, you will get the following warning on the service created for the control plane tenant `Error syncing load balancer: failed to ensure load balancer: LoadBalancerIP cannot be specified for AWS ELB`. you can ignore it for now.
 
@@ -293,7 +293,7 @@ it is important to provide a static public IP address for the API server in orde
 
 Check the access to the Tenant Control Plane:
 
-> If the domain you used is a private route53 domain make sure to map the public IP of the LB to ${TENANT_NAME}.${TENANT_DOMAIN} in your `/etc/hosts`. otherwise kubectl will fail checking ssl certificates
+> If the domain you used is a private route53 domain make sure to map the public IP of the LB to `${TENANT_NAME}.${TENANT_DOMAIN}` in your `/etc/hosts`. otherwise, `kubectl` will fail to check SSL certificates
 
 ```bash
 curl -k https://${TENANT_PUBLIC_IP}:${TENANT_PORT}/version
@@ -336,7 +336,7 @@ kubernetes   13.37.33.12:6443   3m22s
 
 The Tenant Control Plane is made of pods running in the Kamaji Management Cluster. At this point, the Tenant Cluster has no worker nodes. So, the next step is to join some worker nodes to the Tenant Control Plane.
 
-Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Currently, a Cluster API `ControlPlane` provider for AWS is available: check the [official documentation](https://github.com/clastix/cluster-api-control-plane-provider-kamaji/blob/master/docs/providers-aws.md).
+Kamaji does not provide any helper for the creation of tenant worker nodes, instead, it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Currently, a Cluster API `ControlPlane` provider for AWS is available: check the [official documentation](https://github.com/clastix/cluster-api-control-plane-provider-kamaji/blob/master/docs/providers-aws.md).
 
 An alternative approach to create and join worker nodes in AWS is to manually create the VMs, turn them into Kubernetes worker nodes and then join through the `kubeadm` command.
 
@@ -349,11 +349,13 @@ TENANT_ADDR=$(kubectl -n ${TENANT_NAMESPACE} get svc ${TENANT_NAME} -o json | jq
 JOIN_CMD=$(echo "sudo kubeadm join ${TENANT_ADDR}:6443 ")$(kubeadm --kubeconfig=${TENANT_NAMESPACE}-${TENANT_NAME}.kubeconfig token create --ttl 0 --print-join-command |cut -d" " -f4-)
 ```
 
-> Setting `--ttl=0` on the `kubeadm token create` will guarantee that the token will never expires and can be used every time.
+> Setting `--ttl=0` on the `kubeadm token create` will guarantee that the token will never expire and can be used every time.
+>
+> It's not intended for production-grade setups.
 
 ### Create tenant worker nodes
 
-In this section, we will use AMI provided by CAPA (Cluster API Provider AWS) to create the worker nodes. Those AMIs are built using [image builder](https://github.com/kubernetes-sigs/image-builder/tree/main) and contains all the necessary components to join the cluster.
+In this section, we will use AMI provided by CAPA (Cluster API Provider AWS) to create the worker nodes. Those AMIs are built using [image builder](https://github.com/kubernetes-sigs/image-builder/tree/main) and contain all the necessary components to join the cluster.
 
 ```bash
 
@@ -416,11 +418,9 @@ ip-192-168-153-94   Ready      <none>   59m   v1.30.2
 
 ## Cleanup
 
-To get rid of the Kamaji infrastructure, remove the RESOURCE_GROUP:
+To get rid of the whole Kamaji infrastructure, remove the EKS cluster:
 
 ```bash
 eksctl delete cluster -f eks-cluster.yaml
-
-```
 
 That's all folks!
