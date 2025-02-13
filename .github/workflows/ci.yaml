@@ -16,7 +16,7 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6.3.2
+        uses: golangci/golangci-lint-action@v6.3.3
         with:
           version: v1.62.2
           only-new-issues: false
