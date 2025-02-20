@@ -22,6 +22,7 @@ import (
 	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
+	"github.com/clastix/kamaji/internal/webhook/handlers"
 )
 
 type APIServerCertificate struct {
@@ -66,6 +67,10 @@ func (r *APIServerCertificate) GetTmpDirectory() string {
 }
 
 func (r *APIServerCertificate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (res controllerutil.OperationResult, err error) {
+	if err = (handlers.TenantControlPlaneCertSANs{}).ValidateCertSANs(tenantControlPlane); err != nil {
+		return controllerutil.OperationResultNone, err
+	}
+
 	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
