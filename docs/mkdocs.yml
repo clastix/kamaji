@@ -9,7 +9,7 @@ site_author: bsctl
 site_description: >-
   Kamaji deploys and operates Kubernetes Control Plane at scale with a fraction of the operational burden.
 
-copyright: Copyright &copy; 2020 - 2023 Clastix Labs
+copyright: Copyright &copy; 2020 - 2025 Clastix Labs
 
 theme:
   name: material
@@ -60,6 +60,11 @@ nav:
   - getting-started/getting-started.md
   - getting-started/kind.md
 - 'Concepts': concepts.md
+- 'Cluster API':
+  - cluster-api/index.md
+  - cluster-api/control-plane-provider.md
+  - cluster-api/vsphere-infra-provider.md
+  - cluster-api/cluster-autoscaler.md
 - 'Guides':
   - guides/index.md
   - guides/kamaji-azure-deployment.md
