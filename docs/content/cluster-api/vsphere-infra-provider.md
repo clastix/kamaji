@@ -107,6 +107,13 @@ clusterctl generate cluster \
     --from capi-kamaji-vsphere-template.yaml > capi-kamaji-vsphere-cluster.yaml
 ```
 
+If you want to use DHCP instead of IPAM, use a different template file:
+
+```bash
+clusterctl generate cluster \
+    --from capi-kamaji-vsphere-dhcp-template.yaml > capi-kamaji-vsphere-cluster.yaml
+```
+
 ### Apply the Cluster Manifest
 
 Apply the generated cluster manifest to create the tenant cluster:
