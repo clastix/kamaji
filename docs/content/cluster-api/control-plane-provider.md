@@ -1,8 +1,8 @@
 # Kamaji Control Plane Provider
 
-Kamaji can act as a Cluster API Control Plane provider via usage of the `KamajiControlPlane`, custom resource that defines the control plane of a Tenant Cluster. 
+Kamaji can act as a Cluster API Control Plane provider using the `KamajiControlPlane` custom resource, which defines the control plane of a Tenant Cluster.
 
-Here an example of a `KamajiControlPlane`:
+Here is an example of a `KamajiControlPlane`:
 
 ```yaml
 kind: KamajiControlPlane
@@ -34,7 +34,7 @@ spec:
   version: ${KUBERNETES_VERSION}
 ```
 
-You can use it as reference in a standard `Cluster` custom resource as controlplane provider:
+You can use this as reference in a standard `Cluster` custom resource as controlplane provider:
 
 ```yaml
 kind: Cluster
@@ -67,22 +67,23 @@ spec:
 
 ## Getting started with the Kamaji Control Plane Provider
 
-Cluster API Provider Kamaji is compliant with the `clusterctl` contract, which means you can use it with the `clusterctl` CLI to create and manage your Kamaji-based clusters.
+Cluster API Provider Kamaji is compliant with the `clusterctl` contract, which means you can use it with the `clusterctl` CLI to create and manage your Kamaji based clusters.
 
 !!! info "Options for install Cluster API"
     There are two ways to getting started with Cluster API:
-    * using `clusterctl` to install the Cluster API components as stated in this guide
+
+    * using `clusterctl` to install the Cluster API components.
     * using the Cluster API Operator. Please refer to the [Cluster API Operator](https://cluster-api-operator.sigs.k8s.io/) guide for this option.
 
 ### Prerequisites
 
-* [`clusterctl`](https://cluster-api.sigs.k8s.io/user/quick-start#install-clusterctl) installed in your workstation to handle the lifecycle of your Kamaji-based clusters.
-* [`kubectl`](https://kubernetes.io/docs/tasks/tools/) installed in your workstation to interact with your Kamaji-based clusters.
+* [`clusterctl`](https://cluster-api.sigs.k8s.io/user/quick-start#install-clusterctl) installed in your workstation to handle the lifecycle of your clusters.
+* [`kubectl`](https://kubernetes.io/docs/tasks/tools/) installed in your workstation to interact with your clusters.
 * [Kamaji](../getting-started/getting-started.md) installed in your Management Cluster.
 
 ### Initialize the Management Cluster
 
-Using `clusterctl` to initialize the Management Cluster. When executed for the first time, `clusterctl init` will fetch and install the Cluster API components in the Management Cluster
+Use `clusterctl` to initialize the Management Cluster. When executed for the first time, `clusterctl init` will fetch and install the Cluster API components in the Management Cluster
 
 ```bash
 clusterctl init --control-plane kamaji
@@ -94,5 +95,7 @@ As result, `clusterctl` the following Cluster API components will be installed:
 * Bootstrap Provider in `capi-kubeadm-bootstrap-system` namespace
 * Kamaji Control Plane Provider in `kamaji-system` namespace
 
-We're still missing the infrastructure provider of choice, which is required to create a Kamaji-based cluster. And this is the next step.
+The next step, we will be to create a fully functional Kubernetes cluster on VMware vSphere using the Kamaji Control Plane Provider and the vSphere Infrastructure Provider. This is just an example, as Kamaji supports several other infrastructure providers.
+
+For a complete list of supported infrastructure providers, please refer to the [other providers](other-providers.md) page.
 

@@ -63,7 +63,10 @@ nav:
 - 'Cluster API':
   - cluster-api/index.md
   - cluster-api/control-plane-provider.md
+  - cluster-api/kubevirt-infra-provider.md
   - cluster-api/vsphere-infra-provider.md
+  - cluster-api/other-providers.md
+  - cluster-api/cluster-class.md
   - cluster-api/cluster-autoscaler.md
 - 'Guides':
   - guides/index.md
@@ -75,7 +78,6 @@ nav:
   - guides/datastore-migration.md
   - guides/backup-and-restore.md
   - guides/certs-lifecycle.md
-  - guides/cluster-api.md
   - guides/console.md
 - 'Use Cases': use-cases.md
 - 'Reference':
