@@ -1,9 +1,9 @@
-# vSphere Infrastructure Provider
+# vSphere Infra Provider
 
 Use the [vSphere Infrastructure Provider](https://github.com/kubernetes-sigs/cluster-api-provider-vsphere) to create a fully functional Kubernetes cluster on **vSphere** using the [Kamaji Control Plane Provider](https://github.com/clastix/cluster-api-control-plane-provider-kamaji).
 
-!!! info "Virtual Machines Placement"
-    As Kamaji decouples the Control Plane from the infrastructure, the Kamaji Management Cluster hosting the Tenant control Plane, is not required to be on the same vSphere where worker machines will be. As network reachability is satisfied, you can have your Kamaji Management Cluster on a different vSphere or even on a different cloud provider.
+!!! info "Control Plane and Infrastructure Decoupling"
+    Kamaji decouples the Control Plane from the infrastructure, so the Kamaji Management Cluster hosting the Tenant Control Plane does not need to be on the same vSphere as the worker machines. As long as network reachability is satisfied, you can have your Kamaji Management Cluster on a different vSphere or even on a different cloud provider.
 
 ## vSphere Requirements
 
@@ -42,30 +42,30 @@ clusterctl init --ipam in-cluster
 
 ## Create a Tenant Cluster
 
-Once all the controllers are up and running in the management cluster, you can apply the cluster manifests containing the specifications of the tenant cluster you want to provision.
+Once all the controllers are up and running in the management cluster, you can generate and apply the cluster manifests of the tenant cluster you want to provision.
 
 ### Generate the Cluster Manifest using the template
 
 Using `clusterctl`, you can generate a tenant cluster manifest for your vSphere environment. Set the environment variables to match your vSphere configuration:
 
 ```bash
-# VSphere Configuration
+# vSphere Configuration
 export VSPHERE_USERNAME="admin@vsphere.local"
 export VSPHERE_PASSWORD="changeme"
 export VSPHERE_SERVER="vcenter.vsphere.local"
-export VSPHERE_DATACENTER: "SDDC-Datacenter"
-export VSPHERE_DATASTORE: "DefaultDatastore"
-export VSPHERE_NETWORK: "VM Networkt"
-export VSPHERE_RESOURCE_POOL: "*/Resources"
-export VSPHERE_FOLDER: "kamaji-capi-pool"
-export VSPHERE_TEMPLATE: "ubuntu-2404-kube-v1.31.0"
-export VSPHERE_TLS_THUMBPRINT: "..."
-export VSPHERE_STORAGE_POLICY: ""
-export KUBERNETES_VERSION: "v1.31.0"
-export CPI_IMAGE_K8S_VERSION: "v1.31.0"
-export CSI_INSECURE: "1"
-export VSPHERE_SSH_USER: "clastix"
-export VSPHERE_SSH_AUTHORIZED_KEY: "ssh-rsa AAAAB3N..." 
+export VSPHERE_DATACENTER="SDDC-Datacenter"
+export VSPHERE_DATASTORE="DefaultDatastore"
+export VSPHERE_NETWORK="VM Network"
+export VSPHERE_RESOURCE_POOL="*/Resources"
+export VSPHERE_FOLDER="kamaji-capi-pool"
+export VSPHERE_TEMPLATE="ubuntu-2404-kube-v1.31.0"
+export VSPHERE_TLS_THUMBPRINT="..."
+export VSPHERE_STORAGE_POLICY=""
+export KUBERNETES_VERSION="v1.31.0"
+export CPI_IMAGE_K8S_VERSION="v1.31.0"
+export CSI_INSECURE="1"
+export VSPHERE_SSH_USER="clastix"
+export VSPHERE_SSH_AUTHORIZED_KEY="ssh-rsa AAAAB3N..."
 ```
 
 If you intend to use IPAM, set the environment variables to match your IPAM configuration:
@@ -100,10 +100,11 @@ export MACHINE_DEPLOY_REPLICAS=3
 export NAMESERVER="8.8.8.8"
 ```
 
-The following command will generate a cluster manifest based on the [`capi-kamaji-vsphere-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/main/templates/capi-kamaji-vsphere-template.yaml) template file:
+The following command will generate a cluster manifest based on the [`capi-kamaji-vsphere-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/capi-kamaji-vsphere-template.yaml) template file:
 
 ```bash
-clusterctl generate cluster --from capi-kamaji-vsphere-template.yaml > capi-kamaji-vsphere-cluster.yaml
+clusterctl generate cluster \
+    --from capi-kamaji-vsphere-template.yaml > capi-kamaji-vsphere-cluster.yaml
 ```
 
 ### Apply the Cluster Manifest
@@ -140,12 +141,26 @@ and related tenant control plane created on Kamaji Management Cluster:
 kubectl get tcp -n default
 ```
 
+## Install the Tenant Cluster as Helm Release
+
+Another option to create a Tenant Cluster is to use the Helm Chart:
+
+```bash
+helm repo add clastix https://clastix.github.io/cluster-api-kamaji-vsphere
+helm repo update
+helm install sample clastix/cluster-api-kamaji-vsphere \
+    --set cluster.name=sample \
+    --namespace default \
+    --values my-values.yaml
+```
+
 ## Access the Tenant Cluster
 
 To access the tenant cluster, you can estract the `kubeconfig` file from the Kamaji Management Cluster:
 
 ```bash
-kubectl get secret sample-kubeconfig -o jsonpath='{.data.value}' | base64 -d > ~/.kube/sample.kubeconfig
+kubectl get secret sample-kubeconfig \
+    -o jsonpath='{.data.value}' | base64 -d > ~/.kube/sample.kubeconfig
 ```
 
 and use it to access the tenant cluster:
@@ -157,7 +172,11 @@ kubectl cluster-info
 
 ## Cloud Controller Manager
 
-The template file `capi-kamaji-vsphere-template.yaml` includes the external [Cloud Controller Manager (CCM)](https://github.com/kubernetes/cloud-provider-vsphere) configuration for vSphere. The CCM is a Kubernetes controller that manages the cloud provider's resources. The CCM is responsible for creating and managing the cloud provider's resources, such as Load Balancers, Persistent Volumes, and Node Balancers.
+The template file `capi-kamaji-vsphere-template.yaml` includes the external [Cloud Controller Manager (CCM)](https://github.com/kubernetes/cloud-provider-vsphere) configuration for vSphere. The CCM is a Kubernetes controller that manages the cloud provider's resources. Usually, the CCM is deployed on control plane nodes, but in this case, the CCM is deployed on the worker nodes as daemonset.
+
+## vSphere CSI Driver
+
+The template file `capi-kamaji-vsphere-template.yaml` includes the [vSphere CSI Driver]() configuration for vSphere. The vSphere CSI Driver is a Container Storage Interface (CSI) driver that provides a way to use vSphere storage with Kubernetes. The template file also include a default storage class for the vSphere CSI Driver.
 
 ## Delete the Tenant Cluster
 

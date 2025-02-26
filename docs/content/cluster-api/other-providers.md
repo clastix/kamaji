@@ -1,4 +1,4 @@
-# Other Supported Infrastructure Providers
+# Other Infra Providers
 
 Kamaji offers seamless integration with the most popular [Cluster API Infrastructure Providers](https://cluster-api.sigs.k8s.io/reference/providers#infrastructure):
 

@@ -95,7 +95,7 @@ As result, `clusterctl` the following Cluster API components will be installed:
 * Bootstrap Provider in `capi-kubeadm-bootstrap-system` namespace
 * Kamaji Control Plane Provider in `kamaji-system` namespace
 
-The next step, we will be to create a fully functional Kubernetes cluster on VMware vSphere using the Kamaji Control Plane Provider and the vSphere Infrastructure Provider. This is just an example, as Kamaji supports several other infrastructure providers.
+The next step, we will be to create a fully functional Kubernetes cluster using the Kamaji Control Plane Provider and the Infrastructure provider of choice.
 
 For a complete list of supported infrastructure providers, please refer to the [other providers](other-providers.md) page.
 
