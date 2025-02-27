@@ -20,9 +20,11 @@ Feel free to open a Pull-Request to get yours listed.
 | End-user | Sicuro Tech Lab | 2024 | [link](https://sicurotechlab.it/) | Sicuro Tech Lab offers cloud infrastructure for Web Agencies and uses kamaji to provide managed k8s services. |
 | Vendor | Sovereign Cloud Stack | 2024 | [link](https://sovereigncloudstack.org) | Sovereign Cloud Stack develops a standardized cloud platform and uses Kamaji in there Kubernetes-as-a-Service reference implementation |
 | R&D | TIM | 2024 | [link](https://www.gruppotim.it) | TIM is an Italian telecommunications company using Kamaji for experimental research and development purposes. |
+| End-user | Tinext Cloud | 2025 | [link](https://cloud.tinext.com) | Tinex Cloud is a Swiss cloud service provider using Kamaji to build their Managed Kubernetes Services. |
 | Vendor | Ænix | 2023 | [link](https://aenix.io/) | Ænix provides consulting services for cloud providers and uses Kamaji for running Kubernetes-as-a-Service in free PaaS platform [Cozystack](https://cozystack.io). |
 | End-user | Rackspace | 2024 | [link](https://spot.rackspace.com/) | Rackspace Spot uses Kamaji to manage our instances, offering fully-managed kubernetes infrastructure, auctioned in an open market. |
 | R&D | IONOS Cloud | 2024 | [link](https://cloud.ionos.com/) | IONOS Cloud is a German Cloud Provider evaluating Kamaji for its [Managed Kubernetes platform](https://cloud.ionos.com/managed/kubernetes). |
+| Vendor | OVHCloud | 2025 | [link](https://www.ovhcloud.com/) | OVHCloud is a European Cloud Provider that will use Kamaji for its Managed Kubernetes Service offer. |
 
 ### Adopter Types
 

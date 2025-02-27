@@ -219,6 +219,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 					},
 				},
 				routes.TenantControlPlaneValidate{}: {
+					handlers.TenantControlPlaneCertSANs{},
 					handlers.TenantControlPlaneName{},
 					handlers.TenantControlPlaneVersion{},
 					handlers.TenantControlPlaneKubeletAddresses{},
