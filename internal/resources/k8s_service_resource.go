@@ -106,7 +106,10 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 			if len(tenantControlPlane.Spec.NetworkProfile.LoadBalancerSourceRanges) > 0 {
 				r.resource.Spec.LoadBalancerSourceRanges = tenantControlPlane.Spec.NetworkProfile.LoadBalancerSourceRanges
 			}
-			if len(address) > 0 {
+
+			// hack: Load Balancer IP should not be added to avoid the AWS Load Balancer get stuck
+			_, hasLbAwsEipAllocations := r.resource.Annotations["service.beta.kubernetes.io/aws-load-balancer-eip-allocations"]
+			if len(address) > 0 && !hasLbAwsEipAllocations {
 				r.resource.Spec.LoadBalancerIP = address
 			}
 		case kamajiv1alpha1.ServiceTypeNodePort:
