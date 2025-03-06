@@ -15,7 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
-	bootstraptokenv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
+	bootstrapapi "k8s.io/cluster-bootstrap/token/api"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/kubeconfig"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,7 +24,6 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/kubeadm"
-	"github.com/clastix/kamaji/internal/resources/utils"
 )
 
 type kubeadmPhase int
@@ -53,7 +52,7 @@ func (r *KubeadmPhase) GetWatchedObject() client.Object {
 	case PhaseUploadConfigKubelet:
 		return &corev1.ConfigMap{}
 	case PhaseBootstrapToken:
-		return &corev1.Secret{}
+		return &corev1.ConfigMap{}
 	case PhaseClusterAdminRBAC:
 		return &rbacv1.ClusterRoleBinding{}
 	default:
@@ -73,9 +72,9 @@ func (r *KubeadmPhase) GetPredicateFunc() func(obj client.Object) bool {
 		}
 	case PhaseBootstrapToken:
 		return func(obj client.Object) bool {
-			secret := obj.(*corev1.Secret) //nolint:forcetypeassert
+			cm := obj.(*corev1.ConfigMap) //nolint:forcetypeassert
 
-			return secret.Type == "bootstrap.kubernetes.io/token" && secret.GetNamespace() == metav1.NamespaceSystem
+			return cm.Name == bootstrapapi.ConfigMapClusterInfo && cm.GetNamespace() == metav1.NamespacePublic
 		}
 	case PhaseClusterAdminRBAC:
 		return func(obj client.Object) bool {
@@ -130,7 +129,7 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 		return kubeadm.UploadKubeletConfig, nil
 	case PhaseBootstrapToken:
 		return func(client clientset.Interface, config *kubeadm.Configuration) ([]byte, error) {
-			bootstrapTokensEnrichment(config.InitConfiguration.BootstrapTokens)
+			config.InitConfiguration.BootstrapTokens = nil
 
 			return nil, kubeadm.BootstrapToken(client, config)
 		}, nil
@@ -177,26 +176,6 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 	}
 }
 
-func bootstrapTokensEnrichment(bootstrapTokens []bootstraptokenv1.BootstrapToken) {
-	var bootstrapToken bootstraptokenv1.BootstrapToken
-	if len(bootstrapTokens) > 0 {
-		bootstrapToken = bootstrapTokens[0]
-	}
-
-	enrichBootstrapToken(&bootstrapToken)
-	bootstrapTokens[0] = bootstrapToken
-}
-
-func enrichBootstrapToken(bootstrapToken *bootstraptokenv1.BootstrapToken) {
-	if bootstrapToken.Token == nil {
-		bootstrapToken.Token = &bootstraptokenv1.BootstrapTokenString{}
-	}
-
-	if bootstrapToken.Token.ID == "" {
-		bootstrapToken.Token.ID = fmt.Sprintf("%s.%s", utils.RandomString(6), utils.RandomString(16))
-	}
-}
-
 func (r *KubeadmPhase) GetClient() client.Client {
 	return r.Client
 }
@@ -239,6 +218,10 @@ func (r *KubeadmPhase) GetStatus(tenantControlPlane *kamajiv1alpha1.TenantContro
 
 func (r *KubeadmPhase) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName(), "phase", r.Phase.String())
+
+	if r.Phase == PhaseBootstrapToken {
+		return KubeadmBootstrap(ctx, r, logger, tenantControlPlane)
+	}
 
 	return KubeadmPhaseCreate(ctx, r, logger, tenantControlPlane)
 }

@@ -8,7 +8,12 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
+	bootstrapapi "k8s.io/cluster-bootstrap/token/api"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -79,6 +84,89 @@ func GetKubeadmManifestDeps(ctx context.Context, client client.Client, tenantCon
 	}
 
 	return tenantClient, config, nil
+}
+
+func KubeadmBootstrap(ctx context.Context, r KubeadmPhaseResource, logger logr.Logger, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	var checksum string
+
+	tntClient, err := utilities.GetTenantClient(ctx, r.GetClient(), tenantControlPlane)
+	if err != nil {
+		logger.Error(err, "cannot generate tenant client")
+
+		return controllerutil.OperationResultNone, err
+	}
+
+	var clusterInfo corev1.ConfigMap
+	if cmErr := tntClient.Get(ctx, types.NamespacedName{Name: bootstrapapi.ConfigMapClusterInfo, Namespace: metav1.NamespacePublic}, &clusterInfo); cmErr != nil {
+		if !k8serrors.IsNotFound(cmErr) {
+			logger.Error(cmErr, "cannot retrieve cluster-info ConfigMap")
+		}
+	}
+
+	status, err := r.GetStatus(tenantControlPlane)
+	if err != nil {
+		logger.Error(err, "cannot retrieve status")
+
+		return controllerutil.OperationResultNone, err
+	}
+
+	if status != nil {
+		checksum = utilities.CalculateMapChecksum(clusterInfo.Data)
+
+		if checksum == status.GetChecksum() {
+			r.SetKubeadmConfigChecksum(checksum)
+
+			return controllerutil.OperationResultNone, nil
+		}
+	}
+
+	kubeconfig, err := utilities.GetTenantKubeconfig(ctx, r.GetClient(), tenantControlPlane)
+	if err != nil {
+		logger.Error(err, "cannot retrieve kubeconfig configuration")
+
+		return controllerutil.OperationResultNone, err
+	}
+
+	config, err := getStoredKubeadmConfiguration(ctx, r.GetClient(), r.GetTmpDirectory(), tenantControlPlane)
+	if err != nil {
+		logger.Error(err, "cannot retrieve kubeadm configuration")
+
+		return controllerutil.OperationResultNone, err
+	}
+
+	config.Kubeconfig = *kubeconfig
+
+	fun, err := r.GetKubeadmFunction(ctx, tenantControlPlane)
+	if err != nil {
+		logger.Error(err, "cannot retrieve kubeadm function")
+
+		return controllerutil.OperationResultNone, err
+	}
+
+	client, err := utilities.GetTenantClientSet(ctx, r.GetClient(), tenantControlPlane)
+	if err != nil {
+		logger.Error(err, "cannot generate tenant client")
+
+		return controllerutil.OperationResultNone, err
+	}
+
+	if _, err = fun(client, config); err != nil {
+		logger.Error(err, "kubeadm function failed")
+
+		return controllerutil.OperationResultNone, err
+	}
+
+	if status == nil {
+		return controllerutil.OperationResultNone, nil
+	}
+
+	r.SetKubeadmConfigChecksum(checksum)
+
+	if checksum == "" {
+		return controllerutil.OperationResultCreated, nil
+	}
+
+	return controllerutil.OperationResultUpdated, nil
 }
 
 func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr.Logger, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
