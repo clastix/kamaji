@@ -8,6 +8,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -103,6 +104,20 @@ func (r *KubernetesDeploymentResource) isProgressingUpgrade() bool {
 	}
 
 	if r.resource.Status.UnavailableReplicas > 0 {
+		return true
+	}
+
+	// An update is complete when new pods are ready and old pods deleted.
+	desired := ptr.Deref(r.resource.Spec.Replicas, 2)
+	if r.resource.Status.UpdatedReplicas != desired {
+		return true
+	}
+
+	if r.resource.Status.ReadyReplicas != desired {
+		return true
+	}
+
+	if r.resource.Status.Replicas != desired {
 		return true
 	}
 
