@@ -25,7 +25,7 @@ require (
 	go.etcd.io/etcd/api/v3 v3.5.19
 	go.etcd.io/etcd/client/v3 v3.5.19
 	go.uber.org/automaxprocs v1.6.0
-	gomodules.xyz/jsonpatch/v2 v2.4.0
+	gomodules.xyz/jsonpatch/v2 v2.5.0
 	k8s.io/api v0.32.2
 	k8s.io/apimachinery v0.32.2
 	k8s.io/apiserver v0.32.2
