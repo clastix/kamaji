@@ -10,6 +10,7 @@ Feel free to open a Pull-Request to get yours listed.
 | Vendor | Aknostic | 2023 | [link](https://aknostic.com) | Aknostic is a cloud-native consultancy company using Kamaji to build a Kubernetes based PaaS. |
 | R&D | Aruba | 2024 | [link](https://www.aruba.it/home.aspx) | Aruba Cloud is an Italian Cloud Service Provider evaluating Kamaji to build and offer [Managed Kubernetes Service](https://my.arubacloud.com). |
 | Vendor | DCloud | 2024 | [link](https://dcloud.co.id) | DCloud is an Indonesian Cloud Provider using Kamaji to build and offer [Managed Kubernetes Service](https://dcloud.co.id/dkubes.html). |
+| Vendor | Dinova | 2025 | [link](https://dinova.one/) | Dinova is an Italian cloud services provider that integrates Kamaji in its datacenters to offer fully managed Kubernetes clusters. |
 | End-user | KINX | 2024 | [link](https://kinx.net/?lang=en) | KINX is an Internet infrastructure service provider and will use kamaji for its new [Managed Kubernetes Service](https://kinx.net/service/cloud/kubernetes/intro/?lang=en). |
 | Vendor | Netsons | 2023 | [link](https://www.netsons.com) | Netsons is an Italian hosting and cloud provider and uses Kamaji in its [Managed Kubernetes](https://www.netsons.com/kubernetes) offering. |
 | Vendor | NVIDIA | 2024 | [link](https://github.com/NVIDIA/doca-platform) | DOCA Platform Framework manages provisioning and service orchestration for NVIDIA Bluefield DPUs. |

@@ -128,8 +128,11 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 		return resources.OperationResultEnqueueBack, nil
 	case controllerutil.OperationResultNone:
 
-		if len(d.job.Status.Conditions) > 0 && d.job.Status.Conditions[0].Type == batchv1.JobComplete && d.job.Status.Conditions[0].Status == corev1.ConditionTrue {
-			return controllerutil.OperationResultNone, nil
+		// Note: job.Status.Conditions can contain more than one condition on Kubernetes versions greater than v1.30
+		for _, condition := range d.job.Status.Conditions {
+			if condition.Type == batchv1.JobComplete && condition.Status == corev1.ConditionTrue {
+				return controllerutil.OperationResultNone, nil
+			}
 		}
 
 		d.inProgress = true
