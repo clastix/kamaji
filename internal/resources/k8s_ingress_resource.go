@@ -80,10 +80,30 @@ func (r *KubernetesIngressResource) ShouldCleanup(tcp *kamajiv1alpha1.TenantCont
 	return tcp.Spec.ControlPlane.Ingress == nil
 }
 
-func (r *KubernetesIngressResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (r *KubernetesIngressResource) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
-	if err := r.Client.Delete(ctx, r.resource); err != nil {
+	var ingress networkingv1.Ingress
+	if err := r.Client.Get(ctx, client.ObjectKey{
+		Namespace: r.resource.GetNamespace(),
+		Name:      r.resource.GetName(),
+	}, &ingress); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			logger.Error(err, "failed to get ingress resource before cleanup")
+
+			return false, err
+		}
+
+		return false, nil
+	}
+
+	if !metav1.IsControlledBy(&ingress, tcp) {
+		logger.Info("skipping cleanup: ingress is not managed by Kamaji", "name", ingress.Name, "namespace", ingress.Namespace)
+
+		return false, nil
+	}
+
+	if err := r.Client.Delete(ctx, &ingress); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			logger.Error(err, "cannot cleanup resource")
 
