@@ -7,7 +7,7 @@ replicaCount: 1
 
 image:
   # -- The container image of the Kamaji controller.
-  repository: clastix/kamaji
+  repository: quay.io/platform9/kamaji
   pullPolicy: Always
   # -- Overrides the image tag whose default is the chart appVersion.
   tag:
@@ -107,5 +107,5 @@ kamaji-etcd:
 
 # -- Disable the analytics traces collection
 telemetry:
-  disabled: false
+  disabled: true
   

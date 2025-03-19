@@ -3,7 +3,17 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= $(or $(shell git describe --abbrev=0 --tags 2>/dev/null),$(GIT_HEAD_COMMIT))
+# VERSION ?= $(or $(shell git describe --abbrev=0 --tags 2>/dev/null),$(GIT_HEAD_COMMIT))
+
+ifndef OVERRIDE_KAMAJI_VERSION
+	VERSION = $(shell ./get-label.bash)
+else
+	ifneq ($(strip $(OVERRIDE_KAMAJI_VERSION)),)
+		VERSION ?= $(OVERRIDE_KAMAJI_VERSION)
+	else
+		VERSION = $(shell ./get-label.bash)
+	endif
+endif
 
 # ENVTEST_K8S_VERSION specifies the Kubernetes version to be used 
 # during testing with the envtest environment. This ensures that 
@@ -20,7 +30,7 @@ ENVTEST_K8S_VERSION = 1.31.0
 ENVTEST_VERSION ?= release-0.19
 
 # Image URL to use all building/pushing image targets
-CONTAINER_REPOSITORY ?= docker.io/clastix/kamaji
+CONTAINER_REPOSITORY ?= quay.io/platform9/kamaji
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
