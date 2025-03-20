@@ -96,6 +96,10 @@ func (d DataStoreValidation) validateTLSConfig(ctx context.Context, ds kamajiv1a
 		if ds.Spec.TLSConfig.CertificateAuthority.PrivateKey == nil {
 			return fmt.Errorf("CA private key is required when using the etcd driver")
 		}
+
+		if ds.Spec.TLSConfig.ClientCertificate == nil {
+			return fmt.Errorf("client certificate is required when using the etcd driver")
+		}
 	}
 
 	if ds.Spec.TLSConfig.CertificateAuthority.PrivateKey != nil {
