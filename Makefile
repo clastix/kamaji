@@ -213,11 +213,11 @@ GIT_MODIFIED    ?= $$(echo "$(GIT_MODIFIED_1)$(GIT_MODIFIED_2)")
 GIT_REPO        ?= $$(git config --get remote.origin.url)
 BUILD_DATE      ?= $$(git log -1 --format="%at" | xargs -I{} date -d @{} +%Y-%m-%dT%H:%M:%S)
 
-LD_FLAGS ?= "-X github.com/clastix/kamaji/internal.GitCommit=$(GIT_HEAD_COMMIT) \
-             -X github.com/clastix/kamaji/internal.GitTag=$(VERSION) \
-             -X github.com/clastix/kamaji/internal.GitDirty=$(GIT_MODIFIED) \
-             -X github.com/clastix/kamaji/internal.BuildTime=$(BUILD_DATE) \
-             -X github.com/clastix/kamaji/internal.GitRepo=$(GIT_REPO)"
+LD_FLAGS ?= "-X github.com/platform9/kamaji/internal.GitCommit=$(GIT_HEAD_COMMIT) \
+             -X github.com/platform9/kamaji/internal.GitTag=$(VERSION) \
+             -X github.com/platform9/kamaji/internal.GitDirty=$(GIT_MODIFIED) \
+             -X github.com/platform9/kamaji/internal.BuildTime=$(BUILD_DATE) \
+             -X github.com/platform9/kamaji/internal.GitRepo=$(GIT_REPO)"
 
 KO_PUSH ?= false
 KO_LOCAL ?= true
