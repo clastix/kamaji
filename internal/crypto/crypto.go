@@ -40,10 +40,10 @@ func CheckPublicAndPrivateKeyValidity(publicKey []byte, privateKey []byte) (bool
 	return checkPublicKeys(pubKey, privKey), nil
 }
 
-// CheckCertificateSAN checks if the Kubernetes API Server certificate matches the SAN stored in the kubeadm:
+// CheckCertificateNamesAndIPs checks if the Kubernetes API Server certificate matches the Control Plane Endpoint and SAN stored in the kubeadm:
 // it must check both IPs and DNS names, and returns a false if the required entry isn't available.
 // In case of removal of entries, this function returns true nevertheless to avoid reloading a Control Plane uselessly.
-func CheckCertificateSAN(certificateBytes []byte, certSANs []string) (bool, error) {
+func CheckCertificateNamesAndIPs(certificateBytes []byte, entries []string) (bool, error) {
 	crt, err := ParseCertificateBytes(certificateBytes)
 	if err != nil {
 		return false, err
@@ -56,7 +56,7 @@ func CheckCertificateSAN(certificateBytes []byte, certSANs []string) (bool, erro
 
 	dns := sets.New[string](crt.DNSNames...)
 
-	for _, e := range certSANs {
+	for _, e := range entries {
 		if ip := net.ParseIP(e); ip != nil {
 			if !ips.Has(ip.String()) {
 				return false, nil

@@ -134,7 +134,14 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.APIServerCertAndKeyBaseName, err.Error()))
 			}
 
-			dnsNamesMatches, dnsErr := crypto.CheckCertificateSAN(r.resource.Data[kubeadmconstants.APIServerCertName], config.InitConfiguration.APIServer.CertSANs)
+			commonNames := config.InitConfiguration.APIServer.CertSANs
+
+			if tenantControlPlane.Spec.ControlPlane.Ingress != nil {
+				address, _ := utilities.GetControlPlaneAddressAndPortFromHostname(tenantControlPlane.Spec.ControlPlane.Ingress.Hostname, 6443)
+				commonNames = append(commonNames, address)
+			}
+
+			dnsNamesMatches, dnsErr := crypto.CheckCertificateNamesAndIPs(r.resource.Data[kubeadmconstants.APIServerCertName], commonNames)
 			if dnsErr != nil {
 				logger.Info(fmt.Sprintf("%s SAN check returned an error: %s", kubeadmconstants.APIServerCertAndKeyBaseName, err.Error()))
 			}
