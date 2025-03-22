@@ -274,7 +274,7 @@ The Tenant Control Plane is made of pods running in the Kamaji Management Cluste
 !!! warning "Opening Ports"
     To make sure worker nodes can join the Tenant Control Plane, you must allow incoming connections to: `${TENANT_ADDR}:${TENANT_PORT}` and `${TENANT_ADDR}:${TENANT_PROXY_PORT}`
 
-Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Refer to the [Cluster API guide](guides/cluster-api.md) to learn more about supported providers.
+Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Refer to the [Cluster API guide](guides/cluster-api/index.md) to learn more about Cluster API support in Kamaji.
 
 An alternative approach for joining nodes is to use the `kubeadm` command on each node. Follow the related [documentation](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) in order to:
 
@@ -308,7 +308,7 @@ done
 ```
 
 !!! tip "yaki"
-    This manual process can be further automated to handle the node prerequisites and joining. See [yaki](https://github.com/clastix/yaki) script, which you could modify for your preferred operating system and version. The provided script is just a facility: it assumes all worker nodes are running `Ubuntu 22.04`. Make sure to adapt the script if you're using a different distribution.
+    This manual process can be further automated to handle the node prerequisites and joining. See [yaki](https://goyaki.clastix.io/) script, which you could modify for your preferred operating system and version. The provided script is just a facility: it assumes all worker nodes are running `Ubuntu`. Make sure to adapt the script if you're using a different OS distribution.
 
 
 Checking the nodes:
