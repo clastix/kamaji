@@ -52,12 +52,14 @@ func (d *DatastoreUsedSecret) ExtractValue() client.IndexerFunc {
 				res = append(res, d.namespacedName(*ds.Spec.TLSConfig.CertificateAuthority.PrivateKey.SecretRef))
 			}
 
-			if ds.Spec.TLSConfig.ClientCertificate.Certificate.SecretRef != nil {
-				res = append(res, d.namespacedName(*ds.Spec.TLSConfig.ClientCertificate.Certificate.SecretRef))
-			}
+			if ds.Spec.TLSConfig.ClientCertificate != nil {
+				if ds.Spec.TLSConfig.ClientCertificate.Certificate.SecretRef != nil {
+					res = append(res, d.namespacedName(*ds.Spec.TLSConfig.ClientCertificate.Certificate.SecretRef))
+				}
 
-			if ds.Spec.TLSConfig.ClientCertificate.PrivateKey.SecretRef != nil {
-				res = append(res, d.namespacedName(*ds.Spec.TLSConfig.ClientCertificate.PrivateKey.SecretRef))
+				if ds.Spec.TLSConfig.ClientCertificate.PrivateKey.SecretRef != nil {
+					res = append(res, d.namespacedName(*ds.Spec.TLSConfig.ClientCertificate.PrivateKey.SecretRef))
+				}
 			}
 		}
 
