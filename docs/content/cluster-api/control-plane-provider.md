@@ -60,7 +60,7 @@ spec:
 ```
 
 !!! info "Full Reference"
-    For a full reference of the `KamajiControlPlane` custom resource, please see the [Reference APIs](reference/api.md).
+    For a full reference of the `KamajiControlPlane` custom resource, please see the [Reference APIs](https://doc.crds.dev/github.com/clastix/cluster-api-control-plane-provider-kamaji/controlplane.cluster.x-k8s.io/KamajiControlPlane/v1alpha1).
 
 ## Getting started with the Kamaji Control Plane Provider
 
