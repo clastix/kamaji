@@ -63,9 +63,9 @@ nav:
 - 'Cluster API':
   - cluster-api/index.md
   - cluster-api/control-plane-provider.md
-  - cluster-api/vsphere-infra-provider.md
   - cluster-api/cluster-class.md
   - cluster-api/cluster-autoscaler.md
+  - cluster-api/vsphere-infra-provider.md
   - cluster-api/other-providers.md
 - 'Guides':
   - guides/index.md

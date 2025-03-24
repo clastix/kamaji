@@ -223,7 +223,7 @@ The template file `capi-kamaji-vsphere-template-csi.yaml` includes the [vSphere 
 
 This template file introduces a *"split configuration"* for the vSphere CSI Driver, with the CSI driver deployed on the worker nodes as daemonset and the CSI Controller Manager deployed on the Management Cluster as part of the Hosted Control Plane. In this way, no vSphere credentials are required on the tenant cluster.
 
-This spit architecture enables:
+This split architecture enables:
 
 * Tenant isolation from vSphere credentials
 * Simplified networking requirements
