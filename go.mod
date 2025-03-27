@@ -20,7 +20,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
-	github.com/spf13/viper v1.20.0
+	github.com/spf13/viper v1.20.1
 	github.com/testcontainers/testcontainers-go v0.35.0
 	go.etcd.io/etcd/api/v3 v3.5.20
 	go.etcd.io/etcd/client/v3 v3.5.20
