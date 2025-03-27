@@ -40,6 +40,11 @@ type sootItem struct {
 
 type sootMap map[string]sootItem
 
+const (
+	sootManagerAnnotation       = "kamaji.clastix.io/soot"
+	sootManagerFailedAnnotation = "failed"
+)
+
 type Manager struct {
 	client  client.Client
 	sootMap sootMap
@@ -99,6 +104,26 @@ func (m *Manager) cleanup(ctx context.Context, req reconcile.Request, tenantCont
 	return nil
 }
 
+func (m *Manager) retryTenantControlPlaneAnnotations(ctx context.Context, request reconcile.Request, modifierFn func(annotations map[string]string)) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		tcp, err := m.retrieveTenantControlPlane(ctx, request)()
+		if err != nil {
+			return err
+		}
+
+		if tcp.Annotations == nil {
+			tcp.Annotations = map[string]string{}
+		}
+
+		modifierFn(tcp.Annotations)
+
+		tcp.SetAnnotations(tcp.Annotations)
+
+		return m.AdminClient.Update(ctx, tcp)
+	})
+}
+
+//nolint:maintidx
 func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res reconcile.Result, err error) {
 	// Retrieving the TenantControlPlane:
 	// in case of deletion, we must be sure to properly remove from the memory the soot manager.
@@ -126,6 +151,12 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	v, ok := m.sootMap[request.String()]
 	if ok {
 		switch {
+		case tcp.Annotations != nil && tcp.Annotations[sootManagerAnnotation] == sootManagerFailedAnnotation:
+			delete(m.sootMap, request.String())
+
+			return reconcile.Result{}, m.retryTenantControlPlaneAnnotations(ctx, request, func(annotations map[string]string) {
+				delete(annotations, sootManagerAnnotation)
+			})
 		case tcpStatus == kamajiv1alpha1.VersionCARotating:
 			// The TenantControlPlane CA has been rotated, it means the running manager
 			// must be restarted to avoid certificate signed by unknown authority errors.
@@ -275,6 +306,14 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	go func() {
 		if err = mgr.Start(tcpCtx); err != nil {
 			log.FromContext(ctx).Error(err, "unable to start soot manager")
+			// The sootMAnagerAnnotation is used to propagate the error between reconciliations with its state:
+			// this is required to avoid mutex and prevent concurrent read/write on the soot map
+			annotationErr := m.retryTenantControlPlaneAnnotations(ctx, request, func(annotations map[string]string) {
+				annotations[sootManagerAnnotation] = sootManagerFailedAnnotation
+			})
+			if annotationErr != nil {
+				log.FromContext(ctx).Error(err, "unable to update TenantControlPlane for soot failed annotation")
+			}
 			// When the manager cannot start we're enqueuing back the request to take advantage of the backoff factor
 			// of the queue: this is a goroutine and cannot return an error since the manager is running on its own,
 			// using the sootManagerErrChan channel we can trigger a reconciliation although the TCP hadn't any change.
