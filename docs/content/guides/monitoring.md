@@ -138,7 +138,7 @@ spec:
 ```
 
 !!! tip "TLS certificates"
-    To access metrics endpoints, the Service Monitor must authenticate with the control plane endpoints. You can use the `charlie-api-server-kubelet-client-certificate` secret. This secret is automatically created by Kamaji in the namespace and contains the client certificate and key needed for the control plane components.
+    To access metrics endpoints, the Prometheus must authenticate with the control plane endpoints. You can use the `<tcp_name>-api-server-kubelet-client-certificate` secret. This secret is automatically created by Kamaji in the namespace and contains the client certificate and key needed for the control plane components.
 
 Finally, ensure the Prometheus service account, e.g. `kube-prometheus-stack-prometheus` has the necessary permissions to access the secret containing the certificates. The following is an example of a `ClusterRole` and `ClusterRoleBinding` that grants the required permissions:
 
