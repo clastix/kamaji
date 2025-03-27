@@ -76,6 +76,7 @@ nav:
   - guides/upgrade.md
   - guides/datastore-migration.md
   - guides/backup-and-restore.md
+  - guides/monitoring.md
   - guides/certs-lifecycle.md
   - guides/console.md
 - 'Use Cases': use-cases.md
