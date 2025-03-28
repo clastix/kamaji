@@ -5,9 +5,10 @@ package soot
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
@@ -34,7 +35,7 @@ import (
 )
 
 type sootItem struct {
-	triggers []chan event.GenericEvent
+	triggers map[string]chan event.GenericEvent
 	cancelFn context.CancelFunc
 }
 
@@ -129,7 +130,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	// in case of deletion, we must be sure to properly remove from the memory the soot manager.
 	tcp := &kamajiv1alpha1.TenantControlPlane{}
 	if err = m.client.Get(ctx, request.NamespacedName, tcp); err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, m.cleanup(ctx, request, nil)
 		}
 
@@ -167,8 +168,12 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			// Once the TCP will be ready again, the event will be intercepted and the manager started back.
 			return reconcile.Result{}, m.cleanup(ctx, request, tcp)
 		default:
-			for _, trigger := range v.triggers {
-				trigger <- event.GenericEvent{Object: tcp}
+			for name, trigger := range v.triggers {
+				select {
+				case trigger <- event.GenericEvent{Object: tcp}:
+				default:
+					log.FromContext(ctx).Error(errors.New("channel is full"), fmt.Sprintf("can't push trigger %s reconciliation for object %s/%s", name, tcp.Namespace, tcp.Name))
+				}
 			}
 		}
 
@@ -322,14 +327,14 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	}()
 
 	m.sootMap[request.NamespacedName.String()] = sootItem{
-		triggers: []chan event.GenericEvent{
-			migrate.TriggerChannel,
-			konnectivityAgent.TriggerChannel,
-			kubeProxy.TriggerChannel,
-			coreDNS.TriggerChannel,
-			uploadKubeadmConfig.TriggerChannel,
-			uploadKubeletConfig.TriggerChannel,
-			bootstrapToken.TriggerChannel,
+		triggers: map[string]chan event.GenericEvent{
+			"migrate":             migrate.TriggerChannel,
+			"konnectivityAgent":   konnectivityAgent.TriggerChannel,
+			"kubeProxy":           kubeProxy.TriggerChannel,
+			"coreDNS":             coreDNS.TriggerChannel,
+			"uploadKubeadmConfig": uploadKubeadmConfig.TriggerChannel,
+			"uploadKubeletConfig": uploadKubeletConfig.TriggerChannel,
+			"bootstrapToken":      bootstrapToken.TriggerChannel,
 		},
 		cancelFn: tcpCancelFn,
 	}

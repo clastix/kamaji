@@ -5,7 +5,9 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
 	k8stypes "k8s.io/apimachinery/pkg/types"
@@ -76,7 +78,11 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	for _, i := range tcpList.Items {
 		tcp := i
 
-		r.TenantControlPlaneTrigger <- event.GenericEvent{Object: &tcp}
+		select {
+		case r.TenantControlPlaneTrigger <- event.GenericEvent{Object: &tcp}:
+		default:
+			log.Error(errors.New("channel is full"), fmt.Sprintf("can't push DataStore reconciliation for object %s/%s", tcp.Namespace, tcp.Name))
+		}
 	}
 
 	return reconcile.Result{}, nil
