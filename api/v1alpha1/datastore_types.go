@@ -31,6 +31,7 @@ type Endpoints []string
 // +kubebuilder:validation:XValidation:rule="(self.driver != \"etcd\" && has(self.tlsConfig)) ? ((self.tlsConfig.clientCertificate == null || (has(self.tlsConfig.clientCertificate.certificate.secretReference) || has(self.tlsConfig.clientCertificate.certificate.content)))) : true", message="When driver is not etcd and tlsConfig exists, clientCertificate must be null or contain valid content"
 // +kubebuilder:validation:XValidation:rule="(self.driver != \"etcd\" && has(self.basicAuth)) ? ((has(self.basicAuth.username.secretReference) || has(self.basicAuth.username.content))) : true", message="When driver is not etcd and basicAuth exists, username must have secretReference or content"
 // +kubebuilder:validation:XValidation:rule="(self.driver != \"etcd\" && has(self.basicAuth)) ? ((has(self.basicAuth.password.secretReference) || has(self.basicAuth.password.content))) : true", message="When driver is not etcd and basicAuth exists, password must have secretReference or content"
+// +kubebuilder:validation:XValidation:rule="(self.driver != \"etcd\" && (has(self.tlsConfig) || has(self.basicAuth)))", message="When driver is not etcd, either tlsConfig or basicAuth must be provided"
 type DataStoreSpec struct {
 	// The driver to use to connect to the shared datastore.
 	Driver Driver `json:"driver"`
