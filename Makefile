@@ -144,11 +144,10 @@ golint: golangci-lint ## Linting the code according to the styling guide.
 ## Run unit tests (all tests except E2E).
 .PHONY: test
 test: envtest ginkgo
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -v --trace \
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -v -coverprofile cover.out --trace \
 		./api/... \
 		./cmd/... \
 		./internal/... \
-		-coverprofile cover.out
 
 _datastore-mysql:
 	$(MAKE) NAME=$(NAME) -C deploy/kine/mysql mariadb
