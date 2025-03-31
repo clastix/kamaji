@@ -33,7 +33,14 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 				Name:      "tcp",
 				Namespace: "default",
 			},
-			Spec: kamajiv1alpha1.TenantControlPlaneSpec{},
+			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
+				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
+					ServiceCIDR: "10.96.0.0/12",
+					DNSServiceIPs: []string{
+						"10.96.0.10",
+					},
+				},
+			},
 		}
 		ctx = context.Background() //nolint:fatcontext
 	})
