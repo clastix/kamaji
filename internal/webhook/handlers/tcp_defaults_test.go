@@ -42,7 +42,7 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 				},
 			},
 		}
-		ctx = context.Background() //nolint:fatcontext
+		ctx = context.Background()
 	})
 
 	Describe("fields missing", func() {

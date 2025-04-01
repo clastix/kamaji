@@ -19,7 +19,7 @@ var _ = Describe("Datastores validation test", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = context.Background() //nolint:fatcontext
+		ctx = context.Background()
 		ds = &DataStore{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "ds",
