@@ -9,6 +9,7 @@ import (
 )
 
 //+kubebuilder:validation:Enum=etcd;MySQL;PostgreSQL;NATS
+//+kubebuilder:validation:XValidation:rule="self == oldSelf",message="Datastore driver is immutable"
 
 type Driver string
 
