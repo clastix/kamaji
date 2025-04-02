@@ -22,18 +22,18 @@ import (
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
-var _ = Describe("When migrating a Tenant Control Plane to another datastore", func() {
+func featureTestMigration(driver string) {
 	var tcp *kamajiv1alpha1.TenantControlPlane
 	// Create a TenantControlPlane resource into the cluster
 	JustBeforeEach(func() {
 		// Fill TenantControlPlane object
 		tcp = &kamajiv1alpha1.TenantControlPlane{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("migrating-%s-etcd", rand.String(5)),
+				Name:      fmt.Sprintf("migrating-%s-%s", rand.String(5), driver),
 				Namespace: "default",
 			},
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
-				DataStore: "etcd-bronze",
+				DataStore: fmt.Sprintf("%s-bronze", driver),
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					Deployment: kamajiv1alpha1.DeploymentSpec{
 						Replicas: pointer.To(int32(1)),
@@ -91,7 +91,7 @@ var _ = Describe("When migrating a Tenant Control Plane to another datastore", f
 				return err
 			}
 
-			tcp.Spec.DataStore = "etcd-silver"
+			tcp.Spec.DataStore = fmt.Sprintf("%s-silver", driver)
 
 			return k8sClient.Update(context.Background(), tcp)
 		}, time.Minute, time.Second).ShouldNot(HaveOccurred())
@@ -114,11 +114,28 @@ var _ = Describe("When migrating a Tenant Control Plane to another datastore", f
 			}
 
 			return tcp.Status.Storage.DataStoreName
-		}, time.Minute, time.Second).Should(BeEquivalentTo("etcd-silver"))
+		}, time.Minute, time.Second).Should(BeEquivalentTo(fmt.Sprintf("%s-silver", driver)))
 
 		By("checking the presence of the previous Namespace")
 		Eventually(func() error {
 			return tcpClient.Get(context.Background(), types.NamespacedName{Name: ns.GetName()}, &corev1.Namespace{})
 		}).ShouldNot(HaveOccurred())
+		// The Freeze ValidatingWebhookConfiguration should have been removed successfully:
+		// we're checking write operations are allowed.
+		By("checking the changes are newly allowed")
+		Eventually(func() error {
+			var writeNamespace corev1.Namespace
+			writeNamespace.Name = fmt.Sprintf("write-%s-%s", rand.String(5), driver)
+
+			return tcpClient.Create(context.Background(), &writeNamespace)
+		}).ShouldNot(HaveOccurred())
 	})
+}
+
+var _ = Describe("When migrating a Tenant Control Plane to another datastore (etcd)", func() {
+	featureTestMigration("etcd")
+})
+
+var _ = Describe("When migrating a Tenant Control Plane to another datastore (postgresql)", func() {
+	featureTestMigration("postgresql")
 })

@@ -64,7 +64,7 @@ func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, te
 	d.setLabels(deployment, utilities.MergeMaps(utilities.KamajiLabels(tenantControlPlane.GetName(), "deployment"), tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Labels))
 	d.setAnnotations(deployment, utilities.MergeMaps(deployment.Annotations, tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalMetadata.Annotations))
 	d.setTemplateLabels(&deployment.Spec.Template, utilities.MergeMaps(d.templateLabels(ctx, &tenantControlPlane), tenantControlPlane.Spec.ControlPlane.Deployment.PodAdditionalMetadata.Labels))
-	d.setTemplateAnnotations(&deployment.Spec.Template, tenantControlPlane.Spec.ControlPlane.Deployment.PodAdditionalMetadata.Annotations)
+	d.setTemplateAnnotations(&deployment.Spec.Template, utilities.MergeMaps(tenantControlPlane.Spec.ControlPlane.Deployment.PodAdditionalMetadata.Annotations, map[string]string{"storage.kamaji.clastix.io/config": tenantControlPlane.Status.Storage.Config.Checksum}))
 	d.setNodeSelector(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setToleration(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setAffinity(&deployment.Spec.Template.Spec, tenantControlPlane)
