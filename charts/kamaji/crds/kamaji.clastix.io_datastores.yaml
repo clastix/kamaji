@@ -120,6 +120,9 @@ spec:
                     - PostgreSQL
                     - NATS
                   type: string
+                  x-kubernetes-validations:
+                    - message: Datastore driver is immutable
+                      rule: self == oldSelf
                 endpoints:
                   description: |-
                     List of the endpoints to connect to the shared datastore.
