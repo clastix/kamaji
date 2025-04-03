@@ -75,9 +75,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 		return reconcile.Result{}, err
 	}
 	// Triggering the reconciliation of the Tenant Control Plane upon a Secret change
-	for _, i := range tcpList.Items {
-		tcp := i
-
+	for _, tcp := range tcpList.Items {
 		select {
 		case r.TenantControlPlaneTrigger <- event.GenericEvent{Object: &tcp}:
 		default:
