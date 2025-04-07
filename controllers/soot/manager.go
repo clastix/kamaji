@@ -136,9 +136,9 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 
 		return reconcile.Result{}, err
 	}
-	// Handling finalizer if the TenantControlPlane is marked for deletion:
+	// Handling finalizer if the TenantControlPlane is marked for deletion or scaled to zero:
 	// the clean-up function is already taking care to stop the manager, if this exists.
-	if tcp.GetDeletionTimestamp() != nil {
+	if tcp.GetDeletionTimestamp() != nil || ptr.Deref(tcp.Spec.ControlPlane.Deployment.Replicas, 0) == 0 {
 		if controllerutil.ContainsFinalizer(tcp, finalizers.SootFinalizer) {
 			return reconcile.Result{}, m.cleanup(ctx, request, tcp)
 		}
