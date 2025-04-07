@@ -136,17 +136,16 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 
 		return reconcile.Result{}, err
 	}
+	tcpStatus := ptr.Deref(tcp.Status.Kubernetes.Version.Status, kamajiv1alpha1.VersionProvisioning)
 	// Handling finalizer if the TenantControlPlane is marked for deletion or scaled to zero:
 	// the clean-up function is already taking care to stop the manager, if this exists.
-	if tcp.GetDeletionTimestamp() != nil || ptr.Deref(tcp.Spec.ControlPlane.Deployment.Replicas, 0) == 0 {
+	if tcp.GetDeletionTimestamp() != nil || tcpStatus == kamajiv1alpha1.VersionSleeping {
 		if controllerutil.ContainsFinalizer(tcp, finalizers.SootFinalizer) {
 			return reconcile.Result{}, m.cleanup(ctx, request, tcp)
 		}
 
 		return reconcile.Result{}, nil
 	}
-
-	tcpStatus := *tcp.Status.Kubernetes.Version.Status
 	// Triggering the reconciliation of the underlying controllers of
 	// the soot manager if this is already registered.
 	v, ok := m.sootMap[request.String()]
@@ -181,7 +180,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	}
 	// No need to start a soot manager if the TenantControlPlane is not ready:
 	// enqueuing back is not required since we're going to get that event once ready.
-	if tcpStatus == kamajiv1alpha1.VersionNotReady || tcpStatus == kamajiv1alpha1.VersionCARotating {
+	if tcpStatus == kamajiv1alpha1.VersionNotReady || tcpStatus == kamajiv1alpha1.VersionCARotating || tcpStatus == kamajiv1alpha1.VersionSleeping {
 		log.FromContext(ctx).Info("skipping start of the soot manager for a not ready instance")
 
 		return reconcile.Result{}, nil
