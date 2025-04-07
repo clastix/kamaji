@@ -7379,6 +7379,7 @@ spec:
                             - Migrating
                             - Ready
                             - NotReady
+                            - Sleeping
                           type: string
                         version:
                           description: Version is the running Kubernetes version of the Tenant Control Plane.

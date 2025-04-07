@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -81,7 +82,7 @@ func (m *TelemetryController) collectStats(ctx context.Context, uid string) {
 
 	for _, tcp := range tcpList.Items {
 		switch {
-		case tcp.Spec.ControlPlane.Deployment.Replicas == nil || *tcp.Spec.ControlPlane.Deployment.Replicas == 0:
+		case ptr.Deref(tcp.Status.Kubernetes.Version.Status, kamajiv1alpha1.VersionProvisioning) == kamajiv1alpha1.VersionSleeping:
 			stats.TenantControlPlanes.Sleeping++
 		case tcp.Status.Kubernetes.Version.Status != nil && *tcp.Status.Kubernetes.Version.Status == kamajiv1alpha1.VersionNotReady:
 			stats.TenantControlPlanes.NotReady++
