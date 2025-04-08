@@ -31,14 +31,14 @@ import (
 var _ = Describe("starting a kind worker with kubeadm", func() {
 	ctx := context.Background()
 
-	var tcp kamajiv1alpha1.TenantControlPlane
+	var tcp *kamajiv1alpha1.TenantControlPlane
 
 	var workerContainer testcontainers.Container
 
 	var kubeconfigFile *os.File
 
 	JustBeforeEach(func() {
-		tcp = kamajiv1alpha1.TenantControlPlane{
+		tcp = &kamajiv1alpha1.TenantControlPlane{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "worker-nodes-join",
 				Namespace: "default",
@@ -69,7 +69,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 				Addons: kamajiv1alpha1.AddonsSpec{},
 			},
 		}
-		Expect(k8sClient.Create(ctx, &tcp)).NotTo(HaveOccurred())
+		Expect(k8sClient.Create(ctx, tcp)).NotTo(HaveOccurred())
 
 		var err error
 
@@ -99,24 +99,13 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 
 	JustAfterEach(func() {
 		Expect(workerContainer.Terminate(ctx)).ToNot(HaveOccurred())
-		Expect(k8sClient.Delete(ctx, &tcp)).Should(Succeed())
+		Expect(k8sClient.Delete(ctx, tcp)).Should(Succeed())
 		Expect(os.Remove(kubeconfigFile.Name())).ToNot(HaveOccurred())
 	})
 
 	It("should join the Tenant Control Plane cluster", func() {
 		By("waiting for the Tenant Control Plane being ready", func() {
-			Eventually(func() kamajiv1alpha1.KubernetesVersionStatus {
-				err := k8sClient.Get(ctx, types.NamespacedName{Name: tcp.GetName(), Namespace: tcp.GetNamespace()}, &tcp)
-				if err != nil {
-					return ""
-				}
-
-				if tcp.Status.Kubernetes.Version.Status == nil {
-					return ""
-				}
-
-				return *tcp.Status.Kubernetes.Version.Status
-			}, 5*time.Minute, time.Second).Should(Equal(kamajiv1alpha1.VersionReady))
+			StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
 		})
 
 		By("downloading Tenant Control Plane kubeconfig", func() {
@@ -139,7 +128,12 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 			clientset, err := kubernetes.NewForConfig(config)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(cmd.RunCreateToken(joinCommandBuffer, clientset, "", &kubeadmv1beta4.InitConfiguration{}, true, "", kubeconfigFile.Name())).ToNot(HaveOccurred())
+			// Soot controller might take a while to set up RBAC.
+			Eventually(func() error {
+				joinCommandBuffer.Reset()
+
+				return cmd.RunCreateToken(joinCommandBuffer, clientset, "", &kubeadmv1beta4.InitConfiguration{}, true, "", kubeconfigFile.Name())
+			}, 1*time.Minute, 1*time.Second).Should(BeTrue())
 		})
 
 		By("executing the command in the worker node", func() {
