@@ -121,11 +121,9 @@ func PrintKamajiLogs() {
 }
 
 func StatusMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, status kamajiv1alpha1.KubernetesVersionStatus) {
+	GinkgoHelper()
 	Eventually(func() kamajiv1alpha1.KubernetesVersionStatus {
-		err := k8sClient.Get(context.Background(), types.NamespacedName{
-			Name:      tcp.GetName(),
-			Namespace: tcp.GetNamespace(),
-		}, tcp)
+		err := k8sClient.Get(context.Background(), client.ObjectKeyFromObject(tcp), tcp)
 		if err != nil {
 			return ""
 		}
@@ -139,6 +137,7 @@ func StatusMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, status kamajiv1al
 }
 
 func AllPodsLabelMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, label string, value string) {
+	GinkgoHelper()
 	Eventually(func() bool {
 		tcpPods := &corev1.PodList{}
 		err := k8sClient.List(context.Background(), tcpPods, client.MatchingLabels{
@@ -158,6 +157,7 @@ func AllPodsLabelMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, label strin
 }
 
 func AllPodsAnnotationMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, annotation string, value string) {
+	GinkgoHelper()
 	Eventually(func() bool {
 		tcpPods := &corev1.PodList{}
 		err := k8sClient.List(context.Background(), tcpPods, client.MatchingLabels{
@@ -177,6 +177,7 @@ func AllPodsAnnotationMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, annota
 }
 
 func PodsServiceAccountMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, sa *corev1.ServiceAccount) {
+	GinkgoHelper()
 	saName := sa.GetName()
 	Eventually(func() bool {
 		tcpPods := &corev1.PodList{}
@@ -194,4 +195,11 @@ func PodsServiceAccountMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, sa *c
 
 		return true
 	}, 5*time.Minute, time.Second).Should(BeTrue())
+}
+
+func ScaleTenantControlPlane(tcp *kamajiv1alpha1.TenantControlPlane, replicas int32) {
+	GinkgoHelper()
+	Expect(k8sClient.Get(context.Background(), client.ObjectKeyFromObject(tcp), tcp)).To(Succeed())
+	tcp.Spec.ControlPlane.Deployment.Replicas = &replicas
+	Expect(k8sClient.Update(context.Background(), tcp)).To(Succeed())
 }
