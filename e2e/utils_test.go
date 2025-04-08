@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -199,7 +200,11 @@ func PodsServiceAccountMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, sa *c
 
 func ScaleTenantControlPlane(tcp *kamajiv1alpha1.TenantControlPlane, replicas int32) {
 	GinkgoHelper()
-	Expect(k8sClient.Get(context.Background(), client.ObjectKeyFromObject(tcp), tcp)).To(Succeed())
-	tcp.Spec.ControlPlane.Deployment.Replicas = &replicas
-	Expect(k8sClient.Update(context.Background(), tcp)).To(Succeed())
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		Expect(k8sClient.Get(context.Background(), client.ObjectKeyFromObject(tcp), tcp)).To(Succeed())
+		tcp.Spec.ControlPlane.Deployment.Replicas = &replicas
+
+		return k8sClient.Update(context.Background(), tcp)
+	})
+	Expect(err).To(Succeed())
 }
