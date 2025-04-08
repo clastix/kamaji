@@ -133,7 +133,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 				joinCommandBuffer.Reset()
 
 				return cmd.RunCreateToken(joinCommandBuffer, clientset, "", &kubeadmv1beta4.InitConfiguration{}, true, "", kubeconfigFile.Name())
-			}, 1*time.Minute, 1*time.Second).Should(BeTrue())
+			}, 1*time.Minute, 1*time.Second).Should(Succeed())
 		})
 
 		By("executing the command in the worker node", func() {
