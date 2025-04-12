@@ -1,30 +1,31 @@
 # Concepts
 
-**Kamaji** is a **Kubernetes Control Plane Manager**. It operates Kubernetes at scale with a fraction of the operational burden. Kamaji turns any Kubernetes cluster into a _“Management Cluster”_ to orchestrate other Kubernetes clusters called _“Tenant Clusters”_.
+Kamaji turns any Kubernetes cluster into a _“Management Cluster”_ to orchestrate other Kubernetes clusters called _“Tenant Clusters”_.
+
+<img src="../images/architecture.png"  width="600">
 
 These are requirements of the design behind Kamaji:
 
-- Communication between the _“Management Cluster”_ and a _“Tenant Cluster”_ is unidirectional. The _“Management Cluster”_ manages a _“Tenant Cluster”_, but a _“Tenant Cluster”_ has no awareness of the _“Management Cluster”_.
+- Communication between _“Management Cluster”_ and _“Tenant Clusters”_ is unidirectional, meaning the _“Management Cluster”_ manages the _“Tenant Clusters”_, but a _“Tenant Cluster”_ has no awareness of the _“Management Cluster”_.
 - Communication between different _“Tenant Clusters”_ is not allowed.
-- The worker nodes of tenant should not run anything beyond tenant's workloads.
+- The worker nodes of the _“Tenant Clusters”_ should not run anything beyond tenant's workloads.
 
 Goals and scope may vary as the project evolves.
 
 ## Tenant Control Plane
-Kamaji is special because the Control Planes of the _“Tenant Clusters”_ are regular pods running in a namespace of the _“Management Cluster”_ instead of a dedicated machines. This solution makes running Control Planes at scale cheaper and easier to deploy and operate. The Tenant Control Plane components are packaged in the same way they are running in bare metal or virtual nodes. We leverage the `kubeadm` code to set up the control plane components as they were running on their own server. The unchanged images of upstream `kube-apiserver`, `kube-scheduler`, and `kube-controller-manager` are used.
+In Kamaji, the Control Plane components of the _“Tenant Clusters”_ run in a regular pod in the _“Management Cluster”_ instead of being deployed in a dedicated machine of the _“Tenant Cluster”_. We leverage the `kubeadm` code to set up these components as they were running on their own server. The unchanged images of upstream `kube-apiserver`, `kube-scheduler`, and `kube-controller-manager` are always used.
 
-High Availability and rolling updates of the Tenant Control Plane pods are provided by a regular Deployment. Autoscaling based on the metrics is available. A Service is used to espose the Tenant Control Plane outside of the _“Management Cluster”_. The `LoadBalancer` service type is used, `NodePort` and `ClusterIP` are other viable options, depending on the case.
+High Availability and rolling updates of the Tenant Control Plane pods are provided by a regular Deployment. Autoscaling based on the metrics is possible. A Service is used to espose the Tenant Control Plane outside of the _“Management Cluster”_. The `LoadBalancer` service type is used, `NodePort` and `ClusterIP` are other viable options, depending on the case.
 
 Kamaji offers a [Custom Resource Definition](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/) to provide a declarative approach of managing a Tenant Control Plane. This *CRD* is called `TenantControlPlane`, or `tcp` in short.
 
-All the _“Tenant Clusters”_ built with Kamaji are fully compliant CNCF Kubernetes clusters and are compatible with the standard Kubernetes toolchains everybody knows and loves. See [CNCF compliance](reference/conformance.md).
+!!! info "CNCF Compliance"
+    All the Tenant Clusters built with Kamaji are fully compliant [CNCF Certified Kubernetes](https://www.cncf.io/certification/software-conformance/) and are compatible with the standard toolchains everybody knows and loves.
 
 ## Tenant worker nodes
 
 And what about the tenant worker nodes?
-They are just _"worker nodes"_, i.e. regular virtual or bare metal machines, connecting to the APIs server of the Tenant Control Plane.
-Kamaji's goal is to manage the lifecycle of hundreds of these _“Tenant Clusters”_, not only one, so how to add another Tenant Cluster to Kamaji?
-As you could expect, you have just deploys a new Tenant Control Plane in one of the _“Management Cluster”_ namespace, and then joins the tenant worker nodes to it.
+They are just _"worker nodes"_, i.e. regular virtual or bare metal machines, connecting to the APIs server of the Tenant Control Plane. Kamaji's goal is to manage the lifecycle of hundreds of these _“Tenant Clusters”_, not only one, so how to add another Tenant Cluster to Kamaji? As you could expect, you have just deploys a new Tenant Control Plane in one of the _“Management Cluster”_ namespace, and then joins the tenant worker nodes to it.
 
 A [Cluster API ControlPlane provider](https://github.com/clastix/cluster-api-control-plane-provider-kamaji) has been released, allowing to offer a Cluster API-native declarative lifecycle, by automating the worker nodes join.
 

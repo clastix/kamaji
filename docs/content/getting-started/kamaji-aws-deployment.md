@@ -129,7 +129,7 @@ aws route53 create-hosted-zone --name "$TENANT_DOMAIN" --caller-reference $(date
 
 ## Install Kamaji
 
-Follow the [Getting Started](../getting-started.md) to install Cert Manager and the Kamaji Controller.
+Follow the [Getting Started](getting-started.md) to install Cert Manager and the Kamaji Controller.
 
 ### Install Cert Manager
 

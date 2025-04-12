@@ -1,4 +1,4 @@
-# Use Alternative Datastores
+# Alternative Datastores
 
 Kamaji offers the possibility of having a different storage system than `etcd` thanks to [kine](https://github.com/k3s-io/kine) integration.
 
