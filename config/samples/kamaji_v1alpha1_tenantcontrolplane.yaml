@@ -5,6 +5,7 @@ metadata:
   labels:
     tenant.clastix.io: k8s-130
 spec:
+  dataStore: postgresql-bronze
   controlPlane:
     deployment:
       replicas: 2
