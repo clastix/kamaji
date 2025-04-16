@@ -2,7 +2,7 @@
 
 Kamaji supports **ClusterClass**, a simple way to create many clusters of a similar shape. This is useful for creating many clusters with the same configuration, such as a development cluster, a staging cluster, and a production cluster.
 
-!!! warning "Caution!"
+!!! warning "Experimental Feature"
     ClusterClass is an experimental feature of Cluster API. As with any experimental features it should be used with caution as it may be unreliable. All experimental features are not subject to any compatibility or deprecation policy and are not yet recommended for production use.
 
 You can read more about ClusterClass in the [Cluster API documentation](https://cluster-api.sigs.k8s.io/tasks/experimental-features/cluster-class/).
@@ -54,7 +54,7 @@ spec:
 # other resources omitted for brevity ...
 ```
 
-The template file [`capi-kamaji-vsphere-class-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/capi-kamaji-vsphere-class-template.yaml) provides a full example of a ClusterClass for vSphere. You can generate a ClusterClass manifest using `clusterctl`.
+The template file [`capi-kamaji-vsphere-class-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/vsphere/capi-kamaji-vsphere-class-template.yaml) provides a full example of a ClusterClass for vSphere. You can generate a ClusterClass manifest using `clusterctl`.
 
 Before you need to list all the variables in the template file:
 

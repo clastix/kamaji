@@ -1,14 +1,11 @@
-# Setup Kamaji on Azure
+# Kamaji on Azure
 This guide will lead you through the process of creating a working Kamaji setup on on MS Azure.
-
-!!! warning ""
-    The material here is relatively dense. We strongly encourage you to dedicate time to walk through these instructions, with a mind to learning. We do NOT provide any "one-click" deployment here. However, once you've understood the components involved it is encouraged that you build suitable, auditable GitOps deployment processes around your final infrastructure.
 
 The guide requires:
 
 - a bootstrap machine
-- a Kubernetes cluster to run the Admin and Tenant Control Planes
-- an arbitrary number of machines to host `Tenant`s' workloads
+- a Kubernetes cluster (AKS) to run the Management and Tenant Control Planes
+- an arbitrary number of machines to host Tenant workloads.
 
 ## Summary
 
@@ -98,7 +95,7 @@ kubectl cluster-info
 
 ## Install Kamaji
 
-Follow the [Getting Started](../getting-started.md) to install Cert Manager and the Kamaji Controller.
+Follow the [Getting Started](kamaji-generic.md) to install Cert Manager and the Kamaji Controller.
 
 ## Create Tenant Cluster
 

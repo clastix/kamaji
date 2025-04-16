@@ -19,10 +19,6 @@ Using Edge Release artifacts and reporting bugs helps us ensure a rapid pace of 
 
 ### Stable Releases
 
-Stable Release artifacts of Kamaji follow semantic versioning, whereby changes in major version denote large feature additions and possible breaking changes and changes in minor versions denote safe upgrades without breaking changes. As of July 2024 [Clastix Labs](https://github.com/clastix) organization does no longer provide stable release artifacts. Latest stable release available is:
+Stable Release artifacts of Kamaji follow semantic versioning, whereby changes in major version denote large feature additions and possible breaking changes and changes in minor versions denote safe upgrades without breaking changes. As of July 2024, [Clastix Labs](https://github.com/clastix) does no longer provide stable release artifacts.
 
-| Kamaji | Management Cluster | Tenant Cluster       |
-|--------|--------------------|----------------------|
-| v1.0.0 | v1.22+             | [v1.21.0 .. v1.30.2] |
-
-Stable Release artifacts are offered now on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor. Learn more about [available subscription plans](https://clastix.io/support/) provided by CLASTIX.
+Stable Release artifacts are offered now on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor. Learn more about the available [Subscription Plans](https://clastix.io/support/).

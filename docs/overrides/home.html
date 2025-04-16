@@ -1,0 +1,197 @@
+{% extends "main.html" %}
+
+{% block extrahead %}
+  <link rel="stylesheet" href="{{ 'assets/stylesheets/home.css' | url }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<section class="tx-hero">
+  <div class="md-grid md-typeset">
+    <div class="tx-hero_content">
+      <h1>The Control Plane Manager for Kubernetes</h1>
+      <p>Kamaji runs the Control Plane as pods within a Management Cluster, rather than on dedicated machines. This approach simplifies operations and enables the management of multiple Kubernetes clusters with a fraction of the operational burden.</p>
+      <div class="tx-hero_buttons">
+        <a href="{{ 'getting-started/' | url }}" class="md-button md-button--primary">Get Started</a>
+        <a href="{{ 'concepts/' | url }}" class="md-button">Concepts</a>
+      </div>
+    </div>
+    <div class="tx-hero_image">
+      <img class="tx-hero_image--light" src="assets/images/hero_logo_light.svg" alt="Kamaji Light Theme" draggable="false">
+      <img class="tx-hero_image--dark" src="assets/images/hero_logo_dark.svg" alt="Kamaji Dark Theme" draggable="false">
+    </div>
+  </div>
+</section>
+
+<!-- Highlights Section -->
+<section class="tx-section tx-section--alternate">
+  <div class="md-grid md-typeset">
+    <h2 class="tx-section-title">Highlights</h2>
+    <div class="tx-grid tx-grid--3x2">
+      <div class="tx-card">
+        <div class="tx-card_icon">
+          {% include ".icons/fontawesome/solid/layer-group.svg" %}
+        </div>
+        <h3>Multi-Tenancy</h3>
+        <p>Deploy multiple Kubernetes control planes as pods within a single management cluster. Each control plane operates independently, ensuring complete isolation between tenants.</p>
+      </div>
+
+      <div class="tx-card">
+        <div class="tx-card_icon">
+          {% include ".icons/fontawesome/solid/cube.svg" %}
+        </div>
+        <h3>Upstream Kubernetes</h3>
+        <p>Uses unmodified upstream Kubernetes components and leverages kubeadm, the default tool for cluster bootstrapping and management.</p>
+      </div>
+
+      <div class="tx-card">
+        <div class="tx-card_icon">
+          {% include ".icons/fontawesome/solid/server.svg" %}
+        </div>
+        <h3>Infrastructure Agnostic</h3>
+        <p>Connect worker nodes from any infrastructure provider. Supports bare metal, virtual machines, and cloud instances, allowing hybrid and multi-cloud deployments.</p>
+      </div>
+
+      <div class="tx-card">
+        <div class="tx-card_icon">
+          {% include ".icons/fontawesome/solid/chart-line.svg" %}
+        </div>
+        <h3>Resource Optimization</h3>
+        <p>Control planes run as pods, sharing the management cluster's resources efficiently. Scale control planes independently based on actual usage patterns and requirements.</p>
+      </div>
+
+      <div class="tx-card">
+        <div class="tx-card_icon">
+          {% include ".icons/fontawesome/solid/puzzle-piece.svg" %}
+        </div>
+        <h3>Cluster API Integration</h3>
+        <p>Seamlessly integrates with Cluster API providers for automated infrastructure provisioning and lifecycle management across different environments.</p>
+      </div>
+
+      <div class="tx-card">
+        <div class="tx-card_icon">
+          {% include ".icons/fontawesome/solid/shield.svg" %}
+        </div>
+        <h3>High Availability</h3>
+        <p>Support for multi-node control plane deployments with distributed etcd clusters. Includes automated failover and recovery mechanisms for production workloads.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Use Cases Section -->
+<section class="tx-section tx-section--alternate">
+  <div class="md-grid md-typeset">
+    <h2 class="tx-section-title">Use Cases</h2>
+    <div class="tx-grid tx-grid--3x2">
+      <div class="tx-card">
+        <div class="tx-card_icon">
+          {% include ".icons/fontawesome/solid/building.svg" %}
+        </div>
+        <h3>Private Cloud</h3>
+        <p>Optimize your data center resources by running multiple Kubernetes control planes. Perfect for organizations that need complete control over their infrastructure while maintaining strict isolation between different business units.</p>
+      </div>
+
+      <div class="tx-card">
+        <div class="tx-card_icon">
+          {% include ".icons/fontawesome/solid/cloud.svg" %}
+        </div>
+        <h3>Public Cloud</h3>
+        <p>Build independent public cloud offerings with Kubernetes as a Service capabilities. Provide the same user experience of major cloud providers while maintaining full control over the infrastructure and operational costs.</p>
+      </div>
+
+      <div class="tx-card">
+        <div class="tx-card_icon">
+          {% include ".icons/fontawesome/solid/microchip.svg" %}
+        </div>
+        <h3>Bare Metal</h3>
+        <p>Maximize hardware utilization by running multiple control planes on your physical infrastructure. Ideal for environments where direct hardware access, network performance, and data locality are critical.</p>
+      </div>
+
+      <div class="tx-card">
+        <div class="tx-card_icon">
+          {% include ".icons/fontawesome/solid/wave-square.svg" %}
+        </div>
+        <h3>Edge Computing</h3>
+        <p>Run lightweight Kubernetes clusters at the edge while managing their control planes centrally. Reduce the hardware footprint at edge locations by keeping control planes in your central management cluster.</p>
+      </div>
+
+      <div class="tx-card">
+        <div class="tx-card_icon">
+          {% include ".icons/fontawesome/solid/gears.svg" %}
+        </div>
+        <h3>Platform Engineering</h3>
+        <p>Build internal Kubernetes platforms with standardized cluster provisioning and management. Enable self-service capabilities while maintaining centralized control and governance over all clusters.</p>
+      </div>
+
+      <div class="tx-card">
+        <div class="tx-card_icon">
+          {% include ".icons/fontawesome/solid/cloud-arrow-up.svg" %}
+        </div>
+        <h3>BYO Cloud</h3>
+        <p>Create your own managed Kubernetes service using standard upstream components. Provide dedicated clusters to your users while maintaining operational efficiency through centralized control plane management.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="tx-section tx-section--alternate">
+  <div class="md-grid md-typeset">
+    <h2 class="tx-section-title">Frequently Asked Questions</h2>
+    <div class="tx-faq">
+      <div class="tx-faq_item">
+        <div class="tx-faq_question">Q. What does Kamaji mean?</div>
+        <div class="tx-faq_answer">
+          <p>A. Kamaji is named after <em>Kamajī ( かまじ )</em> from the Japanese movie <a href="https://en.wikipedia.org/wiki/Spirited_Away">Spirited Away</a>. Kamajī is the boiler room operator who efficiently manages the bathhouse's water system - just like how our Kamaji manages Kubernetes clusters!</p>
+        </div>
+      </div>
+
+      <div class="tx-faq_item">
+        <div class="tx-faq_question">Q. Is Kamaji another Kubernetes distribution?</div>
+        <div class="tx-faq_answer">
+          <p>A. No, Kamaji is a Kubernetes Operator that provides managed Kubernetes clusters as a service, leveraging kubeadm for conformant CNCF Kubernetes clusters.</p>
+        </div>
+      </div>
+
+      <div class="tx-faq_item">
+        <div class="tx-faq_question">Q. How is it different from typical solutions?</div>
+        <div class="tx-faq_answer">
+          <p>A. Kamaji runs the Control Plane as regular pods in the Management Cluster, offering it as a service and making it more cost-effective and easier to operate at scale.</p>
+        </div>
+      </div>
+
+      <div class="tx-faq_item">
+        <div class="tx-faq_question">Q. How does it compare to Public Cloud services?</div>
+        <div class="tx-faq_answer">
+          <p>A. Kamaji gives you full control over your Kubernetes infrastructures, offering consistency across cloud, data-center, and edge while simplifying centralized operations.</p>
+        </div>
+      </div>
+
+      <div class="tx-faq_item">
+        <div class="tx-faq_question">Q. How does it differ from Cluster API?</div>
+        <div class="tx-faq_answer">
+          <p>A. They complement each other: Kamaji simplifies Control Plane management, while Cluster API handles infrastructure abstraction and lifecycle management.</p>
+        </div>
+      </div>
+
+      <div class="tx-faq_item">
+        <div class="tx-faq_question">Q. Why Kamaji when Capsule exists?</div>
+        <div class="tx-faq_answer">
+          <p>A. While <a href="https://projectcapsule.dev">Capsule</a> provides a single control plane with isolated namespaces, Kamaji provides dedicated control planes when tenants need full cluster admin permissions.</p>
+        </div>
+      </div>
+
+      <div class="tx-faq_item">
+        <div class="tx-faq_question">Q. Do you provide support?</div>
+        <div class="tx-faq_answer">
+          <p>A. Yes, <a href="https://clastix.io">Clastix</a> offers subscription-based, enterprise-grade support plans for Kamaji. Please contact us to discuss your support needs.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{% endblock %}

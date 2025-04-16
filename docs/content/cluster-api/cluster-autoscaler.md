@@ -16,7 +16,7 @@ In other words, the Cluster Autoscaler is running as a pod in the Kamaji Managem
 
 Create a workload cluster using the Kamaji Control Plane Provider and the Infrastructure Provider of choice. The following example creates a workload cluster using the vSphere Infrastructure Provider:
 
-The template file [`capi-kamaji-vsphere-autoscaler-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/capi-kamaji-vsphere-autoscaler-template.yaml) provides a full example of a cluster with autoscaler enabled. You can generate the cluster manifest using `clusterctl`.
+The template file [`capi-kamaji-vsphere-autoscaler-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/vsphere/capi-kamaji-vsphere-autoscaler-template.yaml) provides a full example of a cluster with autoscaler enabled. You can generate the cluster manifest using `clusterctl`.
 
 Before you need to list all the variables in the template file:
 

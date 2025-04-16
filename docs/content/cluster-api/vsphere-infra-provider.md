@@ -104,7 +104,7 @@ export SSH_USER="clastix"
 export SSH_AUTHORIZED_KEY="ssh-rsa AAAAB3N..."
 ```
 
-The following command will generate a cluster manifest based on the [`capi-kamaji-vsphere-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/capi-kamaji-vsphere-template.yaml) template file:
+The following command will generate a cluster manifest based on the [`capi-kamaji-vsphere-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/vsphere/capi-kamaji-vsphere-template.yaml) template file:
 
 ```bash
 clusterctl generate cluster $CLUSTER_NAME \
@@ -112,7 +112,7 @@ clusterctl generate cluster $CLUSTER_NAME \
     > capi-kamaji-vsphere-cluster.yaml
 ```
 
-If you want to use DHCP instead of IPAM, use the [`capi-kamaji-vsphere-dhcp-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/capi-kamaji-vsphere-dhcp-template.yaml) template file:
+If you want to use DHCP instead of IPAM, use the [`capi-kamaji-vsphere-dhcp-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/vsphere/capi-kamaji-vsphere-dhcp-template.yaml) template file:
 
 ```bash
 clusterctl generate cluster $CLUSTER_NAME \
@@ -197,11 +197,11 @@ kubectl cluster-info
 
 ## Cloud Controller Manager
 
-The template file `capi-kamaji-vsphere-template.yaml` includes the external [Cloud Controller Manager (CCM)](https://github.com/kubernetes/cloud-provider-vsphere) configuration for vSphere. The CCM is a Kubernetes controller that manages the cloud provider's resources.
+The template file [`capi-kamaji-vsphere-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/vsphere/capi-kamaji-vsphere-template.yaml) includes the external [Cloud Controller Manager (CCM)](https://github.com/kubernetes/cloud-provider-vsphere) configuration for vSphere. The CCM is a Kubernetes controller that manages the cloud provider's resources.
 
 Usually, the CCM is deployed on control plane nodes, but in Kamaji there are no nodes for Control Plane, so the CCM is deployed on the worker nodes as daemonset.
 
-As alternative, you can deploy the CCM as part of the Hosted Control Plane on the Management Cluster. To do so, the template file [`capi-kamaji-vsphere-template-ccm.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/capi-kamaji-vsphere-template-ccm.yaml) includes the configuration for the CCM as part of the Kamaji Control Plane. This approach provides security benefits by isolating vSphere credentials from tenant users while maintaining full Cluster API integration.
+As alternative, you can deploy the CCM as part of the Hosted Control Plane on the Management Cluster. To do so, the template file [`capi-kamaji-vsphere-template-ccm.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/vsphere/capi-kamaji-vsphere-template-ccm.yaml) includes the configuration for the CCM as part of the Kamaji Control Plane. This approach provides security benefits by isolating vSphere credentials from tenant users while maintaining full Cluster API integration.
 
 The following command will generate a cluster manifest with the CCM installed on the Management Cluster:
 
@@ -219,7 +219,7 @@ kubectl apply -f capi-kamaji-vsphere-cluster.yaml
 
 ## vSphere CSI Driver
 
-The template file `capi-kamaji-vsphere-template-csi.yaml` includes the [vSphere CSI Driver](https://github.com/kubernetes-sigs/vsphere-csi-driver) configuration for vSphere. The vSphere CSI Driver is a Container Storage Interface (CSI) driver that provides a way to use vSphere storage with Kubernetes.
+The template file [`capi-kamaji-vsphere-template-csi.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/vsphere/capi-kamaji-vsphere-template-csi.yaml) includes the [vSphere CSI Driver](https://github.com/kubernetes-sigs/vsphere-csi-driver) configuration for vSphere. The vSphere CSI Driver is a Container Storage Interface (CSI) driver that provides a way to use vSphere storage with Kubernetes.
 
 This template file introduces a *"split configuration"* for the vSphere CSI Driver, with the CSI driver deployed on the worker nodes as daemonset and the CSI Controller Manager deployed on the Management Cluster as part of the Hosted Control Plane. In this way, no vSphere credentials are required on the tenant cluster.
 

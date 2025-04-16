@@ -99,11 +99,10 @@ By default, the rotation will occur the day before their expiration.
 This rotation deadline can be dynamically configured using the Kamaji CLI flag `--certificate-expiration-deadline` using the Go _Duration_ syntax:
 e.g.: set the value `7d` to trigger the renewal a week before the effective expiration date.
 
-> Nota Bene:
->
-> Kamaji is responsible for creating the `etcd` client certificate, and the generation of a new one will occur.
-> For other Datastore drivers, such as MySQL, PostgreSQL, or NATS, the referenced Secret will always be deleted by the Controller to trigger the rotation:
-> the PKI management, since it's offloaded externally, must provide the renewed certificates.
+!!! info "Other Datastore Drivers"
+    Kamaji is responsible for creating the `etcd` client certificate, and the generation of a new one will occur.
+    
+    For other Datastore drivers, such as MySQL, PostgreSQL, or NATS, the referenced Secret will always be deleted by the Controller to trigger the rotation: the PKI management, since it's offloaded externally, must provide the renewed certificates.
 
 ## Certificate Authority rotation
 
