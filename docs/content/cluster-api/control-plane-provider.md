@@ -76,7 +76,7 @@ Cluster API Provider Kamaji is compliant with the `clusterctl` contract, which m
 
 * [`clusterctl`](https://cluster-api.sigs.k8s.io/user/quick-start#install-clusterctl) installed in your workstation to handle the lifecycle of your clusters.
 * [`kubectl`](https://kubernetes.io/docs/tasks/tools/) installed in your workstation to interact with your clusters.
-* [Kamaji](../getting-started/getting-started.md) installed in your Management Cluster.
+* [Kamaji](../getting-started/index.md) installed in your Management Cluster.
 
 ### Initialize the Management Cluster
 

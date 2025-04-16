@@ -105,21 +105,21 @@
   /* Primary button */
   .tx-hero .md-button.md-button--primary {
     border: none;
-    color: #24456F; 
-    background-color: #ffffff;
+    color: #ffffff;
+    background-color: #D81D56;
   }
 
   /* Secondary button */
   .tx-hero .md-button:not(.md-button--primary) {
     border: none;
-    color: #ffffff;
-    background-color: none;
+    color: #24456F;
+    background-color: #DBDCDB;
   }
 
   /* Hover for both buttons */
   .tx-hero .md-button:hover {
-    background-color: #D81D56;
-    color: #ffffff;
+    color: #24456F; 
+    background-color: #ffffff;
   }
 
   /* Hero images */

@@ -4,18 +4,16 @@ Kamaji offers the possibility of having a different storage system than `etcd` t
 
 ## Installing Drivers
 
-The following `make` recipes help you to setup alternative `Datastore` resources.
-
-> The default settings are not production grade:
-> the following scripts are just used to test the Kamaji usage of different drivers.
-
-On the Management Cluster, you can use the following commands:
+The following `make` recipes help you to setup alternative `Datastore` resources. On the Management Cluster, you can use the following commands:
 
 - **MySQL**: `$ make -C deploy/kine/mysql mariadb`
 
 - **PostgreSQL**: `$ make -C deploy/kine/postgresql postgresql`
 
 - **NATS**: `$ make -C deploy/kine/nats nats`
+
+!!! warning "Not for production"
+    The default settings are not production grade: the following scripts are just used to test the Kamaji usage of different drivers.
 
 ## Defining a default Datastore upon Kamaji installation
 
@@ -62,6 +60,4 @@ When the said key is omitted, Kamaji will use the default datastore configured w
 
 The NATS support is still experimental, mostly because multi-tenancy is **NOT** supported.
 
-> A `NATS` based DataStore can host one and only one Tenant Control Plane.
-> When a `TenantControlPlane` is referring to a NATS `DataStore` already used by another instance,
-> reconciliation will fail and blocked.
+A `NATS` based DataStore can host one and only one Tenant Control Plane. When a `TenantControlPlane` is referring to a NATS `DataStore` already used by another instance, reconciliation will fail and blocked.

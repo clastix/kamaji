@@ -1,14 +1,11 @@
-# Getting started with Kamaji
+# Kamaji on generic infra
 This guide will lead you through the process of creating a working Kamaji setup on a generic infrastructure.
-
-!!! info "Slow Start"
-    The material here is relatively dense. We strongly encourage you to dedicate time to walk through these instructions, with a mind to learning how Kamaji works. We do NOT provide any "one-click" deployment here. However, once you've understood the components involved it is encouraged that you build suitable, auditable GitOps deployment processes around your final infrastructure.
 
 The guide requires:
 
 - a bootstrap machine
-- a Kubernetes cluster to run the Admin and Tenant Control Planes
-- an arbitrary number of machines to host `Tenant`s' workloads
+- a Kubernetes cluster to run the Management and Tenant Control Planes
+- an arbitrary number of machines to host Tenant workloads.
 
 ## Summary
 
@@ -75,9 +72,9 @@ helm install \
 Installing Kamaji via Helm charts is the preferred way to deploy the Kamaji controller. The Helm chart is available in the `charts` directory of the Kamaji repository.
 
 !!! info "Stable Releases"
-    As of July 2024 [Clastix Labs](https://github.com/clastix) does no longer publish stable release artifacts. Stable releases are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor. 
+    As of July 2024 [Clastix Labs](https://github.com/clastix) no longer publish stable release artifacts. Stable releases are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor. 
 
-Run the following commands to install latest edge release of Kamaji:
+Run the following commands to install the latest edge release of Kamaji:
 
 ```bash
 git clone https://github.com/clastix/kamaji
@@ -190,7 +187,7 @@ service/tenant-00   LoadBalancer   10.32.132.241   192.168.32.240   6443:32152/T
 
 The regular Tenant Control Plane containers: `kube-apiserver`, `kube-controller-manager`, `kube-scheduler` are running unchanged in the `tcp` pods instead of dedicated machines and they are exposed through a service on the port `6443` of worker nodes in the Management Cluster.
 
-The `LoadBalancer` service type is used to expose the Tenant Control Plane on the assigned `loadBalancerIP` acting as `ControlPlaneEndpoint` for the worker nodes and other clients as, for example, `kubectl`. Service types `NodePort` and `ClusterIP` are still viable options to expose the Tenant Control Plane, depending on the case. High Availability and rolling updates of the Tenant Control Planes are provided by the `tcp` Deployment and all the resources reconcilied by the Kamaji controller.
+The `LoadBalancer` service type is used to expose the Tenant Control Plane on the assigned `loadBalancerIP` acting as `ControlPlaneEndpoint` for the worker nodes and other clients as, for example, `kubectl`. Service types `NodePort` and `ClusterIP` are still viable options to expose the Tenant Control Plane, depending on the case. High Availability and rolling updates of the Tenant Control Planes are provided by the `tcp` Deployment and all the resources reconciled by the Kamaji controller.
 
 ### Assign a Specific Address to the Tenant Control Plane
 

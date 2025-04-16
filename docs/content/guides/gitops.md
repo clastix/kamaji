@@ -27,7 +27,8 @@ NAME      VERSION   STATUS   CONTROL-PLANE-ENDPOINT   KUBECONFIG                
 tenant1   v1.25.1   Ready    172.18.0.2:31443         tenant1-admin-kubeconfig   108s
 ```
 
-> As the *admin* user has *cluster-admin* `ClusterRole` it will have the necessary privileges to operate on Custom Resources too.
+!!! info "Admin Permissions"
+    As the *admin* user has *cluster-admin* `ClusterRole` it will have the necessary privileges to operate on Custom Resources too.
 
 Given that Flux it's installed in the *Management Cluster* - guide [here](https://fluxcd.io/flux/installation/) - resources can be ensured for specifics Tenant Clusters, by filling the `spec.kubeConfig` field of the Flux reconciliation resource.
 

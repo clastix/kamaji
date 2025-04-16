@@ -11,7 +11,7 @@
   <div class="md-grid md-typeset">
     <div class="tx-hero_content">
       <h1>The Control Plane Manager for Kubernetes</h1>
-      <p>Kamaji runs the Control Plane in pods instead of dedicated machines. It allows operating Kubernetes clusters at scale, with a fraction of the operational burden.</p>
+      <p>Kamaji runs the Control Plane as pods within a Management Cluster, rather than on dedicated machines. This approach simplifies operations and enables the management of multiple Kubernetes clusters with a fraction of the operational burden.</p>
       <div class="tx-hero_buttons">
         <a href="{{ 'getting-started/' | url }}" class="md-button md-button--primary">Get Started</a>
         <a href="{{ 'concepts/' | url }}" class="md-button">Concepts</a>
@@ -33,7 +33,7 @@
         <div class="tx-card_icon">
           {% include ".icons/fontawesome/solid/layer-group.svg" %}
         </div>
-        <h3>Multi-Tenant Control Planes</h3>
+        <h3>Multi-Tenancy</h3>
         <p>Deploy multiple Kubernetes control planes as pods within a single management cluster. Each control plane operates independently, ensuring complete isolation between tenants.</p>
       </div>
 
@@ -90,7 +90,7 @@
           {% include ".icons/fontawesome/solid/building.svg" %}
         </div>
         <h3>Private Cloud</h3>
-        <p>Optimize your data center resources by running multiple Kubernetes control planes as pods. Perfect for organizations that need complete control over their infrastructure while maintaining strict isolation between different business units.</p>
+        <p>Optimize your data center resources by running multiple Kubernetes control planes. Perfect for organizations that need complete control over their infrastructure while maintaining strict isolation between different business units.</p>
       </div>
 
       <div class="tx-card">
