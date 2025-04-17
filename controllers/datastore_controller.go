@@ -110,7 +110,7 @@ func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
 	//nolint:forcetypeassert
 	return controllerruntime.NewControllerManagedBy(mgr).
 		For(&kamajiv1alpha1.DataStore{}, builder.WithPredicates(
-			predicate.ResourceVersionChangedPredicate{},
+			predicate.GenerationChangedPredicate{},
 		)).
 		Watches(&kamajiv1alpha1.TenantControlPlane{}, handler.Funcs{
 			CreateFunc: func(_ context.Context, createEvent event.TypedCreateEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
