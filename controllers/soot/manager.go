@@ -36,8 +36,9 @@ import (
 )
 
 type sootItem struct {
-	triggers map[string]chan event.GenericEvent
-	cancelFn context.CancelFunc
+	triggers    map[string]chan event.GenericEvent
+	cancelFn    context.CancelFunc
+	completedCh chan struct{}
 }
 
 type sootMap map[string]sootItem
@@ -99,6 +100,24 @@ func (m *Manager) cleanup(ctx context.Context, req reconcile.Request, tenantCont
 	}
 
 	v.cancelFn()
+	// TODO(prometherion): the 10 seconds is an hardcoded number,
+	// it's widely used across the code base as a timeout with the API Server.
+	// Evaluate if we would need to make this configurable globally.
+	deadlineCtx, deadlineFn := context.WithTimeout(ctx, 10*time.Second)
+	defer deadlineFn()
+
+	select {
+	case _, completedChOk := <-v.completedCh:
+		if !completedChOk {
+			log.FromContext(ctx).Info("soot manager completed its process")
+
+			break
+		}
+	case <-deadlineCtx.Done():
+		log.FromContext(ctx).Error(deadlineCtx.Err(), "soot manager didn't exit to timeout")
+
+		break
+	}
 
 	delete(m.sootMap, tcpName)
 
@@ -323,11 +342,12 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	if err = kubeadmRbac.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
 	}
+	completedCh := make(chan struct{})
 	// Starting the manager
 	go func() {
 		if err = mgr.Start(tcpCtx); err != nil {
 			log.FromContext(ctx).Error(err, "unable to start soot manager")
-			// The sootMAnagerAnnotation is used to propagate the error between reconciliations with its state:
+			// The sootManagerAnnotation is used to propagate the error between reconciliations with its state:
 			// this is required to avoid mutex and prevent concurrent read/write on the soot map
 			annotationErr := m.retryTenantControlPlaneAnnotations(ctx, request, func(annotations map[string]string) {
 				annotations[sootManagerAnnotation] = sootManagerFailedAnnotation
@@ -345,6 +365,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 
 			m.sootManagerErrChan <- event.GenericEvent{Object: &shrunkTCP}
 		}
+		close(completedCh)
 	}()
 
 	m.sootMap[request.NamespacedName.String()] = sootItem{
@@ -357,7 +378,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			"uploadKubeletConfig": uploadKubeletConfig.TriggerChannel,
 			"bootstrapToken":      bootstrapToken.TriggerChannel,
 		},
-		cancelFn: tcpCancelFn,
+		cancelFn:    tcpCancelFn,
+		completedCh: completedCh,
 	}
 
 	return reconcile.Result{Requeue: true}, nil
