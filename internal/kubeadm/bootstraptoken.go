@@ -52,7 +52,7 @@ func BootstrapToken(client kubernetes.Interface, config *Configuration) error {
 		return err
 	}
 
-	err = apiclient.CreateOrUpdate[*corev1.ConfigMap](client.CoreV1().ConfigMaps(""), &corev1.ConfigMap{
+	err = apiclient.CreateOrUpdate[*corev1.ConfigMap](client.CoreV1().ConfigMaps(metav1.NamespacePublic), &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      bootstrapapi.ConfigMapClusterInfo,
 			Namespace: metav1.NamespacePublic,
