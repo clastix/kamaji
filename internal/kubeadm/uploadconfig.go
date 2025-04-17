@@ -60,7 +60,7 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) ([]
 		},
 	}
 
-	if err = apiclient.CreateOrUpdateConfigMap(client, configMap); err != nil {
+	if err = apiclient.CreateOrUpdate[*corev1.ConfigMap](client.CoreV1().ConfigMaps(""), configMap); err != nil {
 		return nil, err
 	}
 
@@ -99,7 +99,7 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration) ([]by
 func createConfigMapRBACRules(client kubernetes.Interface, configMapName string) error {
 	configMapRBACName := kubeadmconstants.KubeletBaseConfigMapRole
 
-	if err := apiclient.CreateOrUpdateRole(client, &rbacv1.Role{
+	if err := apiclient.CreateOrUpdate[*rbacv1.Role](client.RbacV1().Roles(""), &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      configMapRBACName,
 			Namespace: metav1.NamespaceSystem,
@@ -116,7 +116,7 @@ func createConfigMapRBACRules(client kubernetes.Interface, configMapName string)
 		return err
 	}
 
-	return apiclient.CreateOrUpdateRoleBinding(client, &rbacv1.RoleBinding{
+	return apiclient.CreateOrUpdate[*rbacv1.RoleBinding](client.RbacV1().RoleBindings(""), &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      configMapRBACName,
 			Namespace: metav1.NamespaceSystem,
