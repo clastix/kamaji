@@ -136,7 +136,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
-			tcpChannel, certChannel := make(controllers.TenantControlPlaneChannel), make(controllers.CertificateChannel)
+			tcpChannel, certChannel := make(controllers.TenantControlPlaneChannel, maxConcurrentReconciles), make(controllers.CertificateChannel, maxConcurrentReconciles)
 
 			if err = (&controllers.DataStore{Client: mgr.GetClient(), TenantControlPlaneTrigger: tcpChannel}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "DataStore")
