@@ -14,6 +14,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -24,10 +25,10 @@ import (
 )
 
 func GetKindIPAddress() string {
-	ep := &corev1.Endpoints{}
-	Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: "kubernetes", Namespace: "default"}, ep)).ToNot(HaveOccurred())
+	var ep discoveryv1.EndpointSlice
+	Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: "kubernetes", Namespace: "default"}, &ep)).ToNot(HaveOccurred())
 
-	return ep.Subsets[0].Addresses[0].IP
+	return ep.Endpoints[0].Addresses[0]
 }
 
 func PrintTenantControlPlaneInfo() {
