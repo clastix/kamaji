@@ -30,8 +30,7 @@ import (
 )
 
 type CoreDNS struct {
-	logger logr.Logger
-
+	Logger                    logr.Logger
 	AdminClient               client.Client
 	GetTenantControlPlaneFunc utils.TenantControlPlaneRetrievalFn
 	TriggerChannel            chan event.GenericEvent
@@ -40,43 +39,40 @@ type CoreDNS struct {
 func (c *CoreDNS) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
 	tcp, err := c.GetTenantControlPlaneFunc()
 	if err != nil {
-		c.logger.Error(err, "cannot retrieve TenantControlPlane")
+		c.Logger.Error(err, "cannot retrieve TenantControlPlane")
 
 		return reconcile.Result{}, err
 	}
 
-	c.logger.Info("start processing")
+	c.Logger.Info("start processing")
 
 	resource := &addons.CoreDNS{Client: c.AdminClient}
 
 	result, handlingErr := resources.Handle(ctx, resource, tcp)
 	if handlingErr != nil {
-		c.logger.Error(handlingErr, "resource process failed", "resource", resource.GetName())
+		c.Logger.Error(handlingErr, "resource process failed", "resource", resource.GetName())
 
 		return reconcile.Result{}, handlingErr
 	}
 
 	if result == controllerutil.OperationResultNone {
-		c.logger.Info("reconciliation completed")
+		c.Logger.Info("reconciliation completed")
 
 		return reconcile.Result{}, nil
 	}
 
 	if err = utils.UpdateStatus(ctx, c.AdminClient, tcp, resource); err != nil {
-		c.logger.Error(err, "update status failed", "resource", resource.GetName())
+		c.Logger.Error(err, "update status failed", "resource", resource.GetName())
 
 		return reconcile.Result{}, err
 	}
 
-	c.logger.Info("reconciliation processed")
+	c.Logger.Info("reconciliation processed")
 
 	return reconcile.Result{}, nil
 }
 
 func (c *CoreDNS) SetupWithManager(mgr manager.Manager) error {
-	c.logger = mgr.GetLogger().WithName("coredns")
-	c.TriggerChannel = make(chan event.GenericEvent)
-
 	return controllerruntime.NewControllerManagedBy(mgr).
 		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
 		For(&rbacv1.ClusterRoleBinding{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {

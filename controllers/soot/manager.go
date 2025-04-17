@@ -47,7 +47,6 @@ const (
 )
 
 type Manager struct {
-	client  client.Client
 	sootMap sootMap
 	// sootManagerErrChan is the channel that is going to be used
 	// when the soot manager cannot start due to any kind of problem.
@@ -65,7 +64,7 @@ func (m *Manager) retrieveTenantControlPlane(ctx context.Context, request reconc
 	return func() (*kamajiv1alpha1.TenantControlPlane, error) {
 		tcp := &kamajiv1alpha1.TenantControlPlane{}
 
-		if err := m.client.Get(ctx, request.NamespacedName, tcp); err != nil {
+		if err := m.AdminClient.Get(ctx, request.NamespacedName, tcp); err != nil {
 			return nil, err
 		}
 
@@ -129,7 +128,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	// Retrieving the TenantControlPlane:
 	// in case of deletion, we must be sure to properly remove from the memory the soot manager.
 	tcp := &kamajiv1alpha1.TenantControlPlane{}
-	if err = m.client.Get(ctx, request.NamespacedName, tcp); err != nil {
+	if err = m.AdminClient.Get(ctx, request.NamespacedName, tcp); err != nil {
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, m.cleanup(ctx, request, nil)
 		}
@@ -198,7 +197,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	}
 	// Generating the manager and starting it:
 	// in case of any error, reconciling the request to start it back from the beginning.
-	tcpRest, err := utilities.GetRESTClientConfig(ctx, m.client, tcp)
+	tcpRest, err := utilities.GetRESTClientConfig(ctx, m.AdminClient, tcp)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -213,14 +212,14 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 
 	mgr, err := controllerruntime.NewManager(tcpRest, controllerruntime.Options{
 		Logger: log.Log.WithName(fmt.Sprintf("soot_%s_%s", tcp.GetNamespace(), tcp.GetName())),
-		Scheme: m.client.Scheme(),
+		Scheme: m.AdminClient.Scheme(),
 		Metrics: metricsserver.Options{
 			BindAddress: "0",
 		},
-		NewClient: func(config *rest.Config, _ client.Options) (client.Client, error) {
-			return client.New(config, client.Options{
-				Scheme: m.client.Scheme(),
-			})
+		NewClient: func(config *rest.Config, opts client.Options) (client.Client, error) {
+			opts.Scheme = m.AdminClient.Scheme()
+
+			return client.New(config, opts)
 		},
 	})
 	if err != nil {
@@ -234,6 +233,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		WebhookServiceName:        m.MigrateServiceName,
 		WebhookCABundle:           m.MigrateCABundle,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		Client:                    mgr.GetClient(),
+		Logger:                    mgr.GetLogger().WithName("migrate"),
 	}
 	if err = migrate.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -242,6 +243,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	konnectivityAgent := &controllers.KonnectivityAgent{
 		AdminClient:               m.AdminClient,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		Logger:                    mgr.GetLogger().WithName("konnectivity_agent"),
+		TriggerChannel:            make(chan event.GenericEvent),
 	}
 	if err = konnectivityAgent.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -250,6 +253,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	kubeProxy := &controllers.KubeProxy{
 		AdminClient:               m.AdminClient,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		Logger:                    mgr.GetLogger().WithName("kube_proxy"),
+		TriggerChannel:            make(chan event.GenericEvent),
 	}
 	if err = kubeProxy.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -258,6 +263,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	coreDNS := &controllers.CoreDNS{
 		AdminClient:               m.AdminClient,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		Logger:                    mgr.GetLogger().WithName("coredns"),
+		TriggerChannel:            make(chan event.GenericEvent),
 	}
 	if err = coreDNS.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -269,6 +276,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			Client: m.AdminClient,
 			Phase:  resources.PhaseUploadConfigKubeadm,
 		},
+		TriggerChannel: make(chan event.GenericEvent),
 	}
 	if err = uploadKubeadmConfig.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -280,6 +288,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			Client: m.AdminClient,
 			Phase:  resources.PhaseUploadConfigKubelet,
 		},
+		TriggerChannel: make(chan event.GenericEvent),
 	}
 	if err = uploadKubeletConfig.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -291,6 +300,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			Client: m.AdminClient,
 			Phase:  resources.PhaseBootstrapToken,
 		},
+		TriggerChannel: make(chan event.GenericEvent),
 	}
 	if err = bootstrapToken.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -302,6 +312,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			Client: m.AdminClient,
 			Phase:  resources.PhaseClusterAdminRBAC,
 		},
+		TriggerChannel: make(chan event.GenericEvent),
 	}
 	if err = kubeadmRbac.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -342,7 +353,6 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 }
 
 func (m *Manager) SetupWithManager(mgr manager.Manager) error {
-	m.client = mgr.GetClient()
 	m.sootManagerErrChan = make(chan event.GenericEvent)
 	m.sootMap = make(map[string]sootItem)
 

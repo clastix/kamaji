@@ -30,53 +30,49 @@ import (
 )
 
 type KubeProxy struct {
+	Logger                    logr.Logger
 	AdminClient               client.Client
 	GetTenantControlPlaneFunc utils.TenantControlPlaneRetrievalFn
 	TriggerChannel            chan event.GenericEvent
-
-	logger logr.Logger
 }
 
 func (k *KubeProxy) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
 	tcp, err := k.GetTenantControlPlaneFunc()
 	if err != nil {
-		k.logger.Error(err, "cannot retrieve TenantControlPlane")
+		k.Logger.Error(err, "cannot retrieve TenantControlPlane")
 
 		return reconcile.Result{}, err
 	}
 
-	k.logger.Info("start processing")
+	k.Logger.Info("start processing")
 
 	resource := &addons.KubeProxy{Client: k.AdminClient}
 
 	result, handlingErr := resources.Handle(ctx, resource, tcp)
 	if handlingErr != nil {
-		k.logger.Error(handlingErr, "resource process failed", "resource", resource.GetName())
+		k.Logger.Error(handlingErr, "resource process failed", "resource", resource.GetName())
 
 		return reconcile.Result{}, handlingErr
 	}
 
 	if result == controllerutil.OperationResultNone {
-		k.logger.Info("reconciliation completed")
+		k.Logger.Info("reconciliation completed")
 
 		return reconcile.Result{}, nil
 	}
 
 	if err = utils.UpdateStatus(ctx, k.AdminClient, tcp, resource); err != nil {
-		k.logger.Error(err, "update status failed")
+		k.Logger.Error(err, "update status failed")
 
 		return reconcile.Result{}, err
 	}
 
-	k.logger.Info("reconciliation processed")
+	k.Logger.Info("reconciliation processed")
 
 	return reconcile.Result{}, nil
 }
 
 func (k *KubeProxy) SetupWithManager(mgr manager.Manager) error {
-	k.logger = mgr.GetLogger().WithName("kube_proxy")
-	k.TriggerChannel = make(chan event.GenericEvent)
-
 	return controllerruntime.NewControllerManagedBy(mgr).
 		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
 		For(&rbacv1.ClusterRoleBinding{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
