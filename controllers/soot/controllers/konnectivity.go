@@ -31,8 +31,7 @@ import (
 )
 
 type KonnectivityAgent struct {
-	logger logr.Logger
-
+	Logger                    logr.Logger
 	AdminClient               client.Client
 	GetTenantControlPlaneFunc utils.TenantControlPlaneRetrievalFn
 	TriggerChannel            chan event.GenericEvent
@@ -41,43 +40,40 @@ type KonnectivityAgent struct {
 func (k *KonnectivityAgent) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
 	tcp, err := k.GetTenantControlPlaneFunc()
 	if err != nil {
-		k.logger.Error(err, "cannot retrieve TenantControlPlane")
+		k.Logger.Error(err, "cannot retrieve TenantControlPlane")
 
 		return reconcile.Result{}, err
 	}
 
 	for _, resource := range controllers.GetExternalKonnectivityResources(k.AdminClient) {
-		k.logger.Info("start processing", "resource", resource.GetName())
+		k.Logger.Info("start processing", "resource", resource.GetName())
 
 		result, handlingErr := resources.Handle(ctx, resource, tcp)
 		if handlingErr != nil {
-			k.logger.Error(handlingErr, "resource process failed", "resource", resource.GetName())
+			k.Logger.Error(handlingErr, "resource process failed", "resource", resource.GetName())
 
 			return reconcile.Result{}, handlingErr
 		}
 
 		if result == controllerutil.OperationResultNone {
-			k.logger.Info("resource processed", "resource", resource.GetName())
+			k.Logger.Info("resource processed", "resource", resource.GetName())
 
 			continue
 		}
 
 		if err = utils.UpdateStatus(ctx, k.AdminClient, tcp, resource); err != nil {
-			k.logger.Error(err, "update status failed", "resource", resource.GetName())
+			k.Logger.Error(err, "update status failed", "resource", resource.GetName())
 
 			return reconcile.Result{}, err
 		}
 	}
 
-	k.logger.Info("reconciliation completed")
+	k.Logger.Info("reconciliation completed")
 
 	return reconcile.Result{}, nil
 }
 
 func (k *KonnectivityAgent) SetupWithManager(mgr manager.Manager) error {
-	k.logger = mgr.GetLogger().WithName("konnectivity_agent")
-	k.TriggerChannel = make(chan event.GenericEvent)
-
 	return controllerruntime.NewControllerManagedBy(mgr).
 		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
 		For(&appsv1.DaemonSet{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {

@@ -29,9 +29,8 @@ import (
 )
 
 type Migrate struct {
-	client client.Client
-	logger logr.Logger
-
+	Client                    client.Client
+	Logger                    logr.Logger
 	GetTenantControlPlaneFunc utils.TenantControlPlaneRetrievalFn
 	WebhookNamespace          string
 	WebhookServiceName        string
@@ -57,7 +56,7 @@ func (m *Migrate) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile
 	}
 
 	if err != nil {
-		m.logger.Error(err, "reconciliation failed")
+		m.Logger.Error(err, "reconciliation failed")
 
 		return reconcile.Result{}, err
 	}
@@ -66,7 +65,7 @@ func (m *Migrate) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile
 }
 
 func (m *Migrate) cleanup(ctx context.Context) error {
-	if err := m.client.Delete(ctx, m.object()); err != nil {
+	if err := m.Client.Delete(ctx, m.object()); err != nil {
 		if errors.IsNotFound(err) {
 			return nil
 		}
@@ -80,7 +79,7 @@ func (m *Migrate) cleanup(ctx context.Context) error {
 func (m *Migrate) createOrUpdate(ctx context.Context) error {
 	obj := m.object()
 
-	_, err := utilities.CreateOrUpdateWithConflict(ctx, m.client, obj, func() error {
+	_, err := utilities.CreateOrUpdateWithConflict(ctx, m.Client, obj, func() error {
 		obj.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 			{
 				Name: "leases.migrate.kamaji.clastix.io",
@@ -178,8 +177,6 @@ func (m *Migrate) createOrUpdate(ctx context.Context) error {
 }
 
 func (m *Migrate) SetupWithManager(mgr manager.Manager) error {
-	m.client = mgr.GetClient()
-	m.logger = mgr.GetLogger().WithName("migrate")
 	m.TriggerChannel = make(chan event.GenericEvent)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
