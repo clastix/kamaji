@@ -44,7 +44,7 @@ type TenantControlPlaneReconciler struct {
 	Client                  client.Client
 	APIReader               client.Reader
 	Config                  TenantControlPlaneReconcilerConfig
-	TriggerChan             TenantControlPlaneChannel
+	TriggerChan             chan event.GenericEvent
 	KamajiNamespace         string
 	KamajiServiceAccount    string
 	KamajiService           string
@@ -53,7 +53,7 @@ type TenantControlPlaneReconciler struct {
 	// CertificateChan is the channel used by the CertificateLifecycleController that is checking for
 	// certificates and kubeconfig user certs validity: a generic event for the given TCP will be triggered
 	// once the validity threshold for the given certificate is reached.
-	CertificateChan CertificateChannel
+	CertificateChan chan event.GenericEvent
 
 	clock mutex.Clock
 }
