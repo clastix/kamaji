@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
@@ -167,8 +168,13 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			return reconcile.Result{}, m.cleanup(ctx, request, tcp)
 		default:
 			for name, trigger := range v.triggers {
+				var shrunkTCP kamajiv1alpha1.TenantControlPlane
+
+				shrunkTCP.Name = tcp.Namespace
+				shrunkTCP.Namespace = tcp.Namespace
+
 				select {
-				case trigger <- event.GenericEvent{Object: tcp}:
+				case trigger <- event.GenericEvent{Object: &shrunkTCP}:
 				default:
 					log.FromContext(ctx).Error(errors.New("channel is full"), fmt.Sprintf("can't push trigger %s reconciliation for object %s/%s", name, tcp.Namespace, tcp.Name))
 				}
@@ -332,7 +338,12 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			// When the manager cannot start we're enqueuing back the request to take advantage of the backoff factor
 			// of the queue: this is a goroutine and cannot return an error since the manager is running on its own,
 			// using the sootManagerErrChan channel we can trigger a reconciliation although the TCP hadn't any change.
-			m.sootManagerErrChan <- event.GenericEvent{Object: tcp}
+			var shrunkTCP kamajiv1alpha1.TenantControlPlane
+
+			shrunkTCP.Name = tcp.Name
+			shrunkTCP.Namespace = tcp.Namespace
+
+			m.sootManagerErrChan <- event.GenericEvent{Object: &shrunkTCP}
 		}
 	}()
 

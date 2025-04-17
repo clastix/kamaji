@@ -82,8 +82,13 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	}
 	// Triggering the reconciliation of the Tenant Control Plane upon a Secret change
 	for _, tcp := range tcpList.Items {
+		var shrunkTCP kamajiv1alpha1.TenantControlPlane
+
+		shrunkTCP.Name = tcp.Name
+		shrunkTCP.Namespace = tcp.Namespace
+
 		select {
-		case r.TenantControlPlaneTrigger <- event.GenericEvent{Object: &tcp}:
+		case r.TenantControlPlaneTrigger <- event.GenericEvent{Object: &shrunkTCP}:
 		default:
 			logger.Error(errors.New("channel is full"), fmt.Sprintf("can't push DataStore reconciliation for object %s/%s", tcp.Namespace, tcp.Name))
 		}
