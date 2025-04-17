@@ -5,7 +5,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -24,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/controllers/utils"
 )
 
 type DataStore struct {
@@ -31,7 +31,7 @@ type DataStore struct {
 	// TenantControlPlaneTrigger is the channel used to communicate across the controllers:
 	// if a Data Source is updated, we have to be sure that the reconciliation of the certificates content
 	// for each Tenant Control Plane is put in place properly.
-	TenantControlPlaneTrigger TenantControlPlaneChannel
+	TenantControlPlaneTrigger chan event.GenericEvent
 }
 
 //+kubebuilder:rbac:groups=kamaji.clastix.io,resources=datastores,verbs=get;list;watch;create;update;patch;delete
@@ -87,11 +87,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 		shrunkTCP.Name = tcp.Name
 		shrunkTCP.Namespace = tcp.Namespace
 
-		select {
-		case r.TenantControlPlaneTrigger <- event.GenericEvent{Object: &shrunkTCP}:
-		default:
-			logger.Error(errors.New("channel is full"), fmt.Sprintf("can't push DataStore reconciliation for object %s/%s", tcp.Namespace, tcp.Name))
-		}
+		go utils.TriggerChannel(ctx, r.TenantControlPlaneTrigger, shrunkTCP)
 	}
 
 	return reconcile.Result{}, nil

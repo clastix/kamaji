@@ -5,7 +5,6 @@ package soot
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -36,7 +35,7 @@ import (
 )
 
 type sootItem struct {
-	triggers    map[string]chan event.GenericEvent
+	triggers    []chan event.GenericEvent
 	cancelFn    context.CancelFunc
 	completedCh chan struct{}
 }
@@ -107,8 +106,8 @@ func (m *Manager) cleanup(ctx context.Context, req reconcile.Request, tenantCont
 	defer deadlineFn()
 
 	select {
-	case _, completedChOk := <-v.completedCh:
-		if !completedChOk {
+	case _, open := <-v.completedCh:
+		if !open {
 			log.FromContext(ctx).Info("soot manager completed its process")
 
 			break
@@ -186,17 +185,13 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			// Once the TCP will be ready again, the event will be intercepted and the manager started back.
 			return reconcile.Result{}, m.cleanup(ctx, request, tcp)
 		default:
-			for name, trigger := range v.triggers {
+			for _, trigger := range v.triggers {
 				var shrunkTCP kamajiv1alpha1.TenantControlPlane
 
 				shrunkTCP.Name = tcp.Namespace
 				shrunkTCP.Namespace = tcp.Namespace
 
-				select {
-				case trigger <- event.GenericEvent{Object: &shrunkTCP}:
-				default:
-					log.FromContext(ctx).Error(errors.New("channel is full"), fmt.Sprintf("can't push trigger %s reconciliation for object %s/%s", name, tcp.Namespace, tcp.Name))
-				}
+				go utils.TriggerChannel(ctx, trigger, shrunkTCP)
 			}
 		}
 
@@ -369,14 +364,14 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	}()
 
 	m.sootMap[request.NamespacedName.String()] = sootItem{
-		triggers: map[string]chan event.GenericEvent{
-			"migrate":             migrate.TriggerChannel,
-			"konnectivityAgent":   konnectivityAgent.TriggerChannel,
-			"kubeProxy":           kubeProxy.TriggerChannel,
-			"coreDNS":             coreDNS.TriggerChannel,
-			"uploadKubeadmConfig": uploadKubeadmConfig.TriggerChannel,
-			"uploadKubeletConfig": uploadKubeletConfig.TriggerChannel,
-			"bootstrapToken":      bootstrapToken.TriggerChannel,
+		triggers: []chan event.GenericEvent{
+			migrate.TriggerChannel,
+			konnectivityAgent.TriggerChannel,
+			kubeProxy.TriggerChannel,
+			coreDNS.TriggerChannel,
+			uploadKubeadmConfig.TriggerChannel,
+			uploadKubeletConfig.TriggerChannel,
+			bootstrapToken.TriggerChannel,
 		},
 		cancelFn:    tcpCancelFn,
 		completedCh: completedCh,
