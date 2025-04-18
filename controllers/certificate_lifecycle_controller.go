@@ -30,7 +30,7 @@ import (
 )
 
 type CertificateLifecycle struct {
-	Channel  CertificateChannel
+	Channel  chan event.GenericEvent
 	Deadline time.Duration
 
 	client client.Client
