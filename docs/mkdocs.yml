@@ -66,6 +66,7 @@ nav:
   - cluster-api/cluster-class.md
   - cluster-api/cluster-autoscaler.md
   - cluster-api/vsphere-infra-provider.md
+  - cluster-api/proxmox-infra-provider.md
   - cluster-api/other-providers.md
 - 'Guides':
   - guides/index.md

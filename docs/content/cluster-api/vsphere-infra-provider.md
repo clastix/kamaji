@@ -1,9 +1,6 @@
 # vSphere Infra Provider
 
-Use the [vSphere Infrastructure Provider](https://github.com/kubernetes-sigs/cluster-api-provider-vsphere) to create a fully functional Kubernetes cluster on **vSphere** using the [Kamaji Control Plane Provider](https://github.com/clastix/cluster-api-control-plane-provider-kamaji).
-
-!!! info "Control Plane and Infrastructure Decoupling"
-    Kamaji decouples the Control Plane from the infrastructure, so the Kamaji Management Cluster hosting the Tenant Control Plane does not need to be on the same vSphere as the worker machines. As long as network reachability is satisfied, you can have your Kamaji Management Cluster on a different vSphere or even on a different cloud provider.
+Use the Cluster API [vSphere Infra Provider](https://github.com/kubernetes-sigs/cluster-api-provider-vsphere) to create a fully functional Kubernetes cluster using the Cluster API [Kamaji Control Plane Provider](https://github.com/clastix/cluster-api-control-plane-provider-kamaji).
 
 ## vSphere Requirements
 
