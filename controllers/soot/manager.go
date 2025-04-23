@@ -5,8 +5,8 @@ package soot
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
@@ -35,8 +35,9 @@ import (
 )
 
 type sootItem struct {
-	triggers map[string]chan event.GenericEvent
-	cancelFn context.CancelFunc
+	triggers    []chan event.GenericEvent
+	cancelFn    context.CancelFunc
+	completedCh chan struct{}
 }
 
 type sootMap map[string]sootItem
@@ -98,6 +99,24 @@ func (m *Manager) cleanup(ctx context.Context, req reconcile.Request, tenantCont
 	}
 
 	v.cancelFn()
+	// TODO(prometherion): the 10 seconds is an hardcoded number,
+	// it's widely used across the code base as a timeout with the API Server.
+	// Evaluate if we would need to make this configurable globally.
+	deadlineCtx, deadlineFn := context.WithTimeout(ctx, 10*time.Second)
+	defer deadlineFn()
+
+	select {
+	case _, open := <-v.completedCh:
+		if !open {
+			log.FromContext(ctx).Info("soot manager completed its process")
+
+			break
+		}
+	case <-deadlineCtx.Done():
+		log.FromContext(ctx).Error(deadlineCtx.Err(), "soot manager didn't exit to timeout")
+
+		break
+	}
 
 	delete(m.sootMap, tcpName)
 
@@ -166,12 +185,13 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			// Once the TCP will be ready again, the event will be intercepted and the manager started back.
 			return reconcile.Result{}, m.cleanup(ctx, request, tcp)
 		default:
-			for name, trigger := range v.triggers {
-				select {
-				case trigger <- event.GenericEvent{Object: tcp}:
-				default:
-					log.FromContext(ctx).Error(errors.New("channel is full"), fmt.Sprintf("can't push trigger %s reconciliation for object %s/%s", name, tcp.Namespace, tcp.Name))
-				}
+			for _, trigger := range v.triggers {
+				var shrunkTCP kamajiv1alpha1.TenantControlPlane
+
+				shrunkTCP.Name = tcp.Namespace
+				shrunkTCP.Namespace = tcp.Namespace
+
+				go utils.TriggerChannel(ctx, trigger, shrunkTCP)
 			}
 		}
 
@@ -317,11 +337,12 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	if err = kubeadmRbac.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
 	}
+	completedCh := make(chan struct{})
 	// Starting the manager
 	go func() {
 		if err = mgr.Start(tcpCtx); err != nil {
 			log.FromContext(ctx).Error(err, "unable to start soot manager")
-			// The sootMAnagerAnnotation is used to propagate the error between reconciliations with its state:
+			// The sootManagerAnnotation is used to propagate the error between reconciliations with its state:
 			// this is required to avoid mutex and prevent concurrent read/write on the soot map
 			annotationErr := m.retryTenantControlPlaneAnnotations(ctx, request, func(annotations map[string]string) {
 				annotations[sootManagerAnnotation] = sootManagerFailedAnnotation
@@ -332,21 +353,28 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			// When the manager cannot start we're enqueuing back the request to take advantage of the backoff factor
 			// of the queue: this is a goroutine and cannot return an error since the manager is running on its own,
 			// using the sootManagerErrChan channel we can trigger a reconciliation although the TCP hadn't any change.
-			m.sootManagerErrChan <- event.GenericEvent{Object: tcp}
+			var shrunkTCP kamajiv1alpha1.TenantControlPlane
+
+			shrunkTCP.Name = tcp.Name
+			shrunkTCP.Namespace = tcp.Namespace
+
+			m.sootManagerErrChan <- event.GenericEvent{Object: &shrunkTCP}
 		}
+		close(completedCh)
 	}()
 
 	m.sootMap[request.NamespacedName.String()] = sootItem{
-		triggers: map[string]chan event.GenericEvent{
-			"migrate":             migrate.TriggerChannel,
-			"konnectivityAgent":   konnectivityAgent.TriggerChannel,
-			"kubeProxy":           kubeProxy.TriggerChannel,
-			"coreDNS":             coreDNS.TriggerChannel,
-			"uploadKubeadmConfig": uploadKubeadmConfig.TriggerChannel,
-			"uploadKubeletConfig": uploadKubeletConfig.TriggerChannel,
-			"bootstrapToken":      bootstrapToken.TriggerChannel,
+		triggers: []chan event.GenericEvent{
+			migrate.TriggerChannel,
+			konnectivityAgent.TriggerChannel,
+			kubeProxy.TriggerChannel,
+			coreDNS.TriggerChannel,
+			uploadKubeadmConfig.TriggerChannel,
+			uploadKubeletConfig.TriggerChannel,
+			bootstrapToken.TriggerChannel,
 		},
-		cancelFn: tcpCancelFn,
+		cancelFn:    tcpCancelFn,
+		completedCh: completedCh,
 	}
 
 	return reconcile.Result{Requeue: true}, nil
