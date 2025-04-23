@@ -64,6 +64,7 @@ Such labels must be set on the workload cluster, in the `Cluster` and `MachineDe
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
+  labels:
     cluster.x-k8s.io/cluster-name: sample
     # Cluster Autoscaler labels
     autoscaling: enabled
