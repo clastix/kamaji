@@ -237,8 +237,8 @@ load: kind
 ##@ e2e
 
 .PHONY: env
-env:
-	@make -C deploy/kind kind ingress-nginx
+env: kind
+	$(KIND) create cluster --name kamaji
 
 .PHONY: e2e
 e2e: env build load helm ginkgo cert-manager ## Create a KinD cluster, install Kamaji on it and run the test suite.
