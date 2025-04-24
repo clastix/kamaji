@@ -136,6 +136,20 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 			}, 1*time.Minute, 1*time.Second).Should(Succeed())
 		})
 
+		By("enabling br_netfilter", func() {
+			exitCode, _, err := workerContainer.Exec(ctx, []string{"modprobe", "br_netfilter"})
+
+			Expect(exitCode).To(Equal(0))
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		By("disabling swapp", func() {
+			exitCode, _, err := workerContainer.Exec(ctx, []string{"swapoff", "-a"})
+
+			Expect(exitCode).To(Equal(0))
+			Expect(err).ToNot(HaveOccurred())
+		})
+
 		By("executing the command in the worker node", func() {
 			cmds := append(strings.Split(strings.TrimSpace(joinCommandBuffer.String()), " "), "--ignore-preflight-errors=SystemVerification")
 

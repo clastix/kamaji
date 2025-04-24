@@ -65,6 +65,7 @@ var _ = Describe("Deploy a TenantControlPlane with resource with custom service 
 	// Delete the service account and TenantControlPlane resources after test is finished
 	JustAfterEach(func() {
 		Expect(k8sClient.Delete(context.Background(), tcp)).Should(Succeed())
+		Expect(k8sClient.Delete(context.Background(), sa)).NotTo(HaveOccurred())
 	})
 	// Check if TenantControlPlane resource has been created and if its pods have the right service account
 	It("Should be Ready and have correct sa", func() {
