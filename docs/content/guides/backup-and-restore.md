@@ -39,10 +39,10 @@ velero backup describe tenant-00
 
 ## Restore step
 
->_WARNING_: this procedure will restore just the TCP resource.
-In the event that the related datastore has been lost, you MUST restore it BEFORE continue; to do this, refer to the backup and restore strategy of the datastore of your choice.
-
----
+!!! warning "Restoring Datastore"
+    This procedure will restore just the TCP resource.
+    
+    In the event that the related datastore has been lost, you MUST restore it BEFORE continue; to do this, refer to the backup and restore strategy of the datastore of your choice.
 
 To restore just the desired TCP, simply execute:
 

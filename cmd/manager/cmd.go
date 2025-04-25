@@ -20,6 +20,7 @@ import (
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -136,7 +137,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
-			tcpChannel, certChannel := make(controllers.TenantControlPlaneChannel), make(controllers.CertificateChannel)
+			tcpChannel, certChannel := make(chan event.GenericEvent), make(chan event.GenericEvent)
 
 			if err = (&controllers.DataStore{Client: mgr.GetClient(), TenantControlPlaneTrigger: tcpChannel}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "DataStore")

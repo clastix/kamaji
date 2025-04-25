@@ -65,7 +65,6 @@ func (k *KubeadmPhase) Reconcile(ctx context.Context, _ reconcile.Request) (reco
 
 func (k *KubeadmPhase) SetupWithManager(mgr manager.Manager) error {
 	k.logger = mgr.GetLogger().WithName(k.Phase.GetName())
-	k.TriggerChannel = make(chan event.GenericEvent)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
 		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).

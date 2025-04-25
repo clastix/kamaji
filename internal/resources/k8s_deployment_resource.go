@@ -76,6 +76,8 @@ func (r *KubernetesDeploymentResource) GetName() string {
 
 func (r *KubernetesDeploymentResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	switch {
+	case ptr.Deref(tenantControlPlane.Spec.ControlPlane.Deployment.Replicas, 2) == 0:
+		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionSleeping
 	case !r.isProgressingUpgrade():
 		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionReady
 		tenantControlPlane.Status.Kubernetes.Version.Version = tenantControlPlane.Spec.Kubernetes.Version

@@ -120,6 +120,9 @@ spec:
                     - PostgreSQL
                     - NATS
                   type: string
+                  x-kubernetes-validations:
+                    - message: Datastore driver is immutable
+                      rule: self == oldSelf
                 endpoints:
                   description: |-
                     List of the endpoints to connect to the shared datastore.
@@ -263,6 +266,21 @@ spec:
                 - driver
                 - endpoints
               type: object
+              x-kubernetes-validations:
+                - message: certificateAuthority privateKey must have secretReference or content when driver is etcd
+                  rule: '(self.driver == "etcd") ? (self.tlsConfig != null && (has(self.tlsConfig.certificateAuthority.privateKey.secretReference) || has(self.tlsConfig.certificateAuthority.privateKey.content))) : true'
+                - message: clientCertificate must have secretReference or content when driver is etcd
+                  rule: '(self.driver == "etcd") ? (self.tlsConfig != null && (has(self.tlsConfig.clientCertificate.certificate.secretReference) || has(self.tlsConfig.clientCertificate.certificate.content))) : true'
+                - message: clientCertificate privateKey must have secretReference or content when driver is etcd
+                  rule: '(self.driver == "etcd") ? (self.tlsConfig != null && (has(self.tlsConfig.clientCertificate.privateKey.secretReference) || has(self.tlsConfig.clientCertificate.privateKey.content))) : true'
+                - message: When driver is not etcd and tlsConfig exists, clientCertificate must be null or contain valid content
+                  rule: '(self.driver != "etcd" && has(self.tlsConfig) && has(self.tlsConfig.clientCertificate)) ? (((has(self.tlsConfig.clientCertificate.certificate.secretReference) || has(self.tlsConfig.clientCertificate.certificate.content)))) : true'
+                - message: When driver is not etcd and basicAuth exists, username must have secretReference or content
+                  rule: '(self.driver != "etcd" && has(self.basicAuth)) ? ((has(self.basicAuth.username.secretReference) || has(self.basicAuth.username.content))) : true'
+                - message: When driver is not etcd and basicAuth exists, password must have secretReference or content
+                  rule: '(self.driver != "etcd" && has(self.basicAuth)) ? ((has(self.basicAuth.password.secretReference) || has(self.basicAuth.password.content))) : true'
+                - message: When driver is not etcd, either tlsConfig or basicAuth must be provided
+                  rule: '(self.driver != "etcd") ? (has(self.tlsConfig) || has(self.basicAuth)) : true'
             status:
               description: DataStoreStatus defines the observed state of DataStore.
               properties:

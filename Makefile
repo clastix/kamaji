@@ -113,7 +113,7 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
 $(GOLANGCI_LINT): $(LOCALBIN)
-	test -s $(LOCALBIN)/golangci-lint || GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.2
+	test -s $(LOCALBIN)/golangci-lint || GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.0.2
 
 .PHONY: apidocs-gen
 apidocs-gen: $(APIDOCS_GEN)  ## Download crdoc locally if necessary.
@@ -154,11 +154,10 @@ golint: golangci-lint ## Linting the code according to the styling guide.
 ## Run unit tests (all tests except E2E).
 .PHONY: test
 test: envtest ginkgo
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -v --trace \
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -v -coverprofile cover.out --trace \
 		./api/... \
 		./cmd/... \
 		./internal/... \
-		-coverprofile cover.out
 
 _datastore-mysql:
 	$(MAKE) NAME=$(NAME) -C deploy/kine/mysql mariadb
@@ -248,8 +247,8 @@ load: kind
 ##@ e2e
 
 .PHONY: env
-env:
-	@make -C deploy/kind kind ingress-nginx
+env: kind
+	$(KIND) create cluster --name kamaji
 
 .PHONY: e2e
 e2e: env build load helm ginkgo cert-manager ## Create a KinD cluster, install Kamaji on it and run the test suite.

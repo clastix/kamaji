@@ -7,9 +7,9 @@ docs_dir: content
 site_dir: site
 site_author: bsctl
 site_description: >-
-  Kamaji deploys and operates Kubernetes Control Plane at scale with a fraction of the operational burden.
+  Kamaji is the Control Plane Manager for Kubernetes
 
-copyright: Copyright &copy; 2020 - 2023 Clastix Labs
+copyright: Copyright &copy; 2020 - 2025 Clastix Labs
 
 theme:
   name: material
@@ -23,28 +23,21 @@ theme:
     - content.code.copy
   include_sidebar: true
   palette:
-    # Palette toggle for automatic mode
-    - media: "(prefers-color-scheme)"
+    - scheme: default
       primary: white
-      toggle:
-        icon: material/brightness-auto
-        name: Switch to light mode
-    # Palette toggle for light mode
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: white 
+      media: "(prefers-color-scheme: light)"
       toggle:
         icon: material/lightbulb
         name: Switch to dark mode
-    # Palette toggle for dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
+    - scheme: slate
       primary: white
+      media: "(prefers-color-scheme: dark)"
       toggle:
         icon: material/lightbulb-outline
-        name: Switch to system preference
+        name: Switch to light mode
   favicon: images/favicon.png
   logo: images/logo.png
+  custom_dir: overrides
 
 markdown_extensions:
   - admonition
@@ -57,22 +50,35 @@ nav:
 - 'Kamaji': index.md
 - 'Getting started':
   - getting-started/index.md
-  - getting-started/getting-started.md
-  - getting-started/kind.md
-- 'Concepts': concepts.md
+  - getting-started/kamaji-kind.md
+  - getting-started/kamaji-generic.md
+  - getting-started/kamaji-aws.md
+  - getting-started/kamaji-azure.md
+- 'Concepts':
+  - concepts/index.md
+  - concepts/tenant-control-plane.md
+  - concepts/datastore.md
+  - concepts/tenant-worker-nodes.md
+  - concepts/konnectivity.md
+- 'Cluster API':
+  - cluster-api/index.md
+  - cluster-api/control-plane-provider.md
+  - cluster-api/cluster-class.md
+  - cluster-api/cluster-autoscaler.md
+  - cluster-api/vsphere-infra-provider.md
+  - cluster-api/proxmox-infra-provider.md
+  - cluster-api/other-providers.md
 - 'Guides':
   - guides/index.md
-  - guides/kamaji-azure-deployment.md
-  - guides/kamaji-aws-deployment.md
   - guides/alternative-datastore.md
-  - guides/kamaji-gitops-flux.md
+  - guides/gitops.md
   - guides/upgrade.md
   - guides/datastore-migration.md
   - guides/backup-and-restore.md
-  - guides/certs-lifecycle.md
-  - guides/cluster-api.md
+  - guides/monitoring.md
   - guides/console.md
-- 'Use Cases': use-cases.md
+  - guides/certs-lifecycle.md
+  - guides/contribute.md
 - 'Reference':
   - reference/index.md
   - reference/benchmark.md
@@ -81,7 +87,7 @@ nav:
   - reference/versioning.md
   - reference/api.md
 - 'Telemetry': telemetry.md
-- 'Enterprise Addons':
+- 'Addons':
   - enterprise-addons/index.md
   - enterprise-addons/ingress.md
-- 'Contribute': contribute.md
+

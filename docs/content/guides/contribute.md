@@ -1,4 +1,4 @@
-# General
+# Contribute
 
 Thank you for your interest in contributing to Kamaji. Whether it's a bug report, new feature, correction, or additional documentation, we greatly value feedback and contributions from our community.
 

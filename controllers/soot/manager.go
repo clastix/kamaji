@@ -6,8 +6,9 @@ package soot
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
@@ -34,14 +35,19 @@ import (
 )
 
 type sootItem struct {
-	triggers []chan event.GenericEvent
-	cancelFn context.CancelFunc
+	triggers    []chan event.GenericEvent
+	cancelFn    context.CancelFunc
+	completedCh chan struct{}
 }
 
 type sootMap map[string]sootItem
 
+const (
+	sootManagerAnnotation       = "kamaji.clastix.io/soot"
+	sootManagerFailedAnnotation = "failed"
+)
+
 type Manager struct {
-	client  client.Client
 	sootMap sootMap
 	// sootManagerErrChan is the channel that is going to be used
 	// when the soot manager cannot start due to any kind of problem.
@@ -59,7 +65,7 @@ func (m *Manager) retrieveTenantControlPlane(ctx context.Context, request reconc
 	return func() (*kamajiv1alpha1.TenantControlPlane, error) {
 		tcp := &kamajiv1alpha1.TenantControlPlane{}
 
-		if err := m.client.Get(ctx, request.NamespacedName, tcp); err != nil {
+		if err := m.AdminClient.Get(ctx, request.NamespacedName, tcp); err != nil {
 			return nil, err
 		}
 
@@ -93,39 +99,82 @@ func (m *Manager) cleanup(ctx context.Context, req reconcile.Request, tenantCont
 	}
 
 	v.cancelFn()
+	// TODO(prometherion): the 10 seconds is an hardcoded number,
+	// it's widely used across the code base as a timeout with the API Server.
+	// Evaluate if we would need to make this configurable globally.
+	deadlineCtx, deadlineFn := context.WithTimeout(ctx, 10*time.Second)
+	defer deadlineFn()
+
+	select {
+	case _, open := <-v.completedCh:
+		if !open {
+			log.FromContext(ctx).Info("soot manager completed its process")
+
+			break
+		}
+	case <-deadlineCtx.Done():
+		log.FromContext(ctx).Error(deadlineCtx.Err(), "soot manager didn't exit to timeout")
+
+		break
+	}
 
 	delete(m.sootMap, tcpName)
 
 	return nil
 }
 
+func (m *Manager) retryTenantControlPlaneAnnotations(ctx context.Context, request reconcile.Request, modifierFn func(annotations map[string]string)) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		tcp, err := m.retrieveTenantControlPlane(ctx, request)()
+		if err != nil {
+			return err
+		}
+
+		if tcp.Annotations == nil {
+			tcp.Annotations = map[string]string{}
+		}
+
+		modifierFn(tcp.Annotations)
+
+		tcp.SetAnnotations(tcp.Annotations)
+
+		return m.AdminClient.Update(ctx, tcp)
+	})
+}
+
+//nolint:maintidx
 func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res reconcile.Result, err error) {
 	// Retrieving the TenantControlPlane:
 	// in case of deletion, we must be sure to properly remove from the memory the soot manager.
 	tcp := &kamajiv1alpha1.TenantControlPlane{}
-	if err = m.client.Get(ctx, request.NamespacedName, tcp); err != nil {
-		if errors.IsNotFound(err) {
+	if err = m.AdminClient.Get(ctx, request.NamespacedName, tcp); err != nil {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, m.cleanup(ctx, request, nil)
 		}
 
 		return reconcile.Result{}, err
 	}
-	// Handling finalizer if the TenantControlPlane is marked for deletion:
+	tcpStatus := ptr.Deref(tcp.Status.Kubernetes.Version.Status, kamajiv1alpha1.VersionProvisioning)
+	// Handling finalizer if the TenantControlPlane is marked for deletion or scaled to zero:
 	// the clean-up function is already taking care to stop the manager, if this exists.
-	if tcp.GetDeletionTimestamp() != nil {
+	if tcp.GetDeletionTimestamp() != nil || tcpStatus == kamajiv1alpha1.VersionSleeping {
 		if controllerutil.ContainsFinalizer(tcp, finalizers.SootFinalizer) {
 			return reconcile.Result{}, m.cleanup(ctx, request, tcp)
 		}
 
 		return reconcile.Result{}, nil
 	}
-
-	tcpStatus := *tcp.Status.Kubernetes.Version.Status
 	// Triggering the reconciliation of the underlying controllers of
 	// the soot manager if this is already registered.
 	v, ok := m.sootMap[request.String()]
 	if ok {
 		switch {
+		case tcp.Annotations != nil && tcp.Annotations[sootManagerAnnotation] == sootManagerFailedAnnotation:
+			delete(m.sootMap, request.String())
+
+			return reconcile.Result{}, m.retryTenantControlPlaneAnnotations(ctx, request, func(annotations map[string]string) {
+				delete(annotations, sootManagerAnnotation)
+			})
 		case tcpStatus == kamajiv1alpha1.VersionCARotating:
 			// The TenantControlPlane CA has been rotated, it means the running manager
 			// must be restarted to avoid certificate signed by unknown authority errors.
@@ -137,7 +186,12 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			return reconcile.Result{}, m.cleanup(ctx, request, tcp)
 		default:
 			for _, trigger := range v.triggers {
-				trigger <- event.GenericEvent{Object: tcp}
+				var shrunkTCP kamajiv1alpha1.TenantControlPlane
+
+				shrunkTCP.Name = tcp.Namespace
+				shrunkTCP.Namespace = tcp.Namespace
+
+				go utils.TriggerChannel(ctx, trigger, shrunkTCP)
 			}
 		}
 
@@ -145,7 +199,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	}
 	// No need to start a soot manager if the TenantControlPlane is not ready:
 	// enqueuing back is not required since we're going to get that event once ready.
-	if tcpStatus == kamajiv1alpha1.VersionNotReady || tcpStatus == kamajiv1alpha1.VersionCARotating {
+	if tcpStatus == kamajiv1alpha1.VersionNotReady || tcpStatus == kamajiv1alpha1.VersionCARotating || tcpStatus == kamajiv1alpha1.VersionSleeping {
 		log.FromContext(ctx).Info("skipping start of the soot manager for a not ready instance")
 
 		return reconcile.Result{}, nil
@@ -163,7 +217,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	}
 	// Generating the manager and starting it:
 	// in case of any error, reconciling the request to start it back from the beginning.
-	tcpRest, err := utilities.GetRESTClientConfig(ctx, m.client, tcp)
+	tcpRest, err := utilities.GetRESTClientConfig(ctx, m.AdminClient, tcp)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -178,14 +232,14 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 
 	mgr, err := controllerruntime.NewManager(tcpRest, controllerruntime.Options{
 		Logger: log.Log.WithName(fmt.Sprintf("soot_%s_%s", tcp.GetNamespace(), tcp.GetName())),
-		Scheme: m.client.Scheme(),
+		Scheme: m.AdminClient.Scheme(),
 		Metrics: metricsserver.Options{
 			BindAddress: "0",
 		},
-		NewClient: func(config *rest.Config, _ client.Options) (client.Client, error) {
-			return client.New(config, client.Options{
-				Scheme: m.client.Scheme(),
-			})
+		NewClient: func(config *rest.Config, opts client.Options) (client.Client, error) {
+			opts.Scheme = m.AdminClient.Scheme()
+
+			return client.New(config, opts)
 		},
 	})
 	if err != nil {
@@ -199,6 +253,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		WebhookServiceName:        m.MigrateServiceName,
 		WebhookCABundle:           m.MigrateCABundle,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		Client:                    mgr.GetClient(),
+		Logger:                    mgr.GetLogger().WithName("migrate"),
 	}
 	if err = migrate.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -207,6 +263,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	konnectivityAgent := &controllers.KonnectivityAgent{
 		AdminClient:               m.AdminClient,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		Logger:                    mgr.GetLogger().WithName("konnectivity_agent"),
+		TriggerChannel:            make(chan event.GenericEvent),
 	}
 	if err = konnectivityAgent.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -215,6 +273,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	kubeProxy := &controllers.KubeProxy{
 		AdminClient:               m.AdminClient,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		Logger:                    mgr.GetLogger().WithName("kube_proxy"),
+		TriggerChannel:            make(chan event.GenericEvent),
 	}
 	if err = kubeProxy.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -223,6 +283,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	coreDNS := &controllers.CoreDNS{
 		AdminClient:               m.AdminClient,
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		Logger:                    mgr.GetLogger().WithName("coredns"),
+		TriggerChannel:            make(chan event.GenericEvent),
 	}
 	if err = coreDNS.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -234,6 +296,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			Client: m.AdminClient,
 			Phase:  resources.PhaseUploadConfigKubeadm,
 		},
+		TriggerChannel: make(chan event.GenericEvent),
 	}
 	if err = uploadKubeadmConfig.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -245,6 +308,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			Client: m.AdminClient,
 			Phase:  resources.PhaseUploadConfigKubelet,
 		},
+		TriggerChannel: make(chan event.GenericEvent),
 	}
 	if err = uploadKubeletConfig.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -256,6 +320,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			Client: m.AdminClient,
 			Phase:  resources.PhaseBootstrapToken,
 		},
+		TriggerChannel: make(chan event.GenericEvent),
 	}
 	if err = bootstrapToken.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -267,19 +332,35 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			Client: m.AdminClient,
 			Phase:  resources.PhaseClusterAdminRBAC,
 		},
+		TriggerChannel: make(chan event.GenericEvent),
 	}
 	if err = kubeadmRbac.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
 	}
+	completedCh := make(chan struct{})
 	// Starting the manager
 	go func() {
 		if err = mgr.Start(tcpCtx); err != nil {
 			log.FromContext(ctx).Error(err, "unable to start soot manager")
+			// The sootManagerAnnotation is used to propagate the error between reconciliations with its state:
+			// this is required to avoid mutex and prevent concurrent read/write on the soot map
+			annotationErr := m.retryTenantControlPlaneAnnotations(ctx, request, func(annotations map[string]string) {
+				annotations[sootManagerAnnotation] = sootManagerFailedAnnotation
+			})
+			if annotationErr != nil {
+				log.FromContext(ctx).Error(err, "unable to update TenantControlPlane for soot failed annotation")
+			}
 			// When the manager cannot start we're enqueuing back the request to take advantage of the backoff factor
 			// of the queue: this is a goroutine and cannot return an error since the manager is running on its own,
 			// using the sootManagerErrChan channel we can trigger a reconciliation although the TCP hadn't any change.
-			m.sootManagerErrChan <- event.GenericEvent{Object: tcp}
+			var shrunkTCP kamajiv1alpha1.TenantControlPlane
+
+			shrunkTCP.Name = tcp.Name
+			shrunkTCP.Namespace = tcp.Namespace
+
+			m.sootManagerErrChan <- event.GenericEvent{Object: &shrunkTCP}
 		}
+		close(completedCh)
 	}()
 
 	m.sootMap[request.NamespacedName.String()] = sootItem{
@@ -292,14 +373,14 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			uploadKubeletConfig.TriggerChannel,
 			bootstrapToken.TriggerChannel,
 		},
-		cancelFn: tcpCancelFn,
+		cancelFn:    tcpCancelFn,
+		completedCh: completedCh,
 	}
 
 	return reconcile.Result{Requeue: true}, nil
 }
 
 func (m *Manager) SetupWithManager(mgr manager.Manager) error {
-	m.client = mgr.GetClient()
 	m.sootManagerErrChan = make(chan event.GenericEvent)
 	m.sootMap = make(map[string]sootItem)
 

@@ -7,6 +7,15 @@ on:
     branches: [ "*" ]
 
 jobs:
+  test:
+    name: integration
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: make test
   golangci:
     name: lint
     runs-on: ubuntu-22.04
@@ -16,11 +25,13 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6.5.1
-        with:
-          version: v1.62.2
-          only-new-issues: false
-          args: --config .golangci.yml
+        run: make golint
+# TODO(prometherion): enable back once golangci-lint is built from v1.24 rather than v1.23
+#        uses: golangci/golangci-lint-action@v6.5.2
+#        with:
+#          version: v1.62.2
+#          only-new-issues: false
+#          args: --config .golangci.yml
   diff:
     name: diff
     runs-on: ubuntu-22.04

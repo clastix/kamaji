@@ -108,12 +108,14 @@ func (d DataStoreValidation) validateTLSConfig(ctx context.Context, ds kamajiv1a
 		}
 	}
 
-	if err := d.validateContentReference(ctx, ds.Spec.TLSConfig.ClientCertificate.Certificate); err != nil {
-		return fmt.Errorf("client certificate is not valid, %w", err)
-	}
+	if ds.Spec.TLSConfig.ClientCertificate != nil {
+		if err := d.validateContentReference(ctx, ds.Spec.TLSConfig.ClientCertificate.Certificate); err != nil {
+			return fmt.Errorf("client certificate is not valid, %w", err)
+		}
 
-	if err := d.validateContentReference(ctx, ds.Spec.TLSConfig.ClientCertificate.PrivateKey); err != nil {
-		return fmt.Errorf("client private key is not valid, %w", err)
+		if err := d.validateContentReference(ctx, ds.Spec.TLSConfig.ClientCertificate.PrivateKey); err != nil {
+			return fmt.Errorf("client private key is not valid, %w", err)
+		}
 	}
 
 	return nil

@@ -31,7 +31,8 @@ Following is the list of supported Ingress Controllers:
 
 - [HAProxy Technologies Kubernetes Ingress](https://github.com/haproxytech/kubernetes-ingress)
 
-> Active subscribers can request additional Ingress Controller flavours  
+!!! info "Other Ingress Controllers"
+    Active subscribers can request support for additional Ingress Controller flavours.  
 
 ## How to enable the Addon
 
@@ -89,9 +90,7 @@ spec:
 ```
 
 The pattern for the generated hosts is the following:
-`${tcp.namespace}-${tcp.name}.{k8s|konnectivity}.${ADDON_ANNOTATION_VALUE}`
-
-> Please, notice the `konnectivity` rule will be created only if the `konnectivity` addon has been enabled.
+`${tcp.namespace}-${tcp.name}.{k8s|konnectivity}.${ADDON_ANNOTATION_VALUE}`. Please, notice the `konnectivity` rule will be created only if the `konnectivity` addon has been enabled.
 
 ## Infrastructure requirements
 
@@ -142,7 +141,8 @@ spec:
 The `ingressClassName` value must match a non-handled `IngressClass` object,
 the addon will take care of generating the correct object.
 
-> Nota Bene: the `hostname` must absolutely point to the 443 port
+!!! warning "Use the right port"
+    The `hostname` field must absolutely point to the 443 port!
 
 ### Kubernetes components extra Arguments
 

@@ -9,6 +9,7 @@ import (
 )
 
 //+kubebuilder:validation:Enum=etcd;MySQL;PostgreSQL;NATS
+//+kubebuilder:validation:XValidation:rule="self == oldSelf",message="Datastore driver is immutable"
 
 type Driver string
 
@@ -24,6 +25,13 @@ var (
 type Endpoints []string
 
 // DataStoreSpec defines the desired state of DataStore.
+// +kubebuilder:validation:XValidation:rule="(self.driver == \"etcd\") ? (self.tlsConfig != null && (has(self.tlsConfig.certificateAuthority.privateKey.secretReference) || has(self.tlsConfig.certificateAuthority.privateKey.content))) : true", message="certificateAuthority privateKey must have secretReference or content when driver is etcd"
+// +kubebuilder:validation:XValidation:rule="(self.driver == \"etcd\") ? (self.tlsConfig != null && (has(self.tlsConfig.clientCertificate.certificate.secretReference) || has(self.tlsConfig.clientCertificate.certificate.content))) : true", message="clientCertificate must have secretReference or content when driver is etcd"
+// +kubebuilder:validation:XValidation:rule="(self.driver == \"etcd\") ? (self.tlsConfig != null && (has(self.tlsConfig.clientCertificate.privateKey.secretReference) || has(self.tlsConfig.clientCertificate.privateKey.content))) : true", message="clientCertificate privateKey must have secretReference or content when driver is etcd"
+// +kubebuilder:validation:XValidation:rule="(self.driver != \"etcd\" && has(self.tlsConfig) && has(self.tlsConfig.clientCertificate)) ? (((has(self.tlsConfig.clientCertificate.certificate.secretReference) || has(self.tlsConfig.clientCertificate.certificate.content)))) : true", message="When driver is not etcd and tlsConfig exists, clientCertificate must be null or contain valid content"
+// +kubebuilder:validation:XValidation:rule="(self.driver != \"etcd\" && has(self.basicAuth)) ? ((has(self.basicAuth.username.secretReference) || has(self.basicAuth.username.content))) : true", message="When driver is not etcd and basicAuth exists, username must have secretReference or content"
+// +kubebuilder:validation:XValidation:rule="(self.driver != \"etcd\" && has(self.basicAuth)) ? ((has(self.basicAuth.password.secretReference) || has(self.basicAuth.password.content))) : true", message="When driver is not etcd and basicAuth exists, password must have secretReference or content"
+// +kubebuilder:validation:XValidation:rule="(self.driver != \"etcd\") ? (has(self.tlsConfig) || has(self.basicAuth)) : true", message="When driver is not etcd, either tlsConfig or basicAuth must be provided"
 type DataStoreSpec struct {
 	// The driver to use to connect to the shared datastore.
 	Driver Driver `json:"driver"`

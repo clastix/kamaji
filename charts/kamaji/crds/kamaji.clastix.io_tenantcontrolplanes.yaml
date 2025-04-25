@@ -427,7 +427,7 @@ spec:
                                   Values defined by an Env with a duplicate key will take precedence.
                                   Cannot be updated.
                                 items:
-                                  description: EnvFromSource represents the source of a set of ConfigMaps
+                                  description: EnvFromSource represents the source of a set of ConfigMaps or Secrets
                                   properties:
                                     configMapRef:
                                       description: The ConfigMap to select from
@@ -447,7 +447,7 @@ spec:
                                       type: object
                                       x-kubernetes-map-type: atomic
                                     prefix:
-                                      description: An optional identifier to prepend to each key in the ConfigMap. Must be a C_IDENTIFIER.
+                                      description: Optional text to prepend to the name of each environment variable. Must be a C_IDENTIFIER.
                                       type: string
                                     secretRef:
                                       description: The Secret to select from
@@ -696,6 +696,12 @@ spec:
                                           - port
                                         type: object
                                     type: object
+                                  stopSignal:
+                                    description: |-
+                                      StopSignal defines which signal will be sent to a container when it is being stopped.
+                                      If not specified, the default is defined by the container runtime in use.
+                                      StopSignal can only be set for Pods with a non-empty .spec.os.name
+                                    type: string
                                 type: object
                               livenessProbe:
                                 description: |-
@@ -1792,7 +1798,7 @@ spec:
                                   Values defined by an Env with a duplicate key will take precedence.
                                   Cannot be updated.
                                 items:
-                                  description: EnvFromSource represents the source of a set of ConfigMaps
+                                  description: EnvFromSource represents the source of a set of ConfigMaps or Secrets
                                   properties:
                                     configMapRef:
                                       description: The ConfigMap to select from
@@ -1812,7 +1818,7 @@ spec:
                                       type: object
                                       x-kubernetes-map-type: atomic
                                     prefix:
-                                      description: An optional identifier to prepend to each key in the ConfigMap. Must be a C_IDENTIFIER.
+                                      description: Optional text to prepend to the name of each environment variable. Must be a C_IDENTIFIER.
                                       type: string
                                     secretRef:
                                       description: The Secret to select from
@@ -2061,6 +2067,12 @@ spec:
                                           - port
                                         type: object
                                     type: object
+                                  stopSignal:
+                                    description: |-
+                                      StopSignal defines which signal will be sent to a container when it is being stopped.
+                                      If not specified, the default is defined by the container runtime in use.
+                                      StopSignal can only be set for Pods with a non-empty .spec.os.name
+                                    type: string
                                 type: object
                               livenessProbe:
                                 description: |-
@@ -4087,7 +4099,7 @@ spec:
                                   The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
                                   The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
                                   The volume will be mounted read-only (ro) and non-executable files (noexec).
-                                  Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath).
+                                  Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath) before 1.33.
                                   The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
                                 properties:
                                   pullPolicy:
@@ -5173,7 +5185,6 @@ spec:
                                               pod labels will be ignored. The default value is empty.
                                               The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                               Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                              This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                             items:
                                               type: string
                                             type: array
@@ -5188,7 +5199,6 @@ spec:
                                               pod labels will be ignored. The default value is empty.
                                               The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                               Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                              This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                             items:
                                               type: string
                                             type: array
@@ -5349,7 +5359,6 @@ spec:
                                           pod labels will be ignored. The default value is empty.
                                           The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                           Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                          This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                         items:
                                           type: string
                                         type: array
@@ -5364,7 +5373,6 @@ spec:
                                           pod labels will be ignored. The default value is empty.
                                           The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                           Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                          This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                         items:
                                           type: string
                                         type: array
@@ -5518,7 +5526,6 @@ spec:
                                               pod labels will be ignored. The default value is empty.
                                               The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                               Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                              This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                             items:
                                               type: string
                                             type: array
@@ -5533,7 +5540,6 @@ spec:
                                               pod labels will be ignored. The default value is empty.
                                               The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                               Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                              This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                             items:
                                               type: string
                                             type: array
@@ -5694,7 +5700,6 @@ spec:
                                           pod labels will be ignored. The default value is empty.
                                           The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                           Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                          This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                         items:
                                           type: string
                                         type: array
@@ -5709,7 +5714,6 @@ spec:
                                           pod labels will be ignored. The default value is empty.
                                           The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                           Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                          This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                         items:
                                           type: string
                                         type: array
@@ -6339,7 +6343,6 @@ spec:
                                   - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
 
                                   If this value is nil, the behavior is equivalent to the Honor policy.
-                                  This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                                 type: string
                               nodeTaintsPolicy:
                                 description: |-
@@ -6350,7 +6353,6 @@ spec:
                                   - Ignore: node taints are ignored. All nodes are included.
 
                                   If this value is nil, the behavior is equivalent to the Ignore policy.
-                                  This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                                 type: string
                               topologyKey:
                                 description: |-
@@ -7071,7 +7073,7 @@ spec:
                       description: KubernetesDeploymentStatus defines the status for the Tenant Control Plane Deployment in the management cluster.
                       properties:
                         availableReplicas:
-                          description: Total number of available pods (ready for at least minReadySeconds) targeted by this deployment.
+                          description: Total number of available non-terminating pods (ready for at least minReadySeconds) targeted by this deployment.
                           format: int32
                           type: integer
                         collisionCount:
@@ -7129,16 +7131,24 @@ spec:
                           format: int64
                           type: integer
                         readyReplicas:
-                          description: readyReplicas is the number of pods targeted by this Deployment with a Ready Condition.
+                          description: Total number of non-terminating pods targeted by this Deployment with a Ready Condition.
                           format: int32
                           type: integer
                         replicas:
-                          description: Total number of non-terminated pods targeted by this deployment (their labels match the selector).
+                          description: Total number of non-terminating pods targeted by this deployment (their labels match the selector).
                           format: int32
                           type: integer
                         selector:
                           description: Selector is the label selector used to group the Tenant Control Plane Pods used by the scale subresource.
                           type: string
+                        terminatingReplicas:
+                          description: |-
+                            Total number of terminating pods targeted by this deployment. Terminating pods have a non-null
+                            .metadata.deletionTimestamp and have not yet reached the Failed or Succeeded .status.phase.
+
+                            This is an alpha field. Enable DeploymentReplicaSetTerminatingReplicas to be able to use this field.
+                          format: int32
+                          type: integer
                         unavailableReplicas:
                           description: |-
                             Total number of unavailable pods targeted by this deployment. This is the total number of
@@ -7147,7 +7157,7 @@ spec:
                           format: int32
                           type: integer
                         updatedReplicas:
-                          description: Total number of non-terminated pods targeted by this deployment that have the desired template spec.
+                          description: Total number of non-terminating pods targeted by this deployment that have the desired template spec.
                           format: int32
                           type: integer
                       required:
@@ -7379,6 +7389,7 @@ spec:
                             - Migrating
                             - Ready
                             - NotReady
+                            - Sleeping
                           type: string
                         version:
                           description: Version is the running Kubernetes version of the Tenant Control Plane.

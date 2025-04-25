@@ -1,4 +1,4 @@
-# Manage Tenant Control Planes with GitOps
+# GitOps
 
 This guide describe a declarative way to deploy Kubernetes add-ons across multiple Tenant Clusters, the GitOps-way. An admin may need to apply a specific workload into Tenant Clusters and ensure is constantly reconciled, no matter what the tenants will do in their clusters. Examples include installing monitoring agents, ensuring specific policies, installing infrastructure operators like Cert Manager and so on.
 
@@ -27,7 +27,8 @@ NAME      VERSION   STATUS   CONTROL-PLANE-ENDPOINT   KUBECONFIG                
 tenant1   v1.25.1   Ready    172.18.0.2:31443         tenant1-admin-kubeconfig   108s
 ```
 
-> As the *admin* user has *cluster-admin* `ClusterRole` it will have the necessary privileges to operate on Custom Resources too.
+!!! info "Admin Permissions"
+    As the *admin* user has *cluster-admin* `ClusterRole` it will have the necessary privileges to operate on Custom Resources too.
 
 Given that Flux it's installed in the *Management Cluster* - guide [here](https://fluxcd.io/flux/installation/) - resources can be ensured for specifics Tenant Clusters, by filling the `spec.kubeConfig` field of the Flux reconciliation resource.
 

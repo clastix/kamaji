@@ -1,14 +1,11 @@
-# Getting started with Kamaji
+# Kamaji on generic infra
 This guide will lead you through the process of creating a working Kamaji setup on a generic infrastructure.
-
-!!! warning ""
-    The material here is relatively dense. We strongly encourage you to dedicate time to walk through these instructions, with a mind to learning. We do NOT provide any "one-click" deployment here. However, once you've understood the components involved it is encouraged that you build suitable, auditable GitOps deployment processes around your final infrastructure.
 
 The guide requires:
 
 - a bootstrap machine
-- a Kubernetes cluster to run the Admin and Tenant Control Planes
-- an arbitrary number of machines to host `Tenant`s' workloads
+- a Kubernetes cluster to run the Management and Tenant Control Planes
+- an arbitrary number of machines to host Tenant workloads.
 
 ## Summary
 
@@ -43,11 +40,11 @@ Throughout the following instructions, shell variables are used to indicate valu
 source kamaji.env
 ```
 
-Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji setup. To work properly, the Management Clusterr should provide:
+Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji setup. To work properly, the Management Cluster should provide:
 
 - CNI module installed, eg. [Calico](https://github.com/projectcalico/calico), [Cilium](https://github.com/cilium/cilium).
-- CSI module installed with a Storage Class for the Tenant datastores. Local Persistent Volumes are an option.
-- Support for LoadBalancer service type, eg. [MetalLB](https://metallb.universe.tf/), or a Cloud based controller.
+- CSI module installed with a Storage Class for the Tenant datastores. The [Local Path Provisioner](https://github.com/rancher/local-path-provisioner) is a suggested choice, even for production environments.
+- Support for LoadBalancer service type, eg. [MetalLB](https://metallb.universe.tf/), or cloud based.
 - Optionally, a Monitoring Stack installed, eg. [Prometheus](https://github.com/prometheus-community).
 
 Make sure you have a `kubeconfig` file with admin permissions on the cluster you want to turn into Kamaji Management Cluster and check you can access:
@@ -67,24 +64,17 @@ helm install \
   cert-manager jetstack/cert-manager \
   --namespace cert-manager \
   --create-namespace \
-  --version v1.11.0 \
   --set installCRDs=true
 ```
 
 ## Install Kamaji Controller
 
-Installing Kamaji via Helm charts is the preferred way. Run the following commands to install a stable release of Kamaji:
-
-```bash
-helm repo add clastix https://clastix.github.io/charts
-helm repo update
-helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
-```
+Installing Kamaji via Helm charts is the preferred way to deploy the Kamaji controller. The Helm chart is available in the `charts` directory of the Kamaji repository.
 
 !!! info "Stable Releases"
-    As of July 2024 [Clastix Labs](https://github.com/clastix) does no longer publish stable release artifacts. Stable releases are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor. 
+    As of July 2024 [Clastix Labs](https://github.com/clastix) no longer publish stable release artifacts. Stable releases are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor. 
 
-Run the following commands to install latest edge release of Kamaji:
+Run the following commands to install the latest edge release of Kamaji:
 
 ```bash
 git clone https://github.com/clastix/kamaji
@@ -140,22 +130,7 @@ spec:
         apiServer: []
         controllerManager: []
         scheduler: []
-      resources:
-        apiServer:
-          requests:
-            cpu: 250m
-            memory: 512Mi
-          limits: {}
-        controllerManager:
-          requests:
-            cpu: 125m
-            memory: 256Mi
-          limits: {}
-        scheduler:
-          requests:
-            cpu: 125m
-            memory: 256Mi
-          limits: {}
+      resources: {}
     service:
       additionalMetadata:
         labels:
@@ -182,11 +157,9 @@ spec:
     konnectivity:
       server:
         port: ${TENANT_PROXY_PORT}
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits: {}
+        resources: {}
+      client:
+        resources: {}
 EOF
 
 kubectl -n ${TENANT_NAMESPACE} apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
@@ -198,7 +171,7 @@ After a few seconds, check the created resources in the tenants namespace and wh
 kubectl -n ${TENANT_NAMESPACE} get tcp,deploy,pods,svc
 
 NAME                           VERSION   STATUS   CONTROL-PLANE ENDPOINT   KUBECONFIG                   DATASTORE   AGE
-tenantcontrolplane/tenant-00   v1.25.2   Ready    192.168.32.240:6443      tenant-00-admin-kubeconfig   default     2m20s
+tenantcontrolplane/tenant-00   v1.32.2   Ready    192.168.32.240:6443      tenant-00-admin-kubeconfig   default     2m20s
 
 NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
 deployment.apps/tenant-00   3/3     3            3           118s
@@ -214,7 +187,40 @@ service/tenant-00   LoadBalancer   10.32.132.241   192.168.32.240   6443:32152/T
 
 The regular Tenant Control Plane containers: `kube-apiserver`, `kube-controller-manager`, `kube-scheduler` are running unchanged in the `tcp` pods instead of dedicated machines and they are exposed through a service on the port `6443` of worker nodes in the Management Cluster.
 
-The `LoadBalancer` service type is used to expose the Tenant Control Plane on the assigned `loadBalancerIP` acting as `ControlPlaneEndpoint` for the worker nodes and other clients as, for example, `kubectl`. Service types `NodePort` and `ClusterIP` are still viable options to expose the Tenant Control Plane, depending on the case. High Availability and rolling updates of the Tenant Control Planes are provided by the `tcp` Deployment and all the resources reconcilied by the Kamaji controller.
+The `LoadBalancer` service type is used to expose the Tenant Control Plane on the assigned `loadBalancerIP` acting as `ControlPlaneEndpoint` for the worker nodes and other clients as, for example, `kubectl`. Service types `NodePort` and `ClusterIP` are still viable options to expose the Tenant Control Plane, depending on the case. High Availability and rolling updates of the Tenant Control Planes are provided by the `tcp` Deployment and all the resources reconciled by the Kamaji controller.
+
+### Assign a Specific Address to the Tenant Control Plane
+
+When a Tenant Control Plane is created, Kamaji waits for the LoadBalancer to provide an address, which it then assigns to the `ControlPlaneEndpoint` field of the Tenant Control Plane. This address is crucial as it allows worker nodes and tenant users to access the Tenant Control Plane. By default, the LoadBalancer controller in your management cluster dynamically selects this address and passes it to Kamaji through the `Service` resource.
+
+If you need to use a specific address for your Tenant Control Plane, you can specify it by setting the `tcp.spec.networkProfile.address` field in the Tenant Control Plane manifest. This optional field ensures that Kamaji uses your preferred address. However, if the specified address is unavailable, the Tenant Control Plane will remain in a `NotReady` state until the address becomes available.
+
+To ensure that the LoadBalancer controller uses your specified address for the Service, you'll need to use controller-specific annotations. For instance, if you're using MetalLB as your LoadBalancer controller, you can add the `metallb.universe.tf/loadBalancerIPs` annotation to your Service definition, allowing the LoadBalancer controller to select the specified address:
+
+```yaml
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: sample-tcp
+  labels:
+    tenant.clastix.io: sample-tcp
+spec:
+  controlPlane:
+    deployment:
+      replicas: 2
+    service:
+      serviceType: LoadBalancer
+      additionalMetadata:
+        annotations:
+          metallb.universe.tf/loadBalancerIPs: 172.18.255.104 # use this address
+  kubernetes:
+    version: "v1.30.0"
+    kubelet:
+      cgroupfs: systemd
+  networkProfile:
+    address: 172.18.255.104 # use this address
+    port: 6443
+```
 
 ### Working with Tenant Control Plane
 
@@ -274,7 +280,7 @@ The Tenant Control Plane is made of pods running in the Kamaji Management Cluste
 !!! warning "Opening Ports"
     To make sure worker nodes can join the Tenant Control Plane, you must allow incoming connections to: `${TENANT_ADDR}:${TENANT_PORT}` and `${TENANT_ADDR}:${TENANT_PROXY_PORT}`
 
-Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster Management API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Refer to the [Cluster API guide](guides/cluster-api.md) to learn more about supported providers.
+Kamaji does not provide any helper for creation of tenant worker nodes, instead it leverages the [Cluster API](https://github.com/kubernetes-sigs/cluster-api). This allows you to create the Tenant Clusters, including worker nodes, in a completely declarative way. Refer to the section [Cluster API](../cluster-api/index.md) to learn more about Cluster API support in Kamaji.
 
 An alternative approach for joining nodes is to use the `kubeadm` command on each node. Follow the related [documentation](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) in order to:
 
@@ -308,7 +314,7 @@ done
 ```
 
 !!! tip "yaki"
-    This manual process can be further automated to handle the node prerequisites and joining. See [yaki](https://github.com/clastix/yaki) script, which you could modify for your preferred operating system and version. The provided script is just a facility: it assumes all worker nodes are running `Ubuntu 22.04`. Make sure to adapt the script if you're using a different distribution.
+    This manual process can be further automated to handle the node prerequisites and joining. See [yaki](https://goyaki.clastix.io/) script, which you could modify for your preferred operating system and version. The provided script is just a facility: it assumes all worker nodes are running `Ubuntu`. Make sure to adapt the script if you're using a different OS distribution.
 
 
 Checking the nodes:
