@@ -83,11 +83,11 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 							Target: "/lib/modules",
 						},
 					}
+					config.Privileged = true
 				},
-				Name:       fmt.Sprintf("%s-worker-node", tcp.GetName()),
-				Image:      fmt.Sprintf("kindest/node:%s", tcp.Spec.Kubernetes.Version),
-				Networks:   []string{"kind"},
-				Privileged: true,
+				Name:     fmt.Sprintf("%s-worker-node", tcp.GetName()),
+				Image:    fmt.Sprintf("kindest/node:%s", tcp.Spec.Kubernetes.Version),
+				Networks: []string{"kind"},
 			},
 			Started: true,
 		})
