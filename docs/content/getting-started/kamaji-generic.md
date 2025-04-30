@@ -69,17 +69,20 @@ helm install \
 
 ## Install Kamaji Controller
 
-Installing Kamaji via Helm charts is the preferred way to deploy the Kamaji controller. The Helm chart is available in the `charts` directory of the Kamaji repository.
+Installing Kamaji via Helm charts is the preferred way to deploy the Kamaji controller.
+The Helm chart is available in the `charts` directory of the Kamaji repository, or as Helm Chart versioned as `0.0.0+latest`
 
 !!! info "Stable Releases"
-    As of July 2024 [Clastix Labs](https://github.com/clastix) no longer publish stable release artifacts. Stable releases are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor. 
+    As of July 2024 [Clastix Labs](https://github.com/clastix) no longer publish version pinned release artifacts.
+    Version pinned and stable releases are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor. 
 
 Run the following commands to install the latest edge release of Kamaji:
 
 ```bash
-git clone https://github.com/clastix/kamaji
-cd kamaji
-helm install kamaji charts/kamaji -n kamaji-system --create-namespace \
+helm install kamaji clastix/kamaji \
+    --version 0.0.0+latest \
+    --namespace kamaji-system \
+    --create-namespace \
     --set image.tag=latest
 ```
 
