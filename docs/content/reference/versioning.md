@@ -29,9 +29,9 @@ They may also involve breaking changes, of course, we do our best to avoid this.
 
 Edge Releases are generally considered production ready and the project will mark specific releases as _"not recommended"_ if bugs are discovered after release.
 
-| Kamaji       | Management Cluster | Tenant Cluster       |
-|--------------|--------------------|----------------------|
-| edge-24.12.1 | v1.22+             | [v1.29.0 .. v1.31.4] |
+| Kamaji      | Management Cluster | Tenant Cluster       |
+|-------------|--------------------|----------------------|
+| edge-25.4.1 | v1.22+             | [v1.30.0 .. v1.33.0] |
 
 
 Using Edge Release artifacts and reporting bugs helps us ensure a rapid pace of development and is a great way to help maintainers.
