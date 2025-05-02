@@ -181,7 +181,7 @@ After migrating data to the new datastore, complete the migration procedure by r
 When migrating between datastores, the Kamaji controller automatically creates a migration job to transfer data from the source to the destination datastore. By default, this job uses the same image version as the running Kamaji controller. If you need to use a different image version for the migration job, you can specify it by passing extra arguments to the controller:
 
 ```shell
-helm upgrade kamaji clastix/kamaji -n kamaji-system 
+helm upgrade kamaji clastix/kamaji --version ${CHART_VERSION} -n kamaji-system 
 --set extraArgs[0]=--migrate-image=custom/kamaji:version`
 ```
 

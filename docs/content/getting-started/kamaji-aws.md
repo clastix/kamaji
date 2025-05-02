@@ -163,7 +163,7 @@ Installing Kamaji via Helm charts is the preferred way. Run the following comman
 ```bash
 helm repo add clastix https://clastix.github.io/charts
 helm repo update
-helm install kamaji clastix/kamaji -n kamaji-system --create-namespace
+helm install kamaji clastix/kamaji -n kamaji-system --create-namespace --version 0.0.0+latest
 ```
 
 ## Create Tenant Cluster

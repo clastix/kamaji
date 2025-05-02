@@ -92,21 +92,14 @@ EOF
 
 ## Installing Kamaji
 
-- Clone the Kamaji repository
-
-```
-git clone https://github.com/clastix/kamaji
-cd kamaji
-```
-
 - Install Kamaji with Helm
 
 ```
-helm upgrade --install kamaji charts/kamaji \
+helm upgrade --install kamaji clastix/kamaji \
   --namespace kamaji-system \
   --create-namespace \
-  --set image.tag=latest \
-  --set 'resources=null'
+  --set 'resources=null' \
+  --version 0.0.0+latest
 ```
 
 - Watch the progress of the deployments
