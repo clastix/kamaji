@@ -3,6 +3,8 @@ name: Helm Chart
 on:
   push:
     branches: [ "master" ]
+  pull_request:
+    branches: [ "*" ]
 
 jobs:
   diff:
@@ -29,6 +31,7 @@ jobs:
       - name: Linting Chart
         run: helm lint ./charts/kamaji
   release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: [ "lint", "diff" ]
     runs-on: ubuntu-22.04
     steps:
