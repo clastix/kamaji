@@ -70,8 +70,9 @@ type KubeletSpec struct {
 	// Default to Hostname, InternalIP, ExternalIP.
 	//+kubebuilder:default={"Hostname","InternalIP","ExternalIP"}
 	//+kubebuilder:validation:MinItems=1
+	//+listType=set
 	PreferredAddressTypes []KubeletPreferredAddressType `json:"preferredAddressTypes,omitempty"`
-	// CGroupFS defines the  cgroup driver for Kubelet
+	// CGroupFS defines the cgroup driver for Kubelet
 	// https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
 	CGroupFS CGroupDriver `json:"cgroupfs,omitempty"`
 }

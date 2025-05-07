@@ -6535,7 +6535,7 @@ spec:
                       properties:
                         cgroupfs:
                           description: |-
-                            CGroupFS defines the  cgroup driver for Kubelet
+                            CGroupFS defines the cgroup driver for Kubelet
                             https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
                           enum:
                             - systemd
@@ -6559,6 +6559,7 @@ spec:
                             type: string
                           minItems: 1
                           type: array
+                          x-kubernetes-list-type: set
                       type: object
                     version:
                       description: Kubernetes Version for the tenant control plane
