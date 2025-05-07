@@ -13500,7 +13500,7 @@ Full reference available here: https://kubernetes.io/docs/reference/access-authn
         <td><b>cgroupfs</b></td>
         <td>enum</td>
         <td>
-          CGroupFS defines the  cgroup driver for Kubelet
+          CGroupFS defines the cgroup driver for Kubelet
 https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/<br/>
           <br/>
             <i>Enum</i>: systemd, cgroupfs<br/>
