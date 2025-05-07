@@ -223,7 +223,6 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 					handlers.TenantControlPlaneCertSANs{},
 					handlers.TenantControlPlaneName{},
 					handlers.TenantControlPlaneVersion{},
-					handlers.TenantControlPlaneKubeletAddresses{},
 					handlers.TenantControlPlaneDataStore{Client: mgr.GetClient()},
 					handlers.TenantControlPlaneDeployment{
 						Client: mgr.GetClient(),
