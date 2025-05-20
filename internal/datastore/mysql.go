@@ -29,7 +29,7 @@ const (
 	mysqlShowGrantsStatement       = "SHOW GRANTS FOR `%s`@`%%`"
 	mysqlCreateDBStatement         = "CREATE DATABASE IF NOT EXISTS %s"
 	mysqlCreateUserStatement       = "CREATE USER `%s`@`%%` IDENTIFIED BY '%s'"
-	mysqlGrantPrivilegesStatement  = "GRANT ALL PRIVILEGES ON `%s`.* TO `%s`@`%%`"
+	mysqlGrantPrivilegesStatement  = "GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON `%s`.* TO `%s`@`%%`"
 	mysqlDropDBStatement           = "DROP DATABASE IF EXISTS `%s`"
 	mysqlDropUserStatement         = "DROP USER IF EXISTS `%s`"
 	mysqlRevokePrivilegesStatement = "REVOKE ALL PRIVILEGES ON `%s`.* FROM `%s`"
