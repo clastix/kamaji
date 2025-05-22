@@ -91,6 +91,11 @@ EOF
 ```
 
 ## Installing Kamaji
+- Add the Clastix Repo to the Helm Manager.
+
+```
+helm repo add clastix https://clastix.github.io/charts
+```
 
 - Install Kamaji with Helm
 
