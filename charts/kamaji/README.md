@@ -82,10 +82,7 @@ Here the values you can override:
 | image.repository | string | `"clastix/kamaji"` | The container image of the Kamaji controller. |
 | image.tag | string | `nil` | Overrides the image tag whose default is the chart appVersion. |
 | imagePullSecrets | list | `[]` |  |
-| kamaji-etcd.datastore.enabled | bool | `true` |  |
-| kamaji-etcd.datastore.name | string | `"default"` |  |
-| kamaji-etcd.deploy | bool | `true` |  |
-| kamaji-etcd.fullnameOverride | string | `"kamaji-etcd"` |  |
+| kamaji-etcd | object | `{"clusterDomain":"cluster.local","datastore":{"enabled":true,"name":"default"},"deploy":true,"fullnameOverride":"kamaji-etcd"}` | Subchart: See https://github.com/clastix/kamaji-etcd/blob/master/charts/kamaji-etcd/values.yaml |
 | livenessProbe | object | `{"httpGet":{"path":"/healthz","port":"healthcheck"},"initialDelaySeconds":15,"periodSeconds":20}` | The livenessProbe for the controller container |
 | loggingDevel.enable | bool | `false` | Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false) |
 | metricsBindAddress | string | `":8080"` | The address the metric endpoint binds to. (default ":8080") |
