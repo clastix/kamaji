@@ -172,8 +172,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		r.resource.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Image, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Version)
 		r.resource.Spec.Template.Spec.Containers[0].Name = AgentName
 		r.resource.Spec.Template.Spec.Containers[0].Command = []string{"/proxy-agent"}
-		r.resource.Spec.Template.Spec.HostNetwork = true
-		r.resource.Spec.Template.Spec.DNSPolicy = corev1.DNSClusterFirstWithHostNet
+		r.resource.Spec.Template.Spec.HostNetwork = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.UseHostNetwork
 
 		args := make(map[string]string)
 		args["-v"] = "8"
