@@ -71,13 +71,14 @@ nav:
 - 'Guides':
   - guides/index.md
   - guides/alternative-datastore.md
-  - guides/gitops.md
-  - guides/upgrade.md
-  - guides/datastore-migration.md
   - guides/backup-and-restore.md
-  - guides/monitoring.md
-  - guides/console.md
   - guides/certs-lifecycle.md
+  - guides/datastore-migration.md
+  - guides/gitops.md
+  - guides/console.md
+  - guides/upgrade.md
+  - guides/monitoring.md
+  - guides/terraform.md
   - guides/contribute.md
 - 'Reference':
   - reference/index.md
