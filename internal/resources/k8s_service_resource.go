@@ -8,6 +8,7 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -24,6 +25,12 @@ import (
 type KubernetesServiceResource struct {
 	resource *corev1.Service
 	Client   client.Client
+}
+
+func (r *KubernetesServiceResource) GetHistogram() prometheus.Histogram {
+	serviceCollector = LazyLoadHistogramFromResource(serviceCollector, r)
+
+	return serviceCollector
 }
 
 func (r *KubernetesServiceResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {

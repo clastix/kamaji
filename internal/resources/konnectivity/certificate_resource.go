@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,12 +22,19 @@ import (
 	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
+	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type CertificateResource struct {
 	resource *corev1.Secret
 	Client   client.Client
+}
+
+func (r *CertificateResource) GetHistogram() prometheus.Histogram {
+	certificateCollector = resources.LazyLoadHistogramFromResource(certificateCollector, r)
+
+	return certificateCollector
 }
 
 func (r *CertificateResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {

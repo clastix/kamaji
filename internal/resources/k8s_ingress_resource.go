@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +23,12 @@ import (
 type KubernetesIngressResource struct {
 	resource *networkingv1.Ingress
 	Client   client.Client
-	Name     string
+}
+
+func (r *KubernetesIngressResource) GetHistogram() prometheus.Histogram {
+	ingressCollector = LazyLoadHistogramFromResource(ingressCollector, r)
+
+	return ingressCollector
 }
 
 func (r *KubernetesIngressResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
@@ -140,8 +146,6 @@ func (r *KubernetesIngressResource) Define(_ context.Context, tenantControlPlane
 		},
 	}
 
-	r.Name = "ingress"
-
 	return nil
 }
 
@@ -211,5 +215,5 @@ func (r *KubernetesIngressResource) CreateOrUpdate(ctx context.Context, tenantCo
 }
 
 func (r *KubernetesIngressResource) GetName() string {
-	return r.Name
+	return "ingress"
 }

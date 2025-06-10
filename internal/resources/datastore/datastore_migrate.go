@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -34,6 +35,12 @@ type Migrate struct {
 	job              *batchv1.Job
 
 	inProgress bool
+}
+
+func (d *Migrate) GetHistogram() prometheus.Histogram {
+	migrateCollector = resources.LazyLoadHistogramFromResource(migrateCollector, d)
+
+	return migrateCollector
 }
 
 func (d *Migrate) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {

@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/upgrade"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,6 +25,12 @@ type KubernetesUpgrade struct {
 	upgrade upgrade.Upgrade
 
 	inProgress bool
+}
+
+func (k *KubernetesUpgrade) GetHistogram() prometheus.Histogram {
+	kubeadmupgradeCollector = LazyLoadHistogramFromResource(kubeadmupgradeCollector, k)
+
+	return kubeadmupgradeCollector
 }
 
 func (k *KubernetesUpgrade) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {

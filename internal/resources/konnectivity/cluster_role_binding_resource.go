@@ -6,6 +6,7 @@ package konnectivity
 import (
 	"context"
 
+	"github.com/prometheus/client_golang/prometheus"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,6 +16,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/constants"
+	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -23,6 +25,12 @@ type ClusterRoleBindingResource struct {
 
 	resource     *rbacv1.ClusterRoleBinding
 	tenantClient client.Client
+}
+
+func (r *ClusterRoleBindingResource) GetHistogram() prometheus.Histogram {
+	clusterrolebindingCollector = resources.LazyLoadHistogramFromResource(clusterrolebindingCollector, r)
+
+	return clusterrolebindingCollector
 }
 
 func (r *ClusterRoleBindingResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {

@@ -6,6 +6,7 @@ package konnectivity
 import (
 	"context"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,6 +16,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/constants"
+	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -23,6 +25,12 @@ type ServiceAccountResource struct {
 
 	resource     *corev1.ServiceAccount
 	tenantClient client.Client
+}
+
+func (r *ServiceAccountResource) GetHistogram() prometheus.Histogram {
+	serviceaccountCollector = resources.LazyLoadHistogramFromResource(serviceaccountCollector, r)
+
+	return serviceaccountCollector
 }
 
 func (r *ServiceAccountResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {

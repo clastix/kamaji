@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,6 +44,29 @@ type KubeadmPhase struct {
 	Client   client.Client
 	Phase    kubeadmPhase
 	checksum string
+}
+
+func (r *KubeadmPhase) GetHistogram() prometheus.Histogram {
+	switch r.Phase {
+	case PhaseUploadConfigKubeadm:
+		kubeadmphaseUploadConfigKubeadmCollector = LazyLoadHistogramFromResource(kubeadmphaseUploadConfigKubeadmCollector, r)
+
+		return kubeadmphaseUploadConfigKubeadmCollector
+	case PhaseUploadConfigKubelet:
+		kubeadmphaseUploadConfigKubeletCollector = LazyLoadHistogramFromResource(kubeadmphaseUploadConfigKubeletCollector, r)
+
+		return kubeadmphaseUploadConfigKubeletCollector
+	case PhaseBootstrapToken:
+		kubeadmphaseBootstrapTokenCollector = LazyLoadHistogramFromResource(kubeadmphaseBootstrapTokenCollector, r)
+
+		return kubeadmphaseBootstrapTokenCollector
+	case PhaseClusterAdminRBAC:
+		kubeadmphaseClusterAdminRBACCollector = LazyLoadHistogramFromResource(kubeadmphaseClusterAdminRBACCollector, r)
+
+		return kubeadmphaseClusterAdminRBACCollector
+	default:
+		panic("should not happen")
+	}
 }
 
 func (r *KubeadmPhase) GetWatchedObject() client.Object {

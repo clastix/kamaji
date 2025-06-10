@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -19,6 +20,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/constants"
+	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -26,6 +28,12 @@ type Agent struct {
 	resource     *appsv1.DaemonSet
 	Client       client.Client
 	tenantClient client.Client
+}
+
+func (r *Agent) GetHistogram() prometheus.Histogram {
+	agentCollector = resources.LazyLoadHistogramFromResource(agentCollector, r)
+
+	return agentCollector
 }
 
 func (r *Agent) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {

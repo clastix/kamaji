@@ -8,6 +8,7 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,6 +26,12 @@ type KubeadmConfigResource struct {
 	Client       client.Client
 	ETCDs        []string
 	TmpDirectory string
+}
+
+func (r *KubeadmConfigResource) GetHistogram() prometheus.Histogram {
+	kubeadmconfigCollector = LazyLoadHistogramFromResource(kubeadmconfigCollector, r)
+
+	return kubeadmconfigCollector
 }
 
 func (r *KubeadmConfigResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
