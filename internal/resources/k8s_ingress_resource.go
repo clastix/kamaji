@@ -22,7 +22,6 @@ import (
 type KubernetesIngressResource struct {
 	resource *networkingv1.Ingress
 	Client   client.Client
-	Name     string
 }
 
 func (r *KubernetesIngressResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
@@ -140,8 +139,6 @@ func (r *KubernetesIngressResource) Define(_ context.Context, tenantControlPlane
 		},
 	}
 
-	r.Name = "ingress"
-
 	return nil
 }
 
@@ -211,5 +208,5 @@ func (r *KubernetesIngressResource) CreateOrUpdate(ctx context.Context, tenantCo
 }
 
 func (r *KubernetesIngressResource) GetName() string {
-	return r.Name
+	return "ingress"
 }

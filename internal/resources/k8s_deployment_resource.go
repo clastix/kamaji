@@ -21,7 +21,6 @@ type KubernetesDeploymentResource struct {
 	resource           *appsv1.Deployment
 	Client             client.Client
 	DataStore          kamajiv1alpha1.DataStore
-	Name               string
 	KineContainerImage string
 }
 
@@ -49,8 +48,6 @@ func (r *KubernetesDeploymentResource) Define(_ context.Context, tenantControlPl
 		},
 	}
 
-	r.Name = "deployment"
-
 	return nil
 }
 
@@ -71,7 +68,7 @@ func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenan
 }
 
 func (r *KubernetesDeploymentResource) GetName() string {
-	return r.Name
+	return "deployment"
 }
 
 func (r *KubernetesDeploymentResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
