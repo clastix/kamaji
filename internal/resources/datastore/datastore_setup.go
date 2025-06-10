@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -18,6 +19,7 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers/finalizers"
 	"github.com/clastix/kamaji/internal/datastore"
+	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/resources/utils"
 )
 
@@ -32,6 +34,12 @@ type Setup struct {
 	Client     client.Client
 	Connection datastore.Connection
 	DataStore  kamajiv1alpha1.DataStore
+}
+
+func (r *Setup) GetHistogram() prometheus.Histogram {
+	setupCollector = resources.LazyLoadHistogramFromResource(setupCollector, r)
+
+	return setupCollector
 }
 
 func (r *Setup) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {

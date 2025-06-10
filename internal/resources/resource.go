@@ -5,7 +5,9 @@ package resources
 
 import (
 	"context"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
@@ -20,7 +22,13 @@ const (
 	OperationResultEnqueueBack controllerutil.OperationResult = "enqueueBack"
 )
 
+type ResourceMetric interface {
+	GetHistogram() prometheus.Histogram
+}
+
 type Resource interface {
+	ResourceMetric
+
 	Define(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error
 	ShouldCleanup(tcp *kamajiv1alpha1.TenantControlPlane) bool
 	CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (bool, error)
@@ -59,6 +67,11 @@ type HandlerConfig struct {
 
 // Handle handles the given resource and returns a boolean to say if the tenantControlPlane has been modified.
 func Handle(ctx context.Context, resource Resource, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+	startTime := time.Now()
+	defer func() {
+		resource.GetHistogram().Observe(time.Since(startTime).Seconds())
+	}()
+
 	if err := resource.Define(ctx, tenantControlPlane); err != nil {
 		return "", err
 	}

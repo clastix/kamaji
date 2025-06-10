@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
@@ -37,6 +38,12 @@ type KubeconfigResource struct {
 	Name               string
 	KubeConfigFileName string
 	TmpDirectory       string
+}
+
+func (r *KubeconfigResource) GetHistogram() prometheus.Histogram {
+	kubeconfigCollector = LazyLoadHistogramFromResource(kubeconfigCollector, r)
+
+	return kubeconfigCollector
 }
 
 func (r *KubeconfigResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {

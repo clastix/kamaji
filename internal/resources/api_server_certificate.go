@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
@@ -29,6 +30,12 @@ type APIServerCertificate struct {
 	resource     *corev1.Secret
 	Client       client.Client
 	TmpDirectory string
+}
+
+func (r *APIServerCertificate) GetHistogram() prometheus.Histogram {
+	apiservercertificateCollector = LazyLoadHistogramFromResource(apiservercertificateCollector, r)
+
+	return apiservercertificateCollector
 }
 
 func (r *APIServerCertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {

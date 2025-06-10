@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,6 +23,12 @@ import (
 type KubernetesIngressResource struct {
 	resource *networkingv1.Ingress
 	Client   client.Client
+}
+
+func (r *KubernetesIngressResource) GetHistogram() prometheus.Histogram {
+	ingressCollector = LazyLoadHistogramFromResource(ingressCollector, r)
+
+	return ingressCollector
 }
 
 func (r *KubernetesIngressResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {

@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -35,6 +36,12 @@ type CoreDNS struct {
 	clusterRole        *rbacv1.ClusterRole
 	clusterRoleBinding *rbacv1.ClusterRoleBinding
 	serviceAccount     *corev1.ServiceAccount
+}
+
+func (c *CoreDNS) GetHistogram() prometheus.Histogram {
+	coreDNSCollector = resources.LazyLoadHistogramFromResource(coreDNSCollector, c)
+
+	return coreDNSCollector
 }
 
 func (c *CoreDNS) Define(context.Context, *kamajiv1alpha1.TenantControlPlane) error {

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
@@ -26,6 +27,12 @@ type SACertificate struct {
 	Client       client.Client
 	Name         string
 	TmpDirectory string
+}
+
+func (r *SACertificate) GetHistogram() prometheus.Histogram {
+	serviceaccountcertificateCollector = LazyLoadHistogramFromResource(serviceaccountcertificateCollector, r)
+
+	return serviceaccountcertificateCollector
 }
 
 func (r *SACertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
