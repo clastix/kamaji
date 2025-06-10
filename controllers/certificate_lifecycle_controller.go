@@ -99,7 +99,7 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 
 	logger.Info("certificate is still valid, enqueuing back", "after", after.String())
 
-	return reconcile.Result{Requeue: true, RequeueAfter: after}, nil
+	return reconcile.Result{RequeueAfter: after}, nil
 }
 
 func (s *CertificateLifecycle) extractCertificateFromBareSecret(secret corev1.Secret) (*x509.Certificate, error) {

@@ -6,6 +6,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -45,7 +46,7 @@ func (m *Migrate) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile
 	}
 	// Cannot detect the status of the TenantControlPlane, enqueuing back
 	if tcp.Status.Kubernetes.Version.Status == nil {
-		return reconcile.Result{Requeue: true}, nil
+		return reconcile.Result{RequeueAfter: time.Second}, nil
 	}
 
 	switch *tcp.Status.Kubernetes.Version.Status {

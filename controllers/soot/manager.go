@@ -213,7 +213,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			return nil
 		})
 
-		return reconcile.Result{Requeue: true}, finalizerErr
+		return reconcile.Result{RequeueAfter: time.Second}, finalizerErr
 	}
 	// Generating the manager and starting it:
 	// in case of any error, reconciling the request to start it back from the beginning.
@@ -377,7 +377,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		completedCh: completedCh,
 	}
 
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{RequeueAfter: time.Second}, nil
 }
 
 func (m *Manager) SetupWithManager(mgr manager.Manager) error {
