@@ -172,6 +172,11 @@ After a while, depending on the amount of data to migrate, the Tenant Control Pl
 !!! info "Leftover"
     Please, note the datastore migration leaves the data on the default datastore, so you have to remove it manually.
 
+!!! info "Avoiding stale DataStore content"
+    When migrating `TenantControlPlane` across DataStore, a collision with the __schema__ name could happen,
+    leading to unexpected results such as old data still available.
+    The annotation `kamaji.clastix.io/cleanup-prior-migration=true` allows to enforce the clean-up of the target `DataStore` schema in case of collision.
+
 ## Post migration
 After migrating data to the new datastore, complete the migration procedure by restarting the `kubelet.service` on all the tenant worker nodes.
 
