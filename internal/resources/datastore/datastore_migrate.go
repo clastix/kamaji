@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	batchv1 "k8s.io/api/batch/v1"
@@ -123,9 +124,13 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 			fmt.Sprintf("--target-datastore=%s", tenantControlPlane.Spec.DataStore),
 		}
 
-		if tenantControlPlane.GetAnnotations() != nil {
-			v, _ := strconv.ParseBool(tenantControlPlane.GetAnnotations()["kamaji.clastix.io/cleanup-prior-migration"])
+		if annotations := tenantControlPlane.GetAnnotations(); annotations != nil {
+			v, _ := strconv.ParseBool(annotations["kamaji.clastix.io/cleanup-prior-migration"])
 			d.job.Spec.Template.Spec.Containers[0].Args = append(d.job.Spec.Template.Spec.Containers[0].Args, fmt.Sprintf("--cleanup-prior-migration=%t", v))
+
+			if timeout, tErr := time.ParseDuration(annotations["kamaji.clastix.io/migration-timeout"]); tErr == nil {
+				d.job.Spec.Template.Spec.Containers[0].Args = append(d.job.Spec.Template.Spec.Containers[0].Args, fmt.Sprintf("--timeout=%s", timeout.String()))
+			}
 		}
 
 		return nil
