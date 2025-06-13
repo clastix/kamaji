@@ -160,7 +160,6 @@ tenant-00   v1.25.2   Ready       192.168.32.200:6443      tenant-00-admin-kubec
 
 During the datastore migration, the Tenant Control Plane is put in read-only mode to avoid misalignments between source and destination datastores. If tenant users try to update the data, an admission controller denies the request with the following message:
 
-
 ```shell
 Error from server (the current Control Plane is in freezing mode due to a maintenance mode,
 all the changes are blocked: removing the webhook may lead to an inconsistent state upon its completion):
@@ -168,6 +167,9 @@ admission webhook "catchall.migrate.kamaji.clastix.io" denied the request
 ```
 
 After a while, depending on the amount of data to migrate, the Tenant Control Plane is put back in full operating mode by the Kamaji controller.
+
+Migration is expected to complete in 5 minutes.
+However, that timeout can be customized at the `TenantControlPlane` level with the annotation `kamaji.clastix.io/migration-timeout` with a Go-duration value (e.g.: `5m`).
 
 !!! info "Leftover"
     Please, note the datastore migration leaves the data on the default datastore, so you have to remove it manually.
