@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	batchv1 "k8s.io/api/batch/v1"
@@ -123,14 +124,27 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 			fmt.Sprintf("--target-datastore=%s", tenantControlPlane.Spec.DataStore),
 		}
 
-		if tenantControlPlane.GetAnnotations() != nil {
-			v, _ := strconv.ParseBool(tenantControlPlane.GetAnnotations()["kamaji.clastix.io/cleanup-prior-migration"])
+		if annotations := tenantControlPlane.GetAnnotations(); annotations != nil {
+			v, _ := strconv.ParseBool(annotations["kamaji.clastix.io/cleanup-prior-migration"])
 			d.job.Spec.Template.Spec.Containers[0].Args = append(d.job.Spec.Template.Spec.Containers[0].Args, fmt.Sprintf("--cleanup-prior-migration=%t", v))
+
+			if timeout, tErr := time.ParseDuration(annotations["kamaji.clastix.io/migration-timeout"]); tErr == nil {
+				d.job.Spec.Template.Spec.Containers[0].Args = append(d.job.Spec.Template.Spec.Containers[0].Args, fmt.Sprintf("--timeout=%s", timeout.String()))
+			}
 		}
 
 		return nil
 	})
 	if err != nil {
+		// Jobs are immutable, except for a tiny subset of fields:
+		// these are useless for Kamaji, and we don't have proper RBAC.
+		// If the Job has a UUID, it means it's an update, and we're expecting that error.
+		if errors.IsForbidden(err) && d.job.UID != "" {
+			_ = d.Client.Delete(ctx, d.job)
+
+			return controllerutil.OperationResultNone, fmt.Errorf("migration job must be cretaed back due to immutable fields")
+		}
+
 		return res, fmt.Errorf("unable to launch migrate job: %w", err)
 	}
 
