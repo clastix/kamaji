@@ -136,6 +136,15 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 		return nil
 	})
 	if err != nil {
+		// Jobs are immutable, except for a tiny subset of fields:
+		// these are useless for Kamaji, and we don't have proper RBAC.
+		// If the Job has a UUID, it means it's an update, and we're expecting that error.
+		if errors.IsForbidden(err) && d.job.UID != "" {
+			_ = d.Client.Delete(ctx, d.job)
+
+			return controllerutil.OperationResultNone, fmt.Errorf("migration job must be cretaed back due to immutable fields")
+		}
+
 		return res, fmt.Errorf("unable to launch migrate job: %w", err)
 	}
 
