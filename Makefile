@@ -250,6 +250,15 @@ e2e: env build load helm ginkgo cert-manager ## Create a KinD cluster, install K
 
 ##@ Document
 
+CAPI_URL = https://github.com/clastix/cluster-api-control-plane-provider-kamaji.git
+CAPI_DIR := $(shell mktemp -d)
+CRDS_DIR := $(shell mktemp -d)
+
 .PHONY: apidoc
 apidoc: apidocs-gen
-	$(APIDOCS_GEN) crdoc --resources charts/kamaji/crds --output docs/content/reference/api.md --template docs/templates/reference-cr.tmpl
+	@cp charts/kamaji/crds/*.yaml $(CRDS_DIR)
+	@git clone $(CAPI_URL) $(CAPI_DIR)
+	@cp $(CAPI_DIR)/config/crd/bases/*.yaml $(CRDS_DIR)
+	@rm -rf $(CAPI_DIR)
+	$(APIDOCS_GEN) crdoc --resources $(CRDS_DIR) --output docs/content/reference/api.md --template docs/templates/reference-cr.tmpl
+	@rm -rf $(CRDS_DIR)
