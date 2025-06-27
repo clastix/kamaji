@@ -24,7 +24,7 @@ spec:
           name: Version
           type: string
         - description: The actual installed Kubernetes version from status
-          jsonPath: .status.kubernetes.version
+          jsonPath: .status.kubernetesResources.version.version
           name: Installed Version
           type: string
         - description: Status

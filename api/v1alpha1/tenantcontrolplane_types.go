@@ -305,7 +305,7 @@ type TenantControlPlaneSpec struct {
 //+kubebuilder:subresource:scale:specpath=.spec.controlPlane.deployment.replicas,statuspath=.status.kubernetesResources.deployment.replicas,selectorpath=.status.kubernetesResources.deployment.selector
 //+kubebuilder:resource:categories=kamaji,shortName=tcp
 //+kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.kubernetes.version",description="Kubernetes version"
-//+kubebuilder:printcolumn:name="Installed Version",type="string",JSONPath=".status.kubernetes.version",description="The actual installed Kubernetes version from status"
+//+kubebuilder:printcolumn:name="Installed Version",type="string",JSONPath=".status.kubernetesResources.version.version",description="The actual installed Kubernetes version from status"
 //+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.kubernetesResources.version.status",description="Status"
 //+kubebuilder:printcolumn:name="Control-Plane endpoint",type="string",JSONPath=".status.controlPlaneEndpoint",description="Tenant Control Plane Endpoint (API server)"
 //+kubebuilder:printcolumn:name="Kubeconfig",type="string",JSONPath=".status.kubeconfig.admin.secretName",description="Secret which contains admin kubeconfig"
