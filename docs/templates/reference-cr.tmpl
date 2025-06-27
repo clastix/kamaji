@@ -11,7 +11,7 @@ Packages:
 {{- range .Groups }}
 {{- $group := . }}
 
-# {{.Group}}/{{.Version}}
+## {{.Group}}/{{.Version}}
 
 Resource Types:
 {{range .Kinds}}
@@ -20,14 +20,13 @@ Resource Types:
 
 {{range .Kinds}}
 {{$kind := .}}
-## {{.Name}}
+### {{.Name}}
 
 {{range .Types}}
 
 {{if not .IsTopLevel}}
-### {{.Name}}
+<span id="{{ anchorize .Name }}">`{{.Name}}`</span>
 {{end}}
-
 
 {{.Description}}
 
