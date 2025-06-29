@@ -67,8 +67,8 @@ const (
 
 type KubeletSpec struct {
 	// Ordered list of the preferred NodeAddressTypes to use for kubelet connections.
-	// Default to Hostname, InternalIP, ExternalIP.
-	//+kubebuilder:default={"Hostname","InternalIP","ExternalIP"}
+	// Default to InternalIP, ExternalIP, Hostname.
+	//+kubebuilder:default={"InternalIP","ExternalIP","Hostname"}
 	//+kubebuilder:validation:MinItems=1
 	//+listType=set
 	PreferredAddressTypes []KubeletPreferredAddressType `json:"preferredAddressTypes,omitempty"`
