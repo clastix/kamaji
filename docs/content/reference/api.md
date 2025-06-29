@@ -39470,10 +39470,10 @@ https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-dri
         <td>[]enum</td>
         <td>
           Ordered list of the preferred NodeAddressTypes to use for kubelet connections.
-Default to Hostname, InternalIP, ExternalIP.<br/>
+Default to InternalIP, ExternalIP, Hostname.<br/>
           <br/>
             <i>Enum</i>: Hostname, InternalIP, ExternalIP, InternalDNS, ExternalDNS<br/>
-            <i>Default</i>: [Hostname InternalIP ExternalIP]<br/>
+            <i>Default</i>: [InternalIP ExternalIP Hostname]<br/>
         </td>
         <td>false</td>
       </tr></tbody>
