@@ -136,9 +136,12 @@ kubectl apply -f https://raw.githubusercontent.com/clastix/kamaji/master/config/
 kubectl get tcp -w
 ```
 
-- You can attempt to get the details of the control plane by downloading the `kubeconfig` file
+- You can attempt to get the details of the control plane by downloading the `kubeconfig` file and enter kind cluster container.
 
 ```
+# enter kind cluster container, and kubectl is installed by default
+docker exec -it $(docker container list | grep kamaji-control-plane | awk '{print $1}') bash
+
 # Set the SECRET as KUBECONFIG column listed in the tcp output.
 SECRET=""
 kubectl get secret $SECRET -o jsonpath='{.data.admin\.conf}'|base64 -d > /tmp/kamaji.conf
