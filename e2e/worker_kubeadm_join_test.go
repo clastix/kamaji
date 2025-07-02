@@ -173,7 +173,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 		})
 
 		By("executing the command in the worker node", func() {
-			cmds := append(strings.Split(strings.TrimSpace(joinCommandBuffer.String()), " "), "--ignore-preflight-errors=SystemVerification")
+			cmds := append(strings.Split(strings.TrimSpace(joinCommandBuffer.String()), " "), "--ignore-preflight-errors=SystemVerification,FileExisting")
 
 			exitCode, stdout, err := workerContainer.Exec(ctx, cmds)
 
