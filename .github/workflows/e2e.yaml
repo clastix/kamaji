@@ -46,5 +46,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y golang-cfssl
           sudo swapoff -a
+          sudo modprobe br_netfilter
       - name: e2e testing
         run: make e2e
