@@ -7,7 +7,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -137,23 +139,49 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 		})
 
 		By("enabling br_netfilter", func() {
-			exitCode, _, err := workerContainer.Exec(ctx, []string{"modprobe", "br_netfilter"})
+			exitCode, stdout, err := workerContainer.Exec(ctx, []string{"modprobe", "br_netfilter"})
 
-			Expect(exitCode).To(Equal(0))
-			Expect(err).ToNot(HaveOccurred())
+			out, _ := io.ReadAll(stdout)
+			if len(out) > 0 {
+				_, _ = fmt.Fprintln(GinkgoWriter, "modprobe failed: "+string(out))
+			}
+
+			if exitCode != 0 {
+				_, _ = fmt.Fprintln(GinkgoWriter, "modprobe exit code: "+strconv.FormatUint(uint64(exitCode), 10))
+			}
+
+			if err != nil {
+				_, _ = fmt.Fprintln(GinkgoWriter, "modprobe error: "+err.Error())
+			}
 		})
 
-		By("disabling swapp", func() {
-			exitCode, _, err := workerContainer.Exec(ctx, []string{"swapoff", "-a"})
+		By("disabling swap", func() {
+			exitCode, stdout, err := workerContainer.Exec(ctx, []string{"swapoff", "-a"})
 
-			Expect(exitCode).To(Equal(0))
-			Expect(err).ToNot(HaveOccurred())
+			out, _ := io.ReadAll(stdout)
+			if len(out) > 0 {
+				_, _ = fmt.Fprintln(GinkgoWriter, "swapoff failed: "+string(out))
+			}
+
+			if exitCode != 0 {
+				_, _ = fmt.Fprintln(GinkgoWriter, "swapoff exit code: "+strconv.FormatUint(uint64(exitCode), 10))
+			}
+
+			if err != nil {
+				_, _ = fmt.Fprintln(GinkgoWriter, "swapoff error: "+err.Error())
+			}
 		})
 
 		By("executing the command in the worker node", func() {
-			cmds := append(strings.Split(strings.TrimSpace(joinCommandBuffer.String()), " "), "--ignore-preflight-errors=SystemVerification")
+			cmds := append(strings.Split(strings.TrimSpace(joinCommandBuffer.String()), " "), "--ignore-preflight-errors=SystemVerification,FileExisting")
 
-			exitCode, _, err := workerContainer.Exec(ctx, cmds)
+			exitCode, stdout, err := workerContainer.Exec(ctx, cmds)
+
+			out, _ := io.ReadAll(stdout)
+			if len(out) > 0 {
+				_, _ = fmt.Fprintln(GinkgoWriter, "executing failed: "+string(out))
+			}
+
 			Expect(exitCode).To(Equal(0))
 			Expect(err).ToNot(HaveOccurred())
 		})

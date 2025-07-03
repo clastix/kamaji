@@ -33,7 +33,7 @@ on:
 jobs:
   kind:
     name: Kubernetes
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,5 +46,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y golang-cfssl
           sudo swapoff -a
+          sudo modprobe br_netfilter
       - name: e2e testing
         run: make e2e
