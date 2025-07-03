@@ -144,6 +144,12 @@ SECRET=""
 kubectl get secret $SECRET -o jsonpath='{.data.admin\.conf}'|base64 -d > /tmp/kamaji.conf
 ```
 
+- (options) if you run kind in some specific systems with `docker bridge network`, eg macOS, you may need to access the `kind` container, and perform the `kubectl` actions:
+
+```
+docker exec -it $(docker container list | grep kamaji-control-plane | awk '{print $1}') bash
+```
+
 - Export the `kubeconfig` file to the environment variable `KUBECONFIG`
 
 ```
