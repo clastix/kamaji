@@ -168,7 +168,7 @@ Available only if Kamaji is running using Kine as backing storage.<br/>
         <td>
           Configure the Kubelet options, such as the preferred address types, or the expected cgroupfs.<br/>
           <br/>
-            <i>Default</i>: map[cgroupfs:systemd preferredAddressTypes:[Hostname InternalIP ExternalIP]]<br/>
+            <i>Default</i>: map[cgroupfs:systemd preferredAddressTypes:[InternalIP ExternalIP Hostname]]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13384,7 +13384,7 @@ Available only if Kamaji is running using Kine as backing storage.<br/>
         <td>
           Configure the Kubelet options, such as the preferred address types, or the expected cgroupfs.<br/>
           <br/>
-            <i>Default</i>: map[cgroupfs:systemd preferredAddressTypes:[Hostname InternalIP ExternalIP]]<br/>
+            <i>Default</i>: map[cgroupfs:systemd preferredAddressTypes:[InternalIP ExternalIP Hostname]]<br/>
         </td>
         <td>false</td>
       </tr><tr>
