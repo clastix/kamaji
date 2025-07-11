@@ -4,6 +4,8 @@
 package internal
 
 var (
+	ContainerRepository = "docker.io"
+
 	GitRepo   = ""
 	GitTag    = "dev"
 	GitCommit = ""
