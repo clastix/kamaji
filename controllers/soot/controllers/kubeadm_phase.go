@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	"k8s.io/utils/ptr"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -19,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	sooterrors "github.com/clastix/kamaji/controllers/soot/controllers/errors"
 	"github.com/clastix/kamaji/controllers/utils"
 	"github.com/clastix/kamaji/internal/resources"
 )
@@ -34,6 +36,12 @@ type KubeadmPhase struct {
 func (k *KubeadmPhase) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
 	tcp, err := k.GetTenantControlPlaneFunc()
 	if err != nil {
+		if errors.Is(err, sooterrors.ErrPausedReconciliation) {
+			k.logger.Info(err.Error())
+
+			return reconcile.Result{}, nil
+		}
+
 		return reconcile.Result{}, err
 	}
 

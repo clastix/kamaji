@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/controllers/utils"
 	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -41,17 +42,23 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 
 	logger.Info("starting CertificateLifecycle handling")
 
-	secret := corev1.Secret{}
-	err := s.client.Get(ctx, request.NamespacedName, &secret)
-	if k8serrors.IsNotFound(err) {
-		logger.Info("resource have been deleted, skipping")
+	var secret corev1.Secret
+	if err := s.client.Get(ctx, request.NamespacedName, &secret); err != nil {
+		if k8serrors.IsNotFound(err) {
+			logger.Info("resource have been deleted, skipping")
 
-		return reconcile.Result{}, nil
-	}
-	if err != nil {
+			return reconcile.Result{}, nil
+		}
+
 		logger.Error(err, "cannot retrieve the required resource")
 
 		return reconcile.Result{}, err
+	}
+
+	if utils.IsPaused(&secret) {
+		logger.Info("paused reconciliation, no further actions")
+
+		return reconcile.Result{}, nil
 	}
 
 	checkType, ok := secret.GetLabels()[constants.ControllerLabelResource]
@@ -62,6 +69,7 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	var crt *x509.Certificate
+	var err error
 
 	switch checkType {
 	case "x509":

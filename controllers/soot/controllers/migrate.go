@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	pointer "k8s.io/utils/ptr"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -25,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/clastix/kamaji/api/v1alpha1"
+	sooterrors "github.com/clastix/kamaji/controllers/soot/controllers/errors"
 	"github.com/clastix/kamaji/controllers/utils"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -42,6 +44,12 @@ type Migrate struct {
 func (m *Migrate) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
 	tcp, err := m.GetTenantControlPlaneFunc()
 	if err != nil {
+		if errors.Is(err, sooterrors.ErrPausedReconciliation) {
+			m.Logger.Info(err.Error())
+
+			return reconcile.Result{}, nil
+		}
+
 		return reconcile.Result{}, err
 	}
 	// Cannot detect the status of the TenantControlPlane, enqueuing back
@@ -67,7 +75,7 @@ func (m *Migrate) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile
 
 func (m *Migrate) cleanup(ctx context.Context) error {
 	if err := m.Client.Delete(ctx, m.object()); err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil
 		}
 

@@ -53,6 +53,12 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 		return reconcile.Result{}, err
 	}
 
+	if utils.IsPaused(&ds) {
+		logger.Info("paused reconciliation, no further actions")
+
+		return reconcile.Result{}, nil
+	}
+
 	var tcpList kamajiv1alpha1.TenantControlPlaneList
 
 	updateErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {

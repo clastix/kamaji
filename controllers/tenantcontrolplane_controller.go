@@ -95,6 +95,12 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return reconcile.Result{}, err
 	}
 
+	if utils.IsPaused(tenantControlPlane) {
+		log.Info("paused reconciliation, no further actions")
+
+		return ctrl.Result{}, nil
+	}
+
 	releaser, err := mutex.Acquire(r.mutexSpec(tenantControlPlane))
 	if err != nil {
 		switch {
