@@ -73,6 +73,7 @@ nav:
   - guides/alternative-datastore.md
   - guides/backup-and-restore.md
   - guides/certs-lifecycle.md
+  - guides/pausing.md
   - guides/datastore-migration.md
   - guides/gitops.md
   - guides/console.md
