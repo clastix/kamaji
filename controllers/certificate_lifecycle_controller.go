@@ -45,7 +45,7 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 	var secret corev1.Secret
 	if err := s.client.Get(ctx, request.NamespacedName, &secret); err != nil {
 		if k8serrors.IsNotFound(err) {
-			logger.Info("resource have been deleted, skipping")
+			logger.Info("resource may have been deleted, skipping")
 
 			return reconcile.Result{}, nil
 		}

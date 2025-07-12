@@ -85,7 +85,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	tenantControlPlane, err := r.getTenantControlPlane(ctx, req.NamespacedName)()
 	if k8serrors.IsNotFound(err) {
-		log.Info("resource have been deleted, skipping")
+		log.Info("resource may have been deleted, skipping")
 
 		return reconcile.Result{}, nil
 	}

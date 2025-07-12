@@ -43,7 +43,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	var ds kamajiv1alpha1.DataStore
 	if err := r.Client.Get(ctx, request.NamespacedName, &ds); err != nil {
 		if k8serrors.IsNotFound(err) {
-			logger.Info("resource have been deleted, skipping")
+			logger.Info("resource may have been deleted, skipping")
 
 			return reconcile.Result{}, nil
 		}
