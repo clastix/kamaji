@@ -25,7 +25,7 @@ import (
 )
 
 type Agent struct {
-	resource     *appsv1.DaemonSet
+	resource     client.Object
 	Client       client.Client
 	tenantClient client.Client
 }
@@ -38,7 +38,8 @@ func (r *Agent) GetHistogram() prometheus.Histogram {
 
 func (r *Agent) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
 	return tcp.Spec.Addons.Konnectivity == nil && (tcp.Status.Addons.Konnectivity.Agent.Namespace != "" || tcp.Status.Addons.Konnectivity.Agent.Name != "") ||
-		tcp.Spec.Addons.Konnectivity != nil && (tcp.Status.Addons.Konnectivity.Agent.Namespace != r.resource.Namespace || tcp.Status.Addons.Konnectivity.Agent.Name != r.resource.Name)
+		tcp.Spec.Addons.Konnectivity != nil && (tcp.Status.Addons.Konnectivity.Agent.Namespace != r.resource.GetNamespace() || tcp.Status.Addons.Konnectivity.Agent.Name != r.resource.GetName()) ||
+		tcp.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode != tcp.Status.Addons.Konnectivity.Agent.Mode
 }
 
 func (r *Agent) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -78,12 +79,19 @@ func (r *Agent) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlan
 func (r *Agent) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (err error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
-	r.resource = &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      AgentName,
-			Namespace: AgentNamespace,
-		},
+	switch tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode {
+	case kamajiv1alpha1.KonnectivityAgentModeDaemonSet:
+		r.resource = &appsv1.DaemonSet{}
+	case kamajiv1alpha1.KonnectivityAgentModeDeployment:
+		r.resource = &appsv1.Deployment{}
+	default:
+		logger.Info("TenantControlPlane CRD is not updated, or validation failed, fallback to DaemonSet")
+
+		r.resource = &appsv1.DaemonSet{}
 	}
+
+	r.resource.SetNamespace(AgentNamespace)
+	r.resource.SetName(AgentName)
 
 	if r.tenantClient, err = utilities.GetTenantClient(ctx, r.Client, tenantControlPlane); err != nil {
 		logger.Error(err, "unable to retrieve the Tenant Control Plane client")
@@ -96,7 +104,33 @@ func (r *Agent) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 
 func (r *Agent) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
-		return controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(ctx, tenantControlPlane))
+		or, err := controllerutil.CreateOrUpdate(ctx, r.tenantClient, r.resource, r.mutate(ctx, tenantControlPlane))
+		if err != nil {
+			return controllerutil.OperationResultNone, err
+		}
+
+		switch {
+		case tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode == kamajiv1alpha1.KonnectivityAgentModeDaemonSet &&
+			tenantControlPlane.Status.Addons.Konnectivity.Agent.Mode != kamajiv1alpha1.KonnectivityAgentModeDaemonSet:
+			var obj appsv1.Deployment
+			obj.SetName(r.resource.GetName())
+			obj.SetNamespace(r.resource.GetNamespace())
+
+			if cleanupErr := r.tenantClient.Delete(ctx, &obj); cleanupErr != nil {
+				log.FromContext(ctx, "resource", r.GetName()).Error(cleanupErr, "cannot cleanup older appsv1.Deployment")
+			}
+		case tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode == kamajiv1alpha1.KonnectivityAgentModeDeployment &&
+			tenantControlPlane.Status.Addons.Konnectivity.Agent.Mode != kamajiv1alpha1.KonnectivityAgentModeDeployment:
+			var obj appsv1.DaemonSet
+			obj.SetName(r.resource.GetName())
+			obj.SetNamespace(r.resource.GetNamespace())
+
+			if cleanupErr := r.tenantClient.Delete(ctx, &obj); cleanupErr != nil {
+				log.FromContext(ctx, "resource", r.GetName()).Error(cleanupErr, "cannot cleanup older appsv1.DaemonSet")
+			}
+		}
+
+		return or, nil
 	}
 
 	return controllerutil.OperationResultNone, nil
@@ -107,13 +141,16 @@ func (r *Agent) GetName() string {
 }
 
 func (r *Agent) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	tenantControlPlane.Status.Addons.Konnectivity.Agent = kamajiv1alpha1.ExternalKubernetesObjectStatus{}
+	tenantControlPlane.Status.Addons.Konnectivity.Agent = kamajiv1alpha1.KonnectivityAgentStatus{}
 
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
-		tenantControlPlane.Status.Addons.Konnectivity.Agent = kamajiv1alpha1.ExternalKubernetesObjectStatus{
-			Name:       r.resource.GetName(),
-			Namespace:  r.resource.GetNamespace(),
-			LastUpdate: metav1.Now(),
+		tenantControlPlane.Status.Addons.Konnectivity.Agent = kamajiv1alpha1.KonnectivityAgentStatus{
+			ExternalKubernetesObjectStatus: kamajiv1alpha1.ExternalKubernetesObjectStatus{
+				Name:       r.resource.GetName(),
+				Namespace:  r.resource.GetNamespace(),
+				LastUpdate: metav1.Now(),
+			},
+			Mode: tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode,
 		}
 	}
 
@@ -133,27 +170,31 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
-		if r.resource.Spec.Selector == nil {
-			r.resource.Spec.Selector = &metav1.LabelSelector{}
-		}
-		r.resource.Spec.Selector.MatchLabels = map[string]string{
-			"k8s-app": AgentName,
-		}
-
-		r.resource.Spec.Template.SetLabels(utilities.MergeMaps(
-			r.resource.Spec.Template.GetLabels(),
-			map[string]string{
+		specSelector := &metav1.LabelSelector{
+			MatchLabels: map[string]string{
 				"k8s-app": AgentName,
 			},
-		))
+		}
 
-		r.resource.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
-		r.resource.Spec.Template.Spec.Tolerations = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Tolerations
-		r.resource.Spec.Template.Spec.NodeSelector = map[string]string{
+		var podTemplateSpec *corev1.PodTemplateSpec
+
+		switch obj := r.resource.(type) {
+		case *appsv1.DaemonSet:
+			obj.Spec.Selector = specSelector
+			podTemplateSpec = &obj.Spec.Template
+		case *appsv1.Deployment:
+			obj.Spec.Selector = specSelector
+			podTemplateSpec = &obj.Spec.Template
+		}
+
+		podTemplateSpec.SetLabels(utilities.MergeMaps(podTemplateSpec.GetLabels(), specSelector.MatchLabels))
+		podTemplateSpec.Spec.PriorityClassName = "system-cluster-critical"
+		podTemplateSpec.Spec.Tolerations = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Tolerations
+		podTemplateSpec.Spec.NodeSelector = map[string]string{
 			"kubernetes.io/os": "linux",
 		}
-		r.resource.Spec.Template.Spec.ServiceAccountName = AgentName
-		r.resource.Spec.Template.Spec.Volumes = []corev1.Volume{
+		podTemplateSpec.Spec.ServiceAccountName = AgentName
+		podTemplateSpec.Spec.Volumes = []corev1.Volume{
 			{
 				Name: agentTokenName,
 				VolumeSource: corev1.VolumeSource{
@@ -173,13 +214,13 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			},
 		}
 
-		if len(r.resource.Spec.Template.Spec.Containers) != 1 {
-			r.resource.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
+		if len(podTemplateSpec.Spec.Containers) != 1 {
+			podTemplateSpec.Spec.Containers = make([]corev1.Container, 1)
 		}
 
-		r.resource.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Image, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Version)
-		r.resource.Spec.Template.Spec.Containers[0].Name = AgentName
-		r.resource.Spec.Template.Spec.Containers[0].Command = []string{"/proxy-agent"}
+		podTemplateSpec.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Image, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Version)
+		podTemplateSpec.Spec.Containers[0].Name = AgentName
+		podTemplateSpec.Spec.Containers[0].Command = []string{"/proxy-agent"}
 
 		args := make(map[string]string)
 		args["-v"] = "8"
@@ -197,18 +238,18 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			args[k] = v
 		}
 
-		r.resource.Spec.Template.Spec.Containers[0].Args = utilities.ArgsFromMapToSlice(args)
-		r.resource.Spec.Template.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
+		podTemplateSpec.Spec.Containers[0].Args = utilities.ArgsFromMapToSlice(args)
+		podTemplateSpec.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
 			{
 				MountPath: "/var/run/secrets/tokens",
 				Name:      agentTokenName,
 			},
 		}
-		r.resource.Spec.Template.Spec.Containers[0].LivenessProbe = &corev1.Probe{
+		podTemplateSpec.Spec.Containers[0].LivenessProbe = &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/healthz",
-					Port:   intstr.FromInt(8134),
+					Port:   intstr.FromInt32(8134),
 					Scheme: corev1.URISchemeHTTP,
 				},
 			},
@@ -217,6 +258,16 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			PeriodSeconds:       10,
 			SuccessThreshold:    1,
 			FailureThreshold:    3,
+		}
+
+		switch tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode {
+		case kamajiv1alpha1.KonnectivityAgentModeDaemonSet:
+			r.resource.(*appsv1.DaemonSet).Spec.Template = *podTemplateSpec //nolint:forcetypeassert
+		case kamajiv1alpha1.KonnectivityAgentModeDeployment:
+			//nolint:forcetypeassert
+			r.resource.(*appsv1.Deployment).Spec.Template = *podTemplateSpec
+			//nolint:forcetypeassert
+			r.resource.(*appsv1.Deployment).Spec.Replicas = pointer.To(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Replicas)
 		}
 
 		return nil

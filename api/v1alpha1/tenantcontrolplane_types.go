@@ -236,6 +236,15 @@ type KonnectivityServerSpec struct {
 	ExtraArgs ExtraArgs                    `json:"extraArgs,omitempty"`
 }
 
+type KonnectivityAgentMode string
+
+var (
+	KonnectivityAgentModeDaemonSet  KonnectivityAgentMode = "DaemonSet"
+	KonnectivityAgentModeDeployment KonnectivityAgentMode = "Deployment"
+)
+
+//+kubebuilder:validation:XValidation:rule="!(self.mode == 'DaemonSet' && has(self.replicas) && self.replicas != 0) && !(self.mode == 'Deployment' && self.replicas == 0)",message="replicas must be 0 when mode is DaemonSet, and greater than 0 when mode is Deployment"
+
 type KonnectivityAgentSpec struct {
 	// AgentImage defines the container image for Konnectivity's agent.
 	//+kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-agent
@@ -248,13 +257,21 @@ type KonnectivityAgentSpec struct {
 	//+kubebuilder:default={{key: "CriticalAddonsOnly", operator: "Exists"}}
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 	ExtraArgs   ExtraArgs           `json:"extraArgs,omitempty"`
+	// Mode allows specifying the Agent deployment mode: Deployment, or DaemonSet (default).
+	//+kubebuilder:default="DaemonSet"
+	//+kubebuilder:validation:Enum=DaemonSet;Deployment
+	Mode KonnectivityAgentMode `json:"mode,omitempty"`
+	// Replicas defines the number of replicas when Mode is Deployment.
+	// Must be 0 if Mode is DaemonSet.
+	//+kubebuilder:validation:Optional
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.
 type KonnectivitySpec struct {
 	//+kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-server",port:8132}
 	KonnectivityServerSpec KonnectivityServerSpec `json:"server,omitempty"`
-	//+kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-agent"}
+	//+kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-agent",mode:"DaemonSet"}
 	KonnectivityAgentSpec KonnectivityAgentSpec `json:"agent,omitempty"`
 }
 
