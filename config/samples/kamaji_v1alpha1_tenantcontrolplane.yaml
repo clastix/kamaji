@@ -22,3 +22,5 @@ spec:
     konnectivity:
       server:
         port: 8132
+      agent:
+        mode: DaemonSet
