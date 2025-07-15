@@ -104,7 +104,7 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
-				constants.ControllerLabelResource: "x509",
+				constants.ControllerLabelResource: utilities.CertificateX509Label,
 			},
 		))
 
@@ -114,7 +114,9 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 			return err
 		}
 
-		if checksum := tenantControlPlane.Status.Certificates.APIServerKubeletClient.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0 {
+		isRotationRequested := utilities.IsRotationRequested(r.resource)
+
+		if checksum := tenantControlPlane.Status.Certificates.APIServerKubeletClient.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0) {
 			isCAValid, err := crypto.VerifyCertificate(r.resource.Data[kubeadmconstants.APIServerKubeletClientCertName], secretCA.Data[kubeadmconstants.CACertName], x509.ExtKeyUsageClientAuth)
 			if err != nil {
 				logger.Info(fmt.Sprintf("certificate-authority verify failed: %s", err.Error()))
@@ -150,6 +152,10 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 			logger.Error(err, "cannot generate certificate and private key")
 
 			return err
+		}
+
+		if isRotationRequested {
+			utilities.SetLastRotationTimestamp(r.resource)
 		}
 
 		r.resource.Data = map[string][]byte{

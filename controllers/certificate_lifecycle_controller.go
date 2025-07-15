@@ -64,12 +64,12 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 	var crt *x509.Certificate
 
 	switch checkType {
-	case "x509":
+	case utilities.CertificateX509Label:
 		crt, err = s.extractCertificateFromBareSecret(secret)
-	case "kubeconfig":
+	case utilities.CertificateKubeconfigLabel:
 		crt, err = s.extractCertificateFromKubeconfig(secret)
 	default:
-		err = fmt.Errorf("unsupported strategy, %s", checkType)
+		return reconcile.Result{}, fmt.Errorf("unsupported strategy, %q", checkType)
 	}
 
 	if err != nil {
@@ -144,7 +144,7 @@ func (s *CertificateLifecycle) extractCertificateFromKubeconfig(secret corev1.Se
 func (s *CertificateLifecycle) SetupWithManager(mgr controllerruntime.Manager) error {
 	s.client = mgr.GetClient()
 
-	supportedStrategies := sets.New[string]("x509", "kubeconfig")
+	supportedStrategies := sets.New[string](utilities.CertificateX509Label, utilities.CertificateKubeconfigLabel)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
 		For(&corev1.Secret{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
