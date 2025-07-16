@@ -39576,7 +39576,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent version:v0.28.6]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet version:v0.28.6]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -39623,6 +39623,26 @@ unxpected ways. Only modify if you know what you are doing.<br/>
           AgentImage defines the container image for Konnectivity's agent.<br/>
           <br/>
             <i>Default</i>: registry.k8s.io/kas-network-proxy/proxy-agent<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>enum</td>
+        <td>
+          Mode allows specifying the Agent deployment mode: Deployment, or DaemonSet (default).<br/>
+          <br/>
+            <i>Enum</i>: DaemonSet, Deployment<br/>
+            <i>Default</i>: DaemonSet<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          Replicas defines the number of replicas when Mode is Deployment.
+Must be 0 if Mode is DaemonSet.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -40248,6 +40268,13 @@ KonnectivityStatus defines the status of Konnectivity as Addon.
           Last time when k8s object was updated<br/>
           <br/>
             <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr><tr>
