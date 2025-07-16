@@ -91,7 +91,9 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
-		if checksum := tenantControlPlane.Status.Certificates.SA.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0 {
+		isRotationRequested := utilities.IsRotationRequested(r.resource)
+
+		if checksum := tenantControlPlane.Status.Certificates.SA.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0) {
 			isValid, err := crypto.CheckPublicAndPrivateKeyValidity(r.resource.Data[kubeadmconstants.ServiceAccountPublicKeyName], r.resource.Data[kubeadmconstants.ServiceAccountPrivateKeyName])
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s public_key-private_key pair is not valid: %s", kubeadmconstants.ServiceAccountKeyBaseName, err.Error()))
@@ -121,6 +123,10 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 		}
 
 		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
+
+		if isRotationRequested {
+			utilities.SetLastRotationTimestamp(r.resource)
+		}
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 

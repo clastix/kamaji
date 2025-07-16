@@ -172,10 +172,10 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
-				constants.ControllerLabelResource: "kubeconfig",
+				constants.ControllerLabelResource: utilities.CertificateKubeconfigLabel,
 			},
 		))
-		r.resource.SetAnnotations(map[string]string{constants.Checksum: checksum})
+		r.resource.SetAnnotations(utilities.MergeMaps(r.resource.GetAnnotations(), map[string]string{constants.Checksum: checksum}))
 
 		if err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
 			logger.Error(err, "cannot set controller reference", "resource", r.GetName())
@@ -185,18 +185,21 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 		var shouldCreate bool
 
-		shouldCreate = shouldCreate || r.resource.Data == nil                                            // Missing data key
-		shouldCreate = shouldCreate || len(r.resource.Data) == 0                                         // Missing data key
-		shouldCreate = shouldCreate || len(r.resource.Data[r.KubeConfigFileName]) == 0                   // Missing kubeconfig file, must be generated
+		shouldCreate = shouldCreate || r.resource.Data == nil                          // Missing data key
+		shouldCreate = shouldCreate || len(r.resource.Data) == 0                       // Missing data key
+		shouldCreate = shouldCreate || len(r.resource.Data[r.KubeConfigFileName]) == 0 // Missing kubeconfig file, must be generated
+		shouldCreate = shouldCreate || !kubeadm.IsKubeconfigCAValid(r.resource.Data[r.KubeConfigFileName], caCertificatesSecret.Data[kubeadmconstants.CACertName])
 		shouldCreate = shouldCreate || !kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName]) // invalid kubeconfig, or expired client certificate
 		shouldCreate = shouldCreate || status.Checksum != checksum || len(r.resource.UID) == 0           // Wrong checksum
+
+		shouldRotate := utilities.IsRotationRequested(r.resource)
 
 		if !shouldCreate {
 			v, ok := r.resource.Data[r.KubeConfigFileName]
 			shouldCreate = len(v) == 0 || !ok
 		}
-		//nolint:nestif
-		if shouldCreate {
+
+		if shouldCreate || shouldRotate {
 			crtKeyPair := kubeadm.CertificatePrivateKeyPair{
 				Certificate: caCertificatesSecret.Data[kubeadmconstants.CACertName],
 				PrivateKey:  caCertificatesSecret.Data[kubeadmconstants.CAKeyName],
@@ -211,6 +214,10 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 				logger.Error(kcErr, "cannot create a valid kubeconfig")
 
 				return kcErr
+			}
+
+			if shouldRotate {
+				utilities.SetLastRotationTimestamp(r.resource)
 			}
 
 			r.resource.Data[r.KubeConfigFileName] = kubeconfig

@@ -104,7 +104,7 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
-				constants.ControllerLabelResource: "x509",
+				constants.ControllerLabelResource: utilities.CertificateX509Label,
 			},
 		))
 
@@ -114,7 +114,9 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 			return err
 		}
 
-		if checksum := tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0 {
+		isRotationRequested := utilities.IsRotationRequested(r.resource)
+
+		if checksum := tenantControlPlane.Status.Certificates.FrontProxyClient.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0) {
 			isCAValid, err := crypto.VerifyCertificate(r.resource.Data[kubeadmconstants.FrontProxyClientCertName], secretCA.Data[kubeadmconstants.FrontProxyCACertName], x509.ExtKeyUsageClientAuth)
 			if err != nil {
 				logger.Info(fmt.Sprintf("certificate-authority verify failed: %s", err.Error()))
@@ -150,6 +152,10 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 			logger.Error(err, "cannot generate certificate and private key")
 
 			return err
+		}
+
+		if isRotationRequested {
+			utilities.SetLastRotationTimestamp(r.resource)
 		}
 
 		r.resource.Data = map[string][]byte{
