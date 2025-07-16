@@ -94,7 +94,7 @@ Clastix Labs no longer provides release artifacts following its own semantic ver
 - [Releases and Versions](https://github.com/clastix/kamaji/blob/master/docs/content/reference/versioning.md): Kamaji versions are available in different types of release artifacts
 - [API Reference](https://github.com/clastix/kamaji/blob/master/docs/content/reference/api.md): Kamaji Custom Resources full API documentation
 
-## GitHub
+## GitHubK
 
 - [Readme](https://github.com/clastix/kamaji/blob/master/README.md): GitHub Readme file
 - [License](https://github.com/clastix/kamaji/blob/master/LICENSE): Apache 2.0 license
