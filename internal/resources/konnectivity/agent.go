@@ -149,6 +149,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 
 		r.resource.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 		r.resource.Spec.Template.Spec.Tolerations = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Tolerations
+		r.resource.Spec.Template.Spec.HostNetwork = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.HostNetwork
 		r.resource.Spec.Template.Spec.NodeSelector = map[string]string{
 			"kubernetes.io/os": "linux",
 		}
