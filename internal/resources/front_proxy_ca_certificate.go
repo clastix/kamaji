@@ -89,7 +89,9 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
-		if checksum := tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0 {
+		isRotationRequested := utilities.IsRotationRequested(r.resource)
+
+		if checksum := tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0) {
 			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
 				r.resource.Data[kubeadmconstants.FrontProxyCACertName],
 				r.resource.Data[kubeadmconstants.FrontProxyCAKeyName],
@@ -122,6 +124,10 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 		}
 
 		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
+
+		if isRotationRequested {
+			utilities.SetLastRotationTimestamp(r.resource)
+		}
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 

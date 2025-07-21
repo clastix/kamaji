@@ -4,6 +4,7 @@
 package kubeadm
 
 import (
+	"bytes"
 	"os"
 	"path"
 	"path/filepath"
@@ -44,6 +45,21 @@ func CreateKubeconfig(kubeconfigName string, ca CertificatePrivateKeyPair, confi
 	path := filepath.Join(config.InitConfiguration.CertificatesDir, kubeconfigName)
 
 	return os.ReadFile(path)
+}
+
+func IsKubeconfigCAValid(in, caCrt []byte) bool {
+	kc, err := utilities.DecodeKubeconfigYAML(in)
+	if err != nil {
+		return false
+	}
+
+	for _, cluster := range kc.Clusters {
+		if !bytes.Equal(cluster.Cluster.CertificateAuthorityData, caCrt) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func IsKubeconfigValid(bytes []byte) bool {
