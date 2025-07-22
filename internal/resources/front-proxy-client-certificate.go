@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -26,9 +27,10 @@ import (
 )
 
 type FrontProxyClientCertificate struct {
-	resource     *corev1.Secret
-	Client       client.Client
-	TmpDirectory string
+	resource                *corev1.Secret
+	Client                  client.Client
+	TmpDirectory            string
+	CertExpirationThreshold time.Duration
 }
 
 func (r *FrontProxyClientCertificate) GetHistogram() prometheus.Histogram {
@@ -125,6 +127,7 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
 				r.resource.Data[kubeadmconstants.FrontProxyClientCertName],
 				r.resource.Data[kubeadmconstants.FrontProxyClientKeyName],
+				r.CertExpirationThreshold,
 			)
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.FrontProxyClientCertAndKeyBaseName, err.Error()))
