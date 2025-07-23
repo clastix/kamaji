@@ -76,4 +76,11 @@ func (t TenantControlPlaneDefaults) defaultUnsetFields(tcp *kamajiv1alpha1.Tenan
 		dss := strings.ReplaceAll(fmt.Sprintf("%s_%s", tcp.GetNamespace(), tcp.GetName()), "-", "_")
 		tcp.Spec.DataStoreSchema = dss
 	}
+
+	if len(tcp.Spec.DataStoreUsername) == 0 {
+		// The dash character (-) must be replaced with an underscore, PostgreSQL is complaining about it:
+		// https://github.com/clastix/kamaji/issues/328
+		username := strings.ReplaceAll(fmt.Sprintf("%s_%s", tcp.GetNamespace(), tcp.GetName()), "-", "_")
+		tcp.Spec.DataStoreUsername = username
+	}
 }
