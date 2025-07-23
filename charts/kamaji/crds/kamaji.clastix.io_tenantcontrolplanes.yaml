@@ -6486,6 +6486,16 @@ spec:
                   x-kubernetes-validations:
                     - message: changing the dataStoreSchema is not supported
                       rule: self == oldSelf
+                dataStoreUsername:
+                  description: |-
+                    DataStoreUsername allows to specify the username of the database (for relational DataStores). This
+                    value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreUsername values are unique. It's up
+                    to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
+                    DataStoreUsername by concatenating the namespace and name of the TenantControlPlane.
+                  type: string
+                  x-kubernetes-validations:
+                    - message: changing the dataStoreUsername is not supported
+                      rule: self == oldSelf
                 kubernetes:
                   description: Kubernetes specification for tenant control plane
                   properties:
@@ -6670,6 +6680,8 @@ spec:
                   rule: '!has(oldSelf.dataStore) || has(self.dataStore)'
                 - message: unsetting the dataStoreSchema is not supported
                   rule: '!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)'
+                - message: unsetting the dataStoreUsername is not supported
+                  rule: '!has(oldSelf.dataStoreUsername) || has(self.dataStoreUsername)'
                 - message: LoadBalancer source ranges are supported only with LoadBalancer service type
                   rule: '!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == ''LoadBalancer'')'
                 - message: LoadBalancerClass is supported only with LoadBalancer service type
