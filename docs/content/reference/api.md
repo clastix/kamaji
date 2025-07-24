@@ -27050,6 +27050,16 @@ DataStoreSchema by concatenating the namespace and name of the TenantControlPlan
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>dataStoreUsername</b></td>
+        <td>string</td>
+        <td>
+          DataStoreUsername allows to specify the username of the database (for relational DataStores). This
+value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreUsername values are unique. It's up
+to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
+DataStoreUsername by concatenating the namespace and name of the TenantControlPlane.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespecnetworkprofile">networkProfile</a></b></td>
         <td>object</td>
         <td>
