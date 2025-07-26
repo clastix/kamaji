@@ -191,7 +191,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		podTemplateSpec.Spec.PriorityClassName = "system-cluster-critical"
 		podTemplateSpec.Spec.Tolerations = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Tolerations
 		podTemplateSpec.Spec.HostNetwork = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.HostNetwork
-    podTemplateSpec.Spec.NodeSelector = map[string]string{
+		podTemplateSpec.Spec.NodeSelector = map[string]string{
 			"kubernetes.io/os": "linux",
 		}
 		podTemplateSpec.Spec.ServiceAccountName = AgentName
