@@ -27050,6 +27050,16 @@ DataStoreSchema by concatenating the namespace and name of the TenantControlPlan
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>dataStoreUsername</b></td>
+        <td>string</td>
+        <td>
+          DataStoreUsername allows to specify the username of the database (for relational DataStores). This
+value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreUsername values are unique. It's up
+to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
+DataStoreUsername by concatenating the namespace and name of the TenantControlPlane.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespecnetworkprofile">networkProfile</a></b></td>
         <td>object</td>
         <td>
@@ -39576,7 +39586,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent version:v0.28.6]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet version:v0.28.6]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -39633,6 +39643,26 @@ This is useful for scenarios where the agent needs direct access to the host net
           AgentImage defines the container image for Konnectivity's agent.<br/>
           <br/>
             <i>Default</i>: registry.k8s.io/kas-network-proxy/proxy-agent<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>enum</td>
+        <td>
+          Mode allows specifying the Agent deployment mode: Deployment, or DaemonSet (default).<br/>
+          <br/>
+            <i>Enum</i>: DaemonSet, Deployment<br/>
+            <i>Default</i>: DaemonSet<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          Replicas defines the number of replicas when Mode is Deployment.
+Must be 0 if Mode is DaemonSet.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -40258,6 +40288,13 @@ KonnectivityStatus defines the status of Konnectivity as Addon.
           Last time when k8s object was updated<br/>
           <br/>
             <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr><tr>

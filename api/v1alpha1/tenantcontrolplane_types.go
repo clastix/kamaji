@@ -236,6 +236,15 @@ type KonnectivityServerSpec struct {
 	ExtraArgs ExtraArgs                    `json:"extraArgs,omitempty"`
 }
 
+type KonnectivityAgentMode string
+
+var (
+	KonnectivityAgentModeDaemonSet  KonnectivityAgentMode = "DaemonSet"
+	KonnectivityAgentModeDeployment KonnectivityAgentMode = "Deployment"
+)
+
+//+kubebuilder:validation:XValidation:rule="!(self.mode == 'DaemonSet' && has(self.replicas) && self.replicas != 0) && !(self.mode == 'Deployment' && self.replicas == 0)",message="replicas must be 0 when mode is DaemonSet, and greater than 0 when mode is Deployment"
+
 type KonnectivityAgentSpec struct {
 	// AgentImage defines the container image for Konnectivity's agent.
 	//+kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-agent
@@ -247,18 +256,26 @@ type KonnectivityAgentSpec struct {
 	// Can be customized to start the konnectivity-agent even if the nodes are not ready or tainted.
 	//+kubebuilder:default={{key: "CriticalAddonsOnly", operator: "Exists"}}
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+  ExtraArgs   ExtraArgs           `json:"extraArgs,omitempty"`
 	// HostNetwork enables the konnectivity-agent to use the host network namespace.
 	// This is useful for scenarios where the agent needs direct access to the host network.
 	//+kubebuilder:default=false
-	HostNetwork bool      `json:"hostNetwork,omitempty"`
-	ExtraArgs   ExtraArgs `json:"extraArgs,omitempty"`
+	HostNetwork bool `json:"hostNetwork,omitempty"`
+	// Mode allows specifying the Agent deployment mode: Deployment, or DaemonSet (default).
+	//+kubebuilder:default="DaemonSet"
+	//+kubebuilder:validation:Enum=DaemonSet;Deployment
+	Mode KonnectivityAgentMode `json:"mode,omitempty"`
+	// Replicas defines the number of replicas when Mode is Deployment.
+	// Must be 0 if Mode is DaemonSet.
+	//+kubebuilder:validation:Optional
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.
 type KonnectivitySpec struct {
 	//+kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-server",port:8132}
 	KonnectivityServerSpec KonnectivityServerSpec `json:"server,omitempty"`
-	//+kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-agent"}
+	//+kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-agent",mode:"DaemonSet"}
 	KonnectivityAgentSpec KonnectivityAgentSpec `json:"agent,omitempty"`
 }
 
@@ -277,6 +294,7 @@ type AddonsSpec struct {
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStore) || has(self.dataStore)", message="unsetting the dataStore is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"
+// +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreUsername) || has(self.dataStoreUsername)", message="unsetting the dataStoreUsername is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == 'LoadBalancer')", message="LoadBalancer source ranges are supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == 'LoadBalancer'", message="LoadBalancerClass is supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)",message="LoadBalancerClass cannot be set or unset at runtime"
@@ -294,8 +312,14 @@ type TenantControlPlaneSpec struct {
 	// to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
 	// DataStoreSchema by concatenating the namespace and name of the TenantControlPlane.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="changing the dataStoreSchema is not supported"
-	DataStoreSchema string       `json:"dataStoreSchema,omitempty"`
-	ControlPlane    ControlPlane `json:"controlPlane"`
+	DataStoreSchema string `json:"dataStoreSchema,omitempty"`
+	// DataStoreUsername allows to specify the username of the database (for relational DataStores). This
+	// value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreUsername values are unique. It's up
+	// to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
+	// DataStoreUsername by concatenating the namespace and name of the TenantControlPlane.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="changing the dataStoreUsername is not supported"
+	DataStoreUsername string       `json:"dataStoreUsername,omitempty"`
+	ControlPlane      ControlPlane `json:"controlPlane"`
 	// Kubernetes specification for tenant control plane
 	Kubernetes KubernetesSpec `json:"kubernetes"`
 	// NetworkProfile specifies how the network is

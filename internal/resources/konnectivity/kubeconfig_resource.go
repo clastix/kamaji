@@ -103,7 +103,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			r.resource.GetLabels(),
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
-				constants.ControllerLabelResource: "kubeconfig",
+				constants.ControllerLabelResource: utilities.CertificateKubeconfigLabel,
 			},
 		))
 
@@ -113,7 +113,10 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
-		if checksum := tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) {
+		isRotationRequested := utilities.IsRotationRequested(r.resource)
+
+		checksum := tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum
+		if len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) && !isRotationRequested {
 			return nil
 		}
 
@@ -180,6 +183,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		r.resource.Data = map[string][]byte{
 			konnectivityKubeconfigFileName: kubeconfigBytes,
 		}
+
+		utilities.SetLastRotationTimestamp(r.resource)
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 

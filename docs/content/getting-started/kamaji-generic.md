@@ -160,9 +160,6 @@ spec:
     konnectivity:
       server:
         port: ${TENANT_PROXY_PORT}
-        resources: {}
-      client:
-        resources: {}
 EOF
 
 kubectl -n ${TENANT_NAMESPACE} apply -f ${TENANT_NAMESPACE}-${TENANT_NAME}-tcp.yaml
