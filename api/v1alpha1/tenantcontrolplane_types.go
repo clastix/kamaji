@@ -256,7 +256,7 @@ type KonnectivityAgentSpec struct {
 	// Can be customized to start the konnectivity-agent even if the nodes are not ready or tainted.
 	//+kubebuilder:default={{key: "CriticalAddonsOnly", operator: "Exists"}}
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
-  ExtraArgs   ExtraArgs           `json:"extraArgs,omitempty"`
+	ExtraArgs   ExtraArgs           `json:"extraArgs,omitempty"`
 	// HostNetwork enables the konnectivity-agent to use the host network namespace.
 	// This is useful for scenarios where the agent needs direct access to the host network.
 	//+kubebuilder:default=false
