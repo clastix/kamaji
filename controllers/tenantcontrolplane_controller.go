@@ -50,6 +50,7 @@ type TenantControlPlaneReconciler struct {
 	KamajiService           string
 	KamajiMigrateImage      string
 	MaxConcurrentReconciles int
+	ReconcileTimeout        time.Duration
 	// CertificateChan is the channel used by the CertificateLifecycleController that is checking for
 	// certificates and kubeconfig user certs validity: a generic event for the given TCP will be triggered
 	// once the validity threshold for the given certificate is reached.
@@ -60,10 +61,10 @@ type TenantControlPlaneReconciler struct {
 
 // TenantControlPlaneReconcilerConfig gives the necessary configuration for TenantControlPlaneReconciler.
 type TenantControlPlaneReconcilerConfig struct {
-	ReconcileTimeout     time.Duration
-	DefaultDataStoreName string
-	KineContainerImage   string
-	TmpBaseDirectory     string
+	DefaultDataStoreName    string
+	KineContainerImage      string
+	TmpBaseDirectory        string
+	CertExpirationThreshold time.Duration
 }
 
 //+kubebuilder:rbac:groups=kamaji.clastix.io,resources=tenantcontrolplanes,verbs=get;list;watch;create;update;patch;delete
@@ -80,7 +81,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	log := log.FromContext(ctx)
 
 	var cancelFn context.CancelFunc
-	ctx, cancelFn = context.WithTimeout(ctx, r.Config.ReconcileTimeout)
+	ctx, cancelFn = context.WithTimeout(ctx, r.ReconcileTimeout)
 	defer cancelFn()
 
 	tenantControlPlane, err := r.getTenantControlPlane(ctx, req.NamespacedName)()

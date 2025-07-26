@@ -6,6 +6,7 @@ package konnectivity
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -27,8 +28,9 @@ import (
 )
 
 type CertificateResource struct {
-	resource *corev1.Secret
-	Client   client.Client
+	resource                *corev1.Secret
+	Client                  client.Client
+	CertExpirationThreshold time.Duration
 }
 
 func (r *CertificateResource) GetHistogram() prometheus.Histogram {
@@ -117,7 +119,7 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 		isRotationRequested := utilities.IsRotationRequested(r.resource)
 
 		if checksum := tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.CalculateMapChecksum(r.resource.Data)) {
-			isValid, err := crypto.IsValidCertificateKeyPairBytes(r.resource.Data[corev1.TLSCertKey], r.resource.Data[corev1.TLSPrivateKeyKey])
+			isValid, err := crypto.IsValidCertificateKeyPairBytes(r.resource.Data[corev1.TLSCertKey], r.resource.Data[corev1.TLSPrivateKeyKey], r.CertExpirationThreshold)
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", konnectivityCertAndKeyBaseName, err.Error()))
 			}

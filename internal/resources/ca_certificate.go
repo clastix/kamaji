@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -27,8 +28,9 @@ type CACertificate struct {
 	resource     *corev1.Secret
 	isRotatingCA bool
 
-	Client       client.Client
-	TmpDirectory string
+	Client                  client.Client
+	TmpDirectory            string
+	CertExpirationThreshold time.Duration
 }
 
 func (r *CACertificate) GetHistogram() prometheus.Histogram {
@@ -102,6 +104,7 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
 				r.resource.Data[kubeadmconstants.CACertName],
 				r.resource.Data[kubeadmconstants.CAKeyName],
+				r.CertExpirationThreshold,
 			)
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.CACertAndKeyBaseName, err.Error()))

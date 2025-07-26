@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/kubeconfig"
@@ -62,13 +63,13 @@ func IsKubeconfigCAValid(in, caCrt []byte) bool {
 	return true
 }
 
-func IsKubeconfigValid(bytes []byte) bool {
+func IsKubeconfigValid(bytes []byte, expirationThreshold time.Duration) bool {
 	kc, err := utilities.DecodeKubeconfigYAML(bytes)
 	if err != nil {
 		return false
 	}
 
-	ok, _ := crypto.IsValidCertificateKeyPairBytes(kc.AuthInfos[0].AuthInfo.ClientCertificateData, kc.AuthInfos[0].AuthInfo.ClientKeyData)
+	ok, _ := crypto.IsValidCertificateKeyPairBytes(kc.AuthInfos[0].AuthInfo.ClientCertificateData, kc.AuthInfos[0].AuthInfo.ClientKeyData, expirationThreshold)
 
 	return ok
 }
