@@ -252,6 +252,9 @@ type KonnectivityAgentSpec struct {
 	// Version for Konnectivity agent.
 	//+kubebuilder:default=v0.28.6
 	Version string `json:"version,omitempty"`
+	// UseHostNetwork for Konnectivity agent.
+	//+kubebuilder:default=false
+	UseHostNetwork bool `json:"useHostNetwork,omitempty"`
 	// Tolerations for the deployed agent.
 	// Can be customized to start the konnectivity-agent even if the nodes are not ready or tainted.
 	//+kubebuilder:default={{key: "CriticalAddonsOnly", operator: "Exists"}}

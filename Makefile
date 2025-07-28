@@ -3,7 +3,17 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= $(or $(shell git describe --abbrev=0 --tags 2>/dev/null),$(GIT_HEAD_COMMIT))
+# VERSION ?= $(or $(shell git describe --abbrev=0 --tags 2>/dev/null),$(GIT_HEAD_COMMIT))
+
+ifndef OVERRIDE_KAMAJI_VERSION
+	VERSION = $(shell ./get-label.bash)
+else
+	ifneq ($(strip $(OVERRIDE_KAMAJI_VERSION)),)
+		VERSION ?= $(OVERRIDE_KAMAJI_VERSION)
+	else
+		VERSION = $(shell ./get-label.bash)
+	endif
+endif
 
 # ENVTEST_K8S_VERSION specifies the Kubernetes version to be used 
 # during testing with the envtest environment. This ensures that 
@@ -20,7 +30,7 @@ ENVTEST_K8S_VERSION = 1.31.0
 ENVTEST_VERSION ?= release-0.19
 
 # Image URL to use all building/pushing image targets
-CONTAINER_REPOSITORY ?= docker.io/clastix/kamaji
+CONTAINER_REPOSITORY ?= quay.io/platform9/kamaji
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -202,11 +212,11 @@ GIT_MODIFIED    ?= $$(echo "$(GIT_MODIFIED_1)$(GIT_MODIFIED_2)")
 GIT_REPO        ?= $$(git config --get remote.origin.url)
 BUILD_DATE      ?= $$(git log -1 --format="%at" | xargs -I{} date -d @{} +%Y-%m-%dT%H:%M:%S)
 
-LD_FLAGS ?= "-X github.com/clastix/kamaji/internal.GitCommit=$(GIT_HEAD_COMMIT) \
-             -X github.com/clastix/kamaji/internal.GitTag=$(VERSION) \
-             -X github.com/clastix/kamaji/internal.GitDirty=$(GIT_MODIFIED) \
-             -X github.com/clastix/kamaji/internal.BuildTime=$(BUILD_DATE) \
-             -X github.com/clastix/kamaji/internal.GitRepo=$(GIT_REPO)"
+LD_FLAGS ?= "-X github.com/platform9/kamaji/internal.GitCommit=$(GIT_HEAD_COMMIT) \
+             -X github.com/platform9/kamaji/internal.GitTag=$(VERSION) \
+             -X github.com/platform9/kamaji/internal.GitDirty=$(GIT_MODIFIED) \
+             -X github.com/platform9/kamaji/internal.BuildTime=$(BUILD_DATE) \
+             -X github.com/platform9/kamaji/internal.GitRepo=$(GIT_REPO)"
 
 KO_PUSH ?= false
 KO_LOCAL ?= true
