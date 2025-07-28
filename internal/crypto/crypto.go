@@ -22,7 +22,7 @@ import (
 )
 
 // CheckPublicAndPrivateKeyValidity checks if the given bytes for the private and public keys are valid.
-func CheckPublicAndPrivateKeyValidity(publicKey []byte, privateKey []byte) (bool, error) {
+func CheckPublicAndPrivateKeyValidity(publicKey, privateKey []byte) (bool, error) {
 	if len(publicKey) == 0 || len(privateKey) == 0 {
 		return false, nil
 	}
@@ -74,12 +74,12 @@ func CheckCertificateNamesAndIPs(certificateBytes []byte, entries []string) (boo
 }
 
 // CheckCertificateAndPrivateKeyPairValidity checks if the certificate and private key pair are valid.
-func CheckCertificateAndPrivateKeyPairValidity(certificate []byte, privateKey []byte) (bool, error) {
+func CheckCertificateAndPrivateKeyPairValidity(certificate, privateKey []byte, threshold time.Duration) (bool, error) {
 	switch {
 	case len(certificate) == 0, len(privateKey) == 0:
 		return false, nil
 	default:
-		return IsValidCertificateKeyPairBytes(certificate, privateKey)
+		return IsValidCertificateKeyPairBytes(certificate, privateKey, threshold)
 	}
 }
 
@@ -159,7 +159,7 @@ func ParsePublicKeyBytes(content []byte) (*rsa.PublicKey, error) {
 }
 
 // IsValidCertificateKeyPairBytes checks if the certificate matches the private key bounded to it.
-func IsValidCertificateKeyPairBytes(certificateBytes []byte, privateKeyBytes []byte) (bool, error) {
+func IsValidCertificateKeyPairBytes(certificateBytes, privateKeyBytes []byte, expirationThreshold time.Duration) (bool, error) {
 	crt, err := ParseCertificateBytes(certificateBytes)
 	if err != nil {
 		return false, err
@@ -171,7 +171,7 @@ func IsValidCertificateKeyPairBytes(certificateBytes []byte, privateKeyBytes []b
 	}
 
 	switch {
-	case !checkCertificateValidity(*crt):
+	case !checkCertificateValidity(*crt, expirationThreshold):
 		return false, nil
 	case !checkPublicKeys(crt.PublicKey, key):
 		return false, nil
@@ -238,9 +238,9 @@ func generateCertificateKeyPairBytes(template *x509.Certificate, caCert *x509.Ce
 	return certPEM, certPrivKeyPEM, nil
 }
 
-func checkCertificateValidity(cert x509.Certificate) bool {
+func checkCertificateValidity(cert x509.Certificate, threshold time.Duration) bool {
 	// Avoiding waiting for the exact expiration date by creating a one-day gap
-	notAfter := cert.NotAfter.After(time.Now().AddDate(0, 0, 1))
+	notAfter := cert.NotAfter.After(time.Now().Add(threshold))
 	notBefore := cert.NotBefore.Before(time.Now())
 
 	return notAfter && notBefore

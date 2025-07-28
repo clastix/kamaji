@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -33,11 +34,12 @@ const (
 )
 
 type KubeconfigResource struct {
-	resource           *corev1.Secret
-	Client             client.Client
-	Name               string
-	KubeConfigFileName string
-	TmpDirectory       string
+	resource                *corev1.Secret
+	Client                  client.Client
+	Name                    string
+	KubeConfigFileName      string
+	TmpDirectory            string
+	CertExpirationThreshold time.Duration
 }
 
 func (r *KubeconfigResource) GetHistogram() prometheus.Histogram {
@@ -189,8 +191,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		shouldCreate = shouldCreate || len(r.resource.Data) == 0                       // Missing data key
 		shouldCreate = shouldCreate || len(r.resource.Data[r.KubeConfigFileName]) == 0 // Missing kubeconfig file, must be generated
 		shouldCreate = shouldCreate || !kubeadm.IsKubeconfigCAValid(r.resource.Data[r.KubeConfigFileName], caCertificatesSecret.Data[kubeadmconstants.CACertName])
-		shouldCreate = shouldCreate || !kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName]) // invalid kubeconfig, or expired client certificate
-		shouldCreate = shouldCreate || status.Checksum != checksum || len(r.resource.UID) == 0           // Wrong checksum
+		shouldCreate = shouldCreate || !kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName], r.CertExpirationThreshold) // invalid kubeconfig, or expired client certificate
+		shouldCreate = shouldCreate || status.Checksum != checksum || len(r.resource.UID) == 0                                      // Wrong checksum
 
 		shouldRotate := utilities.IsRotationRequested(r.resource)
 
