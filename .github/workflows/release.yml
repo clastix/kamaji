@@ -37,6 +37,12 @@ jobs:
         run: |
           export TAG="${{ steps.tag.outputs.tag }}"
           envsubst < .github/release-template.md > release-notes.md
+      - name: create and push git tag
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag "${{ steps.tag.outputs.tag }}"
+          git push origin "${{ steps.tag.outputs.tag }}"
       - name: create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
