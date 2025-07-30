@@ -39627,6 +39627,18 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>hostNetwork</b></td>
+        <td>boolean</td>
+        <td>
+          HostNetwork enables the konnectivity agent to use the Host network namespace.
+By enabling this mode, the Agent doesn't need to wait for the CNI initialisation,
+enabling a sort of out-of-band access to nodes for troubleshooting scenarios,
+or when the agent needs direct access to the host network.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>

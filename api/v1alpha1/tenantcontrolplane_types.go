@@ -257,6 +257,12 @@ type KonnectivityAgentSpec struct {
 	//+kubebuilder:default={{key: "CriticalAddonsOnly", operator: "Exists"}}
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 	ExtraArgs   ExtraArgs           `json:"extraArgs,omitempty"`
+	// HostNetwork enables the konnectivity agent to use the Host network namespace.
+	// By enabling this mode, the Agent doesn't need to wait for the CNI initialisation,
+	// enabling a sort of out-of-band access to nodes for troubleshooting scenarios,
+	// or when the agent needs direct access to the host network.
+	//+kubebuilder:default=false
+	HostNetwork bool `json:"hostNetwork,omitempty"`
 	// Mode allows specifying the Agent deployment mode: Deployment, or DaemonSet (default).
 	//+kubebuilder:default="DaemonSet"
 	//+kubebuilder:validation:Enum=DaemonSet;Deployment

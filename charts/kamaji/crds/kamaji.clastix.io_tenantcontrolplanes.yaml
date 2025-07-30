@@ -108,6 +108,14 @@ spec:
                               items:
                                 type: string
                               type: array
+                            hostNetwork:
+                              default: false
+                              description: |-
+                                HostNetwork enables the konnectivity agent to use the Host network namespace.
+                                By enabling this mode, the Agent doesn't need to wait for the CNI initialisation,
+                                enabling a sort of out-of-band access to nodes for troubleshooting scenarios,
+                                or when the agent needs direct access to the host network.
+                              type: boolean
                             image:
                               default: registry.k8s.io/kas-network-proxy/proxy-agent
                               description: AgentImage defines the container image for Konnectivity's agent.
