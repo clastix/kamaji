@@ -7,29 +7,37 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/resources"
 )
 
 type MultiTenancy struct {
 	DataStore kamajiv1alpha1.DataStore
 }
 
-func (m MultiTenancy) Define(context.Context, *kamajiv1alpha1.TenantControlPlane) error {
+func (m *MultiTenancy) GetHistogram() prometheus.Histogram {
+	multiTenancyCollector = resources.LazyLoadHistogramFromResource(multiTenancyCollector, m)
+
+	return multiTenancyCollector
+}
+
+func (m *MultiTenancy) Define(context.Context, *kamajiv1alpha1.TenantControlPlane) error {
 	return nil
 }
 
-func (m MultiTenancy) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
+func (m *MultiTenancy) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (m MultiTenancy) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
+func (m *MultiTenancy) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	return false, nil
 }
 
-func (m MultiTenancy) CreateOrUpdate(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
+func (m *MultiTenancy) CreateOrUpdate(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	// If the NATS Datastore is already used by a Tenant Control Plane
 	// and a new one is reclaiming it, we need to stop it, since it's not allowed.
 	// TODO(prometherion): remove this after multi-tenancy is implemented for NATS.
@@ -49,14 +57,14 @@ func (m MultiTenancy) CreateOrUpdate(_ context.Context, tcp *kamajiv1alpha1.Tena
 	}
 }
 
-func (m MultiTenancy) GetName() string {
+func (m *MultiTenancy) GetName() string {
 	return "ds.multitenancy"
 }
 
-func (m MultiTenancy) ShouldStatusBeUpdated(context.Context, *kamajiv1alpha1.TenantControlPlane) bool {
+func (m *MultiTenancy) ShouldStatusBeUpdated(context.Context, *kamajiv1alpha1.TenantControlPlane) bool {
 	return false
 }
 
-func (m MultiTenancy) UpdateTenantControlPlaneStatus(context.Context, *kamajiv1alpha1.TenantControlPlane) error {
+func (m *MultiTenancy) UpdateTenantControlPlaneStatus(context.Context, *kamajiv1alpha1.TenantControlPlane) error {
 	return nil
 }

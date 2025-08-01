@@ -67,11 +67,12 @@ const (
 
 type KubeletSpec struct {
 	// Ordered list of the preferred NodeAddressTypes to use for kubelet connections.
-	// Default to Hostname, InternalIP, ExternalIP.
-	//+kubebuilder:default={"Hostname","InternalIP","ExternalIP"}
+	// Default to InternalIP, ExternalIP, Hostname.
+	//+kubebuilder:default={"InternalIP","ExternalIP","Hostname"}
 	//+kubebuilder:validation:MinItems=1
+	//+listType=set
 	PreferredAddressTypes []KubeletPreferredAddressType `json:"preferredAddressTypes,omitempty"`
-	// CGroupFS defines the  cgroup driver for Kubelet
+	// CGroupFS defines the cgroup driver for Kubelet
 	// https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
 	CGroupFS CGroupDriver `json:"cgroupfs,omitempty"`
 }
@@ -235,6 +236,15 @@ type KonnectivityServerSpec struct {
 	ExtraArgs ExtraArgs                    `json:"extraArgs,omitempty"`
 }
 
+type KonnectivityAgentMode string
+
+var (
+	KonnectivityAgentModeDaemonSet  KonnectivityAgentMode = "DaemonSet"
+	KonnectivityAgentModeDeployment KonnectivityAgentMode = "Deployment"
+)
+
+//+kubebuilder:validation:XValidation:rule="!(self.mode == 'DaemonSet' && has(self.replicas) && self.replicas != 0) && !(self.mode == 'Deployment' && self.replicas == 0)",message="replicas must be 0 when mode is DaemonSet, and greater than 0 when mode is Deployment"
+
 type KonnectivityAgentSpec struct {
 	// AgentImage defines the container image for Konnectivity's agent.
 	//+kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-agent
@@ -250,13 +260,21 @@ type KonnectivityAgentSpec struct {
 	//+kubebuilder:default={{key: "CriticalAddonsOnly", operator: "Exists"}}
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 	ExtraArgs   ExtraArgs           `json:"extraArgs,omitempty"`
+	// Mode allows specifying the Agent deployment mode: Deployment, or DaemonSet (default).
+	//+kubebuilder:default="DaemonSet"
+	//+kubebuilder:validation:Enum=DaemonSet;Deployment
+	Mode KonnectivityAgentMode `json:"mode,omitempty"`
+	// Replicas defines the number of replicas when Mode is Deployment.
+	// Must be 0 if Mode is DaemonSet.
+	//+kubebuilder:validation:Optional
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.
 type KonnectivitySpec struct {
 	//+kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-server",port:8132}
 	KonnectivityServerSpec KonnectivityServerSpec `json:"server,omitempty"`
-	//+kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-agent"}
+	//+kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-agent",mode:"DaemonSet"}
 	KonnectivityAgentSpec KonnectivityAgentSpec `json:"agent,omitempty"`
 }
 
@@ -307,6 +325,7 @@ type TenantControlPlaneSpec struct {
 //+kubebuilder:subresource:scale:specpath=.spec.controlPlane.deployment.replicas,statuspath=.status.kubernetesResources.deployment.replicas,selectorpath=.status.kubernetesResources.deployment.selector
 //+kubebuilder:resource:categories=kamaji,shortName=tcp
 //+kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.kubernetes.version",description="Kubernetes version"
+//+kubebuilder:printcolumn:name="Installed Version",type="string",JSONPath=".status.kubernetesResources.version.version",description="The actual installed Kubernetes version from status"
 //+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.kubernetesResources.version.status",description="Status"
 //+kubebuilder:printcolumn:name="Control-Plane endpoint",type="string",JSONPath=".status.controlPlaneEndpoint",description="Tenant Control Plane Endpoint (API server)"
 //+kubebuilder:printcolumn:name="Kubeconfig",type="string",JSONPath=".status.kubeconfig.admin.secretName",description="Secret which contains admin kubeconfig"

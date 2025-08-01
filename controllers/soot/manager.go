@@ -29,6 +29,7 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers/finalizers"
 	"github.com/clastix/kamaji/controllers/soot/controllers"
+	"github.com/clastix/kamaji/controllers/soot/controllers/errors"
 	"github.com/clastix/kamaji/controllers/utils"
 	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -67,6 +68,10 @@ func (m *Manager) retrieveTenantControlPlane(ctx context.Context, request reconc
 
 		if err := m.AdminClient.Get(ctx, request.NamespacedName, tcp); err != nil {
 			return nil, err
+		}
+
+		if utils.IsPaused(tcp) {
+			return nil, errors.ErrPausedReconciliation
 		}
 
 		return tcp, nil
@@ -213,7 +218,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			return nil
 		})
 
-		return reconcile.Result{Requeue: true}, finalizerErr
+		return reconcile.Result{RequeueAfter: time.Second}, finalizerErr
 	}
 	// Generating the manager and starting it:
 	// in case of any error, reconciling the request to start it back from the beginning.
@@ -377,7 +382,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		completedCh: completedCh,
 	}
 
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{RequeueAfter: time.Second}, nil
 }
 
 func (m *Manager) SetupWithManager(mgr manager.Manager) error {

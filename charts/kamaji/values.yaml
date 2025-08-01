@@ -98,9 +98,12 @@ loggingDevel:
 # -- If specified, all the Kamaji instances with an unassigned DataStore will inherit this default value.
 defaultDatastoreName: default
 
+# -- Subchart: See https://github.com/clastix/kamaji-etcd/blob/master/charts/kamaji-etcd/values.yaml
 kamaji-etcd:
   deploy: true
   fullnameOverride: kamaji-etcd
+  ## -- Important, this must match your management cluster's clusterDomain, otherwise the init jobs will fail
+  clusterDomain: "cluster.local"
   datastore:
     enabled: true
     name: default

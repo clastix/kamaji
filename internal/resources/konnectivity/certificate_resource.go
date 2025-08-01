@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,12 +22,19 @@ import (
 	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
+	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type CertificateResource struct {
 	resource *corev1.Secret
 	Client   client.Client
+}
+
+func (r *CertificateResource) GetHistogram() prometheus.Histogram {
+	certificateCollector = resources.LazyLoadHistogramFromResource(certificateCollector, r)
+
+	return certificateCollector
 }
 
 func (r *CertificateResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -96,7 +104,7 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 			r.resource.GetLabels(),
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
-				constants.ControllerLabelResource: "x509",
+				constants.ControllerLabelResource: utilities.CertificateX509Label,
 			},
 		))
 
@@ -106,7 +114,9 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 			return err
 		}
 
-		if checksum := tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum; len(checksum) > 0 && checksum == utilities.CalculateMapChecksum(r.resource.Data) {
+		isRotationRequested := utilities.IsRotationRequested(r.resource)
+
+		if checksum := tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.CalculateMapChecksum(r.resource.Data)) {
 			isValid, err := crypto.IsValidCertificateKeyPairBytes(r.resource.Data[corev1.TLSCertKey], r.resource.Data[corev1.TLSPrivateKeyKey])
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", konnectivityCertAndKeyBaseName, err.Error()))
@@ -135,6 +145,10 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 			logger.Error(err, "unable to generate certificate and private key")
 
 			return err
+		}
+
+		if isRotationRequested {
+			utilities.SetLastRotationTimestamp(r.resource)
 		}
 
 		r.resource.Type = corev1.SecretTypeTLS

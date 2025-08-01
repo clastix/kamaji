@@ -44,7 +44,7 @@ Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji
 
 - CNI module installed, eg. [Calico](https://github.com/projectcalico/calico), [Cilium](https://github.com/cilium/cilium).
 - CSI module installed with a Storage Class for the Tenant datastores. The [Local Path Provisioner](https://github.com/rancher/local-path-provisioner) is a suggested choice, even for production environments.
-- Support for LoadBalancer service type, eg. [MetalLB](https://metallb.universe.tf/), or cloud based.
+- Support for LoadBalancer service type, eg. [MetalLB](https://metallb.io/), or cloud based.
 - Optionally, a Monitoring Stack installed, eg. [Prometheus](https://github.com/prometheus-community).
 
 Make sure you have a `kubeconfig` file with admin permissions on the cluster you want to turn into Kamaji Management Cluster and check you can access:
@@ -69,17 +69,20 @@ helm install \
 
 ## Install Kamaji Controller
 
-Installing Kamaji via Helm charts is the preferred way to deploy the Kamaji controller. The Helm chart is available in the `charts` directory of the Kamaji repository.
+Installing Kamaji via Helm charts is the preferred way to deploy the Kamaji controller.
+The Helm chart is available in the `charts` directory of the Kamaji repository, or as Helm Chart versioned as `0.0.0+latest`
 
 !!! info "Stable Releases"
-    As of July 2024 [Clastix Labs](https://github.com/clastix) no longer publish stable release artifacts. Stable releases are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor. 
+    As of July 2024 [Clastix Labs](https://github.com/clastix) no longer publish version pinned release artifacts.
+    Version pinned and stable releases are offered on a subscription basis by [CLASTIX](https://clastix.io), the main Kamaji project contributor. 
 
 Run the following commands to install the latest edge release of Kamaji:
 
 ```bash
-git clone https://github.com/clastix/kamaji
-cd kamaji
-helm install kamaji charts/kamaji -n kamaji-system --create-namespace \
+helm install kamaji clastix/kamaji \
+    --version 0.0.0+latest \
+    --namespace kamaji-system \
+    --create-namespace \
     --set image.tag=latest
 ```
 
@@ -195,7 +198,7 @@ When a Tenant Control Plane is created, Kamaji waits for the LoadBalancer to pro
 
 If you need to use a specific address for your Tenant Control Plane, you can specify it by setting the `tcp.spec.networkProfile.address` field in the Tenant Control Plane manifest. This optional field ensures that Kamaji uses your preferred address. However, if the specified address is unavailable, the Tenant Control Plane will remain in a `NotReady` state until the address becomes available.
 
-To ensure that the LoadBalancer controller uses your specified address for the Service, you'll need to use controller-specific annotations. For instance, if you're using MetalLB as your LoadBalancer controller, you can add the `metallb.universe.tf/loadBalancerIPs` annotation to your Service definition, allowing the LoadBalancer controller to select the specified address:
+To ensure that the LoadBalancer controller uses your specified address for the Service, you'll need to use controller-specific annotations. For instance, if you're using MetalLB as your LoadBalancer controller, you can add the `metallb.io/loadBalancerIPs` annotation to your Service definition, allowing the LoadBalancer controller to select the specified address:
 
 ```yaml
 apiVersion: kamaji.clastix.io/v1alpha1
@@ -212,7 +215,7 @@ spec:
       serviceType: LoadBalancer
       additionalMetadata:
         annotations:
-          metallb.universe.tf/loadBalancerIPs: 172.18.255.104 # use this address
+          metallb.io/loadBalancerIPs: 172.18.255.104 # use this address
   kubernetes:
     version: "v1.30.0"
     kubelet:

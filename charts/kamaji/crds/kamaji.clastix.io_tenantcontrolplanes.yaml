@@ -23,6 +23,10 @@ spec:
           jsonPath: .spec.kubernetes.version
           name: Version
           type: string
+        - description: The actual installed Kubernetes version from status
+          jsonPath: .status.kubernetesResources.version.version
+          name: Installed Version
+          type: string
         - description: Status
           jsonPath: .status.kubernetesResources.version.status
           name: Status
@@ -92,6 +96,7 @@ spec:
                         agent:
                           default:
                             image: registry.k8s.io/kas-network-proxy/proxy-agent
+                            mode: DaemonSet
                             version: v0.28.6
                           properties:
                             extraArgs:
@@ -107,6 +112,19 @@ spec:
                               default: registry.k8s.io/kas-network-proxy/proxy-agent
                               description: AgentImage defines the container image for Konnectivity's agent.
                               type: string
+                            mode:
+                              default: DaemonSet
+                              description: 'Mode allows specifying the Agent deployment mode: Deployment, or DaemonSet (default).'
+                              enum:
+                                - DaemonSet
+                                - Deployment
+                              type: string
+                            replicas:
+                              description: |-
+                                Replicas defines the number of replicas when Mode is Deployment.
+                                Must be 0 if Mode is DaemonSet.
+                              format: int32
+                              type: integer
                             tolerations:
                               default:
                                 - key: CriticalAddonsOnly
@@ -160,6 +178,9 @@ spec:
                               description: Version for Konnectivity agent.
                               type: string
                           type: object
+                          x-kubernetes-validations:
+                            - message: replicas must be 0 when mode is DaemonSet, and greater than 0 when mode is Deployment
+                              rule: '!(self.mode == ''DaemonSet'' && has(self.replicas) && self.replicas != 0) && !(self.mode == ''Deployment'' && self.replicas == 0)'
                         server:
                           default:
                             image: registry.k8s.io/kas-network-proxy/proxy-server
@@ -6539,7 +6560,7 @@ spec:
                       properties:
                         cgroupfs:
                           description: |-
-                            CGroupFS defines the  cgroup driver for Kubelet
+                            CGroupFS defines the cgroup driver for Kubelet
                             https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
                           enum:
                             - systemd
@@ -6547,12 +6568,12 @@ spec:
                           type: string
                         preferredAddressTypes:
                           default:
-                            - Hostname
                             - InternalIP
                             - ExternalIP
+                            - Hostname
                           description: |-
                             Ordered list of the preferred NodeAddressTypes to use for kubelet connections.
-                            Default to Hostname, InternalIP, ExternalIP.
+                            Default to InternalIP, ExternalIP, Hostname.
                           items:
                             enum:
                               - Hostname
@@ -6563,6 +6584,7 @@ spec:
                             type: string
                           minItems: 1
                           type: array
+                          x-kubernetes-list-type: set
                       type: object
                     version:
                       description: Kubernetes Version for the tenant control plane
@@ -6683,6 +6705,8 @@ spec:
                             lastUpdate:
                               description: Last time when k8s object was updated
                               format: date-time
+                              type: string
+                            mode:
                               type: string
                             name:
                               type: string

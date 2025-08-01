@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/controllers/utils"
 	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -41,17 +42,23 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 
 	logger.Info("starting CertificateLifecycle handling")
 
-	secret := corev1.Secret{}
-	err := s.client.Get(ctx, request.NamespacedName, &secret)
-	if k8serrors.IsNotFound(err) {
-		logger.Info("resource have been deleted, skipping")
+	var secret corev1.Secret
+	if err := s.client.Get(ctx, request.NamespacedName, &secret); err != nil {
+		if k8serrors.IsNotFound(err) {
+			logger.Info("resource may have been deleted, skipping")
 
-		return reconcile.Result{}, nil
-	}
-	if err != nil {
+			return reconcile.Result{}, nil
+		}
+
 		logger.Error(err, "cannot retrieve the required resource")
 
 		return reconcile.Result{}, err
+	}
+
+	if utils.IsPaused(&secret) {
+		logger.Info("paused reconciliation, no further actions")
+
+		return reconcile.Result{}, nil
 	}
 
 	checkType, ok := secret.GetLabels()[constants.ControllerLabelResource]
@@ -62,14 +69,15 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	var crt *x509.Certificate
+	var err error
 
 	switch checkType {
-	case "x509":
+	case utilities.CertificateX509Label:
 		crt, err = s.extractCertificateFromBareSecret(secret)
-	case "kubeconfig":
+	case utilities.CertificateKubeconfigLabel:
 		crt, err = s.extractCertificateFromKubeconfig(secret)
 	default:
-		err = fmt.Errorf("unsupported strategy, %s", checkType)
+		return reconcile.Result{}, fmt.Errorf("unsupported strategy, %q", checkType)
 	}
 
 	if err != nil {
@@ -99,7 +107,7 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 
 	logger.Info("certificate is still valid, enqueuing back", "after", after.String())
 
-	return reconcile.Result{Requeue: true, RequeueAfter: after}, nil
+	return reconcile.Result{RequeueAfter: after}, nil
 }
 
 func (s *CertificateLifecycle) extractCertificateFromBareSecret(secret corev1.Secret) (*x509.Certificate, error) {
@@ -144,7 +152,7 @@ func (s *CertificateLifecycle) extractCertificateFromKubeconfig(secret corev1.Se
 func (s *CertificateLifecycle) SetupWithManager(mgr controllerruntime.Manager) error {
 	s.client = mgr.GetClient()
 
-	supportedStrategies := sets.New[string]("x509", "kubeconfig")
+	supportedStrategies := sets.New[string](utilities.CertificateX509Label, utilities.CertificateKubeconfigLabel)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
 		For(&corev1.Secret{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {

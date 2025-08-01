@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
@@ -25,6 +26,12 @@ type FrontProxyCACertificate struct {
 	resource     *corev1.Secret
 	Client       client.Client
 	TmpDirectory string
+}
+
+func (r *FrontProxyCACertificate) GetHistogram() prometheus.Histogram {
+	frontproxycaCollector = LazyLoadHistogramFromResource(frontproxycaCollector, r)
+
+	return frontproxycaCollector
 }
 
 func (r *FrontProxyCACertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -82,7 +89,9 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
-		if checksum := tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0 {
+		isRotationRequested := utilities.IsRotationRequested(r.resource)
+
+		if checksum := tenantControlPlane.Status.Certificates.FrontProxyCA.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0) {
 			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
 				r.resource.Data[kubeadmconstants.FrontProxyCACertName],
 				r.resource.Data[kubeadmconstants.FrontProxyCAKeyName],
@@ -115,6 +124,10 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 		}
 
 		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
+
+		if isRotationRequested {
+			utilities.SetLastRotationTimestamp(r.resource)
+		}
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 

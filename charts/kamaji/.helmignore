@@ -21,3 +21,8 @@
 .idea/
 *.tmproj
 .vscode/
+# Helm source files
+README.md.gotmpl
+.helmignore
+# Build tools
+Makefile

@@ -224,3 +224,11 @@
 [data-md-color-scheme="slate"] .tx-card_icon svg {
   fill: #ffffff;
 }
+
+.user-quote {
+  font-size: 1.2em;
+  font-style: italic;
+  margin: 2em 0;
+  border-left: 4px solid #D81D56 !important;
+  padding-left: 1em;
+}

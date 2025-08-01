@@ -6,6 +6,7 @@ package resources
 import (
 	"context"
 
+	"github.com/prometheus/client_golang/prometheus"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -21,8 +22,13 @@ type KubernetesDeploymentResource struct {
 	resource           *appsv1.Deployment
 	Client             client.Client
 	DataStore          kamajiv1alpha1.DataStore
-	Name               string
 	KineContainerImage string
+}
+
+func (r *KubernetesDeploymentResource) GetHistogram() prometheus.Histogram {
+	deploymentCollector = LazyLoadHistogramFromResource(deploymentCollector, r)
+
+	return deploymentCollector
 }
 
 func (r *KubernetesDeploymentResource) isStatusEqual(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -49,8 +55,6 @@ func (r *KubernetesDeploymentResource) Define(_ context.Context, tenantControlPl
 		},
 	}
 
-	r.Name = "deployment"
-
 	return nil
 }
 
@@ -71,7 +75,7 @@ func (r *KubernetesDeploymentResource) CreateOrUpdate(ctx context.Context, tenan
 }
 
 func (r *KubernetesDeploymentResource) GetName() string {
-	return r.Name
+	return "deployment"
 }
 
 func (r *KubernetesDeploymentResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {

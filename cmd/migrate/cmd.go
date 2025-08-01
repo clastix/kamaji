@@ -22,9 +22,10 @@ import (
 func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	// CLI flags
 	var (
-		tenantControlPlane string
-		targetDataStore    string
-		timeout            time.Duration
+		tenantControlPlane    string
+		targetDataStore       string
+		cleanupPriorMigration bool
+		timeout               time.Duration
 	)
 
 	cmd := &cobra.Command{
@@ -95,6 +96,20 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 			defer targetConnection.Close()
+
+			if cleanupPriorMigration {
+				log.Info("Checking if target DataStore should be clean-up prior migration")
+
+				if exists, _ := targetConnection.DBExists(ctx, tcp.Status.Storage.Setup.Schema); exists {
+					log.Info("A colliding schema on target DataStore is present, cleaning up")
+
+					if dErr := targetConnection.DeleteDB(ctx, tcp.Status.Storage.Setup.Schema); dErr != nil {
+						return fmt.Errorf("error cleaning up prior migration: %s", dErr.Error())
+					}
+
+					log.Info("Cleaning up prior migration has been completed")
+				}
+			}
 			// Start migrating from the old Datastore to the new one
 			log.Info("migration from origin to target started")
 
@@ -110,6 +125,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 
 	cmd.Flags().StringVar(&tenantControlPlane, "tenant-control-plane", "", "Namespaced-name of the TenantControlPlane that must be migrated (e.g.: default/test)")
 	cmd.Flags().StringVar(&targetDataStore, "target-datastore", "", "Name of the Datastore to which the TenantControlPlane will be migrated")
+	cmd.Flags().BoolVar(&cleanupPriorMigration, "cleanup-prior-migration", false, "When set to true, migration job will drop existing data in the target DataStore: useful to avoid stale data when migrating back and forth between DataStores.")
 	cmd.Flags().DurationVar(&timeout, "timeout", 5*time.Minute, "Amount of time for the context timeout")
 
 	_ = cmd.MarkFlagRequired("tenant-control-plane")

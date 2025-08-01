@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -37,6 +38,12 @@ type KubeProxy struct {
 	roleBinding        *rbacv1.RoleBinding
 	configMap          *corev1.ConfigMap
 	daemonSet          *appsv1.DaemonSet
+}
+
+func (k *KubeProxy) GetHistogram() prometheus.Histogram {
+	kubeProxyCollector = resources.LazyLoadHistogramFromResource(kubeProxyCollector, k)
+
+	return kubeProxyCollector
 }
 
 func (k *KubeProxy) Define(context.Context, *kamajiv1alpha1.TenantControlPlane) error {

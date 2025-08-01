@@ -1,5 +1,8 @@
 # API Reference
 
+This section contains the Kamaji Customer Resource Definitions,
+as well as the Cluster API Control Plane provider ones.
+
 Packages:
 {{range .Groups}}
 - [{{.Group}}/{{.Version}}](#{{ anchorize (printf "%s/%s" .Group .Version) }})
@@ -8,7 +11,7 @@ Packages:
 {{- range .Groups }}
 {{- $group := . }}
 
-# {{.Group}}/{{.Version}}
+## {{.Group}}/{{.Version}}
 
 Resource Types:
 {{range .Kinds}}
@@ -17,14 +20,13 @@ Resource Types:
 
 {{range .Kinds}}
 {{$kind := .}}
-## {{.Name}}
+### {{.Name}}
 
 {{range .Types}}
 
 {{if not .IsTopLevel}}
-### {{.Name}}
+<span id="{{ anchorize .Name }}">`{{.Name}}`</span>
 {{end}}
-
 
 {{.Description}}
 

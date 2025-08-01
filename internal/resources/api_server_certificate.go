@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
@@ -29,6 +30,12 @@ type APIServerCertificate struct {
 	resource     *corev1.Secret
 	Client       client.Client
 	TmpDirectory string
+}
+
+func (r *APIServerCertificate) GetHistogram() prometheus.Histogram {
+	apiservercertificateCollector = LazyLoadHistogramFromResource(apiservercertificateCollector, r)
+
+	return apiservercertificateCollector
 }
 
 func (r *APIServerCertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -110,7 +117,7 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 		r.resource.SetLabels(utilities.MergeMaps(
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
-				constants.ControllerLabelResource: "x509",
+				constants.ControllerLabelResource: utilities.CertificateX509Label,
 			},
 		))
 
@@ -120,7 +127,9 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 			return err
 		}
 
-		if checksum := tenantControlPlane.Status.Certificates.APIServer.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0 {
+		isRotationRequested := utilities.IsRotationRequested(r.resource)
+
+		if checksum := tenantControlPlane.Status.Certificates.APIServer.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0) {
 			isCAValid, err := crypto.VerifyCertificate(r.resource.Data[kubeadmconstants.APIServerCertName], secretCA.Data[kubeadmconstants.CACertName], x509.ExtKeyUsageServerAuth)
 			if err != nil {
 				logger.Info(fmt.Sprintf("certificate-authority verify failed: %s", err.Error()))
@@ -161,6 +170,10 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 			logger.Error(err, "cannot generate certificate and private key")
 
 			return err
+		}
+
+		if isRotationRequested {
+			utilities.SetLastRotationTimestamp(r.resource)
 		}
 
 		r.resource.Data = map[string][]byte{

@@ -91,22 +91,20 @@ EOF
 ```
 
 ## Installing Kamaji
-
-- Clone the Kamaji repository
+- Add the Clastix Repo to the Helm Manager.
 
 ```
-git clone https://github.com/clastix/kamaji
-cd kamaji
+helm repo add clastix https://clastix.github.io/charts
 ```
 
 - Install Kamaji with Helm
 
 ```
-helm upgrade --install kamaji charts/kamaji \
+helm upgrade --install kamaji clastix/kamaji \
   --namespace kamaji-system \
   --create-namespace \
-  --set image.tag=latest \
-  --set 'resources=null'
+  --set 'resources=null' \
+  --version 0.0.0+latest
 ```
 
 - Watch the progress of the deployments
@@ -144,6 +142,12 @@ kubectl get tcp -w
 # Set the SECRET as KUBECONFIG column listed in the tcp output.
 SECRET=""
 kubectl get secret $SECRET -o jsonpath='{.data.admin\.conf}'|base64 -d > /tmp/kamaji.conf
+```
+
+- (options) if you run kind in some specific systems with `docker bridge network`, eg macOS, you may need to access the `kind` container, and perform the `kubectl` actions:
+
+```
+docker exec -it $(docker container list | grep kamaji-control-plane | awk '{print $1}') bash
 ```
 
 - Export the `kubeconfig` file to the environment variable `KUBECONFIG`

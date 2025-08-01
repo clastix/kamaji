@@ -122,6 +122,12 @@ type ExternalKubernetesObjectStatus struct {
 	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 }
 
+type KonnectivityAgentStatus struct {
+	ExternalKubernetesObjectStatus `json:",inline"`
+
+	Mode KonnectivityAgentMode `json:"mode,omitempty"`
+}
+
 // KonnectivityStatus defines the status of Konnectivity as Addon.
 type KonnectivityStatus struct {
 	Enabled            bool                            `json:"enabled"`
@@ -130,7 +136,7 @@ type KonnectivityStatus struct {
 	Kubeconfig         KubeconfigStatus                `json:"kubeconfig,omitempty"`
 	ServiceAccount     ExternalKubernetesObjectStatus  `json:"sa,omitempty"`
 	ClusterRoleBinding ExternalKubernetesObjectStatus  `json:"clusterrolebinding,omitempty"`
-	Agent              ExternalKubernetesObjectStatus  `json:"agent,omitempty"`
+	Agent              KonnectivityAgentStatus         `json:"agent,omitempty"`
 	Service            KubernetesServiceStatus         `json:"service,omitempty"`
 }
 

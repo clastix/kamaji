@@ -85,7 +85,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	tenantControlPlane, err := r.getTenantControlPlane(ctx, req.NamespacedName)()
 	if k8serrors.IsNotFound(err) {
-		log.Info("resource have been deleted, skipping")
+		log.Info("resource may have been deleted, skipping")
 
 		return reconcile.Result{}, nil
 	}
@@ -95,17 +95,23 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return reconcile.Result{}, err
 	}
 
+	if utils.IsPaused(tenantControlPlane) {
+		log.Info("paused reconciliation, no further actions")
+
+		return ctrl.Result{}, nil
+	}
+
 	releaser, err := mutex.Acquire(r.mutexSpec(tenantControlPlane))
 	if err != nil {
 		switch {
 		case errors.As(err, &mutex.ErrTimeout):
 			log.Info("acquire timed out, current process is blocked by another reconciliation")
 
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Second}, nil
 		case errors.As(err, &mutex.ErrCancelled):
 			log.Info("acquire cancelled")
 
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Second}, nil
 		default:
 			log.Error(err, "acquire failed")
 
@@ -125,7 +131,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		if errors.Is(err, ErrMissingDataStore) {
 			log.Info(err.Error())
 
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Second}, nil
 		}
 
 		log.Error(err, "cannot retrieve the DataStore for the given instance")
@@ -186,7 +192,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			if kamajierrors.ShouldReconcileErrorBeIgnored(err) {
 				log.V(1).Info("sentinel error, enqueuing back request", "error", err.Error())
 
-				return ctrl.Result{Requeue: true}, nil
+				return ctrl.Result{RequeueAfter: time.Second}, nil
 			}
 
 			log.Error(err, "handling of resource failed", "resource", resource.GetName())
@@ -202,7 +208,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			if kamajierrors.ShouldReconcileErrorBeIgnored(err) {
 				log.V(1).Info("sentinel error, enqueuing back request", "error", err.Error())
 
-				return ctrl.Result{Requeue: true}, nil
+				return ctrl.Result{RequeueAfter: time.Second}, nil
 			}
 
 			log.Error(err, "update of the resource failed", "resource", resource.GetName())
@@ -215,7 +221,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		if result == resources.OperationResultEnqueueBack {
 			log.Info("requested enqueuing back", "resources", resource.GetName())
 
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Second}, nil
 		}
 	}
 

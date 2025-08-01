@@ -1,0 +1,127 @@
+# Kamaji
+
+> Kamaji is the Control Plane Manager for Kubernetes, enabling multi-tenant, upstream-compliant clusters as pods in a central management cluster. Developed and maintained by Clastix, Kamaji brings operational efficiency, strong isolation, and cloud-native flexibility to Kubernetes at scale.
+
+Kamaji runs Kubernetes control planes as pods in a central Management Cluster, enabling fast, scalable, and cost-effective multi-tenancy. Each Tenant Cluster is fully isolated, CNCF-compliant, and managed declaratively using Kubernetes CRDs. Kamaji integrates with Cluster API, supports GitOps workflows, and offers enterprise-grade add-ons for advanced use cases.
+Kamaji is like a fleet of Site Reliability Engineers with expertise codified into its logic, working 24/7 to keep your Control Planes up and running.
+
+## Architecture
+
+- **Management Cluster:** Hosts Kamaji and all Tenant Control Planes as pods, leveraging Kubernetes reliability and scalability.
+- **Tenant Clusters:** User-facing clusters, each with a dedicated control plane running in the Management Cluster. Full isolation between tenants.
+- **Tenant Worker Nodes:** Machines that join Tenant Clusters, running only tenant workloads for strong security and resource isolation.
+
+## Main Features
+
+- Multi-Tenancy: Deploy multiple Kubernetes control planes as pods within a single management cluster. Each control plane operates independently, ensuring complete isolation between tenants.
+- Upstream Kubernetes: Uses unmodified upstream Kubernetes components and leverages kubeadm, the default tool for cluster bootstrapping and management.
+- Infrastructure Agnostic: Connect worker nodes from any infrastructure provider. Supports bare metal, virtual machines, and cloud instances, allowing hybrid and multi-cloud deployments.
+- Resource Optimization: Control planes run as pods, sharing the management cluster's resources efficiently. Scale control planes independently based on actual usage patterns and requirements.
+- Cluster API Integration: Seamlessly integrates with Cluster API providers for automated infrastructure provisioning and lifecycle management across different environments.
+- High Availability: Supports multi-node control plane deployments with distributed etcd clusters. Includes automated failover and recovery mechanisms for production workloads.
+- Full CNCF compliance and seamless integration with Cluster API, GitOps, and IaC tools.
+
+## Use Cases
+
+- Private Cloud: Optimize your data center resources by running multiple Kubernetes control planes. Perfect for organizations that need complete control over their infrastructure while maintaining strict isolation between different business units.
+- Public Cloud: Build independent public cloud offerings with Kubernetes-as-a-Service capabilities. Provide the same user experience as major cloud providers while maintaining full control over the infrastructure and operational costs.
+- Bare Metal: Maximize hardware utilization by running multiple control planes on your physical infrastructure. Ideal for environments where direct hardware access, network performance, and data locality are critical.
+- Edge Computing: Run lightweight Kubernetes clusters at the edge while managing their control planes centrally. Reduce the hardware footprint at edge locations by keeping control planes in your central management cluster.
+- Platform Engineering: Build internal Kubernetes platforms with standardized cluster provisioning and management. Enable self-service capabilities while maintaining centralized control and governance over all clusters.
+- Bring Your Own Cloud: Create your own managed Kubernetes service using standard upstream components. Provide dedicated clusters to your users while maintaining operational efficiency through centralized control plane management.
+
+## Frequently Asked Questions
+
+- What does Kamaji mean? Kamaji is named after Kamajī (かまじ) from the Japanese movie Spirited Away. Kamajī is the boiler room operator who efficiently manages the bathhouse's water system—just like Kamaji manages Kubernetes clusters!
+- Is Kamaji another Kubernetes distribution? No, Kamaji is a Kubernetes Operator that provides managed Kubernetes clusters as a service, leveraging kubeadm for conformant CNCF Kubernetes clusters.
+- How is it different from typical solutions? Kamaji runs the Control Plane as regular pods in the Management Cluster, offering it as a service and making it more cost-effective and easier to operate at scale.
+- How does it compare to public cloud services? Kamaji gives you full control over your Kubernetes infrastructure, offering consistency across cloud, data center, and edge while simplifying centralized operations.
+- How does it differ from Cluster API? They complement each other: Kamaji simplifies Control Plane management, while Cluster API handles infrastructure abstraction and lifecycle management.
+- Why Kamaji when Capsule exists? While Capsule provides a single control plane with isolated namespaces, Kamaji provides dedicated control planes when tenants need full cluster admin permissions.
+- Do you provide support? Yes, Clastix offers subscription-based, enterprise-grade support plans for Kamaji. Please contact us to discuss your support needs.
+
+## About Clastix
+
+Clastix is a technology company specializing in cloud-native solutions and Kubernetes platforms, with a strong history of delivering advanced, production-grade systems for cloud computing builders. Clastix has collaborated with a number of CSPs worldwide, enabling them to build resilient, scalable cloud infrastructures aligned with modern digital requirements. Beyond the development of Kamaji, Clastix delivers complementary services including integration with enterprise ecosystems, strategic consulting for infrastructure transformation, and training in cloud-native and Kubernetes best practices.
+
+## Releases and Versions
+
+Kamaji versions are available in different types of release artifacts.
+
+### Latest Releases
+
+CI is responsible for building OCI and Helm Charts for every commit in the main branch (master). The latest artifacts are aimed at rapid development tests and evaluation processes.
+
+### Edge Releases
+
+Edge Release artifacts are published on a monthly basis as part of the open source project. Edge Releases are generally considered production ready.
+
+### Stable Releases
+
+Clastix Labs no longer provides release artifacts following its own semantic versioning: this choice has been made to help monetize Clastix in the development and maintenance of the Kamaji project. Stable artifacts such as OCI (containers) and Helm Charts are available on a subscription basis maintained by CLASTIX.
+
+## Documentation
+
+### Getting Started
+
+- [Getting Started](https://github.com/clastix/kamaji/blob/master/docs/content/getting-started/index.md): Step-by-step setup for different environments
+- [Getting Started on a Generic Infrastructure](https://github.com/clastix/kamaji/blob/master/docs/content/getting-started/kamaji-generic.md): The process of creating a working Kamaji setup on a generic infrastructure.
+
+### Concepts
+
+- [Concepts](https://github.com/clastix/kamaji/blob/master/docs/content/concepts/index.md): Core ideas and architecture
+
+### Cluster API Support
+
+- [Cluster API Support](https://github.com/clastix/kamaji/blob/master/docs/content/cluster-api/index.md): How Kamaji supports Cluster APIs for declarative cluster provisioning
+- [Kamaji Cluster API Provider](https://github.com/clastix/kamaji/blob/master/docs/content/cluster-api/control-plane-provider.md): Kamaji can act as a Cluster API Control Plane provider
+- [Kamaji Cluster API Class](https://github.com/clastix/kamaji/blob/master/docs/content/cluster-api/cluster-class.md): Kamaji supports ClusterClass, a simple way to create many clusters of a similar shape.
+- [Kamaji Cluster Autoscaler](https://github.com/clastix/kamaji/blob/master/docs/content/cluster-api/cluster-autoscaler.md): Kamaji supports the Cluster Autoscaler through Cluster API.
+- [Kamaji Cluster API Infra Providers](https://github.com/clastix/kamaji/blob/master/docs/content/cluster-api/other-providers.md): Kamaji offers seamless integration with the most popular Cluster API Infrastructure Providers
+
+### Guides
+
+- [Kamaji Alternative Datastores](https://github.com/clastix/kamaji/blob/master/docs/content/guides/alternative-datastore.md): Kamaji offers the possibility of using different storage systems
+- [Kamaji Backup & Restore](https://github.com/clastix/kamaji/blob/master/docs/content/guides/backup-and-restore.md): How to back up and restore TCP resources on the Management Cluster using Velero
+- [Kamaji Certificates Lifecycle](https://github.com/clastix/kamaji/blob/master/docs/content/guides/certs-lifecycle.md): Kamaji is able to automatically rotate cluster certificates
+- [Kamaji Datastore Migration](https://github.com/clastix/kamaji/blob/master/docs/content/guides/datastore-migration.md): Kamaji live migrates Tenant data from one datastore to another
+- [Kamaji GitOps Approach](https://github.com/clastix/kamaji/blob/master/docs/content/guides/gitops.md): Describes a declarative way to deploy Kubernetes add-ons across multiple Tenant Clusters, the GitOps way
+- [Tenant Cluster Upgrade](https://github.com/clastix/kamaji/blob/master/docs/content/guides/upgrade.md): How to upgrade a Tenant Cluster
+- [Tenant Control Plane Monitoring](https://github.com/clastix/kamaji/blob/master/docs/content/guides/monitoring.md): How to monitor a Tenant Control Plane
+- [Terraform Support](https://github.com/clastix/kamaji/blob/master/docs/content/guides/terraform.md): How Kamaji supports Infrastructure as Code (IaC)
+- [Benchmark](https://github.com/clastix/kamaji/blob/master/docs/content/reference/benchmark.md): Kamaji has been designed to operate a large scale of Kubernetes Tenant Control Plane resources
+- [CNCF Conformance](https://github.com/clastix/kamaji/blob/master/docs/content/reference/conformance.md): All the "Tenant Clusters" built with Kamaji are CNCF conformant
+- [Releases and Versions](https://github.com/clastix/kamaji/blob/master/docs/content/reference/versioning.md): Kamaji versions are available in different types of release artifacts
+- [API Reference](https://github.com/clastix/kamaji/blob/master/docs/content/reference/api.md): Kamaji Custom Resources full API documentation
+
+## GitHub
+
+- [Readme](https://github.com/clastix/kamaji/blob/master/README.md): GitHub Readme file
+- [License](https://github.com/clastix/kamaji/blob/master/LICENSE): Apache 2.0 license
+
+## Support
+
+- [Contact Clastix](https://clastix.io/contact): Commercial support and inquiries
+- [Kubernetes Slack #kamaji](https://kubernetes.slack.com/archives/C03GLTTMWNN): Community chat
+
+## API Reference
+
+- [TenantControlPlane API](https://github.com/clastix/kamaji/blob/master/docs/content/reference/api.md#tenantcontrolplane): Full spec for the TenantControlPlane resource
+- [Datastore API](https://github.com/clastix/kamaji/blob/master/docs/content/reference/api.md#datastore): Full spec for the Datastore resource
+
+## Adopters
+
+- [Adopters List](https://github.com/clastix/kamaji/blob/master/ADOPTERS.md): Organizations using Kamaji
+
+## Project Status
+
+![GitHub license](https://img.shields.io/github/license/clastix/kamaji)
+![Go version](https://img.shields.io/github/go-mod/go-version/clastix/kamaji)
+![Release](https://img.shields.io/github/v/release/clastix/kamaji)
+![CNCF Certified Kubernetes](https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/certified-kubernetes/versionless/color/certified-kubernetes-color.png)
+
+## User Quote
+
+> "Kamaji works exactly as expected: it's 'simple', efficient, scalable, and I especially appreciate how Clastix has always been available for technical discussions and support throughout these two years of collaboration."
+>
+> — Jeremie Monsinjon, Head of Containers @ OVHCloud 

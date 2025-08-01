@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,12 +21,19 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/constants"
+	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type KubeconfigResource struct {
 	resource *corev1.Secret
 	Client   client.Client
+}
+
+func (r *KubeconfigResource) GetHistogram() prometheus.Histogram {
+	kubeconfigCollector = resources.LazyLoadHistogramFromResource(kubeconfigCollector, r)
+
+	return kubeconfigCollector
 }
 
 func (r *KubeconfigResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -95,7 +103,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			r.resource.GetLabels(),
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
-				constants.ControllerLabelResource: "kubeconfig",
+				constants.ControllerLabelResource: utilities.CertificateKubeconfigLabel,
 			},
 		))
 
@@ -105,7 +113,10 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
-		if checksum := tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) {
+		isRotationRequested := utilities.IsRotationRequested(r.resource)
+
+		checksum := tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum
+		if len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) && !isRotationRequested {
 			return nil
 		}
 
@@ -172,6 +183,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		r.resource.Data = map[string][]byte{
 			konnectivityKubeconfigFileName: kubeconfigBytes,
 		}
+
+		utilities.SetLastRotationTimestamp(r.resource)
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 

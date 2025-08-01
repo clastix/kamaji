@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/rbac/v1"
@@ -25,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/clastix/kamaji/controllers"
+	sooterrors "github.com/clastix/kamaji/controllers/soot/controllers/errors"
 	"github.com/clastix/kamaji/controllers/utils"
 	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/resources/konnectivity"
@@ -40,6 +42,12 @@ type KonnectivityAgent struct {
 func (k *KonnectivityAgent) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
 	tcp, err := k.GetTenantControlPlaneFunc()
 	if err != nil {
+		if errors.Is(err, sooterrors.ErrPausedReconciliation) {
+			k.Logger.Info(err.Error())
+
+			return reconcile.Result{}, nil
+		}
+
 		k.Logger.Error(err, "cannot retrieve TenantControlPlane")
 
 		return reconcile.Result{}, err

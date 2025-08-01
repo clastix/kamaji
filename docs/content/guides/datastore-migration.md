@@ -160,7 +160,6 @@ tenant-00   v1.25.2   Ready       192.168.32.200:6443      tenant-00-admin-kubec
 
 During the datastore migration, the Tenant Control Plane is put in read-only mode to avoid misalignments between source and destination datastores. If tenant users try to update the data, an admission controller denies the request with the following message:
 
-
 ```shell
 Error from server (the current Control Plane is in freezing mode due to a maintenance mode,
 all the changes are blocked: removing the webhook may lead to an inconsistent state upon its completion):
@@ -169,8 +168,16 @@ admission webhook "catchall.migrate.kamaji.clastix.io" denied the request
 
 After a while, depending on the amount of data to migrate, the Tenant Control Plane is put back in full operating mode by the Kamaji controller.
 
+Migration is expected to complete in 5 minutes.
+However, that timeout can be customized at the `TenantControlPlane` level with the annotation `kamaji.clastix.io/migration-timeout` with a Go-duration value (e.g.: `5m`).
+
 !!! info "Leftover"
     Please, note the datastore migration leaves the data on the default datastore, so you have to remove it manually.
+
+!!! info "Avoiding stale DataStore content"
+    When migrating `TenantControlPlane` across DataStore, a collision with the __schema__ name could happen,
+    leading to unexpected results such as old data still available.
+    The annotation `kamaji.clastix.io/cleanup-prior-migration=true` allows to enforce the clean-up of the target `DataStore` schema in case of collision.
 
 ## Post migration
 After migrating data to the new datastore, complete the migration procedure by restarting the `kubelet.service` on all the tenant worker nodes.
@@ -181,7 +188,7 @@ After migrating data to the new datastore, complete the migration procedure by r
 When migrating between datastores, the Kamaji controller automatically creates a migration job to transfer data from the source to the destination datastore. By default, this job uses the same image version as the running Kamaji controller. If you need to use a different image version for the migration job, you can specify it by passing extra arguments to the controller:
 
 ```shell
-helm upgrade kamaji clastix/kamaji -n kamaji-system 
+helm upgrade kamaji clastix/kamaji --version ${CHART_VERSION} -n kamaji-system 
 --set extraArgs[0]=--migrate-image=custom/kamaji:version`
 ```
 

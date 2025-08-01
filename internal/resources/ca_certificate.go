@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
@@ -28,6 +29,12 @@ type CACertificate struct {
 
 	Client       client.Client
 	TmpDirectory string
+}
+
+func (r *CACertificate) GetHistogram() prometheus.Histogram {
+	certificateauthorityCollector = LazyLoadHistogramFromResource(certificateauthorityCollector, r)
+
+	return certificateauthorityCollector
 }
 
 func (r *CACertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -89,7 +96,9 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
-		if checksum := tenantControlPlane.Status.Certificates.CA.Checksum; len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0 {
+		isRotationRequested := utilities.IsRotationRequested(r.resource)
+
+		if checksum := tenantControlPlane.Status.Certificates.CA.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0) {
 			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
 				r.resource.Data[kubeadmconstants.CACertName],
 				r.resource.Data[kubeadmconstants.CAKeyName],
@@ -107,6 +116,10 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			if isValid {
 				return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 			}
+		}
+
+		if isRotationRequested {
+			utilities.SetLastRotationTimestamp(r.resource)
 		}
 
 		if tenantControlPlane.Status.Kubernetes.Version.Status != nil && *tenantControlPlane.Status.Kubernetes.Version.Status != kamajiv1alpha1.VersionProvisioning {
