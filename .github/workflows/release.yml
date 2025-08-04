@@ -38,11 +38,36 @@ jobs:
           export TAG="${{ steps.tag.outputs.tag }}"
           envsubst < .github/release-template.md > release-notes.md
       - name: create and push git tag
+        env:
+          WORKFLOW_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git tag "${{ steps.tag.outputs.tag }}"
+          git remote set-url origin https://x-access-token:${WORKFLOW_TOKEN}@github.com/${{ github.repository }}
           git push origin "${{ steps.tag.outputs.tag }}"
+      - name: generate release notes from template
+        run: |
+          export TAG="${{ steps.tag.outputs.tag }}"
+          envsubst < .github/release-template.md > release-notes-header.md
+      - name: generate GitHub release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release --repo "$GITHUB_REPOSITORY" \
+            create "${{ steps.tag.outputs.tag }}" \
+            --generate-notes \
+            --draft \
+            --title "temp" \
+            --notes "temp" > /dev/null || true
+          
+          gh release view "${{ steps.tag.outputs.tag }}" \
+            --json body --jq .body > auto-notes.md
+          
+          gh release delete "${{ steps.tag.outputs.tag }}" --yes || true
+      - name: combine notes
+        run: |
+          cat release-notes-header.md auto-notes.md > release-notes.md
       - name: create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
