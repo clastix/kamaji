@@ -37,15 +37,6 @@ jobs:
         run: |
           export TAG="${{ steps.tag.outputs.tag }}"
           envsubst < .github/release-template.md > release-notes.md
-      - name: create and push git tag
-        env:
-          WORKFLOW_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git tag "${{ steps.tag.outputs.tag }}"
-          git remote set-url origin https://x-access-token:${WORKFLOW_TOKEN}@github.com/${{ github.repository }}
-          git push origin "${{ steps.tag.outputs.tag }}"
       - name: generate release notes from template
         run: |
           export TAG="${{ steps.tag.outputs.tag }}"
@@ -75,3 +66,10 @@ jobs:
           gh release create "${{ steps.tag.outputs.tag }}" \
             --title "${{ steps.tag.outputs.tag }}" \
             --notes-file release-notes.md
+      - name: trigger container build workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run "Container image build" \
+            --ref master \
+            -f tag="${{ steps.tag.outputs.tag }}"
