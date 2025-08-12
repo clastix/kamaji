@@ -359,7 +359,7 @@ cat <<EOF >> worker-user-data.sh
 $JOIN_CMD
 EOF
 
-aws ec2 run-instances --image-id $WORKER_AMI --instance-type "t2.medium" --user-data $(cat worker-user-data.sh | base64 -w0) --network-interfaces '{"SubnetId":'"'${KAMAJI_PRIVATE_SUBNET_ID}'"',"AssociatePublicIpAddress":false,"DeviceIndex":0,"Groups":["<REPLACE_WITH_SG>"]}' --count "1" 
+aws ec2 run-instances --image-id $WORKER_AMI --instance-type "t2.medium" --user-data $(cat worker-user-data.sh | base64 -w0) --network-interfaces '[{"SubnetId":'"'${KAMAJI_PRIVATE_SUBNET_ID}'"',"AssociatePublicIpAddress":false,"DeviceIndex":0,"Groups":["<REPLACE_WITH_SG>"]}]' --count "1"
 ```
 
 We have used user data to run the `kubeadm join` command on the instance boot. This will make sure that the worker node will join the cluster automatically.
