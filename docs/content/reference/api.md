@@ -148,6 +148,16 @@ Retrieve the list of the allowed ones by issuing "kubectl get datastores.kamaji.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>dataStoreUsername</b></td>
+        <td>string</td>
+        <td>
+          DataStoreUsername allows to specify the username of the database (for relational DataStores). This
+value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreUsername values are unique. It's up
+to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
+DataStoreUsername by concatenating the namespace and name of the TenantControlPlane.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#kamajicontrolplanespecdeployment">deployment</a></b></td>
         <td>object</td>
         <td>
@@ -316,7 +326,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent version:v0.28.6]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet version:v0.28.6]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -357,12 +367,44 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>hostNetwork</b></td>
+        <td>boolean</td>
+        <td>
+          HostNetwork enables the konnectivity agent to use the Host network namespace.
+By enabling this mode, the Agent doesn't need to wait for the CNI initialisation,
+enabling a sort of out-of-band access to nodes for troubleshooting scenarios,
+or when the agent needs direct access to the host network.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
           AgentImage defines the container image for Konnectivity's agent.<br/>
           <br/>
             <i>Default</i>: registry.k8s.io/kas-network-proxy/proxy-agent<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>enum</td>
+        <td>
+          Mode allows specifying the Agent deployment mode: Deployment, or DaemonSet (default).<br/>
+          <br/>
+            <i>Enum</i>: DaemonSet, Deployment<br/>
+            <i>Default</i>: DaemonSet<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          Replicas defines the number of replicas when Mode is Deployment.
+Must be 0 if Mode is DaemonSet.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12594,7 +12636,7 @@ Configure the Kubelet options, such as the preferred address types, or the expec
         <td><b>cgroupfs</b></td>
         <td>enum</td>
         <td>
-          CGroupFS defines the  cgroup driver for Kubelet
+          CGroupFS defines the cgroup driver for Kubelet
 https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/<br/>
           <br/>
             <i>Enum</i>: systemd, cgroupfs<br/>
@@ -12605,10 +12647,10 @@ https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-dri
         <td>[]enum</td>
         <td>
           Ordered list of the preferred NodeAddressTypes to use for kubelet connections.
-Default to Hostname, InternalIP, ExternalIP.<br/>
+Default to InternalIP, ExternalIP, Hostname.<br/>
           <br/>
             <i>Enum</i>: Hostname, InternalIP, ExternalIP, InternalDNS, ExternalDNS<br/>
-            <i>Default</i>: [Hostname InternalIP ExternalIP]<br/>
+            <i>Default</i>: [InternalIP ExternalIP Hostname]<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13364,6 +13406,16 @@ Retrieve the list of the allowed ones by issuing "kubectl get datastores.kamaji.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>dataStoreUsername</b></td>
+        <td>string</td>
+        <td>
+          DataStoreUsername allows to specify the username of the database (for relational DataStores). This
+value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreUsername values are unique. It's up
+to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
+DataStoreUsername by concatenating the namespace and name of the TenantControlPlane.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeployment">deployment</a></b></td>
         <td>object</td>
         <td>
@@ -13521,7 +13573,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent version:v0.28.6]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet version:v0.28.6]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13562,12 +13614,44 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>hostNetwork</b></td>
+        <td>boolean</td>
+        <td>
+          HostNetwork enables the konnectivity agent to use the Host network namespace.
+By enabling this mode, the Agent doesn't need to wait for the CNI initialisation,
+enabling a sort of out-of-band access to nodes for troubleshooting scenarios,
+or when the agent needs direct access to the host network.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
           AgentImage defines the container image for Konnectivity's agent.<br/>
           <br/>
             <i>Default</i>: registry.k8s.io/kas-network-proxy/proxy-agent<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>enum</td>
+        <td>
+          Mode allows specifying the Agent deployment mode: Deployment, or DaemonSet (default).<br/>
+          <br/>
+            <i>Enum</i>: DaemonSet, Deployment<br/>
+            <i>Default</i>: DaemonSet<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          Replicas defines the number of replicas when Mode is Deployment.
+Must be 0 if Mode is DaemonSet.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -25765,7 +25849,7 @@ Configure the Kubelet options, such as the preferred address types, or the expec
         <td><b>cgroupfs</b></td>
         <td>enum</td>
         <td>
-          CGroupFS defines the  cgroup driver for Kubelet
+          CGroupFS defines the cgroup driver for Kubelet
 https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/<br/>
           <br/>
             <i>Enum</i>: systemd, cgroupfs<br/>
@@ -25776,10 +25860,10 @@ https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-dri
         <td>[]enum</td>
         <td>
           Ordered list of the preferred NodeAddressTypes to use for kubelet connections.
-Default to Hostname, InternalIP, ExternalIP.<br/>
+Default to InternalIP, ExternalIP, Hostname.<br/>
           <br/>
             <i>Enum</i>: Hostname, InternalIP, ExternalIP, InternalDNS, ExternalDNS<br/>
-            <i>Default</i>: [Hostname InternalIP ExternalIP]<br/>
+            <i>Default</i>: [InternalIP ExternalIP Hostname]<br/>
         </td>
         <td>false</td>
       </tr></tbody>
