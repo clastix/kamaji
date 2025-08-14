@@ -6,6 +6,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -124,6 +125,19 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 		default:
 			password = []byte(uuid.New().String())
 		}
+		// the coalesce function prioritizes the return value stored in the TenantControlPlane status,
+		// although this is going to be populated by the UpdateTenantControlPlaneStatus handler of the resource datastore-setup:
+		// the default value will be used for fresh new configurations, and preserving a previous one:
+		// this will keep us safe from naming changes cases as occurred with the following commit:
+		// https://github.com/clastix/kamaji/pull/203/commits/09ce38f489cccca72ab728a259bc8fb2cf6e4770
+		coalesceFn := func(fromStatus string) []byte {
+			if len(fromStatus) > 0 {
+				return []byte(fromStatus)
+			}
+			// The dash character (-) must be replaced with an underscore, PostgreSQL is complaining about it:
+			// https://github.com/clastix/kamaji/issues/328
+			return []byte(strings.ReplaceAll(fmt.Sprintf("%s_%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName()), "-", "_"))
+		}
 
 		finalizersList := sets.New[string](r.resource.GetFinalizers()...)
 		finalizersList.Insert(finalizers.DatastoreSecretFinalizer)
@@ -164,7 +178,7 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 				username = []byte(tenantControlPlane.Spec.DataStoreUsername)
 			default:
 				// this can only happen on TCP creations when the webhook is not installed
-				return fmt.Errorf("cannot build datastore storage config, username must either exist in Spec or Status")
+				username = coalesceFn(tenantControlPlane.Status.Storage.Setup.User)
 			}
 		}
 
