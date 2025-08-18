@@ -68,7 +68,7 @@ jobs:
             --notes-file release-notes.md
       - name: trigger container build workflow
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
         run: |
           gh workflow run "Container image build" \
             --ref master \
