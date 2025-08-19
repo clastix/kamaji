@@ -30,6 +30,10 @@
   grid-template-columns: repeat(3, 1fr);
 }
 
+.tx-grid--1x2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
 /* Card styles */
 .tx-card {
   padding: var(--spacing-md);
@@ -182,14 +186,16 @@
   }
 
   .tx-grid--3x2,
-  .tx-grid--3x1 {
+  .tx-grid--3x1,
+  .tx-grid--1x2 {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media screen and (max-width: 600px) {
   .tx-grid--3x2,
-  .tx-grid--3x1 {
+  .tx-grid--3x1,
+  .tx-grid--1x2 {
     grid-template-columns: 1fr;
   }
 
