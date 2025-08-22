@@ -127,6 +127,15 @@ func (r *KubernetesDeploymentResource) isProgressingUpgrade() bool {
 		return true
 	}
 
+	if ptr.Deref(r.resource.Status.TerminatingReplicas, 0) > 0 {
+		// NOTE: This is currently an alpha field, so on clusters where the DeploymentPodReplacementPolicy
+		// feature gate isn't enabled this condition will always be false.
+		// Due to its alpha state the semantics may change over time, but the goal here should always be
+		// to wait until all old Pods were deleted.
+		// See: https://github.com/kubernetes/enhancements/issues/3973
+		return true
+	}
+
 	return false
 }
 
