@@ -240,11 +240,24 @@ func (d Deployment) buildCAVolume(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Te
 	}
 
 	podSpec.Volumes[index].Name = caCertificatesVolumeName
-	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
-		Secret: &corev1.SecretVolumeSource{
-			SecretName:  tcp.Status.Certificates.CA.SecretName,
-			DefaultMode: pointer.To(int32(420)),
-		},
+
+	// Use internal CA certificates ConfigMap if specified, otherwise use cluster CA secret
+	if tcp.Spec.InternalCACertificatesConfigMap != nil {
+		podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: *tcp.Spec.InternalCACertificatesConfigMap,
+				},
+				DefaultMode: pointer.To(int32(420)),
+			},
+		}
+	} else {
+		podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  tcp.Status.Certificates.CA.SecretName,
+				DefaultMode: pointer.To(int32(420)),
+			},
+		}
 	}
 }
 
@@ -256,11 +269,24 @@ func (d Deployment) buildShareCAVolume(podSpec *corev1.PodSpec, tcp kamajiv1alph
 	}
 
 	podSpec.Volumes[index].Name = usrShareCACertificatesVolumeName
-	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
-		Secret: &corev1.SecretVolumeSource{
-			SecretName:  tcp.Status.Certificates.CA.SecretName,
-			DefaultMode: pointer.To(int32(420)),
-		},
+
+	// Use internal CA certificates ConfigMap if specified, otherwise use cluster CA secret
+	if tcp.Spec.InternalCACertificatesConfigMap != nil {
+		podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: *tcp.Spec.InternalCACertificatesConfigMap,
+				},
+				DefaultMode: pointer.To(int32(420)),
+			},
+		}
+	} else {
+		podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  tcp.Status.Certificates.CA.SecretName,
+				DefaultMode: pointer.To(int32(420)),
+			},
+		}
 	}
 }
 
@@ -272,11 +298,24 @@ func (d Deployment) buildLocalShareCAVolume(podSpec *corev1.PodSpec, tcp kamajiv
 	}
 
 	podSpec.Volumes[index].Name = usrLocalShareCaCertificateVolumeName
-	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
-		Secret: &corev1.SecretVolumeSource{
-			SecretName:  tcp.Status.Certificates.CA.SecretName,
-			DefaultMode: pointer.To(int32(420)),
-		},
+
+	// Use internal CA certificates ConfigMap if specified, otherwise use cluster CA secret
+	if tcp.Spec.InternalCACertificatesConfigMap != nil {
+		podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: *tcp.Spec.InternalCACertificatesConfigMap,
+				},
+				DefaultMode: pointer.To(int32(420)),
+			},
+		}
+	} else {
+		podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  tcp.Status.Certificates.CA.SecretName,
+				DefaultMode: pointer.To(int32(420)),
+			},
+		}
 	}
 }
 
