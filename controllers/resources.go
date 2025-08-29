@@ -18,6 +18,7 @@ import (
 	builder "github.com/clastix/kamaji/internal/builders/controlplane"
 	"github.com/clastix/kamaji/internal/datastore"
 	"github.com/clastix/kamaji/internal/resources"
+	"github.com/clastix/kamaji/internal/resources/addons"
 	ds "github.com/clastix/kamaji/internal/resources/datastore"
 	"github.com/clastix/kamaji/internal/resources/konnectivity"
 )
@@ -84,6 +85,7 @@ func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.R
 	resources = append(resources, getKonnectivityServerRequirementsResources(config.client, config.ExpirationThreshold)...)
 	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.DataStore)...)
 	resources = append(resources, getKonnectivityServerPatchResources(config.client)...)
+	resources = append(resources, getAddonResources(config.client)...)
 	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
 	resources = append(resources, getKubernetesIngressResources(config.client)...)
 
@@ -275,6 +277,13 @@ func getKonnectivityServerPatchResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
 		&konnectivity.KubernetesDeploymentResource{Builder: builder.Konnectivity{Scheme: *c.Scheme()}, Client: c},
 		&konnectivity.ServiceResource{Client: c},
+	}
+}
+
+func getAddonResources(c client.Client) []resources.Resource {
+	return []resources.Resource{
+		&addons.CoreDNS{Client: c},
+		&addons.KubeProxy{Client: c},
 	}
 }
 

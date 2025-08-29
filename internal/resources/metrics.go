@@ -21,6 +21,8 @@ var (
 	kubeadmupgradeCollector            prometheus.Histogram
 	kubeconfigCollector                prometheus.Histogram
 	serviceaccountcertificateCollector prometheus.Histogram
+	datastorecertificateCollector      prometheus.Histogram
+	konnectivitycertificateCollector   prometheus.Histogram
 
 	kubeadmphaseUploadConfigKubeadmCollector prometheus.Histogram
 	kubeadmphaseUploadConfigKubeletCollector prometheus.Histogram
@@ -49,4 +51,20 @@ func LazyLoadHistogramFromResource(collector prometheus.Histogram, resource Reso
 	}
 
 	return collector
+}
+
+func GetDatastoreCertificateCollector() prometheus.Histogram {
+	return datastorecertificateCollector
+}
+
+func SetDatastoreCertificateCollector(c prometheus.Histogram) {
+	datastorecertificateCollector = c
+}
+
+func GetKonnectivityCertificateCollector() prometheus.Histogram {
+	return konnectivitycertificateCollector
+}
+
+func SetKonnectivityCertificateCollector(c prometheus.Histogram) {
+	konnectivitycertificateCollector = c
 }
