@@ -111,4 +111,7 @@ kamaji-etcd:
 # -- Disable the analytics traces collection
 telemetry:
   disabled: false
-  
+
+# -- Create self-signed certificate Issuer
+selfSigned:
+  enabled: true
