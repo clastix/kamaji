@@ -193,7 +193,10 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				}
 			}
 
-			if err = (&controllers.CertificateLifecycle{Channel: certChannel, Deadline: certificateExpirationDeadline}).SetupWithManager(mgr); err != nil {
+			certController := &controllers.CertificateLifecycle{Channel: certChannel, Deadline: certificateExpirationDeadline}
+			certController.EnqueueFn = certController.EnqueueForTenantControlPlane
+
+			if err = certController.SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "CertificateLifecycle")
 
 				return err
