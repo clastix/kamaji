@@ -77,6 +77,7 @@ nav:
   - guides/datastore-migration.md
   - guides/gitops.md
   - guides/console.md
+  - guides/kubeconfig-generator.md
   - guides/upgrade.md
   - guides/monitoring.md
   - guides/terraform.md

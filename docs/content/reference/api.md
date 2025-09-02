@@ -27271,6 +27271,8 @@ Resource Types:
 
 - [DataStore](#datastore)
 
+- [KubeconfigGenerator](#kubeconfiggenerator)
+
 - [TenantControlPlane](#tenantcontrolplane)
 
 
@@ -27982,6 +27984,415 @@ DataStoreStatus defines the observed state of DataStore.
           List of the Tenant Control Planes, namespaced named, using this data store.<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+### KubeconfigGenerator
+
+
+
+
+
+KubeconfigGenerator is the Schema for the kubeconfiggenerators API.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+      <td><b>apiVersion</b></td>
+      <td>string</td>
+      <td>kamaji.clastix.io/v1alpha1</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b>kind</b></td>
+      <td>string</td>
+      <td>KubeconfigGenerator</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td>object</td>
+      <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
+      <td>true</td>
+      </tr><tr>
+        <td><b><a href="#kubeconfiggeneratorspec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kubeconfiggeneratorstatus">status</a></b></td>
+        <td>object</td>
+        <td>
+          KubeconfigGeneratorStatus defines the observed state of KubeconfigGenerator.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspec">`KubeconfigGenerator.spec`</span>
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kubeconfiggeneratorspecuser">user</a></b></td>
+        <td>object</td>
+        <td>
+          User resolves to a string to identify the client, assigned to the x509 Common Name field.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>controlPlaneEndpointFrom</b></td>
+        <td>string</td>
+        <td>
+          ControlPlaneEndpointFrom is the key used to extract the Tenant Control Plane endpoint that must be used by the generator.
+The targeted Secret is the `${TCP}-admin-kubeconfig` one, default to `admin.svc`.<br/>
+          <br/>
+            <i>Default</i>: admin.svc<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kubeconfiggeneratorspecgroupsindex">groups</a></b></td>
+        <td>[]object</td>
+        <td>
+          Groups is resolved a set of strings used to assign the x509 organisations field.
+It will be recognised by Kubernetes as user groups.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kubeconfiggeneratorspecnamespaceselector">namespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          NamespaceSelector is used to filter Namespaces from which the generator should extract TenantControlPlane objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kubeconfiggeneratorspectenantcontrolplaneselector">tenantControlPlaneSelector</a></b></td>
+        <td>object</td>
+        <td>
+          TenantControlPlaneSelector is used to filter the TenantControlPlane objects that should be address by the generator.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspecuser">`KubeconfigGenerator.spec.user`</span>
+
+
+User resolves to a string to identify the client, assigned to the x509 Common Name field.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fromDefinition</b></td>
+        <td>string</td>
+        <td>
+          FromDefinition is used to generate a dynamic value,
+it uses the dot notation to access fields from the referenced TenantControlPlane object:
+e.g.: metadata.name<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>stringValue</b></td>
+        <td>string</td>
+        <td>
+          StringValue is a static string value.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspecgroupsindex">`KubeconfigGenerator.spec.groups[index]`</span>
+
+
+CompoundValue allows defining a static, or a dynamic value.
+Options are mutually exclusive, just one should be picked up.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fromDefinition</b></td>
+        <td>string</td>
+        <td>
+          FromDefinition is used to generate a dynamic value,
+it uses the dot notation to access fields from the referenced TenantControlPlane object:
+e.g.: metadata.name<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>stringValue</b></td>
+        <td>string</td>
+        <td>
+          StringValue is a static string value.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspecnamespaceselector">`KubeconfigGenerator.spec.namespaceSelector`</span>
+
+
+NamespaceSelector is used to filter Namespaces from which the generator should extract TenantControlPlane objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kubeconfiggeneratorspecnamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspecnamespaceselectormatchexpressionsindex">`KubeconfigGenerator.spec.namespaceSelector.matchExpressions[index]`</span>
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspectenantcontrolplaneselector">`KubeconfigGenerator.spec.tenantControlPlaneSelector`</span>
+
+
+TenantControlPlaneSelector is used to filter the TenantControlPlane objects that should be address by the generator.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kubeconfiggeneratorspectenantcontrolplaneselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspectenantcontrolplaneselectormatchexpressionsindex">`KubeconfigGenerator.spec.tenantControlPlaneSelector.matchExpressions[index]`</span>
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorstatus">`KubeconfigGenerator.status`</span>
+
+
+KubeconfigGeneratorStatus defines the observed state of KubeconfigGenerator.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>availableResources</b></td>
+        <td>integer</td>
+        <td>
+          AvailableResources is the sum of successfully generated resources.
+In case of a different value compared to Resources, check the field errors.<br/>
+          <br/>
+            <i>Default</i>: 0<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>resources</b></td>
+        <td>integer</td>
+        <td>
+          Resources is the sum of targeted TenantControlPlane objects.<br/>
+          <br/>
+            <i>Default</i>: 0<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#kubeconfiggeneratorstatuserrorsindex">errors</a></b></td>
+        <td>[]object</td>
+        <td>
+          Errors is the list of failed kubeconfig generations.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorstatuserrorsindex">`KubeconfigGenerator.status.errors[index]`</span>
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>message</b></td>
+        <td>string</td>
+        <td>
+          Message is the error message recorded upon the last generator run.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Resource is the Namespaced name of the errored resource.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
