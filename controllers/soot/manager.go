@@ -253,6 +253,19 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	//
 	// Register all the controllers of the soot here:
 	//
+	writePermissions := &controllers.WritePermissions{
+		Logger:                    mgr.GetLogger().WithName("writePermissions"),
+		Client:                    mgr.GetClient(),
+		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
+		WebhookNamespace:          m.MigrateServiceNamespace,
+		WebhookServiceName:        m.MigrateServiceName,
+		WebhookCABundle:           m.MigrateCABundle,
+		TriggerChannel:            nil,
+	}
+	if err = writePermissions.SetupWithManager(mgr); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	migrate := &controllers.Migrate{
 		WebhookNamespace:          m.MigrateServiceNamespace,
 		WebhookServiceName:        m.MigrateServiceName,
@@ -370,6 +383,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 
 	m.sootMap[request.NamespacedName.String()] = sootItem{
 		triggers: []chan event.GenericEvent{
+			writePermissions.TriggerChannel,
 			migrate.TriggerChannel,
 			konnectivityAgent.TriggerChannel,
 			kubeProxy.TriggerChannel,

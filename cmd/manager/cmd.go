@@ -219,6 +219,9 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				routes.TenantControlPlaneMigrate{}: {
 					handlers.Freeze{},
 				},
+				routes.TenantControlPlaneWritePermission{}: {
+					handlers.WritePermission{},
+				},
 				routes.TenantControlPlaneDefaults{}: {
 					handlers.TenantControlPlaneDefaults{
 						DefaultDatastore: datastore,

@@ -7727,6 +7727,7 @@ spec:
                           default: Provisioning
                           description: Status returns the current status of the Kubernetes version, such as its provisioning state, or completed upgrade.
                           enum:
+                            - Unknown
                             - Provisioning
                             - CertificateAuthorityRotating
                             - Upgrading
