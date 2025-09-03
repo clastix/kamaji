@@ -89,7 +89,6 @@ versions:
                         default:
                           image: registry.k8s.io/kas-network-proxy/proxy-agent
                           mode: DaemonSet
-                          version: v0.28.6
                         properties:
                           extraArgs:
                             description: |-
@@ -170,8 +169,11 @@ versions:
                               type: object
                             type: array
                           version:
-                            default: v0.28.6
-                            description: Version for Konnectivity agent.
+                            description: |-
+                              Version for Konnectivity agent.
+                              If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
+
+                              WARNING: for last cut-off releases, the container image could be not available.
                             type: string
                         type: object
                         x-kubernetes-validations:
@@ -181,7 +183,6 @@ versions:
                         default:
                           image: registry.k8s.io/kas-network-proxy/proxy-server
                           port: 8132
-                          version: v0.28.6
                         properties:
                           extraArgs:
                             description: |-
@@ -260,8 +261,11 @@ versions:
                                 type: object
                             type: object
                           version:
-                            default: v0.28.6
-                            description: Container image version of the Konnectivity server.
+                            description: |-
+                              Container image version of the Konnectivity server.
+                              If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
+
+                              WARNING: for last cut-off releases, the container image could be not available.
                             type: string
                         required:
                           - port
