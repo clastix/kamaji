@@ -321,18 +321,31 @@ func (c *CoreDNS) mutateDeployment(ctx context.Context, tenantClient client.Clie
 		d.Spec.Template.Spec.Containers[0].Name = c.deployment.Spec.Template.Spec.Containers[0].Name
 		d.Spec.Template.Spec.Containers[0].Image = c.deployment.Spec.Template.Spec.Containers[0].Image
 		d.Spec.Template.Spec.Containers[0].Args = c.deployment.Spec.Template.Spec.Containers[0].Args
-		if len(d.Spec.Template.Spec.Containers[0].Ports) != 3 {
-			d.Spec.Template.Spec.Containers[0].Ports = make([]corev1.ContainerPort, 3)
+
+		if len(d.Spec.Template.Spec.Containers[0].Ports) != 5 {
+			d.Spec.Template.Spec.Containers[0].Ports = make([]corev1.ContainerPort, 5)
 		}
+
 		d.Spec.Template.Spec.Containers[0].Ports[0].Name = c.deployment.Spec.Template.Spec.Containers[0].Ports[0].Name
 		d.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = c.deployment.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort
 		d.Spec.Template.Spec.Containers[0].Ports[0].Protocol = c.deployment.Spec.Template.Spec.Containers[0].Ports[0].Protocol
+
 		d.Spec.Template.Spec.Containers[0].Ports[1].Name = c.deployment.Spec.Template.Spec.Containers[0].Ports[1].Name
 		d.Spec.Template.Spec.Containers[0].Ports[1].ContainerPort = c.deployment.Spec.Template.Spec.Containers[0].Ports[1].ContainerPort
 		d.Spec.Template.Spec.Containers[0].Ports[1].Protocol = c.deployment.Spec.Template.Spec.Containers[0].Ports[1].Protocol
+
 		d.Spec.Template.Spec.Containers[0].Ports[2].Name = c.deployment.Spec.Template.Spec.Containers[0].Ports[2].Name
 		d.Spec.Template.Spec.Containers[0].Ports[2].ContainerPort = c.deployment.Spec.Template.Spec.Containers[0].Ports[2].ContainerPort
 		d.Spec.Template.Spec.Containers[0].Ports[2].Protocol = c.deployment.Spec.Template.Spec.Containers[0].Ports[2].Protocol
+
+		d.Spec.Template.Spec.Containers[0].Ports[3].Name = c.deployment.Spec.Template.Spec.Containers[0].Ports[3].Name
+		d.Spec.Template.Spec.Containers[0].Ports[3].ContainerPort = c.deployment.Spec.Template.Spec.Containers[0].Ports[3].ContainerPort
+		d.Spec.Template.Spec.Containers[0].Ports[3].Protocol = c.deployment.Spec.Template.Spec.Containers[0].Ports[3].Protocol
+
+		d.Spec.Template.Spec.Containers[0].Ports[4].Name = c.deployment.Spec.Template.Spec.Containers[0].Ports[4].Name
+		d.Spec.Template.Spec.Containers[0].Ports[4].ContainerPort = c.deployment.Spec.Template.Spec.Containers[0].Ports[4].ContainerPort
+		d.Spec.Template.Spec.Containers[0].Ports[4].Protocol = c.deployment.Spec.Template.Spec.Containers[0].Ports[4].Protocol
+
 		d.Spec.Template.Spec.Containers[0].Resources = c.deployment.Spec.Template.Spec.Containers[0].Resources
 		if len(d.Spec.Template.Spec.Containers[0].VolumeMounts) == 0 {
 			d.Spec.Template.Spec.Containers[0].VolumeMounts = make([]corev1.VolumeMount, 1)
