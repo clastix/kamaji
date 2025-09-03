@@ -74,6 +74,7 @@ nav:
   - guides/backup-and-restore.md
   - guides/certs-lifecycle.md
   - guides/pausing.md
+  - guides/write-permissions.md
   - guides/datastore-migration.md
   - guides/gitops.md
   - guides/console.md
