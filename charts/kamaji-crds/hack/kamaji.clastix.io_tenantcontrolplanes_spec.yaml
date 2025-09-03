@@ -6955,6 +6955,22 @@ versions:
                     description: 'CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.'
                     type: string
                 type: object
+              writePermissions:
+                description: |-
+                  WritePermissions allows to select which operations (create, delete, update) must be blocked:
+                  by default, all actions are allowed, and API Server can write to its Datastore.
+
+                  By blocking all actions, the Tenant Control Plane can enter in a Read Only mode:
+                  this phase can be used to prevent Datastore quota exhaustion or for your own business logic
+                  (e.g.: blocking creation and update, but allowing deletion to "clean up" space).
+                properties:
+                  blockCreation:
+                    type: boolean
+                  blockDeletion:
+                    type: boolean
+                  blockUpdate:
+                    type: boolean
+                type: object
             required:
               - controlPlane
               - kubernetes
@@ -7710,6 +7726,7 @@ versions:
                           - Ready
                           - NotReady
                           - Sleeping
+                          - WriteLimited
                         type: string
                       version:
                         description: Version is the running Kubernetes version of the Tenant Control Plane.

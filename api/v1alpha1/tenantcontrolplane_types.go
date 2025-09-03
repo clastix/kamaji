@@ -297,6 +297,20 @@ type AddonsSpec struct {
 	KubeProxy *AddonSpec `json:"kubeProxy,omitempty"`
 }
 
+type Permissions struct {
+	BlockCreate bool `json:"blockCreation,omitempty"`
+	BlockUpdate bool `json:"blockUpdate,omitempty"`
+	BlockDelete bool `json:"blockDeletion,omitempty"`
+}
+
+func (p *Permissions) HasAnyLimitation() bool {
+	if p.BlockCreate || p.BlockUpdate || p.BlockDelete {
+		return true
+	}
+
+	return false
+}
+
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStore) || has(self.dataStore)", message="unsetting the dataStore is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"
@@ -306,6 +320,13 @@ type AddonsSpec struct {
 // +kubebuilder:validation:XValidation:rule="self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)",message="LoadBalancerClass cannot be set or unset at runtime"
 
 type TenantControlPlaneSpec struct {
+	// WritePermissions allows to select which operations (create, delete, update) must be blocked:
+	// by default, all actions are allowed, and API Server can write to its Datastore.
+	//
+	// By blocking all actions, the Tenant Control Plane can enter in a Read Only mode:
+	// this phase can be used to prevent Datastore quota exhaustion or for your own business logic
+	// (e.g.: blocking creation and update, but allowing deletion to "clean up" space).
+	WritePermissions Permissions `json:"writePermissions,omitempty"`
 	// DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
 	// When Kamaji runs with the default DataStore flag, all empty values will inherit the default value.
 	// By leaving it empty and running Kamaji with no default DataStore flag, it is possible to achieve automatic assignment to a specific DataStore object.

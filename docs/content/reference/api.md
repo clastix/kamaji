@@ -28523,6 +28523,13 @@ DataStoreUsername by concatenating the namespace and name of the TenantControlPl
           NetworkProfile specifies how the network is<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>readOnly</b></td>
+        <td>boolean</td>
+        <td>
+          When ReadOnly is set to true, the Tenant Control Plane data will enter in read only mode.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -44111,7 +44118,7 @@ KubernetesVersion contains the information regarding the running Kubernetes vers
         <td>
           Status returns the current status of the Kubernetes version, such as its provisioning state, or completed upgrade.<br/>
           <br/>
-            <i>Enum</i>: Provisioning, CertificateAuthorityRotating, Upgrading, Migrating, Ready, NotReady, Sleeping<br/>
+            <i>Enum</i>: Provisioning, CertificateAuthorityRotating, Upgrading, Migrating, Ready, NotReady, Sleeping, ReadOnly<br/>
             <i>Default</i>: Provisioning<br/>
         </td>
         <td>false</td>

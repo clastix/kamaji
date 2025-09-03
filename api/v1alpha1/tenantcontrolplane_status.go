@@ -189,12 +189,13 @@ type KubernetesStatus struct {
 	Ingress    *KubernetesIngressStatus   `json:"ingress,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Provisioning;CertificateAuthorityRotating;Upgrading;Migrating;Ready;NotReady;Sleeping
+// +kubebuilder:validation:Enum=Provisioning;CertificateAuthorityRotating;Upgrading;Migrating;Ready;NotReady;Sleeping;WriteLimited
 type KubernetesVersionStatus string
 
 var (
 	VersionProvisioning KubernetesVersionStatus = "Provisioning"
 	VersionSleeping     KubernetesVersionStatus = "Sleeping"
+	VersionWriteLimited KubernetesVersionStatus = "WriteLimited"
 	VersionCARotating   KubernetesVersionStatus = "CertificateAuthorityRotating"
 	VersionUpgrading    KubernetesVersionStatus = "Upgrading"
 	VersionMigrating    KubernetesVersionStatus = "Migrating"
