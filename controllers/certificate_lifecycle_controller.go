@@ -31,8 +31,9 @@ import (
 )
 
 type CertificateLifecycle struct {
-	Channel  chan event.GenericEvent
-	Deadline time.Duration
+	Channel   chan event.GenericEvent
+	Deadline  time.Duration
+	EnqueueFn func(secret *corev1.Secret)
 
 	client client.Client
 }
@@ -91,12 +92,7 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 	if deadline.After(crt.NotAfter) {
 		logger.Info("certificate near expiration, must be rotated")
 
-		s.Channel <- event.GenericEvent{Object: &kamajiv1alpha1.TenantControlPlane{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      secret.GetOwnerReferences()[0].Name,
-				Namespace: secret.Namespace,
-			},
-		}}
+		s.EnqueueFn(&secret)
 
 		logger.Info("certificate rotation triggered")
 
@@ -108,6 +104,35 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 	logger.Info("certificate is still valid, enqueuing back", "after", after.String())
 
 	return reconcile.Result{RequeueAfter: after}, nil
+}
+
+func (s *CertificateLifecycle) EnqueueForTenantControlPlane(secret *corev1.Secret) {
+	for _, or := range secret.GetOwnerReferences() {
+		if or.Kind != "TenantControlPlane" {
+			continue
+		}
+
+		s.Channel <- event.GenericEvent{Object: &kamajiv1alpha1.TenantControlPlane{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      or.Name,
+				Namespace: secret.Namespace,
+			},
+		}}
+	}
+}
+
+func (s *CertificateLifecycle) EnqueueForKubeconfigGenerator(secret *corev1.Secret) {
+	for _, or := range secret.GetOwnerReferences() {
+		if or.Kind != "KubeconfigGenerator" {
+			continue
+		}
+
+		s.Channel <- event.GenericEvent{Object: &kamajiv1alpha1.TenantControlPlane{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: or.Name,
+			},
+		}}
+	}
 }
 
 func (s *CertificateLifecycle) extractCertificateFromBareSecret(secret corev1.Secret) (*x509.Certificate, error) {

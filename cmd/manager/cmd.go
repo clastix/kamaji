@@ -4,6 +4,7 @@
 package manager
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -62,8 +63,6 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		webhookCAPath string
 	)
 
-	ctx := ctrl.SetupSignalHandler()
-
 	cmd := &cobra.Command{
 		Use:           "manager",
 		Short:         "Start the Kamaji Kubernetes Operator",
@@ -86,7 +85,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return fmt.Errorf("unable to read webhook CA: %w", err)
 			}
 
-			if err = datastoreutils.CheckExists(ctx, scheme, datastore); err != nil {
+			if err = datastoreutils.CheckExists(context.Background(), scheme, datastore); err != nil {
 				return err
 			}
 
@@ -97,6 +96,8 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			return nil
 		},
 		RunE: func(*cobra.Command, []string) error {
+			ctx := ctrl.SetupSignalHandler()
+
 			setupLog := ctrl.Log.WithName("setup")
 
 			setupLog.Info(fmt.Sprintf("Kamaji version %s %s%s", internal.GitTag, internal.GitCommit, internal.GitDirty))
@@ -193,7 +194,10 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				}
 			}
 
-			if err = (&controllers.CertificateLifecycle{Channel: certChannel, Deadline: certificateExpirationDeadline}).SetupWithManager(mgr); err != nil {
+			certController := &controllers.CertificateLifecycle{Channel: certChannel, Deadline: certificateExpirationDeadline}
+			certController.EnqueueFn = certController.EnqueueForTenantControlPlane
+
+			if err = certController.SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "CertificateLifecycle")
 
 				return err
