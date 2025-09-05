@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/blang/semver"
 	"github.com/prometheus/client_golang/prometheus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,6 +35,19 @@ func (r *Agent) GetHistogram() prometheus.Histogram {
 	agentCollector = resources.LazyLoadHistogramFromResource(agentCollector, r)
 
 	return agentCollector
+}
+
+func (r *Agent) agentVersion(tcp *kamajiv1alpha1.TenantControlPlane) string {
+	if tcp.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Version != "" {
+		return tcp.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Version
+	}
+
+	version, parsedErr := semver.ParseTolerant(tcp.Spec.Kubernetes.Version)
+	if parsedErr != nil {
+		return ""
+	}
+
+	return fmt.Sprintf("v0.%d.0", version.Minor)
 }
 
 func (r *Agent) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
@@ -219,7 +233,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			podTemplateSpec.Spec.Containers = make([]corev1.Container, 1)
 		}
 
-		podTemplateSpec.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Image, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Version)
+		podTemplateSpec.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Image, r.agentVersion(tenantControlPlane))
 		podTemplateSpec.Spec.Containers[0].Name = AgentName
 		podTemplateSpec.Spec.Containers[0].Command = []string{"/proxy-agent"}
 
