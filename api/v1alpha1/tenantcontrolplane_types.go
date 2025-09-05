@@ -302,6 +302,8 @@ type AddonsSpec struct {
 // +kubebuilder:validation:XValidation:rule="self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)",message="LoadBalancerClass cannot be set or unset at runtime"
 
 type TenantControlPlaneSpec struct {
+	// When ReadOnly is set to true, the Tenant Control Plane data will enter in read only mode.
+	ReadOnly bool `json:"readOnly,omitempty"`
 	// DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
 	// When Kamaji runs with the default DataStore flag, all empty values will inherit the default value.
 	// By leaving it empty and running Kamaji with no default DataStore flag, it is possible to achieve automatic assignment to a specific DataStore object.

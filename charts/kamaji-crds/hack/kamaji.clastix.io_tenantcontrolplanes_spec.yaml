@@ -6951,6 +6951,9 @@ versions:
                     description: 'CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.'
                     type: string
                 type: object
+              readOnly:
+                description: When ReadOnly is set to true, the Tenant Control Plane data will enter in read only mode.
+                type: boolean
             required:
               - controlPlane
               - kubernetes
@@ -7706,6 +7709,7 @@ versions:
                           - Ready
                           - NotReady
                           - Sleeping
+                          - ReadOnly
                         type: string
                       version:
                         description: Version is the running Kubernetes version of the Tenant Control Plane.
