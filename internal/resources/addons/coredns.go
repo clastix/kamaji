@@ -298,8 +298,8 @@ func (c *CoreDNS) mutateDeployment(ctx context.Context, tenantClient client.Clie
 
 	if err := tenantClient.Get(ctx, client.ObjectKeyFromObject(&deployment), &deployment); err != nil {
 		if k8serrors.IsNotFound(err) {
-			return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, &deployment, func() error {
-				return controllerutil.SetControllerReference(c.clusterRoleBinding, &deployment, tenantClient.Scheme())
+			return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, c.deployment, func() error {
+				return controllerutil.SetControllerReference(c.clusterRoleBinding, c.deployment, tenantClient.Scheme())
 			})
 		}
 
@@ -334,8 +334,8 @@ func (c *CoreDNS) mutateService(ctx context.Context, tenantClient client.Client)
 
 	if err := tenantClient.Get(ctx, client.ObjectKeyFromObject(&svc), &svc); err != nil {
 		if k8serrors.IsNotFound(err) {
-			return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, &svc, func() error {
-				return controllerutil.SetControllerReference(c.clusterRoleBinding, &svc, tenantClient.Scheme())
+			return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, c.service, func() error {
+				return controllerutil.SetControllerReference(c.clusterRoleBinding, c.service, tenantClient.Scheme())
 			})
 		}
 

@@ -303,8 +303,8 @@ func (k *KubeProxy) mutateDaemonSet(ctx context.Context, tenantClient client.Cli
 
 	if err := tenantClient.Get(ctx, client.ObjectKeyFromObject(&ds), &ds); err != nil {
 		if k8serrors.IsNotFound(err) {
-			return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, &ds, func() error {
-				return controllerutil.SetControllerReference(k.clusterRoleBinding, &ds, tenantClient.Scheme())
+			return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, k.daemonSet, func() error {
+				return controllerutil.SetControllerReference(k.clusterRoleBinding, k.daemonSet, tenantClient.Scheme())
 			})
 		}
 
