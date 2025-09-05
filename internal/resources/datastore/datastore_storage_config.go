@@ -5,7 +5,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -163,8 +162,7 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 				// or defaulted by the defaulting webhook
 				username = []byte(tenantControlPlane.Spec.DataStoreUsername)
 			default:
-				// this can only happen on TCP creations when the webhook is not installed
-				return fmt.Errorf("cannot build datastore storage config, username must either exist in Spec or Status")
+				username = []byte(tenantControlPlane.GetDefaultDatastoreUsername())
 			}
 		}
 
@@ -180,8 +178,7 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 			// or defaulted by the defaulting webhook
 			dataStoreSchema = tenantControlPlane.Spec.DataStoreSchema
 		default:
-			// this can only happen on TCP creations when the webhook is not installed
-			return fmt.Errorf("cannot build datastore storage config, schema name must either exist in Spec or Status")
+			dataStoreSchema = tenantControlPlane.GetDefaultDatastoreSchema()
 		}
 
 		r.resource.Data = map[string][]byte{

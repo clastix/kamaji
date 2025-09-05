@@ -5,6 +5,7 @@ package datastore_test
 
 import (
 	"context"
+	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -60,10 +61,20 @@ var _ = Describe("DatastoreStorageConfig", func() {
 		}
 	})
 
-	When("TCP has neither dataStoreSchema nor dataStoreUsername defined", func() {
+	When("TCP has neither dataStoreSchema nor dataStoreUsername defined, fallback to default value", func() {
 		It("should return an error", func() {
-			_, err := resources.Handle(ctx, dsc, tcp)
-			Expect(err).To(HaveOccurred())
+			op, err := resources.Handle(ctx, dsc, tcp)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(op).To(Equal(controllerutil.OperationResultCreated))
+
+			var secrets corev1.SecretList
+			Expect(fakeClient.List(ctx, &secrets)).To(Succeed())
+			Expect(secrets.Items).To(HaveLen(1))
+
+			expectedValue := []byte(fmt.Sprintf("%s_%s", tcp.Namespace, tcp.Name))
+
+			Expect(secrets.Items[0].Data["DB_SCHEMA"]).To(Equal(expectedValue))
+			Expect(secrets.Items[0].Data["DB_USER"]).To(Equal(expectedValue))
 		})
 	})
 
