@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "*" ]
     paths:
-      - '.github/workflows/e2e.yml'
+      - '.github/workflows/e2e.yaml'
       - 'api/**'
       - 'charts/kamaji/**'
       - 'controllers/**'
@@ -18,7 +18,7 @@ on:
   pull_request:
     branches: [ "*" ]
     paths:
-      - '.github/workflows/e2e.yml'
+      - '.github/workflows/e2e.yaml'
       - 'api/**'
       - 'charts/kamaji/**'
       - 'controllers/**'
