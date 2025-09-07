@@ -116,7 +116,7 @@ func (r *Agent) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 			obj.SetName(r.resource.GetName())
 			obj.SetNamespace(r.resource.GetNamespace())
 
-			if cleanupErr := r.tenantClient.Delete(ctx, &obj); cleanupErr != nil {
+			if cleanupErr := r.tenantClient.Delete(ctx, &obj); cleanupErr != nil && !k8serrors.IsNotFound(cleanupErr) {
 				log.FromContext(ctx, "resource", r.GetName()).Error(cleanupErr, "cannot cleanup older appsv1.Deployment")
 			}
 		case tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode == kamajiv1alpha1.KonnectivityAgentModeDeployment &&
@@ -125,7 +125,7 @@ func (r *Agent) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 			obj.SetName(r.resource.GetName())
 			obj.SetNamespace(r.resource.GetNamespace())
 
-			if cleanupErr := r.tenantClient.Delete(ctx, &obj); cleanupErr != nil {
+			if cleanupErr := r.tenantClient.Delete(ctx, &obj); cleanupErr != nil && !k8serrors.IsNotFound(cleanupErr) {
 				log.FromContext(ctx, "resource", r.GetName()).Error(cleanupErr, "cannot cleanup older appsv1.DaemonSet")
 			}
 		}
