@@ -1,14 +1,15 @@
 # Konnectivity
 
-In traditional Kubernetes deployments, the control plane components need to communicate directly with worker nodes for various operations
-like executing commands in pods, retrieving logs, or managing port forwards.
+In traditional Kubernetes deployments, the control plane components need to communicate directly with worker nodes for various operations like:
+executing commands in pods, retrieving logs, or managing port forwards.
+
 However, in many real-world environments, especially those spanning multiple networks or cloud providers,
 direct communication isn't always possible or desirable. This is where Konnectivity comes in.
 
 ## Understanding Konnectivity in Kamaji
 
 Kamaji integrates [Konnectivity](https://kubernetes.io/docs/concepts/architecture/control-plane-node-communication/) as a core component of its architecture.
-Each Tenant Control Plane pod includes a konnectivity-server running as a sidecar container,
+Each Tenant Control Plane pod includes a `konnectivity-server` running as a sidecar container,
 which establishes and maintains secure tunnels with agents running on the worker nodes.
 
 This design ensures reliable communication even in complex network environments.
@@ -86,3 +87,68 @@ Available strategies are the following:
 
 By integrating Konnectivity as a core feature, Kamaji ensures that your Tenant Clusters can operate reliably and securely across any network topology,
 making it easier to build and manage distributed Kubernetes environments at scale.
+
+## Version compatibility between API Server and Konnectivity
+
+In recent Kubernetes releases, Konnectivity has aligned its versioning with the Kubernetes API Server.
+
+This means that for example:
+- Kubernetes v1.34.0 pairs with Konnectivity v0.34.0
+- Kubernetes v1.33.0 pairs with Konnectivity v0.33.0
+
+Within Kamaji, this version matching happens automatically.
+
+The field `TenantControlPlane.spec.addons.konnectivity` determines the proper Konnectivity version for both the server and the agent,
+ensuring compatibility with the tenant control plane's API Server version.
+
+!!! warning "Konnectivity images could not be available!"
+    For the most recent Kubernetes releases, the corresponding Konnectivity image artifacts _may not yet be built and published_ by the upstream community.
+    In these cases, you may need to override the automatic pairing and configure a previous Konnectivity version that is available.
+
+You can still have a version skew between the Kubernetes API Server for the given Tenant Control Plane, and the Konnectivity components.
+
+```yaml
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: konnectivity
+  namespace: default
+spec:
+  addons:
+    coreDNS: {}
+    konnectivity:
+      agent:
+        hostNetwork: false
+        image: registry.k8s.io/kas-network-proxy/proxy-agent
+        mode: DaemonSet
+        tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists
+        version: v0.33.0
+      server:
+        image: registry.k8s.io/kas-network-proxy/proxy-server
+        port: 8132
+        version: v0.33.0
+    kubeProxy: {}
+  controlPlane:
+    deployment:
+      replicas: 2
+    service:
+      serviceType: LoadBalancer
+  dataStore: etcd-kamaji-etcd
+  kubernetes:
+    kubelet:
+      cgroupfs: systemd
+      preferredAddressTypes:
+      - InternalIP
+      - ExternalIP
+      - Hostname
+    version: v1.34.0
+  networkProfile:
+    clusterDomain: cluster.local
+    dnsServiceIPs:
+    - 10.96.0.10
+    podCidr: 10.244.0.0/16
+    port: 6443
+    serviceCidr: 10.96.0.0/16
+```
