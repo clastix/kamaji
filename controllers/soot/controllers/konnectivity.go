@@ -53,6 +53,10 @@ func (k *KonnectivityAgent) Reconcile(ctx context.Context, _ reconcile.Request) 
 		return reconcile.Result{}, err
 	}
 
+	if tcp.Spec.Addons.Konnectivity == nil {
+		return reconcile.Result{}, nil
+	}
+
 	for _, resource := range controllers.GetExternalKonnectivityResources(k.AdminClient) {
 		k.Logger.Info("start processing", "resource", resource.GetName())
 
