@@ -63,11 +63,11 @@ nav:
 - 'Cluster API':
   - cluster-api/index.md
   - cluster-api/control-plane-provider.md
-  - cluster-api/cluster-class.md
-  - cluster-api/cluster-autoscaler.md
   - cluster-api/vsphere-infra-provider.md
   - cluster-api/proxmox-infra-provider.md
   - cluster-api/other-providers.md
+  - cluster-api/cluster-autoscaler.md
+  - cluster-api/cluster-class.md
 - 'Guides':
   - guides/index.md
   - guides/alternative-datastore.md
