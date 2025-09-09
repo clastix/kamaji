@@ -1,9 +1,9 @@
 # Cluster Class with Kamaji
 
-`ClusterClass` is a Cluster API experimental feature that enables template-based cluster creation. When combined with Kamaji's hosted control plane architecture, `ClusterClass` provides a powerful pattern for standardizing Kubernetes cluster deployments across multiple infrastructure providers while maintaining consistent control plane configurations.
+`ClusterClass` is a Cluster API feature that enables template-based cluster creation. When combined with Kamaji's hosted control plane architecture, `ClusterClass` provides a powerful pattern for standardizing Kubernetes cluster deployments across multiple infrastructure providers while maintaining consistent control plane configurations.
 
 !!! warning "Experimental Feature"
-    `ClusterClass` is an experimental feature of Cluster API. It requires Kubernetes >= 1.22.0 and explicit feature gate enablement. As with any experimental features, use with caution in production environments.
+    ClusterClass is still an experimental feature of Cluster API. As with any experimental features it should be used with caution. Read more about ClusterClass in the [Cluster API documentation](https://cluster-api.sigs.k8s.io/tasks/experimental-features/cluster-class/).
 
 ## Understanding Cluster Class
 
@@ -387,21 +387,7 @@ patches:
 
 ### Complete Cluster Class with Variables
 
-The complete `ClusterClass` combines all templates with comprehensive variable definitions and patches. This creates a flexible foundation for cluster provisioning while maintaining consistency.
-
 For a comprehensive example with all variables and patches configured, see the [vsphere-kamaji-clusterclass.yaml](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/vsphere/capi-kamaji-vsphere-class-template.yaml) template.
-
-Apply the `ClusterClass` and its templates:
-
-```bash
-kubectl apply -f vsphere-standard-clusterclass.yaml
-```
-
-Verify the `ClusterClass` is ready:
-
-```bash
-kubectl get clusterclass vsphere-standard -n capi-templates-vsphere
-```
 
 ## Creating a Cluster from Cluster Class
 
