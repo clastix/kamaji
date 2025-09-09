@@ -4,6 +4,8 @@
 package utilities
 
 import (
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -34,7 +36,7 @@ func SetLastRotationTimestamp(obj client.Object) {
 		annotations = map[string]string{}
 	}
 
-	annotations[RotateCertificateRequestAnnotation] = metav1.Now().String()
+	annotations[RotateCertificateRequestAnnotation] = metav1.Now().Format(time.RFC3339)
 
 	obj.SetAnnotations(annotations)
 }
