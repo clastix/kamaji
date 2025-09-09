@@ -41,7 +41,7 @@ k8s-133-scheduler-kubeconfig                    Opaque              1      3h45m
 ```
 
 Once this operation is performed, Kamaji will trigger a certificate renewal,
-reporting the rotation date time as the annotation `certs.kamaji.clastix.io/rotate` value.
+reporting the rotation date time as the annotation `certs.kamaji.clastix.io/rotate` value in the [RFC3339](https://pkg.go.dev/time#RFC3339) format.
 
 ```
 $: kubectl annotate secret -l kamaji.clastix.io/certificate_lifecycle_controller=x509 certs.kamaji.clastix.io/rotate=""
@@ -52,11 +52,11 @@ secret/k8s-133-front-proxy-client-certificate annotated
 secret/k8s-133-konnectivity-certificate annotated
 
 $: kubectl get secrets -l kamaji.clastix.io/certificate_lifecycle_controller=x509 -ojson | jq -r '.items[] | "\(.metadata.name) rotated at \(.metadata.annotations["certs.kamaji.clastix.io/rotate"])"'
-k8s-133-api-server-certificate rotated at 2025-07-15 15:15:08.842191367 +0200 CEST m=+325.785000014
-k8s-133-api-server-kubelet-client-certificate rotated at 2025-07-15 15:15:10.468139865 +0200 CEST m=+327.410948506
-k8s-133-datastore-certificate rotated at 2025-07-15 15:15:15.454468752 +0200 CEST m=+332.397277417
-k8s-133-front-proxy-client-certificate rotated at 2025-07-15 15:15:13.279920467 +0200 CEST m=+330.222729097
-k8s-133-konnectivity-certificate rotated at 2025-07-15 15:15:17.361431671 +0200 CEST m=+334.304240277
+k8s-133-api-server-certificate rotated at 2025-07-15T15:15:08Z02:00
+k8s-133-api-server-kubelet-client-certificate rotated at 2025-07-15T15:15:10Z0200
+k8s-133-datastore-certificate rotated at 2025-07-15T15:15:15Z0200
+k8s-133-front-proxy-client-certificate rotated at 2025-07-15T15:15:13Z0200
+k8s-133-konnectivity-certificate rotated at 2025-07-15T15:15:17Z0200
 ```
 
 You can notice the secrets have been automatically created back, as well as a TenantControlPlane rollout with the updated certificates.
