@@ -100,7 +100,7 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 		r.resource.Spec.Ports[0].Name = "kube-apiserver"
 		r.resource.Spec.Ports[0].Protocol = corev1.ProtocolTCP
 		r.resource.Spec.Ports[0].Port = tenantControlPlane.Spec.NetworkProfile.Port
-		r.resource.Spec.Ports[0].TargetPort = intstr.FromInt(int(tenantControlPlane.Spec.NetworkProfile.Port))
+		r.resource.Spec.Ports[0].TargetPort = intstr.FromInt32(tenantControlPlane.Spec.NetworkProfile.Port)
 
 		switch tenantControlPlane.Spec.ControlPlane.Service.ServiceType {
 		case kamajiv1alpha1.ServiceTypeLoadBalancer:

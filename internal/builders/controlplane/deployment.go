@@ -136,7 +136,7 @@ func (d Deployment) setStrategy(deployment *appsv1.DeploymentSpec, tcp kamajiv1a
 	if tcp.Spec.ControlPlane.Deployment.Strategy.RollingUpdate == nil {
 		maxSurge := intstr.FromString("100%")
 
-		maxUnavailable := intstr.FromInt(0)
+		maxUnavailable := intstr.FromInt32(0)
 
 		deployment.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
 			MaxUnavailable: &maxUnavailable,
@@ -354,7 +354,7 @@ func (d Deployment) buildScheduler(podSpec *corev1.PodSpec, tenantControlPlane k
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/healthz",
-				Port:   intstr.FromInt(10259),
+				Port:   intstr.FromInt32(10259),
 				Scheme: corev1.URISchemeHTTPS,
 			},
 		},
@@ -368,7 +368,7 @@ func (d Deployment) buildScheduler(podSpec *corev1.PodSpec, tenantControlPlane k
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/healthz",
-				Port:   intstr.FromInt(10259),
+				Port:   intstr.FromInt32(10259),
 				Scheme: corev1.URISchemeHTTPS,
 			},
 		},
@@ -446,7 +446,7 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/healthz",
-				Port:   intstr.FromInt(10257),
+				Port:   intstr.FromInt32(10257),
 				Scheme: corev1.URISchemeHTTPS,
 			},
 		},
@@ -460,7 +460,7 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/healthz",
-				Port:   intstr.FromInt(10257),
+				Port:   intstr.FromInt32(10257),
 				Scheme: corev1.URISchemeHTTPS,
 			},
 		},
@@ -563,7 +563,7 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/livez",
-				Port:   intstr.FromInt(int(tenantControlPlane.Spec.NetworkProfile.Port)),
+				Port:   intstr.FromInt32(tenantControlPlane.Spec.NetworkProfile.Port),
 				Scheme: corev1.URISchemeHTTPS,
 			},
 		},
@@ -577,7 +577,7 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/readyz",
-				Port:   intstr.FromInt(int(tenantControlPlane.Spec.NetworkProfile.Port)),
+				Port:   intstr.FromInt32(tenantControlPlane.Spec.NetworkProfile.Port),
 				Scheme: corev1.URISchemeHTTPS,
 			},
 		},
@@ -591,7 +591,7 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/livez",
-				Port:   intstr.FromInt(int(tenantControlPlane.Spec.NetworkProfile.Port)),
+				Port:   intstr.FromInt32(tenantControlPlane.Spec.NetworkProfile.Port),
 				Scheme: corev1.URISchemeHTTPS,
 			},
 		},
