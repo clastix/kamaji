@@ -344,7 +344,7 @@ func (d Deployment) buildScheduler(podSpec *corev1.PodSpec, tenantControlPlane k
 	args["--authorization-kubeconfig"] = kubeconfig
 	args["--bind-address"] = "0.0.0.0"
 	args["--kubeconfig"] = kubeconfig
-	args["--leader-elect"] = "true" //nolint:goconst
+	args["--leader-elect"] = "true"
 
 	podSpec.Containers[index].Name = schedulerContainerName
 	podSpec.Containers[index].Image = tenantControlPlane.Spec.ControlPlane.Deployment.RegistrySettings.KubeSchedulerImage(tenantControlPlane.Spec.Kubernetes.Version)
@@ -411,33 +411,32 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		index = len(podSpec.Containers)
 		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
 	}
-	// Configuring the arguments of the container,
-	// taking in consideration the extra args from the user-space.
-	args := map[string]string{}
-
-	if tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs != nil {
-		args = utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs.ControllerManager)
-	}
 
 	kubeconfig := "/etc/kubernetes/controller-manager.conf"
 
-	args["--allocate-node-cidrs"] = "true"
-	args["--authentication-kubeconfig"] = kubeconfig
-	args["--authorization-kubeconfig"] = kubeconfig
-	args["--bind-address"] = "0.0.0.0"
-	args["--client-ca-file"] = path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)
-	args["--cluster-name"] = tenantControlPlane.GetName()
-	args["--cluster-signing-cert-file"] = path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)
-	args["--cluster-signing-key-file"] = path.Join(v1beta3.DefaultCertificatesDir, constants.CAKeyName)
-	args["--controllers"] = "*,bootstrapsigner,tokencleaner"
-	args["--kubeconfig"] = kubeconfig
-	args["--leader-elect"] = "true"
-	args["--service-cluster-ip-range"] = tenantControlPlane.Spec.NetworkProfile.ServiceCIDR
-	args["--cluster-cidr"] = tenantControlPlane.Spec.NetworkProfile.PodCIDR
-	args["--requestheader-client-ca-file"] = path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyCACertName)
-	args["--root-ca-file"] = path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName)
-	args["--service-account-private-key-file"] = path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName)
-	args["--use-service-account-credentials"] = "true"
+	args := map[string]string{
+		"--allocate-node-cidrs":              "true",
+		"--authentication-kubeconfig":        kubeconfig,
+		"--authorization-kubeconfig":         kubeconfig,
+		"--bind-address":                     "0.0.0.0",
+		"--client-ca-file":                   path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
+		"--cluster-name":                     tenantControlPlane.GetName(),
+		"--cluster-signing-cert-file":        path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
+		"--cluster-signing-key-file":         path.Join(v1beta3.DefaultCertificatesDir, constants.CAKeyName),
+		"--controllers":                      "*,bootstrapsigner,tokencleaner",
+		"--kubeconfig":                       kubeconfig,
+		"--leader-elect":                     "true",
+		"--service-cluster-ip-range":         tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
+		"--cluster-cidr":                     tenantControlPlane.Spec.NetworkProfile.PodCIDR,
+		"--requestheader-client-ca-file":     path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyCACertName),
+		"--root-ca-file":                     path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
+		"--service-account-private-key-file": path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName),
+		"--use-service-account-credentials":  "true",
+	}
+
+	if extraArgs := tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs; extraArgs != nil && len(extraArgs.ControllerManager) > 0 {
+		args = utilities.MergeMaps(args, utilities.ArgsFromSliceToMap(extraArgs.ControllerManager))
+	}
 
 	podSpec.Containers[index].Name = "kube-controller-manager"
 	podSpec.Containers[index].Image = tenantControlPlane.Spec.ControlPlane.Deployment.RegistrySettings.KubeControllerManagerImage(tenantControlPlane.Spec.Kubernetes.Version)
