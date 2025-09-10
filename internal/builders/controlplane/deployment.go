@@ -52,9 +52,15 @@ const (
 	kineInitContainerName     = "chmod"
 )
 
+type DataStoreOverrides struct {
+	Resource  string
+	DataStore kamajiv1alpha1.DataStore
+}
+
 type Deployment struct {
 	KineContainerImage string
 	DataStore          kamajiv1alpha1.DataStore
+	DataStoreOverrides []DataStoreOverrides
 	Client             client.Client
 }
 
@@ -709,6 +715,20 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 		desiredArgs["--etcd-cafile"] = "/etc/kubernetes/pki/etcd/ca.crt"
 		desiredArgs["--etcd-certfile"] = "/etc/kubernetes/pki/etcd/server.crt"
 		desiredArgs["--etcd-keyfile"] = "/etc/kubernetes/pki/etcd/server.key"
+	}
+
+	if len(d.DataStoreOverrides) != 0 {
+		dataStoreOverridesEndpoints := make([]string, 0, len(d.DataStoreOverrides))
+		for _, dso := range d.DataStoreOverrides {
+			httpsEndpoints := make([]string, 0, len(dso.DataStore.Spec.Endpoints))
+
+			for _, ep := range d.DataStore.Spec.Endpoints {
+				httpsEndpoints = append(httpsEndpoints, fmt.Sprintf("https://%s", ep))
+			}
+			dataStoreOverridesEndpoints = append(dataStoreOverridesEndpoints, fmt.Sprintf("%s#%s", dso.Resource, strings.Join(httpsEndpoints, ";")))
+		}
+
+		desiredArgs["--etcd-servers-overrides"] = strings.Join(dataStoreOverridesEndpoints, ",")
 	}
 
 	// Order matters, here: extraArgs could try to overwrite some arguments managed by Kamaji and that would be crucial.
