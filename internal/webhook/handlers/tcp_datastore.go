@@ -30,7 +30,7 @@ func (t TenantControlPlaneDataStore) OnCreate(object runtime.Object) AdmissionRe
 			return nil, t.check(ctx, tcp.Spec.DataStore)
 		}
 
-		return nil, nil
+		return nil, t.checkDataStoreOverrides(ctx, tcp)
 	}
 }
 
@@ -57,6 +57,22 @@ func (t TenantControlPlaneDataStore) check(ctx context.Context, dataStoreName st
 		}
 
 		return fmt.Errorf("an unexpected error occurred upon Tenant Control Plane DataStore check, %w", err)
+	}
+
+	return nil
+}
+
+func (t TenantControlPlaneDataStore) checkDataStoreOverrides(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error {
+	overrideCheck := make(map[string]struct{}, 0)
+	for _, ds := range tcp.Spec.DataStoreOverrides {
+		if _, exists := overrideCheck[ds.Resource]; !exists {
+			overrideCheck[ds.Resource] = struct{}{}
+		} else {
+			return fmt.Errorf("duplicate resource override in Spec.DataStoreOverrides")
+		}
+		if err := t.check(ctx, ds.DataStore); err != nil {
+			return err
+		}
 	}
 
 	return nil
