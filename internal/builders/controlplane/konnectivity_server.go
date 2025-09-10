@@ -84,7 +84,7 @@ func (k Konnectivity) buildKonnectivityContainer(tcpVersion string, addon *kamaj
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/healthz",
-				Port:   intstr.FromInt(8134),
+				Port:   intstr.FromInt32(8134),
 				Scheme: corev1.URISchemeHTTP,
 			},
 		},
