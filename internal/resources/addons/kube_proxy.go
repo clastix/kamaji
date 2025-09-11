@@ -314,7 +314,7 @@ func (k *KubeProxy) mutateDaemonSet(ctx context.Context, tenantClient client.Cli
 	if err := controllerutil.SetControllerReference(k.clusterRoleBinding, k.daemonSet, tenantClient.Scheme()); err != nil {
 		return controllerutil.OperationResultNone, err
 	}
-	//nolint:staticcheck
+
 	return controllerutil.OperationResultNone, tenantClient.Patch(ctx, k.daemonSet, client.Apply, client.FieldOwner("kamaji"), client.ForceOwnership)
 }
 
