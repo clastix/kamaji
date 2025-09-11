@@ -309,7 +309,7 @@ func (c *CoreDNS) mutateDeployment(ctx context.Context, tenantClient client.Clie
 	if err := controllerutil.SetControllerReference(c.clusterRoleBinding, c.deployment, tenantClient.Scheme()); err != nil {
 		return controllerutil.OperationResultNone, err
 	}
-	//nolint:staticcheck
+
 	return controllerutil.OperationResultNone, tenantClient.Patch(ctx, c.deployment, client.Apply, client.FieldOwner("kamaji"), client.ForceOwnership)
 }
 
@@ -345,7 +345,7 @@ func (c *CoreDNS) mutateService(ctx context.Context, tenantClient client.Client)
 	if err := controllerutil.SetControllerReference(c.clusterRoleBinding, c.service, tenantClient.Scheme()); err != nil {
 		return controllerutil.OperationResultNone, err
 	}
-	//nolint:staticcheck
+
 	return controllerutil.OperationResultNone, tenantClient.Patch(ctx, c.service, client.Apply, client.FieldOwner("kamaji"), client.ForceOwnership)
 }
 
