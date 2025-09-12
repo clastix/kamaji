@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/clastix/kamaji/cmd"
+	kubeconfig_generator "github.com/clastix/kamaji/cmd/kubeconfig-generator"
 	"github.com/clastix/kamaji/cmd/manager"
 	"github.com/clastix/kamaji/cmd/migrate"
 )
@@ -16,9 +17,10 @@ import (
 func main() {
 	scheme := runtime.NewScheme()
 
-	root, mgr, migrator := cmd.NewCmd(scheme), manager.NewCmd(scheme), migrate.NewCmd(scheme)
+	root, mgr, migrator, kubeconfigGenerator := cmd.NewCmd(scheme), manager.NewCmd(scheme), migrate.NewCmd(scheme), kubeconfig_generator.NewCmd(scheme)
 	root.AddCommand(mgr)
 	root.AddCommand(migrator)
+	root.AddCommand(kubeconfigGenerator)
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
