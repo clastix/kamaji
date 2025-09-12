@@ -215,6 +215,9 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				routes.TenantControlPlaneMigrate{}: {
 					handlers.Freeze{},
 				},
+				routes.TenantControlPlaneReadOnly{}: {
+					handlers.ReadOnly{},
+				},
 				routes.TenantControlPlaneDefaults{}: {
 					handlers.TenantControlPlaneDefaults{
 						DefaultDatastore: datastore,

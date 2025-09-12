@@ -239,6 +239,7 @@ func getKubernetesStorageResources(c client.Client, dbConnection datastore.Conne
 
 func getKubernetesDeploymentResources(c client.Client, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, dataStore kamajiv1alpha1.DataStore) []resources.Resource {
 	return []resources.Resource{
+		&resources.ReadOnly{},
 		&resources.KubernetesDeploymentResource{
 			Client:             c,
 			DataStore:          dataStore,
