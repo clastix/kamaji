@@ -1,4 +1,12 @@
 - apiGroups:
+    - ""
+  resources:
+    - namespaces
+  verbs:
+    - get
+    - list
+    - watch
+- apiGroups:
     - apps
   resources:
     - deployments
@@ -51,6 +59,7 @@
     - kamaji.clastix.io
   resources:
     - datastores/status
+    - kubeconfiggenerators/status
     - tenantcontrolplanes/status
   verbs:
     - get
@@ -59,6 +68,18 @@
 - apiGroups:
     - kamaji.clastix.io
   resources:
+    - kubeconfiggenerators
+  verbs:
+    - create
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - kamaji.clastix.io
+  resources:
+    - kubeconfiggenerators/finalizers
     - tenantcontrolplanes/finalizers
   verbs:
     - update
