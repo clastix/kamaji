@@ -8,7 +8,7 @@ Feel free to open a Pull-Request to get yours listed.
 | Type | Name | Since | Website | Use-Case |
 |:-|:-|:-|:-|:-|
 | Vendor | Aknostic | 2023 | [link](https://aknostic.com) | Aknostic is a cloud-native consultancy company using Kamaji to build a Kubernetes based PaaS. |
-| Vendor | Aruba | 2025 | [link](https://www.arubacloud.com/) | Aruba Cloud is an Italian Cloud Service Provider evaluating Kamaji to build and offer [Managed Kubernetes Service](https://my.arubacloud.com). |
+| Vendor | Aruba | 2025 | [link](https://www.arubacloud.com/) | Aruba Cloud is an Italian Cloud Service Provider using Kamaji to build and offer [Managed Kubernetes Service](https://my.arubacloud.com). |
 | Vendor | CBWS | 2025 | [link](https://cbws.nl) | CBWS is an European Cloud Provider using Kamaji to build and offer their [Managed Kubernetes Service](https://cbws.nl/cloud/kubernetes/). |
 | Vendor | Coredge | 2025 | [link](https://coredge.io/) | Coredge uses Kamaji in its K8saaS offering to save infrastructure costs in its Sovereign Cloud & AI Infrastructure Platform for end-user organisations. |
 | Vendor | DCloud | 2024 | [link](https://dcloud.co.id) | DCloud is an Indonesian Cloud Provider using Kamaji to build and offer [Managed Kubernetes Service](https://dcloud.co.id/dkubes.html). |
