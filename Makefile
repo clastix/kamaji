@@ -131,12 +131,14 @@ webhook: controller-gen yq
 crds: controller-gen yq
 	# kamaji chart
 	$(CONTROLLER_GEN) crd webhook paths="./..." output:stdout | $(YQ) 'select(documentIndex == 0)' > ./charts/kamaji/crds/kamaji.clastix.io_datastores.yaml
-	$(CONTROLLER_GEN) crd webhook paths="./..." output:stdout | $(YQ) 'select(documentIndex == 1)' > ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml
+	$(CONTROLLER_GEN) crd webhook paths="./..." output:stdout | $(YQ) 'select(documentIndex == 1)' > ./charts/kamaji/crds/kamaji.clastix.io_kubeconfiggenerators.yaml
+	$(CONTROLLER_GEN) crd webhook paths="./..." output:stdout | $(YQ) 'select(documentIndex == 2)' > ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml
 	$(YQ) -i '. *n load("./charts/kamaji/controller-gen/crd-conversion.yaml")' ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml
 	# kamaji-crds chart
 	cp ./charts/kamaji/controller-gen/crd-conversion.yaml ./charts/kamaji-crds/hack/crd-conversion.yaml
 	$(YQ) '.spec' ./charts/kamaji/crds/kamaji.clastix.io_datastores.yaml > ./charts/kamaji-crds/hack/kamaji.clastix.io_datastores_spec.yaml
 	$(YQ) '.spec' ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml > ./charts/kamaji-crds/hack/kamaji.clastix.io_tenantcontrolplanes_spec.yaml
+	$(YQ) '.spec' ./charts/kamaji/crds/kamaji.clastix.io_kubeconfiggenerators.yaml > ./charts/kamaji-crds/hack/kamaji.clastix.io_kubeconfiggenerators_spec.yaml
 	$(YQ) -i '.conversion.webhook.clientConfig.service.name = "{{ .Values.kamajiService }}"' ./charts/kamaji-crds/hack/kamaji.clastix.io_tenantcontrolplanes_spec.yaml
 	$(YQ) -i '.conversion.webhook.clientConfig.service.namespace = "{{ .Values.kamajiNamespace }}"' ./charts/kamaji-crds/hack/kamaji.clastix.io_tenantcontrolplanes_spec.yaml
 

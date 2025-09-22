@@ -83,6 +83,24 @@ Here the values you can override:
 | image.tag | string | `nil` | Overrides the image tag whose default is the chart appVersion. |
 | imagePullSecrets | list | `[]` |  |
 | kamaji-etcd | object | `{"clusterDomain":"cluster.local","datastore":{"enabled":true,"name":"default"},"deploy":true,"fullnameOverride":"kamaji-etcd"}` | Subchart: See https://github.com/clastix/kamaji-etcd/blob/master/charts/kamaji-etcd/values.yaml |
+| kubeconfigGenerator.affinity | object | `{}` | Kubernetes affinity rules to apply to Kubeconfig Generator controller pods |
+| kubeconfigGenerator.enableLeaderElect | bool | `true` | Enables the leader election. |
+| kubeconfigGenerator.enabled | bool | `false` | Toggle to deploy the Kubeconfig Generator Deployment. |
+| kubeconfigGenerator.extraArgs | list | `[]` | A list of extra arguments to add to the Kubeconfig Generator controller default ones. |
+| kubeconfigGenerator.fullnameOverride | string | `""` |  |
+| kubeconfigGenerator.healthProbeBindAddress | string | `":8081"` | The address the probe endpoint binds to. |
+| kubeconfigGenerator.loggingDevel.enable | bool | `false` | Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) |
+| kubeconfigGenerator.nodeSelector | object | `{}` | Kubernetes node selector rules to schedule Kubeconfig Generator controller |
+| kubeconfigGenerator.podAnnotations | object | `{}` | The annotations to apply to the Kubeconfig Generator controller pods. |
+| kubeconfigGenerator.podSecurityContext | object | `{"runAsNonRoot":true}` | The securityContext to apply to the Kubeconfig Generator controller pods. |
+| kubeconfigGenerator.replicaCount | int | `2` | The number of the pod replicas for the Kubeconfig Generator controller. |
+| kubeconfigGenerator.resources.limits.cpu | string | `"200m"` |  |
+| kubeconfigGenerator.resources.limits.memory | string | `"512Mi"` |  |
+| kubeconfigGenerator.resources.requests.cpu | string | `"200m"` |  |
+| kubeconfigGenerator.resources.requests.memory | string | `"512Mi"` |  |
+| kubeconfigGenerator.securityContext | object | `{"allowPrivilegeEscalation":false}` | The securityContext to apply to the Kubeconfig Generator controller container only. |
+| kubeconfigGenerator.serviceAccountOverride | string | `""` | The name of the service account to use. If not set, the root Kamaji one will be used. |
+| kubeconfigGenerator.tolerations | list | `[]` | Kubernetes node taints that the Kubeconfig Generator controller pods would tolerate |
 | livenessProbe | object | `{"httpGet":{"path":"/healthz","port":"healthcheck"},"initialDelaySeconds":15,"periodSeconds":20}` | The livenessProbe for the controller container |
 | loggingDevel.enable | bool | `false` | Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn). Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error) (default false) |
 | metricsBindAddress | string | `":8080"` | The address the metric endpoint binds to. (default ":8080") |
