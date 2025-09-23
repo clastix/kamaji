@@ -23,7 +23,8 @@ export PROXMOX_TOKEN="clastix@pam\!capi"
 export PROXMOX_SECRET="REDACTED"
 ```
 
-NOTE: you must esacape "\" the "!"
+!!! warning "Env escaping "
+    Pay attention to escape special characters, such as `\` and `!`
 
 Install the Infrastructure Provider:
 
