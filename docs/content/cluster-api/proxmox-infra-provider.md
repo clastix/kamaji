@@ -14,13 +14,13 @@ To use the Proxmox Cluster API provider, you must connect and authenticate to a 
 
 ```bash
 # The Proxmox VE host
-export PROXMOX_URL='https://pve.example:8006
+export PROXMOX_URL="https://pve.example:8006"
 
 # The Proxmox VE TokenID for authentication
-export PROXMOX_TOKEN='clastix@pam\!capi'
+export PROXMOX_TOKEN='clastix@pam!capi'
 
 # The secret associated with the TokenID
-export PROXMOX_SECRET='REDACTED'
+export PROXMOX_SECRET="REDACTED"
 ```
 
 !!! warning "Env escaping "
