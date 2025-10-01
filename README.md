@@ -124,6 +124,7 @@ Since Kamaji is just focusing on the Control Plane a [Kamaji's Cluster API Contr
 - YouTube ▶️ [Enabling Self-Service Kubernetes clusters with Kamaji and Paralus](https://www.youtube.com/watch?v=JWA2LwZazM0)
 - YouTube ▶️ [Hosted Control Plane on Kubernetes (HPC) with Kamaji and K0mostron by Hervé Leclerc, ALTER WAY](https://www.youtube.com/watch?v=vmRdE2ngn78)
 - Medium 📖 [Set up Virtual Control Planes with Kamaji on Minikube, by Ben Soer](https://medium.com/@bensoer/set-up-virtual-control-planes-with-kamaji-on-minikube-a540be0275aa)
+- Hands-On tutorial 📖 [How to build your own managed Kubernetes service on Hetzner Cloud, by Hans Jörg Wieland](https://wieland.tech/blog/kamaji-cluster-api-and-etcd)
 
 ### 🏷️ Versioning
 
