@@ -25,18 +25,21 @@ type handlersChainer struct {
 //nolint:gocognit
 func (h handlersChainer) Handler(object runtime.Object, routeHandlers ...handlers.Handler) admission.HandlerFunc {
 	return func(ctx context.Context, req admission.Request) admission.Response {
-		decodedObj, oldDecodedObj := object.DeepCopyObject(), object.DeepCopyObject()
+		var decodedObj, oldDecodedObj runtime.Object
+		if object != nil {
+			decodedObj, oldDecodedObj = object.DeepCopyObject(), object.DeepCopyObject()
 
-		switch req.Operation {
-		case admissionv1.Delete:
-			// When deleting the OldObject struct field contains the object being deleted:
-			// https://github.com/kubernetes/kubernetes/pull/76346
-			if err := h.decoder.DecodeRaw(req.OldObject, decodedObj); err != nil {
-				return admission.Errored(http.StatusInternalServerError, errors.Wrap(err, fmt.Sprintf("unable to decode deleted object into %T", object)))
-			}
-		default:
-			if err := h.decoder.Decode(req, decodedObj); err != nil {
-				return admission.Errored(http.StatusInternalServerError, errors.Wrap(err, fmt.Sprintf("unable to decode into %T", object)))
+			switch req.Operation {
+			case admissionv1.Delete:
+				// When deleting the OldObject struct field contains the object being deleted:
+				// https://github.com/kubernetes/kubernetes/pull/76346
+				if err := h.decoder.DecodeRaw(req.OldObject, decodedObj); err != nil {
+					return admission.Errored(http.StatusInternalServerError, errors.Wrap(err, fmt.Sprintf("unable to decode deleted object into %T", object)))
+				}
+			default:
+				if err := h.decoder.Decode(req, decodedObj); err != nil {
+					return admission.Errored(http.StatusInternalServerError, errors.Wrap(err, fmt.Sprintf("unable to decode into %T", object)))
+				}
 			}
 		}
 

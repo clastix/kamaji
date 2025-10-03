@@ -28523,6 +28523,18 @@ DataStoreUsername by concatenating the namespace and name of the TenantControlPl
           NetworkProfile specifies how the network is<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecwritepermissions">writePermissions</a></b></td>
+        <td>object</td>
+        <td>
+          WritePermissions allows to select which operations (create, delete, update) must be blocked:
+by default, all actions are allowed, and API Server can write to its Datastore.
+
+By blocking all actions, the Tenant Control Plane can enter in a Read Only mode:
+this phase can be used to prevent Datastore quota exhaustion or for your own business logic
+(e.g.: blocking creation and update, but allowing deletion to "clean up" space).<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -41987,6 +41999,50 @@ Example: {"192.168.1.0/24", "10.0.0.0/8"}<br/>
 </table>
 
 
+<span id="tenantcontrolplanespecwritepermissions">`TenantControlPlane.spec.writePermissions`</span>
+
+
+WritePermissions allows to select which operations (create, delete, update) must be blocked:
+by default, all actions are allowed, and API Server can write to its Datastore.
+
+By blocking all actions, the Tenant Control Plane can enter in a Read Only mode:
+this phase can be used to prevent Datastore quota exhaustion or for your own business logic
+(e.g.: blocking creation and update, but allowing deletion to "clean up" space).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>blockCreation</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>blockDeletion</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>blockUpdate</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 <span id="tenantcontrolplanestatus">`TenantControlPlane.status`</span>
 
 
@@ -44111,7 +44167,7 @@ KubernetesVersion contains the information regarding the running Kubernetes vers
         <td>
           Status returns the current status of the Kubernetes version, such as its provisioning state, or completed upgrade.<br/>
           <br/>
-            <i>Enum</i>: Provisioning, CertificateAuthorityRotating, Upgrading, Migrating, Ready, NotReady, Sleeping<br/>
+            <i>Enum</i>: Unknown, Provisioning, CertificateAuthorityRotating, Upgrading, Migrating, Ready, NotReady, Sleeping, WriteLimited<br/>
             <i>Default</i>: Provisioning<br/>
         </td>
         <td>false</td>
