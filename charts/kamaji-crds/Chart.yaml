@@ -14,7 +14,7 @@ name: kamaji-crds
 sources:
   - https://github.com/clastix/kamaji
 type: application
-version: 0.0.0+edge
+version: 0.0.0+latest
 annotations:
   artifacthub.io/crds: |
     - kind: TenantControlPlane
