@@ -169,13 +169,13 @@ helm install kamaji clastix/kamaji -n kamaji-system --create-namespace --version
 !!! note "Alternative: Two-Step Installation"
     The kamaji chart includes CRDs. For separate CRD management (GitOps, policy requirements), install CRDs first:
 
-    ```bash
-    # Step 1: Install CRDs
-    helm install kamaji-crds clastix/kamaji-crds -n kamaji-system --create-namespace --version 0.0.0+latest
+```bash
+# Step 1: Install CRDs
+helm install kamaji-crds clastix/kamaji-crds -n kamaji-system --create-namespace --version 0.0.0+latest
 
-    # Step 2: Install operator
-    helm install kamaji clastix/kamaji -n kamaji-system --version 0.0.0+latest
-    ```
+# Step 2: Install Kamaji operator
+helm install kamaji clastix/kamaji -n kamaji-system --version 0.0.0+latest
+```
 
 ## Create Tenant Cluster
 
