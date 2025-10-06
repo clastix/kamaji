@@ -4,6 +4,57 @@ This guide describe a declarative way to deploy Kubernetes add-ons across multip
 
 This way the tenant resources can be ensured from a single pane of glass, from the *Management Cluster*.
 
+## Installing Kamaji with GitOps
+
+For GitOps workflows using tools like FluxCD or ArgoCD, the kamaji-crds chart enables separate CRD management:
+
+```yaml
+# Step 1: HelmRelease for CRDs
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kamaji-crds
+  namespace: kamaji-system
+spec:
+  interval: 10m
+  chart:
+    spec:
+      chart: kamaji-crds
+      version: 0.0.0+latest
+      sourceRef:
+        kind: HelmRepository
+        name: clastix
+        namespace: flux-system
+---
+# Step 2: HelmRelease for operator
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kamaji
+  namespace: kamaji-system
+spec:
+  interval: 10m
+  dependsOn:
+    - name: kamaji-crds
+  chart:
+    spec:
+      chart: kamaji
+      version: 0.0.0+latest
+      sourceRef:
+        kind: HelmRepository
+        name: clastix
+        namespace: flux-system
+```
+
+!!! note "CRD Management Options"
+    The kamaji chart includes CRDs in its `crds/` directory. Using the separate kamaji-crds chart is optional and beneficial for:
+
+    - GitOps workflows requiring separate CRD lifecycle management
+    - Organizations with policies requiring separate CRD approval
+    - Scenarios where CRD updates must precede operator updates
+
+    For standard installations, using the kamaji chart alone is sufficient.
+
 ## Flux as the GitOps operator
 
 As GitOps ensures a constant reconciliation to a Git-versioned desired state, [Flux](https://fluxcd.io) can satisfy the requirement of those scenarios. In particular, the controllers that reconcile [resources](https://fluxcd.io/flux/concepts/#reconciliation) support communicating to external clusters.
