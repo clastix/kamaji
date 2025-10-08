@@ -38,16 +38,23 @@ func GetKubeadmManifestDeps(ctx context.Context, client client.Client, tenantCon
 		return nil, nil, errors.Wrap(err, "cannot retrieve Tenant Control Plane address")
 	}
 
+	// Get public address for cluster-info ConfigMap
+	publicAddress, _, err := tenantControlPlane.PublicControlPlaneAddress()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "cannot retrieve Tenant Control Plane public address")
+	}
+
 	config.Kubeconfig = *kubeconfig
 	config.Parameters = kubeadm.Parameters{
-		TenantControlPlaneName:         tenantControlPlane.GetName(),
-		TenantDNSServiceIPs:            tenantControlPlane.Spec.NetworkProfile.DNSServiceIPs,
-		TenantControlPlaneVersion:      tenantControlPlane.Spec.Kubernetes.Version,
-		TenantControlPlanePodCIDR:      tenantControlPlane.Spec.NetworkProfile.PodCIDR,
-		TenantControlPlaneAddress:      address,
-		TenantControlPlaneCertSANs:     tenantControlPlane.Spec.NetworkProfile.CertSANs,
-		TenantControlPlanePort:         tenantControlPlane.Spec.NetworkProfile.Port,
-		TenantControlPlaneCGroupDriver: tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(),
+		TenantControlPlaneName:          tenantControlPlane.GetName(),
+		TenantDNSServiceIPs:             tenantControlPlane.Spec.NetworkProfile.DNSServiceIPs,
+		TenantControlPlaneVersion:       tenantControlPlane.Spec.Kubernetes.Version,
+		TenantControlPlanePodCIDR:       tenantControlPlane.Spec.NetworkProfile.PodCIDR,
+		TenantControlPlaneAddress:       address,
+		TenantControlPlanePublicAddress: publicAddress,
+		TenantControlPlaneCertSANs:      tenantControlPlane.Spec.NetworkProfile.CertSANs,
+		TenantControlPlanePort:          tenantControlPlane.Spec.NetworkProfile.Port,
+		TenantControlPlaneCGroupDriver:  tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(),
 	}
 	// If CoreDNS addon is enabled and with an override, adding these to the kubeadm init configuration
 	if coreDNS := tenantControlPlane.Spec.Addons.CoreDNS; coreDNS != nil {
@@ -191,16 +198,25 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr
 		return controllerutil.OperationResultNone, err
 	}
 
+	// Get public address for cluster-info ConfigMap
+	publicAddress, _, err := tenantControlPlane.PublicControlPlaneAddress()
+	if err != nil {
+		logger.Error(err, "cannot retrieve Tenant Control Plane public address")
+
+		return controllerutil.OperationResultNone, err
+	}
+
 	config.Kubeconfig = *kubeconfig
 	config.Parameters = kubeadm.Parameters{
-		TenantControlPlaneName:         tenantControlPlane.GetName(),
-		TenantDNSServiceIPs:            tenantControlPlane.Spec.NetworkProfile.DNSServiceIPs,
-		TenantControlPlaneVersion:      tenantControlPlane.Spec.Kubernetes.Version,
-		TenantControlPlanePodCIDR:      tenantControlPlane.Spec.NetworkProfile.PodCIDR,
-		TenantControlPlaneAddress:      address,
-		TenantControlPlaneCertSANs:     tenantControlPlane.Spec.NetworkProfile.CertSANs,
-		TenantControlPlanePort:         tenantControlPlane.Spec.NetworkProfile.Port,
-		TenantControlPlaneCGroupDriver: tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(),
+		TenantControlPlaneName:          tenantControlPlane.GetName(),
+		TenantDNSServiceIPs:             tenantControlPlane.Spec.NetworkProfile.DNSServiceIPs,
+		TenantControlPlaneVersion:       tenantControlPlane.Spec.Kubernetes.Version,
+		TenantControlPlanePodCIDR:       tenantControlPlane.Spec.NetworkProfile.PodCIDR,
+		TenantControlPlaneAddress:       address,
+		TenantControlPlanePublicAddress: publicAddress,
+		TenantControlPlaneCertSANs:      tenantControlPlane.Spec.NetworkProfile.CertSANs,
+		TenantControlPlanePort:          tenantControlPlane.Spec.NetworkProfile.Port,
+		TenantControlPlaneCGroupDriver:  tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(),
 	}
 
 	var checksum string

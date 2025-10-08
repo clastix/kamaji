@@ -53,7 +53,7 @@ func (r *Agent) agentVersion(tcp *kamajiv1alpha1.TenantControlPlane) string {
 func (r *Agent) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
 	return tcp.Spec.Addons.Konnectivity == nil && (tcp.Status.Addons.Konnectivity.Agent.Namespace != "" || tcp.Status.Addons.Konnectivity.Agent.Name != "") ||
 		tcp.Spec.Addons.Konnectivity != nil && (tcp.Status.Addons.Konnectivity.Agent.Namespace != r.resource.GetNamespace() || tcp.Status.Addons.Konnectivity.Agent.Name != r.resource.GetName()) ||
-		tcp.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode != tcp.Status.Addons.Konnectivity.Agent.Mode
+		tcp.Spec.Addons.Konnectivity != nil && tcp.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode != tcp.Status.Addons.Konnectivity.Agent.Mode
 }
 
 func (r *Agent) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -92,6 +92,11 @@ func (r *Agent) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlan
 
 func (r *Agent) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (err error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
+
+	// Return early if Konnectivity is disabled (nil spec)
+	if tenantControlPlane.Spec.Addons.Konnectivity == nil {
+		return nil
+	}
 
 	switch tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode {
 	case kamajiv1alpha1.KonnectivityAgentModeDaemonSet:

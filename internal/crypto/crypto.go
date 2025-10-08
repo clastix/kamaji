@@ -138,8 +138,8 @@ func ParsePrivateKeyBytes(content []byte) (crypto.Signer, error) {
 	return privateKey, nil
 }
 
-// ParsePublicKeyBytes takes the public key bytes returning an RSA public key by parsing it.
-func ParsePublicKeyBytes(content []byte) (*rsa.PublicKey, error) {
+// ParsePublicKeyBytes takes the public key bytes returning a public key by parsing it.
+func ParsePublicKeyBytes(content []byte) (crypto.PublicKey, error) {
 	pemContent, _ := pem.Decode(content)
 	if pemContent == nil {
 		return nil, fmt.Errorf("no right PEM block")
@@ -150,12 +150,7 @@ func ParsePublicKeyBytes(content []byte) (*rsa.PublicKey, error) {
 		return nil, err
 	}
 
-	rsaPublicKey, ok := publicKey.(*rsa.PublicKey)
-	if !ok {
-		return nil, fmt.Errorf("expected *rsa.PublicKey, got %T", rsaPublicKey)
-	}
-
-	return rsaPublicKey, nil
+	return publicKey, nil
 }
 
 // IsValidCertificateKeyPairBytes checks if the certificate matches the private key bounded to it.

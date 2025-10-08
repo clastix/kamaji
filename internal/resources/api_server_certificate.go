@@ -41,7 +41,8 @@ func (r *APIServerCertificate) GetHistogram() prometheus.Histogram {
 }
 
 func (r *APIServerCertificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return tenantControlPlane.Status.Certificates.APIServer.Checksum != utilities.GetObjectChecksum(r.resource)
+	return tenantControlPlane.Status.Certificates.APIServer.SecretName != r.resource.GetName() ||
+		tenantControlPlane.Status.Certificates.APIServer.Checksum != utilities.GetObjectChecksum(r.resource)
 }
 
 func (r *APIServerCertificate) ShouldCleanup(_ *kamajiv1alpha1.TenantControlPlane) bool {
@@ -163,29 +164,109 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 			}
 		}
 
-		ca := kubeadm.CertificatePrivateKeyPair{
-			Name:        kubeadmconstants.CACertAndKeyBaseName,
-			Certificate: secretCA.Data[kubeadmconstants.CACertName],
-			PrivateKey:  secretCA.Data[kubeadmconstants.CAKeyName],
-		}
-		certificateKeyPair, err := kubeadm.GenerateCertificatePrivateKeyPair(kubeadmconstants.APIServerCertAndKeyBaseName, config, ca)
-		if err != nil {
-			logger.Error(err, "cannot generate certificate and private key")
-
-			return err
-		}
-
 		if isRotationRequested {
 			utilities.SetLastRotationTimestamp(r.resource)
 		}
 
-		r.resource.Data = map[string][]byte{
-			kubeadmconstants.APIServerCertName: certificateKeyPair.Certificate,
-			kubeadmconstants.APIServerKeyName:  certificateKeyPair.PrivateKey,
+		// Check if pregenerated API Server certificate is specified
+		if tenantControlPlane.Spec.PreGeneratedCertificates != nil && tenantControlPlane.Spec.PreGeneratedCertificates.APIServer != nil {
+			logger.Info("Using pregenerated API Server certificate")
+			if err := r.usePreGeneratedAPIServerCertificate(ctx, tenantControlPlane); err != nil {
+				logger.Error(err, "cannot use pregenerated API Server certificate")
+
+				return err
+			}
+		} else {
+			logger.Info("Generating new API Server certificate")
+
+			ca := kubeadm.CertificatePrivateKeyPair{
+				Name:        kubeadmconstants.CACertAndKeyBaseName,
+				Certificate: secretCA.Data[kubeadmconstants.CACertName],
+				PrivateKey:  secretCA.Data[kubeadmconstants.CAKeyName],
+			}
+			certificateKeyPair, err := kubeadm.GenerateCertificatePrivateKeyPair(kubeadmconstants.APIServerCertAndKeyBaseName, config, ca)
+			if err != nil {
+				logger.Error(err, "cannot generate certificate and private key")
+
+				return err
+			}
+
+			r.resource.Data = map[string][]byte{
+				kubeadmconstants.APIServerCertName: certificateKeyPair.Certificate,
+				kubeadmconstants.APIServerKeyName:  certificateKeyPair.PrivateKey,
+				// Add TLS keys for compatibility with external certificate management
+				corev1.TLSCertKey:       certificateKeyPair.Certificate,
+				corev1.TLSPrivateKeyKey: certificateKeyPair.PrivateKey,
+			}
 		}
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
 		return nil
 	}
+}
+
+func (r *APIServerCertificate) usePreGeneratedAPIServerCertificate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	certRef := tenantControlPlane.Spec.PreGeneratedCertificates.APIServer
+
+	// Determine the namespace for the secret
+	secretNamespace := certRef.SecretNamespace
+	if secretNamespace == "" {
+		secretNamespace = tenantControlPlane.GetNamespace()
+	}
+
+	// Get the referenced secret
+	secret := &corev1.Secret{}
+	secretKey := k8stypes.NamespacedName{
+		Name:      certRef.SecretName,
+		Namespace: secretNamespace,
+	}
+
+	if err := r.Client.Get(ctx, secretKey, secret); err != nil {
+		return fmt.Errorf("failed to get secret %s: %w", secretKey, err)
+	}
+
+	// Determine certificate and private key keys
+	certKey := certRef.CertificateKey
+	if certKey == "" {
+		certKey = corev1.TLSCertKey
+	}
+
+	privKeyKey := certRef.PrivateKeyKey
+	if privKeyKey == "" {
+		privKeyKey = corev1.TLSPrivateKeyKey
+	}
+
+	// Get certificate data with fallback logic - try kubeadm format first, then TLS format
+	certData, exists := secret.Data[kubeadmconstants.APIServerCertName]
+	if !exists {
+		// Fallback to configured certificate key (usually tls.crt)
+		if fallbackCertData, fallbackExists := secret.Data[certKey]; fallbackExists {
+			certData = fallbackCertData
+		} else {
+			return fmt.Errorf("certificate key %s not found in secret %s, and fallback key %s also not found", kubeadmconstants.APIServerCertName, secretKey, certKey)
+		}
+	}
+
+	// Get private key data with fallback logic - try kubeadm format first, then TLS format
+	privKeyData, exists := secret.Data[kubeadmconstants.APIServerKeyName]
+	if !exists {
+		// Fallback to configured private key (usually tls.key)
+		if fallbackPrivData, fallbackExists := secret.Data[privKeyKey]; fallbackExists {
+			privKeyData = fallbackPrivData
+		} else {
+			return fmt.Errorf("private key %s not found in secret %s, and fallback key %s also not found", kubeadmconstants.APIServerKeyName, secretKey, privKeyKey)
+		}
+	}
+
+	// Set the resource data with both kubeadm and TLS keys for compatibility
+	r.resource.Data = map[string][]byte{
+		kubeadmconstants.APIServerCertName: certData,
+		kubeadmconstants.APIServerKeyName:  privKeyData,
+		// Add TLS keys for compatibility with external certificate management
+		corev1.TLSCertKey:       certData,
+		corev1.TLSPrivateKeyKey: privKeyData,
+	}
+
+	return nil
 }

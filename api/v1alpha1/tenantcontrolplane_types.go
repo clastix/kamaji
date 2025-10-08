@@ -200,6 +200,10 @@ type ServiceSpec struct {
 	AdditionalMetadata AdditionalMetadata `json:"additionalMetadata,omitempty"`
 	// ServiceType allows specifying how to expose the Tenant Control Plane.
 	ServiceType ServiceType `json:"serviceType"`
+	// PublicAPIServerAddress allows specifying the hostname used in the cluster-info ConfigMap
+	// instead of the LoadBalancer IP. This enables proper DNS-based access to the API server.
+	// When specified, this address will be used in kubeadm join commands and cluster-info ConfigMap.
+	PublicAPIServerAddress string `json:"publicAPIServerAddress,omitempty"`
 }
 
 // AddonSpec defines the spec for every addon.
@@ -311,6 +315,103 @@ func (p *Permissions) HasAnyLimitation() bool {
 	return false
 }
 
+// CertificateReference references a Secret containing certificate and private key data.
+type CertificateReference struct {
+	// SecretName references a Secret containing certificate data
+	// +kubebuilder:validation:MinLength=1
+	SecretName string `json:"secretName"`
+
+	// SecretNamespace is the namespace of the referenced Secret.
+	// If empty, defaults to the TenantControlPlane namespace.
+	SecretNamespace string `json:"secretNamespace,omitempty"`
+
+	// CertificateKey is the key in the Secret containing the certificate.
+	// +kubebuilder:default="tls.crt"
+	CertificateKey string `json:"certificateKey,omitempty"`
+
+	// PrivateKeyKey is the key in the Secret containing the private key.
+	// +kubebuilder:default="tls.key"
+	PrivateKeyKey string `json:"privateKeyKey,omitempty"`
+}
+
+// KeyReference references a Secret containing public and private key data.
+type KeyReference struct {
+	// SecretName references a Secret containing key data
+	// +kubebuilder:validation:MinLength=1
+	SecretName string `json:"secretName"`
+
+	// SecretNamespace is the namespace of the referenced Secret.
+	// If empty, defaults to the TenantControlPlane namespace.
+	SecretNamespace string `json:"secretNamespace,omitempty"`
+
+	// PublicKeyKey is the key in the Secret containing the public key.
+	// +kubebuilder:default="sa.pub"
+	PublicKeyKey string `json:"publicKeyKey,omitempty"`
+
+	// PrivateKeyKey is the key in the Secret containing the private key.
+	// +kubebuilder:default="sa.key"
+	PrivateKeyKey string `json:"privateKeyKey,omitempty"`
+}
+
+// PreGeneratedCertificatesSpec allows specifying existing certificates instead of generating new ones.
+type PreGeneratedCertificatesSpec struct {
+	// CA certificate and key from existing Secret.
+	// If specified, this CA will be used instead of generating a new one.
+	CA *CertificateReference `json:"ca,omitempty"`
+
+	// API Server certificate and key from existing Secret.
+	// If specified, this certificate will be used instead of generating a new one.
+	// The certificate must be signed by the CA specified above or the generated CA.
+	APIServer *CertificateReference `json:"apiServer,omitempty"`
+
+	// Kubelet client certificate and key from existing Secret.
+	// If specified, this certificate will be used instead of generating a new one.
+	// The certificate must be signed by the CA specified above or the generated CA.
+	KubeletClient *CertificateReference `json:"kubeletClient,omitempty"`
+
+	// Front proxy CA certificate and key from existing Secret.
+	// If specified, this CA will be used instead of generating a new one.
+	FrontProxyCA *CertificateReference `json:"frontProxyCA,omitempty"`
+
+	// Front proxy client certificate and key from existing Secret.
+	// If specified, this certificate will be used instead of generating a new one.
+	// The certificate must be signed by the front proxy CA specified above or the generated front proxy CA.
+	FrontProxyClient *CertificateReference `json:"frontProxyClient,omitempty"`
+
+	// Service account signing key from existing Secret.
+	// If specified, this key pair will be used instead of generating a new one.
+	ServiceAccount *KeyReference `json:"serviceAccount,omitempty"`
+}
+
+// RBACBootstrapSpec defines the RBAC configuration for cluster bootstrap.
+type RBACBootstrapSpec struct {
+	// Enabled controls whether RBAC bootstrap is performed.
+	// When enabled, creates ClusterRoleBindings for admin users and groups.
+	// +kubebuilder:default=true
+	Enabled bool `json:"enabled,omitempty"`
+	// AdminUsers specifies users that should be granted cluster-admin privileges.
+	// Defaults to ["kubernetes-admin"] which matches the generated kubeconfig user.
+	// +kubebuilder:default={"kubernetes-admin"}
+	AdminUsers []string `json:"adminUsers,omitempty"`
+	// AdminGroups specifies groups that should be granted cluster-admin privileges.
+	// Common choices include "system:masters" (traditional K8s admin group).
+	AdminGroups []string `json:"adminGroups,omitempty"`
+}
+
+// BootstrapSpec defines the bootstrap configuration for tenant control plane clusters.
+// This configuration is applied once during cluster creation to solve common
+// bootstrap problems like missing RBAC permissions and initial application deployment.
+type BootstrapSpec struct {
+	// RBAC configures Role-Based Access Control bootstrap.
+	// This solves the common problem where admin kubeconfig is generated
+	// but no ClusterRoleBinding grants the user actual permissions.
+	RBAC *RBACBootstrapSpec `json:"rbac,omitempty"`
+	// InitManifests contains additional Kubernetes manifests to apply after RBAC setup.
+	// Common use cases include CNI deployments (Cilium, Calico), GitOps operators
+	// (Flux, ArgoCD), or any other foundational cluster components.
+	// Manifests are applied as raw YAML after RBAC bootstrap is complete.
+	InitManifests []string `json:"initManifests,omitempty"`
+}
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStore) || has(self.dataStore)", message="unsetting the dataStore is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"
@@ -318,7 +419,7 @@ func (p *Permissions) HasAnyLimitation() bool {
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == 'LoadBalancer')", message="LoadBalancer source ranges are supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == 'LoadBalancer'", message="LoadBalancerClass is supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)",message="LoadBalancerClass cannot be set or unset at runtime"
-
+// +kubebuilder:validation:XValidation:rule="true", message="preGeneratedCertificates are now mutable for certificate maintenance"
 type TenantControlPlaneSpec struct {
 	// WritePermissions allows to select which operations (create, delete, update) must be blocked:
 	// by default, all actions are allowed, and API Server can write to its Datastore.
@@ -353,6 +454,20 @@ type TenantControlPlaneSpec struct {
 	NetworkProfile NetworkProfileSpec `json:"networkProfile,omitempty"`
 	// Addons contain which addons are enabled
 	Addons AddonsSpec `json:"addons,omitempty"`
+	// PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
+	// This field is immutable after creation.
+	PreGeneratedCertificates *PreGeneratedCertificatesSpec `json:"preGeneratedCertificates,omitempty"`
+	// Bootstrap configures initial cluster setup including RBAC and essential components.
+	// This is applied once during cluster creation to solve common bootstrap problems.
+	Bootstrap *BootstrapSpec `json:"bootstrap,omitempty"`
+	// InternalCACertificatesConfigMap specifies a ConfigMap containing internal CA certificates
+	// that should be mounted to the standard CA certificate paths in control plane containers.
+	// If specified, the ConfigMap data will be mounted to:
+	// - /etc/ca-certificates
+	// - /usr/share/ca-certificates
+	// - /usr/local/share/ca-certificates
+	// This enables the control plane to trust internal Certificate Authorities.
+	InternalCACertificatesConfigMap *string `json:"internalCACertificatesConfigMap,omitempty"`
 }
 
 //+kubebuilder:object:root=true
