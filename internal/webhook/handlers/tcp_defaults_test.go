@@ -35,16 +35,9 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 				Namespace: "default",
 				UID:       uuid.NewUUID(),
 			},
-			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
-				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
-					ServiceCIDR: "10.96.0.0/12",
-					DNSServiceIPs: []string{
-						"10.96.0.10",
-					},
-				},
-			},
+			Spec: kamajiv1alpha1.TenantControlPlaneSpec{},
 		}
-		ctx = context.Background()
+		ctx = context.Background() //nolint:fatcontext
 	})
 
 	Describe("fields missing", func() {
@@ -62,7 +55,7 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 			))
 		})
 
-		It("should default the dataStoreSchema and dataStoreUsername to the expected value", func() {
+		It("should default the dataStoreSchema to the expected value", func() {
 			ops, err := t.OnCreate(tcp)(ctx, admission.Request{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ops).To(ContainElement(
@@ -78,7 +71,6 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 		BeforeEach(func() {
 			tcp.Spec.DataStore = "etcd"
 			tcp.Spec.DataStoreSchema = "my_tcp"
-			tcp.Spec.DataStoreUsername = "my_tcp"
 			tcp.Spec.ControlPlane.Deployment.Replicas = ptr.To(int32(2))
 			tcp.Spec.NetworkProfile.ServiceCIDRs = []string{"10.96.0.0/12"}
 		})

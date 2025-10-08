@@ -134,8 +134,8 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 			TenantControlPlanePort:          port,
 			TenantControlPlaneName:          tenantControlPlane.GetName(),
 			TenantControlPlaneNamespace:     tenantControlPlane.GetNamespace(),
-			TenantControlPlaneEndpoint:      endpoint,
-			TenantControlPlaneCertSANs:      certSANs,
+			TenantControlPlaneEndpoint:      net.JoinHostPort(address, strconv.FormatInt(int64(port), 10)), // Always use IP address for kubeadm validation
+			TenantControlPlaneCertSANs:      tenantControlPlane.Spec.NetworkProfile.CertSANs,
 			TenantControlPlaneClusterDomain: tenantControlPlane.Spec.NetworkProfile.ClusterDomain,
 			TenantControlPlanePodCIDR:       podCIDRs,
 			TenantControlPlaneServiceCIDR:   serviceCIDRs,

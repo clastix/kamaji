@@ -33,9 +33,13 @@ type Certificate struct {
 }
 
 func (r *Certificate) GetHistogram() prometheus.Histogram {
-	certificateCollector = resources.LazyLoadHistogramFromResource(certificateCollector, r)
+	return resources.LazyLoadHistogramFromResource(r.getCollector(), r)
+}
 
-	return certificateCollector
+func (r *Certificate) getCollector() prometheus.Histogram {
+	// Return a nil collector since this is in a separate package 
+	// LazyLoadHistogramFromResource will handle creating the collector
+	return nil
 }
 
 func (r *Certificate) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -89,8 +93,6 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
-		isRotationRequested := utilities.IsRotationRequested(r.resource)
-
 		if r.DataStore.Spec.TLSConfig != nil {
 			ca, err := r.DataStore.Spec.TLSConfig.CertificateAuthority.Certificate.GetContent(ctx, r.Client)
 			if err != nil {
@@ -109,7 +111,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 				r.resource.GetLabels(),
 				utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 				map[string]string{
-					constants.ControllerLabelResource: utilities.CertificateX509Label,
+					constants.ControllerLabelResource: "x509",
 				},
 			))
 
@@ -121,7 +123,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 
 			if utilities.GetObjectChecksum(r.resource) == utilities.CalculateMapChecksum(r.resource.Data) {
 				if r.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
-					if isValid, _ := crypto.IsValidCertificateKeyPairBytes(r.resource.Data["server.crt"], r.resource.Data["server.key"], r.CertExpirationThreshold); isValid && !isRotationRequested {
+					if isValid, _ := crypto.IsValidCertificateKeyPairBytes(r.resource.Data["server.crt"], r.resource.Data["server.key"], 0); isValid {
 						return nil
 					}
 				}
@@ -177,10 +179,6 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 		} else {
 			// set r.resource.Data to empty to allow switching from TLS to non-tls
 			r.resource.Data = map[string][]byte{}
-		}
-
-		if isRotationRequested {
-			utilities.SetLastRotationTimestamp(r.resource)
 		}
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)

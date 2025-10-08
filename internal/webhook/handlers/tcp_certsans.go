@@ -19,6 +19,15 @@ import (
 type TenantControlPlaneCertSANs struct{}
 
 func (t TenantControlPlaneCertSANs) ValidateCertSANs(tcp *kamajiv1alpha1.TenantControlPlane) error {
+	// Check mutual exclusivity between certSANs and preGeneratedCertificates
+	if len(tcp.Spec.NetworkProfile.CertSANs) > 0 && tcp.Spec.PreGeneratedCertificates != nil {
+		return field.Invalid(
+			field.NewPath("spec.networkProfile.certSANs"),
+			tcp.Spec.NetworkProfile.CertSANs,
+			"certSANs cannot be specified when preGeneratedCertificates is configured - certificates are already generated with their own SANs",
+		)
+	}
+
 	if len(tcp.Spec.NetworkProfile.CertSANs) == 0 {
 		return nil
 	}

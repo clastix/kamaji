@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -129,28 +130,40 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			r.isRotatingCA = true
 		}
 
-		config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
-		if err != nil {
-			logger.Error(err, "cannot retrieve kubeadm configuration")
+		// Check if pregenerated CA certificate is specified
+		if tenantControlPlane.Spec.PreGeneratedCertificates != nil && tenantControlPlane.Spec.PreGeneratedCertificates.CA != nil {
+			logger.Info("Using pregenerated CA certificate")
+			if err := r.usePreGeneratedCACertificate(ctx, tenantControlPlane); err != nil {
+				logger.Error(err, "cannot use pregenerated CA certificate")
 
-			return err
-		}
+				return err
+			}
+		} else {
+			logger.Info("Generating new CA certificate")
 
-		ca, err := kubeadm.GenerateCACertificatePrivateKeyPair(kubeadmconstants.CACertAndKeyBaseName, config)
-		if err != nil {
-			logger.Error(err, "cannot generate certificate and private key")
+			config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
+			if err != nil {
+				logger.Error(err, "cannot retrieve kubeadm configuration")
 
-			return err
-		}
+				return err
+			}
 
-		r.resource.Data = map[string][]byte{
-			kubeadmconstants.CACertName: ca.Certificate,
-			kubeadmconstants.CAKeyName:  ca.PrivateKey,
-			// Required for Cluster API integration which is reading the basic TLS keys.
-			// We cannot switch over basic corev1.Secret keys for backward compatibility,
-			// it would require a new CA generation breaking all the clusters deployed.
-			corev1.TLSCertKey:       ca.Certificate,
-			corev1.TLSPrivateKeyKey: ca.PrivateKey,
+			ca, err := kubeadm.GenerateCACertificatePrivateKeyPair(kubeadmconstants.CACertAndKeyBaseName, config)
+			if err != nil {
+				logger.Error(err, "cannot generate certificate and private key")
+
+				return err
+			}
+
+			r.resource.Data = map[string][]byte{
+				kubeadmconstants.CACertName: ca.Certificate,
+				kubeadmconstants.CAKeyName:  ca.PrivateKey,
+				// Required for Cluster API integration which is reading the basic TLS keys.
+				// We cannot switch over basic corev1.Secret keys for backward compatibility,
+				// it would require a new CA generation breaking all the clusters deployed.
+				corev1.TLSCertKey:       ca.Certificate,
+				corev1.TLSPrivateKeyKey: ca.PrivateKey,
+			}
 		}
 
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
@@ -159,4 +172,58 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
+}
+
+func (r *CACertificate) usePreGeneratedCACertificate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	certRef := tenantControlPlane.Spec.PreGeneratedCertificates.CA
+
+	// Determine the namespace for the secret
+	secretNamespace := certRef.SecretNamespace
+	if secretNamespace == "" {
+		secretNamespace = tenantControlPlane.GetNamespace()
+	}
+
+	// Get the referenced secret
+	secret := &corev1.Secret{}
+	secretKey := types.NamespacedName{
+		Name:      certRef.SecretName,
+		Namespace: secretNamespace,
+	}
+
+	if err := r.Client.Get(ctx, secretKey, secret); err != nil {
+		return fmt.Errorf("failed to get secret %s: %w", secretKey, err)
+	}
+
+	// Determine certificate and private key keys
+	certKey := certRef.CertificateKey
+	if certKey == "" {
+		certKey = corev1.TLSCertKey
+	}
+
+	privKeyKey := certRef.PrivateKeyKey
+	if privKeyKey == "" {
+		privKeyKey = corev1.TLSPrivateKeyKey
+	}
+
+	// Get certificate and private key data
+	certData, exists := secret.Data[certKey]
+	if !exists {
+		return fmt.Errorf("certificate key %s not found in secret %s", certKey, secretKey)
+	}
+
+	privKeyData, exists := secret.Data[privKeyKey]
+	if !exists {
+		return fmt.Errorf("private key %s not found in secret %s", privKeyKey, secretKey)
+	}
+
+	// Set the resource data with both kubeadm and TLS keys for compatibility
+	r.resource.Data = map[string][]byte{
+		kubeadmconstants.CACertName: certData,
+		kubeadmconstants.CAKeyName:  privKeyData,
+		// Required for Cluster API integration which is reading the basic TLS keys.
+		corev1.TLSCertKey:       certData,
+		corev1.TLSPrivateKeyKey: privKeyData,
+	}
+
+	return nil
 }

@@ -120,6 +120,10 @@ kamaji-etcd:
 telemetry:
   disabled: false
 
+# -- Create self-signed certificate Issuer
+selfSigned:
+  enabled: true
+
 kubeconfigGenerator:
   # -- Toggle to deploy the Kubeconfig Generator Deployment.
   enabled: false

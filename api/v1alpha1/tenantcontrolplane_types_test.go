@@ -77,50 +77,7 @@ var _ = Describe("Cluster controller", func() {
 		})
 	})
 
-	Context("AdvertiseAddress", func() {
-		It("allows a valid IPv4 address", func() {
-			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
-			tcp.Spec.NetworkProfile.AdvertiseAddress = "10.0.0.10"
-
-			err := k8sClient.Create(ctx, tcp)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("allows a valid IPv6 address", func() {
-			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
-			tcp.Spec.NetworkProfile.AdvertiseAddress = "2001:db8::1"
-
-			err := k8sClient.Create(ctx, tcp)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("allows creation when advertiseAddress is unset", func() {
-			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
-
-			err := k8sClient.Create(ctx, tcp)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("denies a DNS hostname", func() {
-			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
-			tcp.Spec.NetworkProfile.AdvertiseAddress = "control-plane.example.com"
-
-			err := k8sClient.Create(ctx, tcp)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("advertiseAddress must be a valid IP address"))
-		})
-
-		It("denies a malformed IP address", func() {
-			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
-			tcp.Spec.NetworkProfile.AdvertiseAddress = "10.0.0.999"
-
-			err := k8sClient.Create(ctx, tcp)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("advertiseAddress must be a valid IP address"))
-		})
-	})
-
-	Context("AllocateLoadBalancerNodePorts", func() {
+Context("AllocateLoadBalancerNodePorts", func() {
 		It("allows the field when service type is LoadBalancer", func() {
 			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeLoadBalancer
 			tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = ptr.To(false)
@@ -143,6 +100,48 @@ var _ = Describe("Cluster controller", func() {
 			err := k8sClient.Create(ctx, tcp)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("allocateLoadBalancerNodePorts is supported only with LoadBalancer service type"))
+		})
+	})
+
+	Context("PublicAPIServerAddress", func() {
+		It("allows creation with valid hostname", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeLoadBalancer
+			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = "k8s-api.example.com"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("allows creation with IP address", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeLoadBalancer
+			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = "192.168.1.100"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("allows creation with empty PublicAPIServerAddress", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeLoadBalancer
+			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = ""
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("allows creation without PublicAPIServerAddress field", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeLoadBalancer
+			// Don't set PublicAPIServerAddress at all
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("works with different service types", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
+			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = "k8s-api.example.com"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })

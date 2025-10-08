@@ -63,7 +63,7 @@ spec:
     service:
       serviceType: LoadBalancer
   kubernetes:
-    version: "v1.33.0"
+    version: "v1.33.4"
   networkProfile:
     port: 6443
   addons:
