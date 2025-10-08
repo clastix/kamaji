@@ -1,3 +1,4 @@
+{{- if .Values.selfSigned.enabled }}
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -8,3 +9,4 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   selfSigned: {}
+{{- end }}

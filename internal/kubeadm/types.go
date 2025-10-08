@@ -36,6 +36,7 @@ type Parameters struct {
 	TenantControlPlaneNamespace     string
 	TenantControlPlaneEndpoint      string
 	TenantControlPlaneAddress       string
+	TenantControlPlanePublicAddress string // Public address for cluster-info ConfigMap
 	TenantControlPlaneCertSANs      []string
 	TenantControlPlanePort          int32
 	TenantControlPlaneClusterDomain string

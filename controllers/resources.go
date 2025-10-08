@@ -20,6 +20,7 @@ import (
 	builder "github.com/clastix/kamaji/internal/builders/controlplane"
 	"github.com/clastix/kamaji/internal/datastore"
 	"github.com/clastix/kamaji/internal/resources"
+	"github.com/clastix/kamaji/internal/resources/addons"
 	ds "github.com/clastix/kamaji/internal/resources/datastore"
 	"github.com/clastix/kamaji/internal/resources/konnectivity"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -101,6 +102,23 @@ func GetDeletableResources(tcp *kamajiv1alpha1.TenantControlPlane, config GroupD
 	return res
 }
 
+func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.Resource {
+	resources := getDataStoreMigratingResources(config.client, config.KamajiNamespace, config.KamajiMigrateImage, config.KamajiServiceAccount, config.KamajiService)
+	resources = append(resources, getUpgradeResources(config.client)...)
+	resources = append(resources, getKubernetesServiceResources(config.client)...)
+	resources = append(resources, getKubeadmConfigResources(config.client, getTmpDirectory(config.tcpReconcilerConfig.TmpBaseDirectory, config.tenantControlPlane), config.DataStore)...)
+	resources = append(resources, getKubernetesCertificatesResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
+	resources = append(resources, getKubeconfigResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
+	resources = append(resources, getKubernetesStorageResources(config.client, config.Connection, config.DataStore, config.ExpirationThreshold)...)
+	resources = append(resources, getKonnectivityServerRequirementsResources(config.client, config.ExpirationThreshold)...)
+	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.DataStore)...)
+	resources = append(resources, getKonnectivityServerPatchResources(config.client)...)
+	resources = append(resources, getAddonResources(config.client)...)
+	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
+	resources = append(resources, getKubernetesIngressResources(config.client)...)
+
+	return resources
+}
 func getDataStoreMigratingCleanup(c client.Client, kamajiNamespace string) []resources.Resource {
 	return []resources.Resource{
 		&ds.Migrate{
@@ -331,6 +349,13 @@ func getKonnectivityServerPatchResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
 		&konnectivity.KubernetesDeploymentResource{Builder: builder.Konnectivity{Scheme: *c.Scheme()}, Client: c},
 		&konnectivity.ServiceResource{Client: c},
+	}
+}
+
+func getAddonResources(c client.Client) []resources.Resource {
+	return []resources.Resource{
+		&addons.CoreDNS{Client: c},
+		&addons.KubeProxy{Client: c},
 	}
 }
 

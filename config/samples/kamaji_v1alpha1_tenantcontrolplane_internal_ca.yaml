@@ -1,0 +1,48 @@
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: k8s-133-internal-ca
+  labels:
+    tenant.clastix.io: k8s-133-internal-ca
+spec:
+  controlPlane:
+    deployment:
+      replicas: 2
+    service:
+      serviceType: LoadBalancer
+  kubernetes:
+    version: "v1.33.4"
+    kubelet:
+      cgroupfs: systemd
+  networkProfile:
+    port: 6443
+  # InternalCACertificatesConfigMap allows mounting internal CA certificates
+  # for proper certificate validation in control plane components
+  internalCACertificatesConfigMap: "internal-ca-certs"
+  addons:
+    coreDNS: {}
+    kubeProxy: {}
+    konnectivity:
+      server:
+        port: 8132
+      agent:
+        mode: DaemonSet
+---
+# Example ConfigMap containing internal CA certificates
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: internal-ca-certs
+  namespace: default
+data:
+  # Internal CA certificate in PEM format
+  internal-ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    # Your internal CA certificate content goes here
+    # This would be your organization's internal Certificate Authority
+    -----END CERTIFICATE-----
+  # Additional internal CA certificates can be added as needed
+  intermediate-ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    # Additional intermediate CA certificate if needed
+    -----END CERTIFICATE-----
