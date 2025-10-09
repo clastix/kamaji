@@ -62,6 +62,7 @@ versions:
           metadata:
             type: object
           spec:
+            description: TenantControlPlaneSpec defines the desired state of TenantControlPlane.
             properties:
               addons:
                 description: Addons contain which addons are enabled
@@ -286,6 +287,50 @@ versions:
                           ImageTag allows to specify a tag for the image.
                           In case this value is set, kubeadm does not change automatically the version of the above components during upgrades.
                         type: string
+                    type: object
+                type: object
+              bootstrap:
+                description: |-
+                  Bootstrap configures initial cluster setup including RBAC and essential components.
+                  This is applied once during cluster creation to solve common bootstrap problems.
+                properties:
+                  initManifests:
+                    description: |-
+                      InitManifests contains additional Kubernetes manifests to apply after RBAC setup.
+                      Common use cases include CNI deployments (Cilium, Calico), GitOps operators
+                      (Flux, ArgoCD), or any other foundational cluster components.
+                      Manifests are applied as raw YAML after RBAC bootstrap is complete.
+                    items:
+                      type: string
+                    type: array
+                  rbac:
+                    description: |-
+                      RBAC configures Role-Based Access Control bootstrap.
+                      This solves the common problem where admin kubeconfig is generated
+                      but no ClusterRoleBinding grants the user actual permissions.
+                    properties:
+                      adminGroups:
+                        description: |-
+                          AdminGroups specifies groups that should be granted cluster-admin privileges.
+                          Common choices include "system:masters" (traditional K8s admin group).
+                        items:
+                          type: string
+                        type: array
+                      adminUsers:
+                        default:
+                          - kubernetes-admin
+                        description: |-
+                          AdminUsers specifies users that should be granted cluster-admin privileges.
+                          Defaults to ["kubernetes-admin"] which matches the generated kubeconfig user.
+                        items:
+                          type: string
+                        type: array
+                      enabled:
+                        default: true
+                        description: |-
+                          Enabled controls whether RBAC bootstrap is performed.
+                          When enabled, creates ClusterRoleBindings for admin users and groups.
+                        type: boolean
                     type: object
                 type: object
               controlPlane:
@@ -6738,6 +6783,12 @@ versions:
                               type: string
                             type: object
                         type: object
+                      publicAPIServerAddress:
+                        description: |-
+                          PublicAPIServerAddress allows specifying the hostname used in the cluster-info ConfigMap
+                          instead of the LoadBalancer IP. This enables proper DNS-based access to the API server.
+                          When specified, this address will be used in kubeadm join commands and cluster-info ConfigMap.
+                        type: string
                       serviceType:
                         description: ServiceType allows specifying how to expose the Tenant Control Plane.
                         enum:
@@ -6780,6 +6831,16 @@ versions:
                 x-kubernetes-validations:
                   - message: changing the dataStoreUsername is not supported
                     rule: self == oldSelf
+              internalCACertificatesConfigMap:
+                description: |-
+                  InternalCACertificatesConfigMap specifies a ConfigMap containing internal CA certificates
+                  that should be mounted to the standard CA certificate paths in control plane containers.
+                  If specified, the ConfigMap data will be mounted to:
+                  - /etc/ca-certificates
+                  - /usr/share/ca-certificates
+                  - /usr/local/share/ca-certificates
+                  This enables the control plane to trust internal Certificate Authorities.
+                type: string
               kubernetes:
                 description: Kubernetes specification for tenant control plane
                 properties:
@@ -6955,6 +7016,165 @@ versions:
                     description: 'CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.'
                     type: string
                 type: object
+              preGeneratedCertificates:
+                description: |-
+                  PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
+                  This field is immutable after creation.
+                properties:
+                  apiServer:
+                    description: |-
+                      API Server certificate and key from existing Secret.
+                      If specified, this certificate will be used instead of generating a new one.
+                      The certificate must be signed by the CA specified above or the generated CA.
+                    properties:
+                      certificateKey:
+                        default: tls.crt
+                        description: CertificateKey is the key in the Secret containing the certificate.
+                        type: string
+                      privateKeyKey:
+                        default: tls.key
+                        description: PrivateKeyKey is the key in the Secret containing the private key.
+                        type: string
+                      secretName:
+                        description: SecretName references a Secret containing certificate data
+                        minLength: 1
+                        type: string
+                      secretNamespace:
+                        description: |-
+                          SecretNamespace is the namespace of the referenced Secret.
+                          If empty, defaults to the TenantControlPlane namespace.
+                        type: string
+                    required:
+                      - secretName
+                    type: object
+                  ca:
+                    description: |-
+                      CA certificate and key from existing Secret.
+                      If specified, this CA will be used instead of generating a new one.
+                    properties:
+                      certificateKey:
+                        default: tls.crt
+                        description: CertificateKey is the key in the Secret containing the certificate.
+                        type: string
+                      privateKeyKey:
+                        default: tls.key
+                        description: PrivateKeyKey is the key in the Secret containing the private key.
+                        type: string
+                      secretName:
+                        description: SecretName references a Secret containing certificate data
+                        minLength: 1
+                        type: string
+                      secretNamespace:
+                        description: |-
+                          SecretNamespace is the namespace of the referenced Secret.
+                          If empty, defaults to the TenantControlPlane namespace.
+                        type: string
+                    required:
+                      - secretName
+                    type: object
+                  frontProxyCA:
+                    description: |-
+                      Front proxy CA certificate and key from existing Secret.
+                      If specified, this CA will be used instead of generating a new one.
+                    properties:
+                      certificateKey:
+                        default: tls.crt
+                        description: CertificateKey is the key in the Secret containing the certificate.
+                        type: string
+                      privateKeyKey:
+                        default: tls.key
+                        description: PrivateKeyKey is the key in the Secret containing the private key.
+                        type: string
+                      secretName:
+                        description: SecretName references a Secret containing certificate data
+                        minLength: 1
+                        type: string
+                      secretNamespace:
+                        description: |-
+                          SecretNamespace is the namespace of the referenced Secret.
+                          If empty, defaults to the TenantControlPlane namespace.
+                        type: string
+                    required:
+                      - secretName
+                    type: object
+                  frontProxyClient:
+                    description: |-
+                      Front proxy client certificate and key from existing Secret.
+                      If specified, this certificate will be used instead of generating a new one.
+                      The certificate must be signed by the front proxy CA specified above or the generated front proxy CA.
+                    properties:
+                      certificateKey:
+                        default: tls.crt
+                        description: CertificateKey is the key in the Secret containing the certificate.
+                        type: string
+                      privateKeyKey:
+                        default: tls.key
+                        description: PrivateKeyKey is the key in the Secret containing the private key.
+                        type: string
+                      secretName:
+                        description: SecretName references a Secret containing certificate data
+                        minLength: 1
+                        type: string
+                      secretNamespace:
+                        description: |-
+                          SecretNamespace is the namespace of the referenced Secret.
+                          If empty, defaults to the TenantControlPlane namespace.
+                        type: string
+                    required:
+                      - secretName
+                    type: object
+                  kubeletClient:
+                    description: |-
+                      Kubelet client certificate and key from existing Secret.
+                      If specified, this certificate will be used instead of generating a new one.
+                      The certificate must be signed by the CA specified above or the generated CA.
+                    properties:
+                      certificateKey:
+                        default: tls.crt
+                        description: CertificateKey is the key in the Secret containing the certificate.
+                        type: string
+                      privateKeyKey:
+                        default: tls.key
+                        description: PrivateKeyKey is the key in the Secret containing the private key.
+                        type: string
+                      secretName:
+                        description: SecretName references a Secret containing certificate data
+                        minLength: 1
+                        type: string
+                      secretNamespace:
+                        description: |-
+                          SecretNamespace is the namespace of the referenced Secret.
+                          If empty, defaults to the TenantControlPlane namespace.
+                        type: string
+                    required:
+                      - secretName
+                    type: object
+                  serviceAccount:
+                    description: |-
+                      Service account signing key from existing Secret.
+                      If specified, this key pair will be used instead of generating a new one.
+                    properties:
+                      privateKeyKey:
+                        default: sa.key
+                        description: PrivateKeyKey is the key in the Secret containing the private key.
+                        type: string
+                      publicKeyKey:
+                        default: sa.pub
+                        description: PublicKeyKey is the key in the Secret containing the public key.
+                        type: string
+                      secretName:
+                        description: SecretName references a Secret containing key data
+                        minLength: 1
+                        type: string
+                      secretNamespace:
+                        description: |-
+                          SecretNamespace is the namespace of the referenced Secret.
+                          If empty, defaults to the TenantControlPlane namespace.
+                        type: string
+                    required:
+                      - secretName
+                    type: object
+                type: object
               writePermissions:
                 description: |-
                   WritePermissions allows to select which operations (create, delete, update) must be blocked:
@@ -6988,6 +7208,8 @@ versions:
                 rule: '!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == ''LoadBalancer'''
               - message: LoadBalancerClass cannot be set or unset at runtime
                 rule: self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)
+              - message: preGeneratedCertificates are now mutable for certificate maintenance
+                rule: "true"
           status:
             description: TenantControlPlaneStatus defines the observed state of TenantControlPlane.
             properties:

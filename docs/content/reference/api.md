@@ -28434,7 +28434,7 @@ TenantControlPlane is the Schema for the tenantcontrolplanes API.
         <td><b><a href="#tenantcontrolplanespec">spec</a></b></td>
         <td>object</td>
         <td>
-          <br/>
+          TenantControlPlaneSpec defines the desired state of TenantControlPlane.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -28451,7 +28451,7 @@ TenantControlPlane is the Schema for the tenantcontrolplanes API.
 <span id="tenantcontrolplanespec">`TenantControlPlane.spec`</span>
 
 
-
+TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 
 <table>
     <thead>
@@ -28482,6 +28482,14 @@ such as the number of Pod replicas, the Service resource, or the Ingress.<br/>
         <td>object</td>
         <td>
           Addons contain which addons are enabled<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecbootstrap">bootstrap</a></b></td>
+        <td>object</td>
+        <td>
+          Bootstrap configures initial cluster setup including RBAC and essential components.
+This is applied once during cluster creation to solve common bootstrap problems.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -28517,10 +28525,31 @@ DataStoreUsername by concatenating the namespace and name of the TenantControlPl
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>internalCACertificatesConfigMap</b></td>
+        <td>string</td>
+        <td>
+          InternalCACertificatesConfigMap specifies a ConfigMap containing internal CA certificates
+that should be mounted to the standard CA certificate paths in control plane containers.
+If specified, the ConfigMap data will be mounted to:
+- /etc/ca-certificates
+- /usr/share/ca-certificates
+- /usr/local/share/ca-certificates
+This enables the control plane to trust internal Certificate Authorities.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespecnetworkprofile">networkProfile</a></b></td>
         <td>object</td>
         <td>
           NetworkProfile specifies how the network is<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificates">preGeneratedCertificates</a></b></td>
+        <td>object</td>
+        <td>
+          PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
+This field is immutable after creation.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -28607,6 +28636,15 @@ Defining the options for the Tenant Control Plane Service resource.
         <td>object</td>
         <td>
           AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>publicAPIServerAddress</b></td>
+        <td>string</td>
+        <td>
+          PublicAPIServerAddress allows specifying the hostname used in the cluster-info ConfigMap
+instead of the LoadBalancer IP. This enables proper DNS-based access to the API server.
+When specified, this address will be used in kubeadm join commands and cluster-info ConfigMap.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -41889,6 +41927,92 @@ In case this value is set, kubeadm does not change automatically the version of 
 </table>
 
 
+<span id="tenantcontrolplanespecbootstrap">`TenantControlPlane.spec.bootstrap`</span>
+
+
+Bootstrap configures initial cluster setup including RBAC and essential components.
+This is applied once during cluster creation to solve common bootstrap problems.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>initManifests</b></td>
+        <td>[]string</td>
+        <td>
+          InitManifests contains additional Kubernetes manifests to apply after RBAC setup.
+Common use cases include CNI deployments (Cilium, Calico), GitOps operators
+(Flux, ArgoCD), or any other foundational cluster components.
+Manifests are applied as raw YAML after RBAC bootstrap is complete.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecbootstraprbac">rbac</a></b></td>
+        <td>object</td>
+        <td>
+          RBAC configures Role-Based Access Control bootstrap.
+This solves the common problem where admin kubeconfig is generated
+but no ClusterRoleBinding grants the user actual permissions.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecbootstraprbac">`TenantControlPlane.spec.bootstrap.rbac`</span>
+
+
+RBAC configures Role-Based Access Control bootstrap.
+This solves the common problem where admin kubeconfig is generated
+but no ClusterRoleBinding grants the user actual permissions.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>adminGroups</b></td>
+        <td>[]string</td>
+        <td>
+          AdminGroups specifies groups that should be granted cluster-admin privileges.
+Common choices include "system:masters" (traditional K8s admin group).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>adminUsers</b></td>
+        <td>[]string</td>
+        <td>
+          AdminUsers specifies users that should be granted cluster-admin privileges.
+Defaults to ["kubernetes-admin"] which matches the generated kubeconfig user.<br/>
+          <br/>
+            <i>Default</i>: [kubernetes-admin]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled controls whether RBAC bootstrap is performed.
+When enabled, creates ClusterRoleBindings for admin users and groups.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 <span id="tenantcontrolplanespecnetworkprofile">`TenantControlPlane.spec.networkProfile`</span>
 
 
@@ -41993,6 +42117,391 @@ Example: {"192.168.1.0/24", "10.0.0.0/8"}<br/>
           CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.<br/>
           <br/>
             <i>Default</i>: 10.96.0.0/16<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificates">`TenantControlPlane.spec.preGeneratedCertificates`</span>
+
+
+PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
+This field is immutable after creation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificatesapiserver">apiServer</a></b></td>
+        <td>object</td>
+        <td>
+          API Server certificate and key from existing Secret.
+If specified, this certificate will be used instead of generating a new one.
+The certificate must be signed by the CA specified above or the generated CA.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificatesca">ca</a></b></td>
+        <td>object</td>
+        <td>
+          CA certificate and key from existing Secret.
+If specified, this CA will be used instead of generating a new one.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificatesfrontproxyca">frontProxyCA</a></b></td>
+        <td>object</td>
+        <td>
+          Front proxy CA certificate and key from existing Secret.
+If specified, this CA will be used instead of generating a new one.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificatesfrontproxyclient">frontProxyClient</a></b></td>
+        <td>object</td>
+        <td>
+          Front proxy client certificate and key from existing Secret.
+If specified, this certificate will be used instead of generating a new one.
+The certificate must be signed by the front proxy CA specified above or the generated front proxy CA.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificateskubeletclient">kubeletClient</a></b></td>
+        <td>object</td>
+        <td>
+          Kubelet client certificate and key from existing Secret.
+If specified, this certificate will be used instead of generating a new one.
+The certificate must be signed by the CA specified above or the generated CA.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificatesserviceaccount">serviceAccount</a></b></td>
+        <td>object</td>
+        <td>
+          Service account signing key from existing Secret.
+If specified, this key pair will be used instead of generating a new one.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificatesapiserver">`TenantControlPlane.spec.preGeneratedCertificates.apiServer`</span>
+
+
+API Server certificate and key from existing Secret.
+If specified, this certificate will be used instead of generating a new one.
+The certificate must be signed by the CA specified above or the generated CA.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName references a Secret containing certificate data<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateKey</b></td>
+        <td>string</td>
+        <td>
+          CertificateKey is the key in the Secret containing the certificate.<br/>
+          <br/>
+            <i>Default</i>: tls.crt<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>privateKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PrivateKeyKey is the key in the Secret containing the private key.<br/>
+          <br/>
+            <i>Default</i>: tls.key<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretNamespace</b></td>
+        <td>string</td>
+        <td>
+          SecretNamespace is the namespace of the referenced Secret.
+If empty, defaults to the TenantControlPlane namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificatesca">`TenantControlPlane.spec.preGeneratedCertificates.ca`</span>
+
+
+CA certificate and key from existing Secret.
+If specified, this CA will be used instead of generating a new one.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName references a Secret containing certificate data<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateKey</b></td>
+        <td>string</td>
+        <td>
+          CertificateKey is the key in the Secret containing the certificate.<br/>
+          <br/>
+            <i>Default</i>: tls.crt<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>privateKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PrivateKeyKey is the key in the Secret containing the private key.<br/>
+          <br/>
+            <i>Default</i>: tls.key<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretNamespace</b></td>
+        <td>string</td>
+        <td>
+          SecretNamespace is the namespace of the referenced Secret.
+If empty, defaults to the TenantControlPlane namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificatesfrontproxyca">`TenantControlPlane.spec.preGeneratedCertificates.frontProxyCA`</span>
+
+
+Front proxy CA certificate and key from existing Secret.
+If specified, this CA will be used instead of generating a new one.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName references a Secret containing certificate data<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateKey</b></td>
+        <td>string</td>
+        <td>
+          CertificateKey is the key in the Secret containing the certificate.<br/>
+          <br/>
+            <i>Default</i>: tls.crt<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>privateKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PrivateKeyKey is the key in the Secret containing the private key.<br/>
+          <br/>
+            <i>Default</i>: tls.key<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretNamespace</b></td>
+        <td>string</td>
+        <td>
+          SecretNamespace is the namespace of the referenced Secret.
+If empty, defaults to the TenantControlPlane namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificatesfrontproxyclient">`TenantControlPlane.spec.preGeneratedCertificates.frontProxyClient`</span>
+
+
+Front proxy client certificate and key from existing Secret.
+If specified, this certificate will be used instead of generating a new one.
+The certificate must be signed by the front proxy CA specified above or the generated front proxy CA.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName references a Secret containing certificate data<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateKey</b></td>
+        <td>string</td>
+        <td>
+          CertificateKey is the key in the Secret containing the certificate.<br/>
+          <br/>
+            <i>Default</i>: tls.crt<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>privateKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PrivateKeyKey is the key in the Secret containing the private key.<br/>
+          <br/>
+            <i>Default</i>: tls.key<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretNamespace</b></td>
+        <td>string</td>
+        <td>
+          SecretNamespace is the namespace of the referenced Secret.
+If empty, defaults to the TenantControlPlane namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificateskubeletclient">`TenantControlPlane.spec.preGeneratedCertificates.kubeletClient`</span>
+
+
+Kubelet client certificate and key from existing Secret.
+If specified, this certificate will be used instead of generating a new one.
+The certificate must be signed by the CA specified above or the generated CA.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName references a Secret containing certificate data<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateKey</b></td>
+        <td>string</td>
+        <td>
+          CertificateKey is the key in the Secret containing the certificate.<br/>
+          <br/>
+            <i>Default</i>: tls.crt<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>privateKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PrivateKeyKey is the key in the Secret containing the private key.<br/>
+          <br/>
+            <i>Default</i>: tls.key<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretNamespace</b></td>
+        <td>string</td>
+        <td>
+          SecretNamespace is the namespace of the referenced Secret.
+If empty, defaults to the TenantControlPlane namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificatesserviceaccount">`TenantControlPlane.spec.preGeneratedCertificates.serviceAccount`</span>
+
+
+Service account signing key from existing Secret.
+If specified, this key pair will be used instead of generating a new one.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName references a Secret containing key data<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>privateKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PrivateKeyKey is the key in the Secret containing the private key.<br/>
+          <br/>
+            <i>Default</i>: sa.key<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>publicKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PublicKeyKey is the key in the Secret containing the public key.<br/>
+          <br/>
+            <i>Default</i>: sa.pub<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretNamespace</b></td>
+        <td>string</td>
+        <td>
+          SecretNamespace is the namespace of the referenced Secret.
+If empty, defaults to the TenantControlPlane namespace.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

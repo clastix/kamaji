@@ -138,36 +138,124 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 			}
 		}
 
-		config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
-		if err != nil {
-			logger.Error(err, "cannot retrieve kubeadm configuration")
+		// Check if pregenerated Kubelet client certificate is specified
+		if tenantControlPlane.Spec.PreGeneratedCertificates != nil && tenantControlPlane.Spec.PreGeneratedCertificates.KubeletClient != nil {
+			logger.Info("Using pregenerated Kubelet client certificate")
+			if err := r.usePreGeneratedKubeletClientCertificate(ctx, tenantControlPlane); err != nil {
+				logger.Error(err, "cannot use pregenerated Kubelet client certificate")
 
-			return err
-		}
+				return err
+			}
+		} else {
+			logger.Info("Generating new Kubelet client certificate")
 
-		ca := kubeadm.CertificatePrivateKeyPair{
-			Name:        kubeadmconstants.CACertAndKeyBaseName,
-			Certificate: secretCA.Data[kubeadmconstants.CACertName],
-			PrivateKey:  secretCA.Data[kubeadmconstants.CAKeyName],
-		}
-		certificateKeyPair, err := kubeadm.GenerateCertificatePrivateKeyPair(kubeadmconstants.APIServerKubeletClientCertAndKeyBaseName, config, ca)
-		if err != nil {
-			logger.Error(err, "cannot generate certificate and private key")
+			config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
+			if err != nil {
+				logger.Error(err, "cannot retrieve kubeadm configuration")
 
-			return err
-		}
+				return err
+			}
 
-		if isRotationRequested {
-			utilities.SetLastRotationTimestamp(r.resource)
-		}
+			ca := kubeadm.CertificatePrivateKeyPair{
+				Name:        kubeadmconstants.CACertAndKeyBaseName,
+				Certificate: secretCA.Data[kubeadmconstants.CACertName],
+				PrivateKey:  secretCA.Data[kubeadmconstants.CAKeyName],
+			}
+			certificateKeyPair, err := kubeadm.GenerateCertificatePrivateKeyPair(kubeadmconstants.APIServerKubeletClientCertAndKeyBaseName, config, ca)
+			if err != nil {
+				logger.Error(err, "cannot generate certificate and private key")
 
-		r.resource.Data = map[string][]byte{
-			kubeadmconstants.APIServerKubeletClientCertName: certificateKeyPair.Certificate,
-			kubeadmconstants.APIServerKubeletClientKeyName:  certificateKeyPair.PrivateKey,
+				return err
+			}
+
+			if isRotationRequested {
+				utilities.SetLastRotationTimestamp(r.resource)
+			}
+
+			r.resource.Data = map[string][]byte{
+				kubeadmconstants.APIServerKubeletClientCertName: certificateKeyPair.Certificate,
+				kubeadmconstants.APIServerKubeletClientKeyName:  certificateKeyPair.PrivateKey,
+				// Add TLS keys for compatibility with external certificate management
+				corev1.TLSCertKey:       certificateKeyPair.Certificate,
+				corev1.TLSPrivateKeyKey: certificateKeyPair.PrivateKey,
+			}
 		}
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
 		return nil
 	}
+}
+
+func (r *APIServerKubeletClientCertificate) usePreGeneratedKubeletClientCertificate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	certRef := tenantControlPlane.Spec.PreGeneratedCertificates.KubeletClient
+
+	// Determine the namespace for the secret
+	secretNamespace := certRef.SecretNamespace
+	if secretNamespace == "" {
+		secretNamespace = tenantControlPlane.GetNamespace()
+	}
+
+	// Fetch the pregenerated certificate secret
+	pregenSecret := &corev1.Secret{}
+	err := r.Client.Get(ctx, k8stypes.NamespacedName{
+		Name:      certRef.SecretName,
+		Namespace: secretNamespace,
+	}, pregenSecret)
+	if err != nil {
+		return fmt.Errorf("failed to get pregenerated Kubelet client certificate secret %s/%s: %w", secretNamespace, certRef.SecretName, err)
+	}
+
+	// Determine certificate and private key keys
+	certKey := certRef.CertificateKey
+	if certKey == "" {
+		certKey = corev1.TLSCertKey
+	}
+
+	privKeyKey := certRef.PrivateKeyKey
+	if privKeyKey == "" {
+		privKeyKey = corev1.TLSPrivateKeyKey
+	}
+
+	// Get certificate data with fallback logic - try kubeadm format first, then TLS format
+	certData, exists := pregenSecret.Data[kubeadmconstants.APIServerKubeletClientCertName]
+	if !exists {
+		// Fallback to configured certificate key (usually tls.crt)
+		if fallbackCertData, fallbackExists := pregenSecret.Data[certKey]; fallbackExists {
+			certData = fallbackCertData
+		} else {
+			return fmt.Errorf("certificate key %s not found in secret %s/%s, and fallback key %s also not found", kubeadmconstants.APIServerKubeletClientCertName, secretNamespace, certRef.SecretName, certKey)
+		}
+	}
+
+	// Get private key data with fallback logic - try kubeadm format first, then TLS format
+	privKeyData, exists := pregenSecret.Data[kubeadmconstants.APIServerKubeletClientKeyName]
+	if !exists {
+		// Fallback to configured private key (usually tls.key)
+		if fallbackPrivData, fallbackExists := pregenSecret.Data[privKeyKey]; fallbackExists {
+			privKeyData = fallbackPrivData
+		} else {
+			return fmt.Errorf("private key %s not found in secret %s/%s, and fallback key %s also not found", kubeadmconstants.APIServerKubeletClientKeyName, secretNamespace, certRef.SecretName, privKeyKey)
+		}
+	}
+
+	// Validate certificate and key format
+	isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(certData, privKeyData, 0)
+	if err != nil {
+		return fmt.Errorf("invalid certificate or private key format: %w", err)
+	}
+	if !isValid {
+		return fmt.Errorf("certificate and private key pair validation failed")
+	}
+
+	// Set the resource data with both kubeadm and TLS keys for compatibility
+	r.resource.Data = map[string][]byte{
+		kubeadmconstants.APIServerKubeletClientCertName: certData,
+		kubeadmconstants.APIServerKubeletClientKeyName:  privKeyData,
+		// Add TLS keys for compatibility with external certificate management
+		corev1.TLSCertKey:       certData,
+		corev1.TLSPrivateKeyKey: privKeyData,
+	}
+
+	return nil
 }

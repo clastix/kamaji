@@ -77,4 +77,12 @@ func (t TenantControlPlaneDefaults) defaultUnsetFields(tcp *kamajiv1alpha1.Tenan
 	if len(tcp.Spec.DataStoreUsername) == 0 {
 		tcp.Spec.DataStoreUsername = tcp.GetDefaultDatastoreUsername()
 	}
+
+	if len(tcp.Spec.NetworkProfile.ServiceCIDR) == 0 {
+		tcp.Spec.NetworkProfile.ServiceCIDR = "10.96.0.0/16"
+	}
+
+	if len(tcp.Spec.NetworkProfile.PodCIDR) == 0 {
+		tcp.Spec.NetworkProfile.PodCIDR = "10.244.0.0/16"
+	}
 }
