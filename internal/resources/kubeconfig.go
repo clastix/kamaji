@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/yaml"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/constants"
@@ -148,7 +149,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
-		if err = r.customizeConfig(config); err != nil {
+		if err = r.customizeConfig(config, tenantControlPlane); err != nil {
 			logger.Error(err, "cannot customize the configuration")
 
 			return err
@@ -219,6 +220,16 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 				return kcErr
 			}
 
+			// Post-process the kubeconfig to use the public API server address for
+			// controller manager and scheduler components instead of localhost/IP address
+			if strings.Contains(r.KubeConfigFileName, "controller-manager") || strings.Contains(r.KubeConfigFileName, "scheduler") {
+				kubeconfig, kcErr = r.replaceServerURLWithPublicAddress(kubeconfig, tenantControlPlane)
+				if kcErr != nil {
+					logger.Error(kcErr, "cannot replace server URL in kubeconfig")
+					return kcErr
+				}
+			}
+
 			if shouldRotate {
 				utilities.SetLastRotationTimestamp(r.resource)
 			}
@@ -247,19 +258,82 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 	}
 }
 
-func (r *KubeconfigResource) customizeConfig(config *kubeadm.Configuration) error {
+func (r *KubeconfigResource) customizeConfig(config *kubeadm.Configuration, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	switch r.KubeConfigFileName {
 	case kubeadmconstants.ControllerManagerKubeConfigFileName:
-		return r.localhostAsAdvertiseAddress(config)
+		return r.usePublicAPIServerAddress(config, tenantControlPlane)
 	case kubeadmconstants.SchedulerKubeConfigFileName:
-		return r.localhostAsAdvertiseAddress(config)
+		return r.usePublicAPIServerAddress(config, tenantControlPlane)
 	default:
 		return nil
 	}
 }
 
-func (r *KubeconfigResource) localhostAsAdvertiseAddress(config *kubeadm.Configuration) error {
-	config.InitConfiguration.LocalAPIEndpoint.AdvertiseAddress = localhost
+func (r *KubeconfigResource) usePublicAPIServerAddress(config *kubeadm.Configuration, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	// Use the public API server endpoint configured in the TenantControlPlane
+	// instead of localhost for controller manager and scheduler kubeconfigs.
+	// This ensures that internal control plane components connect using the proper hostname
+	// which matches the certificate SANs, rather than failing with x509 certificate errors.
+
+	// Note: We don't modify the kubeadm configuration here because LocalAPIEndpoint.AdvertiseAddress
+	// must be an IP address according to kubeadm validation. Instead, we'll post-process
+	// the generated kubeconfig to replace the server URL with the hostname.
 
 	return nil
+}
+
+func (r *KubeconfigResource) replaceServerURLWithPublicAddress(kubeconfigBytes []byte, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) ([]byte, error) {
+	// Parse the kubeconfig YAML
+	var kubeconfig map[string]interface{}
+	if err := yaml.Unmarshal(kubeconfigBytes, &kubeconfig); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal kubeconfig: %w", err)
+	}
+
+	// Get the public API server address from the TenantControlPlane
+	publicHost, publicPort, err := tenantControlPlane.PublicControlPlaneAddress()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get public control plane address: %w", err)
+	}
+	if publicHost == "" {
+		// If no public address is configured, return the original kubeconfig unchanged
+		return kubeconfigBytes, nil
+	}
+
+	// Construct the full public API server URL
+	// Check if publicHost already contains a scheme (full URL)
+	var publicAddress string
+	if strings.HasPrefix(publicHost, "https://") || strings.HasPrefix(publicHost, "http://") {
+		// publicHost is already a full URL, use it as-is
+		publicAddress = publicHost
+	} else {
+		// publicHost is just a hostname, construct the full URL
+		publicAddress = fmt.Sprintf("https://%s:%d", publicHost, publicPort)
+	}
+
+	// Navigate to clusters[0].cluster.server and replace it
+	clusters, ok := kubeconfig["clusters"].([]interface{})
+	if !ok || len(clusters) == 0 {
+		return nil, fmt.Errorf("kubeconfig has no clusters")
+	}
+
+	cluster, ok := clusters[0].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid cluster format")
+	}
+
+	clusterData, ok := cluster["cluster"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid cluster data format")
+	}
+
+	// Replace the server URL with the public address
+	clusterData["server"] = publicAddress
+
+	// Marshal back to YAML
+	modifiedKubeconfig, err := yaml.Marshal(kubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal modified kubeconfig: %w", err)
+	}
+
+	return modifiedKubeconfig, nil
 }
