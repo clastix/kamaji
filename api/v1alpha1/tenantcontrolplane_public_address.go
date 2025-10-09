@@ -3,12 +3,14 @@
 
 package v1alpha1
 
+import "cmp"
+
 // PublicControlPlaneAddress returns the public address for the cluster-info ConfigMap.
 // If PublicAPIServerAddress is specified, it returns that value; otherwise, it falls back
 // to the assigned control plane address. This allows using DNS names in cluster-info
 // instead of LoadBalancer IPs. The port is always taken from NetworkProfile.Port.
 func (in *TenantControlPlane) PublicControlPlaneAddress() (string, int32, error) {
-	port := cmpt.Or(in.Spec.NetworkProfile.Port, 6443)
+	port := cmp.Or(in.Spec.NetworkProfile.Port, 6443)
 
 	// If PublicAPIServerAddress is specified, use it for cluster-info
 	if publicAddress := in.Spec.ControlPlane.Service.PublicAPIServerAddress; len(publicAddress) > 0 {
