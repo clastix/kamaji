@@ -8,10 +8,7 @@ package v1alpha1
 // to the assigned control plane address. This allows using DNS names in cluster-info
 // instead of LoadBalancer IPs. The port is always taken from NetworkProfile.Port.
 func (in *TenantControlPlane) PublicControlPlaneAddress() (string, int32, error) {
-	port := in.Spec.NetworkProfile.Port
-	if port == 0 {
-		port = 6443 // Default Kubernetes API port
-	}
+	port := cmpt.Or(in.Spec.NetworkProfile.Port, 6443)
 
 	// If PublicAPIServerAddress is specified, use it for cluster-info
 	if publicAddress := in.Spec.ControlPlane.Service.PublicAPIServerAddress; len(publicAddress) > 0 {
