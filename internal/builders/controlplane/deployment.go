@@ -956,7 +956,9 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 		}
 
 		podSpec.InitContainers[index].Name = kineInitContainerName
-		podSpec.InitContainers[index].Image = d.KineContainerImage
+		if podSpec.InitContainers[index].Image == "" {
+			podSpec.InitContainers[index].Image = d.KineContainerImage
+		}
 		podSpec.InitContainers[index].Command = []string{"sh"}
 
 		podSpec.InitContainers[index].Args = []string{
@@ -1015,7 +1017,9 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 	}
 
 	podSpec.Containers[index].Name = kineContainerName
-	podSpec.Containers[index].Image = d.KineContainerImage
+	if podSpec.Containers[index].Image == "" {
+		podSpec.Containers[index].Image = d.KineContainerImage
+	}
 	podSpec.Containers[index].Command = []string{"/bin/kine"}
 	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
 	podSpec.Containers[index].VolumeMounts = []corev1.VolumeMount{
