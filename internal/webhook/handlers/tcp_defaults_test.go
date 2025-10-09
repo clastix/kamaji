@@ -42,7 +42,7 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 		It("should issue all required patches", func() {
 			ops, err := t.OnCreate(tcp)(ctx, admission.Request{})
 			Expect(err).ToNot(HaveOccurred())
-			Expect(ops).To(HaveLen(6))
+			Expect(ops).To(HaveLen(7))
 		})
 
 		It("should default the dataStore", func() {
@@ -66,6 +66,7 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 		BeforeEach(func() {
 			tcp.Spec.DataStore = "etcd"
 			tcp.Spec.DataStoreSchema = "my_tcp"
+			tcp.Spec.DataStoreUsername = "my_tcp"
 			tcp.Spec.ControlPlane.Deployment.Replicas = ptr.To(int32(2))
 			tcp.Spec.NetworkProfile.ServiceCIDR = "10.96.0.0/16"
 			tcp.Spec.NetworkProfile.PodCIDR = "10.244.0.0/16"
