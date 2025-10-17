@@ -126,7 +126,7 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 			kubeadmconstants.FrontProxyCAKeyName:  ca.PrivateKey,
 		}
 
-		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
+		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
 		if isRotationRequested {
 			utilities.SetLastRotationTimestamp(r.resource)

@@ -83,7 +83,12 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 	address, _ := tenantControlPlane.DeclaredControlPlaneAddress(ctx, r.Client)
 
 	return func() error {
-		labels := utilities.MergeMaps(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()), tenantControlPlane.Spec.ControlPlane.Service.AdditionalMetadata.Labels)
+		labels := utilities.MergeMaps(
+			r.resource.GetLabels(),
+			utilities.KamajiLabels(
+				tenantControlPlane.GetName(), r.GetName()),
+			tenantControlPlane.Spec.ControlPlane.Service.AdditionalMetadata.Labels,
+		)
 		r.resource.SetLabels(labels)
 
 		annotations := utilities.MergeMaps(r.resource.GetAnnotations(), tenantControlPlane.Spec.ControlPlane.Service.AdditionalMetadata.Annotations)

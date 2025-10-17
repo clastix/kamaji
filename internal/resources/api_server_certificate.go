@@ -117,6 +117,7 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 		}
 
 		r.resource.SetLabels(utilities.MergeMaps(
+			r.resource.GetLabels(),
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
 				constants.ControllerLabelResource: utilities.CertificateX509Label,
