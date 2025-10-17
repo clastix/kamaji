@@ -172,6 +172,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		}
 
 		r.resource.SetLabels(utilities.MergeMaps(
+			r.resource.GetLabels(),
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
 				constants.ControllerLabelResource: utilities.CertificateKubeconfigLabel,

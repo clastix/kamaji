@@ -106,6 +106,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 			r.resource.Data["ca.crt"] = ca
 
 			r.resource.SetLabels(utilities.MergeMaps(
+				r.resource.GetLabels(),
 				utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 				map[string]string{
 					constants.ControllerLabelResource: utilities.CertificateX509Label,
