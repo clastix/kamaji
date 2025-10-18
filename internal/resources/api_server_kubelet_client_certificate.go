@@ -104,6 +104,7 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 		}
 
 		r.resource.SetLabels(utilities.MergeMaps(
+			r.resource.GetLabels(),
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
 				constants.ControllerLabelResource: utilities.CertificateX509Label,

@@ -190,7 +190,7 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
-		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
+		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
