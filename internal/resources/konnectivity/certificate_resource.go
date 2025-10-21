@@ -35,9 +35,7 @@ type CertificateResource struct {
 }
 
 func (r *CertificateResource) GetHistogram() prometheus.Histogram {
-	certificateCollector = resources.LazyLoadHistogramFromResource(certificateCollector, r)
-
-	return certificateCollector
+	return resources.LazyLoadHistogramFromResource(resources.GetKonnectivityCertificateCollector(), r)
 }
 
 func (r *CertificateResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
@@ -117,7 +115,7 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 			r.resource.GetLabels(),
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
-				constants.ControllerLabelResource: utilities.CertificateX509Label,
+				constants.ControllerLabelResource: "x509",
 			},
 		))
 
@@ -155,10 +153,6 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 			logger.Error(err, "unable to generate certificate and private key")
 
 			return err
-		}
-
-		if isRotationRequested {
-			utilities.SetLastRotationTimestamp(r.resource)
 		}
 
 		r.resource.Type = corev1.SecretTypeTLS
