@@ -27,7 +27,7 @@ Kamaji is an open source Kubernetes Operator that transforms any Kubernetes clus
   Kamaji leverages Kubernetes Custom Resource Definitions (CRDs) to provide a fully declarative approach to managing control planes, datastores, and other resources.
 
 - **CNCF Compliance:**  
-  Kamaji uses upstream, unmodified Kubernetes components and kubeadm for control plane setup, ensuring that all Tenant Clusters are [CNCF Certified Kubernetes](https://www.cncf.io/certification/software-conformance/) and compatible with standard Kubernetes tooling.
+  Kamaji uses upstream, unmodified Kubernetes components and kubeadm for control plane setup, ensuring that all Tenant Clusters follow [CNCF Certified Kubernetes Software Conformance](https://www.cncf.io/certification/software-conformance/) and are compatible with standard Kubernetes tooling.
 
 ## Extensibility and Integrations
 
