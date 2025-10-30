@@ -7,6 +7,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // NetworkProfileSpec defines the desired state of NetworkProfile.
@@ -87,6 +88,32 @@ type KubernetesSpec struct {
 	// Full reference available here: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers
 	//+kubebuilder:default=CertificateApproval;CertificateSigning;CertificateSubjectRestriction;DefaultIngressClass;DefaultStorageClass;DefaultTolerationSeconds;LimitRanger;MutatingAdmissionWebhook;NamespaceLifecycle;PersistentVolumeClaimResize;Priority;ResourceQuota;RuntimeClass;ServiceAccount;StorageObjectInUseProtection;TaintNodesByCondition;ValidatingAdmissionWebhook
 	AdmissionControllers AdmissionControllers `json:"admissionControllers,omitempty"`
+}
+
+type AdditionalPort struct {
+	// The name of this port within the Service created by Kamaji.
+	// This must be a DNS_LABEL, must have unique names, and cannot be `kube-apiserver`, or `konnectivity-server`.
+	Name string `json:"name"`
+	// The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
+	//+kubebuilder:validation:Enum=TCP;UDP;SCTP
+	//+kubebuilder:default=TCP
+	Protocol corev1.Protocol `json:"protocol,omitempty"`
+	// The application protocol for this port.
+	// This is used as a hint for implementations to offer richer behavior for protocols that they understand.
+	// This field follows standard Kubernetes label syntax.
+	// Valid values are either:
+	//
+	// * Un-prefixed protocol names - reserved for IANA standard service names (as per
+	// RFC-6335 and https://www.iana.org/assignments/service-names).
+	AppProtocol *string `json:"appProtocol,omitempty"`
+	// The port that will be exposed by this service.
+	Port int32 `json:"port"`
+	// Number or name of the port to access on the pods of the Tenant Control Plane.
+	// Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+	// If this is a string, it will be looked up as a named port in the
+	// target Pod's container ports. If this is not specified, the value
+	// of the 'port' field is used (an identity map).
+	TargetPort intstr.IntOrString `json:"targetPort"`
 }
 
 // AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.
@@ -198,6 +225,9 @@ type ControlPlaneExtraArgs struct {
 
 type ServiceSpec struct {
 	AdditionalMetadata AdditionalMetadata `json:"additionalMetadata,omitempty"`
+	// AdditionalPorts allows adding additional ports to the Service generated Kamaji
+	// which targets the Tenant Control Plane pods.
+	AdditionalPorts []AdditionalPort `json:"additionalPorts,omitempty"`
 	// ServiceType allows specifying how to expose the Tenant Control Plane.
 	ServiceType ServiceType `json:"serviceType"`
 }

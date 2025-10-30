@@ -28609,6 +28609,14 @@ Defining the options for the Tenant Control Plane Service resource.
           AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplaneserviceadditionalportsindex">additionalPorts</a></b></td>
+        <td>[]object</td>
+        <td>
+          AdditionalPorts allows adding additional ports to the Service generated Kamaji
+which targets the Tenant Control Plane pods.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -28639,6 +28647,75 @@ AdditionalMetadata defines which additional metadata, such as labels and annotat
         <td>map[string]string</td>
         <td>
           <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespeccontrolplaneserviceadditionalportsindex">`TenantControlPlane.spec.controlPlane.service.additionalPorts[index]`</span>
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of this port within the Service created by Kamaji.
+This must be a DNS_LABEL, must have unique names, and cannot be `kube-apiserver`, or `konnectivity-server`.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          The port that will be exposed by this service.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>targetPort</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the pods of the Tenant Control Plane.
+Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+If this is a string, it will be looked up as a named port in the
+target Pod's container ports. If this is not specified, the value
+of the 'port' field is used (an identity map).<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>appProtocol</b></td>
+        <td>string</td>
+        <td>
+          The application protocol for this port.
+This is used as a hint for implementations to offer richer behavior for protocols that they understand.
+This field follows standard Kubernetes label syntax.
+Valid values are either:
+
+* Un-prefixed protocol names - reserved for IANA standard service names (as per
+RFC-6335 and https://www.iana.org/assignments/service-names).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>enum</td>
+        <td>
+          The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".<br/>
+          <br/>
+            <i>Enum</i>: TCP, UDP, SCTP<br/>
+            <i>Default</i>: TCP<br/>
         </td>
         <td>false</td>
       </tr></tbody>

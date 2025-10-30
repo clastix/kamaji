@@ -98,14 +98,37 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 			"kamaji.clastix.io/name": tenantControlPlane.GetName(),
 		}
 
-		if len(r.resource.Spec.Ports) == 0 {
+		if r.resource.Spec.Ports == nil {
 			r.resource.Spec.Ports = make([]corev1.ServicePort, 1)
 		}
 
-		r.resource.Spec.Ports[0].Name = "kube-apiserver"
-		r.resource.Spec.Ports[0].Protocol = corev1.ProtocolTCP
-		r.resource.Spec.Ports[0].Port = tenantControlPlane.Spec.NetworkProfile.Port
-		r.resource.Spec.Ports[0].TargetPort = intstr.FromInt32(tenantControlPlane.Spec.NetworkProfile.Port)
+		var ports []corev1.ServicePort
+		for i, port := range r.resource.Spec.Ports {
+			switch {
+			case i == 0:
+				port.Name = "kube-apiserver"
+				port.Protocol = corev1.ProtocolTCP
+				port.Port = tenantControlPlane.Spec.NetworkProfile.Port
+				port.TargetPort = intstr.FromInt32(tenantControlPlane.Spec.NetworkProfile.Port)
+
+				ports = append(ports, port)
+			case i == 1 && port.Name == "konnectivity-server":
+				ports = append(ports, port)
+			}
+		}
+
+		for _, port := range tenantControlPlane.Spec.ControlPlane.Service.AdditionalPorts {
+			ports = append(ports, corev1.ServicePort{
+				Name:        port.Name,
+				Protocol:    port.Protocol,
+				AppProtocol: port.AppProtocol,
+				Port:        port.Port,
+				TargetPort:  port.TargetPort,
+				NodePort:    0,
+			})
+		}
+
+		r.resource.Spec.Ports = ports
 
 		switch tenantControlPlane.Spec.ControlPlane.Service.ServiceType {
 		case kamajiv1alpha1.ServiceTypeLoadBalancer:
