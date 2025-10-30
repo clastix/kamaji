@@ -60,4 +60,16 @@ var _ = Describe("Deploy a TenantControlPlane resource", func() {
 	It("Should be Ready", func() {
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
 	})
+
+	// Check if tenant cluster has standard Kubernetes resources
+	It("Should have standard Kubernetes resources in tenant cluster", func() {
+		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
+
+		validator, err := NewTenantClusterValidator(tcp)
+		Expect(err).NotTo(HaveOccurred(), "should be able to create tenant cluster validator")
+
+		validator.ValidateClusterHealth()
+		validator.ValidateStandardKubernetesResources()
+		validator.ValidateClusterAdminRBAC() // RBAC should be enabled by default
+	})
 })

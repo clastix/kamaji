@@ -11,7 +11,7 @@ spec:
     service:
       serviceType: LoadBalancer
   kubernetes:
-    version: "v1.33.0"
+    version: "v1.33.4"
     kubelet:
       cgroupfs: systemd
   networkProfile:

@@ -33,23 +33,16 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 				Name:      "tcp",
 				Namespace: "default",
 			},
-			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
-				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
-					ServiceCIDR: "10.96.0.0/12",
-					DNSServiceIPs: []string{
-						"10.96.0.10",
-					},
-				},
-			},
+			Spec: kamajiv1alpha1.TenantControlPlaneSpec{},
 		}
-		ctx = context.Background()
+		ctx = context.Background() //nolint:fatcontext
 	})
 
 	Describe("fields missing", func() {
 		It("should issue all required patches", func() {
 			ops, err := t.OnCreate(tcp)(ctx, admission.Request{})
 			Expect(err).ToNot(HaveOccurred())
-			Expect(ops).To(HaveLen(4))
+			Expect(ops).To(HaveLen(7))
 		})
 
 		It("should default the dataStore", func() {
@@ -60,14 +53,11 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 			))
 		})
 
-		It("should default the dataStoreSchema and dataStoreUsername to the expected value", func() {
+		It("should default the dataStoreSchema to the expected value", func() {
 			ops, err := t.OnCreate(tcp)(ctx, admission.Request{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ops).To(ContainElement(
 				jsonpatch.Operation{Operation: "add", Path: "/spec/dataStoreSchema", Value: "default_tcp"},
-			))
-			Expect(ops).To(ContainElement(
-				jsonpatch.Operation{Operation: "add", Path: "/spec/dataStoreUsername", Value: "default_tcp"},
 			))
 		})
 	})
@@ -78,6 +68,9 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 			tcp.Spec.DataStoreSchema = "my_tcp"
 			tcp.Spec.DataStoreUsername = "my_tcp"
 			tcp.Spec.ControlPlane.Deployment.Replicas = ptr.To(int32(2))
+			tcp.Spec.NetworkProfile.ServiceCIDR = "10.96.0.0/16"
+			tcp.Spec.NetworkProfile.PodCIDR = "10.244.0.0/16"
+			tcp.Spec.NetworkProfile.DNSServiceIPs = []string{"10.96.0.10"}
 		})
 
 		It("should not issue any patches", func() {

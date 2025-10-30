@@ -31,7 +31,7 @@ Edge Releases are generally considered production ready and the project will mar
 
 | Kamaji      | Management Cluster | Tenant Cluster       |
 |-------------|--------------------|----------------------|
-| edge-25.4.1 | v1.22+             | [v1.30.0 .. v1.33.0] |
+| edge-25.4.1 | v1.22+             | [v1.30.0 .. v1.33.4] |
 
 
 Using Edge Release artifacts and reporting bugs helps us ensure a rapid pace of development and is a great way to help maintainers.

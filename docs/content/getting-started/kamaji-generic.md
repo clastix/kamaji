@@ -225,7 +225,7 @@ spec:
         annotations:
           metallb.io/loadBalancerIPs: 172.18.255.104 # use this address
   kubernetes:
-    version: "v1.30.0"
+    version: "v1.33.4"
     kubelet:
       cgroupfs: systemd
   networkProfile:
