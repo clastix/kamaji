@@ -6746,6 +6746,56 @@ spec:
                                 type: string
                               type: object
                           type: object
+                        additionalPorts:
+                          description: |-
+                            AdditionalPorts allows adding additional ports to the Service generated Kamaji
+                            which targets the Tenant Control Plane pods.
+                          items:
+                            properties:
+                              appProtocol:
+                                description: |-
+                                  The application protocol for this port.
+                                  This is used as a hint for implementations to offer richer behavior for protocols that they understand.
+                                  This field follows standard Kubernetes label syntax.
+                                  Valid values are either:
+
+                                  * Un-prefixed protocol names - reserved for IANA standard service names (as per
+                                  RFC-6335 and https://www.iana.org/assignments/service-names).
+                                type: string
+                              name:
+                                description: |-
+                                  The name of this port within the Service created by Kamaji.
+                                  This must be a DNS_LABEL, must have unique names, and cannot be `kube-apiserver`, or `konnectivity-server`.
+                                type: string
+                              port:
+                                description: The port that will be exposed by this service.
+                                format: int32
+                                type: integer
+                              protocol:
+                                default: TCP
+                                description: The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
+                                enum:
+                                  - TCP
+                                  - UDP
+                                  - SCTP
+                                type: string
+                              targetPort:
+                                anyOf:
+                                  - type: integer
+                                  - type: string
+                                description: |-
+                                  Number or name of the port to access on the pods of the Tenant Control Plane.
+                                  Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+                                  If this is a string, it will be looked up as a named port in the
+                                  target Pod's container ports. If this is not specified, the value
+                                  of the 'port' field is used (an identity map).
+                                x-kubernetes-int-or-string: true
+                            required:
+                              - name
+                              - port
+                              - targetPort
+                            type: object
+                          type: array
                         serviceType:
                           description: ServiceType allows specifying how to expose the Tenant Control Plane.
                           enum:
