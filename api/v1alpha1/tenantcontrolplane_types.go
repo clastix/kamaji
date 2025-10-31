@@ -8,6 +8,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // NetworkProfileSpec defines the desired state of NetworkProfile.
@@ -131,6 +133,8 @@ type ControlPlane struct {
 	Service ServiceSpec `json:"service"`
 	// Defining the options for an Optional Ingress which will expose API Server of the Tenant Control Plane
 	Ingress *IngressSpec `json:"ingress,omitempty"`
+	// Defining the options for an Optional Gateway which will expose API Server of the Tenant Control Plane
+	GatewayRoutes *GatewayRoutesSpec `json:"gateway_routes,omitempty"`
 }
 
 // IngressSpec defines the options for the ingress which will expose API Server of the Tenant Control Plane.
@@ -140,6 +144,30 @@ type IngressSpec struct {
 	// Hostname is an optional field which will be used as Ingress's Host. If it is not defined,
 	// Ingress's host will be "<tenant>.<namespace>.<domain>", where domain is specified under NetworkProfileSpec
 	Hostname string `json:"hostname,omitempty"`
+}
+
+// Service[LoadBalancer] --(Selector:kamaji.clastix.io/name: k8s-133)-> Pod(port: 6443,8132)
+// 6443: GRPC (??) control plane API
+// 8132: ???? konnectivity. Can it use
+// Service[LoadBalancer] <-(create) Gateway ---> HTTPRoute -> Pod
+//                                          ---> GRPCRoute -> Pod
+
+// TODO: No TLS termination on the gateway? How is this done with the Ingress?
+//       - Check that the gateway ref points to a listerner without TLS.
+//
+// TODO: Find where the tenant get it's "Control Plane Endpoint"
+// Tenant controller --- creates LoadBalancer ---> Kube API
+// Tenant controller <-- anounce the IP       ---- Kube API
+
+// GatewayRoutesSpec defines the options for the Gateway which will expose API Server of the Tenant Control Plane.
+type GatewayRoutesSpec struct {
+	// AdditionalMetadata to add Labels and Annotations support.
+	AdditionalMetadata AdditionalMetadata `json:"additionalMetadata,omitempty"`
+
+	// GatewayParentRefs is the class of the Gateway resource to use.
+	GatewayParentRefs []gatewayv1.ParentReference `json:"gatewayParentRefs,omitempty"`
+
+	Hostname []gatewayv1.Hostname `json:"hostname,omitempty"`
 }
 
 type ControlPlaneComponentsResources struct {
