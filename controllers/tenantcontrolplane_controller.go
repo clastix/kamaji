@@ -276,6 +276,8 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).
 		Owns(&networkingv1.Ingress{}).
+		Owns(&gatewayv1.HTTPRoute{}).
+		Owns(&gatewayv1.GRPCRoute{}).
 		Watches(&batchv1.Job{}, handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
 			labels := object.GetLabels()
 
