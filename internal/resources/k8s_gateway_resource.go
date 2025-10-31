@@ -182,7 +182,7 @@ func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 		}
 
 		// Fail if no hostname is specified, same as the ingress resource.
-		if len(tenantControlPlane.Spec.ControlPlane.GatewayRoutes.Hostname) == 0 {
+		if len(tenantControlPlane.Spec.ControlPlane.GatewayRoutes.Hostnames) == 0 {
 			return fmt.Errorf("missing hostname to expose the Tenant Control Plane using a Gateway resource")
 		}
 
@@ -201,8 +201,8 @@ func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 			},
 		}
 
-		if len(tenantControlPlane.Spec.ControlPlane.GatewayRoutes.Hostname) > 0 {
-			r.grpcResource.Spec.Hostnames = tenantControlPlane.Spec.ControlPlane.GatewayRoutes.Hostname
+		if len(tenantControlPlane.Spec.ControlPlane.GatewayRoutes.Hostnames) > 0 {
+			r.grpcResource.Spec.Hostnames = tenantControlPlane.Spec.ControlPlane.GatewayRoutes.Hostnames
 		}
 
 		r.grpcResource.Spec.Rules = []gatewayv1.GRPCRouteRule{grpcRule}

@@ -5,6 +5,7 @@ package resources_test
 
 import (
 	"context"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -17,6 +18,11 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/resources"
 )
+
+func TestGatewayResource(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Gateway Resource Suite")
+}
 
 var (
 	runtimeScheme *runtime.Scheme
@@ -39,17 +45,14 @@ var _ = Describe("KubernetesGatewayResource", func() {
 	BeforeEach(func() {
 		ctx = context.Background()
 
-		// Create a fake client
 		fakeClient := fake.NewClientBuilder().
 			WithScheme(runtimeScheme).
 			Build()
 
-		// Create the Gateway resource
 		resource = &resources.KubernetesGatewayResource{
 			Client: fakeClient,
 		}
 
-		// Create a basic TenantControlPlane for testing
 		tcp = &kamajiv1alpha1.TenantControlPlane{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-tcp",
@@ -58,7 +61,7 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					GatewayRoutes: &kamajiv1alpha1.GatewayRoutesSpec{
-						Hostname: []gatewayv1.Hostname{"test.example.com"},
+						Hostnames: []gatewayv1.Hostname{"test.example.com"},
 						AdditionalMetadata: kamajiv1alpha1.AdditionalMetadata{
 							Labels: map[string]string{
 								"test-label": "test-value",
@@ -118,7 +121,7 @@ var _ = Describe("KubernetesGatewayResource", func() {
 
 	Context("When hostname is missing", func() {
 		BeforeEach(func() {
-			tcp.Spec.ControlPlane.GatewayRoutes.Hostname = []gatewayv1.Hostname{}
+			tcp.Spec.ControlPlane.GatewayRoutes.Hostnames = []gatewayv1.Hostname{}
 		})
 
 		It("should fail to create or update", func() {
