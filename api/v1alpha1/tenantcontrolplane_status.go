@@ -8,6 +8,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // APIServerCertificatesStatus defines the observed state of ETCD Certificate for API server.
@@ -183,10 +185,11 @@ type TenantControlPlaneStatus struct {
 // such as Deployment and Service.
 type KubernetesStatus struct {
 	// KubernetesVersion contains the information regarding the running Kubernetes version, and its upgrade status.
-	Version    KubernetesVersion          `json:"version,omitempty"`
-	Deployment KubernetesDeploymentStatus `json:"deployment,omitempty"`
-	Service    KubernetesServiceStatus    `json:"service,omitempty"`
-	Ingress    *KubernetesIngressStatus   `json:"ingress,omitempty"`
+	Version       KubernetesVersion              `json:"version,omitempty"`
+	Deployment    KubernetesDeploymentStatus     `json:"deployment,omitempty"`
+	Service       KubernetesServiceStatus        `json:"service,omitempty"`
+	Ingress       *KubernetesIngressStatus       `json:"ingress,omitempty"`
+	GatewayRoutes *KubernetesGatewayRoutesStatus `json:"gateway_routes,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Unknown;Provisioning;CertificateAuthorityRotating;Upgrading;Migrating;Ready;NotReady;Sleeping;WriteLimited
@@ -242,5 +245,17 @@ type KubernetesIngressStatus struct {
 	// The name of the Ingress for the given cluster.
 	Name string `json:"name"`
 	// The namespace which the Ingress for the given cluster is deployed.
+	Namespace string `json:"namespace"`
+}
+
+// KubernetesGatewayRoutesStatus defines the status for the Tenant Control Plane Gateway in the management cluster.
+type KubernetesGatewayRoutesStatus struct {
+	// HTTPRouteStatus contains the status of the HTTP routes configured for the Gateway.
+	HTTPRouteStatus *gatewayv1.HTTPRouteStatus `json:"http_route_status,omitempty"`
+
+	GRPCRouteStatus *gatewayv1.GRPCRouteStatus `json:"grpc_route_status,omitempty"`
+	// The name of the Gateway for the given cluster.
+	Name string `json:"name"`
+	// The namespace which the Gateway for the given cluster is deployed.
 	Namespace string `json:"namespace"`
 }

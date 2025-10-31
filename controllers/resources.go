@@ -86,7 +86,7 @@ func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.R
 	resources = append(resources, getKonnectivityServerPatchResources(config.client)...)
 	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
 	resources = append(resources, getKubernetesIngressResources(config.client)...)
-
+	resources = append(resources, getKubernetesGatewayResources(config.client)...)
 	return resources
 }
 
@@ -123,6 +123,14 @@ func getUpgradeResources(c client.Client) []resources.Resource {
 func getKubernetesServiceResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubernetesServiceResource{
+			Client: c,
+		},
+	}
+}
+
+func getKubernetesGatewayResources(c client.Client) []resources.Resource {
+	return []resources.Resource{
+		&resources.KubernetesGatewayResource{
 			Client: c,
 		},
 	}
