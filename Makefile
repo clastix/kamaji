@@ -73,7 +73,7 @@ help: ## Display this help.
 .PHONY: ko
 ko: $(KO) ## Download ko locally if necessary.
 $(KO): $(LOCALBIN)
-	test -s $(LOCALBIN)/ko || GOBIN=$(LOCALBIN) CGO_ENABLED=0 go install -ldflags="-s -w" github.com/google/ko@v0.14.1
+	test -s $(LOCALBIN)/ko || GOBIN=$(LOCALBIN) CGO_ENABLED=0 go install -ldflags="-s -w" github.com/google/ko@v0.18.0
 
 .PHONY: yq
 yq: $(YQ) ## Download yq locally if necessary.
@@ -240,6 +240,10 @@ cert-manager:
 	$(HELM) repo add jetstack https://charts.jetstack.io
 	$(HELM) upgrade --install cert-manager jetstack/cert-manager --namespace certmanager-system --create-namespace --set "installCRDs=true"
 
+gateway-api:
+	kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+	kubectl wait --for=condition=Established crd/gateways.gateway.networking.k8s.io --timeout=60s
+
 load: kind
 	$(KIND) load docker-image --name kamaji ${CONTAINER_REPOSITORY}:${VERSION}
 
@@ -249,14 +253,31 @@ load: kind
 env: kind
 	$(KIND) create cluster --name kamaji
 
+cleanup: kind
+	$(KIND) delete cluster --name kamaji
+
 .PHONY: e2e
-e2e: env build load helm ginkgo cert-manager ## Create a KinD cluster, install Kamaji on it and run the test suite.
+e2e: env build load helm ginkgo cert-manager gateway-api ## Create a KinD cluster, install Kamaji on it and run the test suite.
 	$(HELM) upgrade --debug --install kamaji-crds ./charts/kamaji-crds --create-namespace --namespace kamaji-system
 	$(HELM) repo add clastix https://clastix.github.io/charts
 	$(HELM) dependency build ./charts/kamaji
 	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true"
 	$(MAKE) datastores
 	$(GINKGO) -v ./e2e
+
+kamaji-helm-install: build load helm ## Install Kamaji on a KinD cluster using Helm.
+	$(HELM) repo add clastix https://clastix.github.io/charts
+	$(HELM) dependency build ./charts/kamaji
+	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true"
+
+.PHONY: e2e-gateway
+e2e-gateway: env build load helm ginkgo cert-manager gateway-api ## Quick Gateway API e2e test
+	$(HELM) upgrade --debug --install kamaji-crds ./charts/kamaji-crds --create-namespace --namespace kamaji-system
+	$(HELM) repo add clastix https://clastix.github.io/charts
+	$(HELM) dependency build ./charts/kamaji
+	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true"
+	$(MAKE) datastores
+	$(GINKGO) -v --focus="Gateway" ./e2e
 
 ##@ Document
 
