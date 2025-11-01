@@ -10,7 +10,7 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/gateway-api/apis/v1"
+	v1 "sigs.k8s.io/gateway-api/apis/v1"
 	"sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -797,15 +797,15 @@ func (in ExtraArgs) DeepCopy() ExtraArgs {
 func (in *GatewayRouteSpec) DeepCopyInto(out *GatewayRouteSpec) {
 	*out = *in
 	in.AdditionalMetadata.DeepCopyInto(&out.AdditionalMetadata)
-	if in.GatewayParentRef != nil {
-		in, out := &in.GatewayParentRef, &out.GatewayParentRef
+	if in.GatewayParentRefs != nil {
+		in, out := &in.GatewayParentRefs, &out.GatewayParentRefs
 		*out = make([]v1.ParentReference, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.Hostname != nil {
-		in, out := &in.Hostname, &out.Hostname
+	if in.Hostnames != nil {
+		in, out := &in.Hostnames, &out.Hostnames
 		*out = make([]v1.Hostname, len(*in))
 		copy(*out, *in)
 	}

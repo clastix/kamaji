@@ -151,10 +151,10 @@ type GatewayRouteSpec struct {
 	// AdditionalMetadata to add Labels and Annotations support.
 	AdditionalMetadata AdditionalMetadata `json:"additionalMetadata,omitempty"`
 
-	// GatewayParentRef is the class of the Gateway resource to use.
-	GatewayParentRef []gatewayv1.ParentReference `json:"gatewayParentRef,omitempty"`
+	// GatewayParentRefs is the class of the Gateway resource to use.
+	GatewayParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
 
-	Hostname []gatewayv1.Hostname `json:"hostname,omitempty"`
+	Hostnames []gatewayv1.Hostname `json:"hostnames,omitempty"`
 }
 
 type ControlPlaneComponentsResources struct {

@@ -34,7 +34,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 					ServiceType: "ClusterIP",
 				},
 				GatewayRoute: &kamajiv1alpha1.GatewayRouteSpec{
-					Hostname: []gatewayv1.Hostname{"tcp-gateway.example.com"},
+					Hostnames: []gatewayv1.Hostname{"tcp-gateway.example.com"},
 					AdditionalMetadata: kamajiv1alpha1.AdditionalMetadata{
 						Labels: map[string]string{
 							"test.kamaji.io/gateway": "true",
@@ -43,7 +43,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 							"test.kamaji.io/created-by": "e2e-test",
 						},
 					},
-					GatewayParentRef: []gatewayv1.ParentReference{
+					GatewayParentRefs: []gatewayv1.ParentReference{
 						{
 							Name: "test-gateway",
 						},
