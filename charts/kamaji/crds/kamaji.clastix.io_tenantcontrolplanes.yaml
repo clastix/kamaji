@@ -6708,7 +6708,30 @@ spec:
                             type: object
                           type: array
                       type: object
-                    gateway_routes:
+                    ingress:
+                      description: Defining the options for an Optional Ingress which will expose API Server of the Tenant Control Plane
+                      properties:
+                        additionalMetadata:
+                          description: AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.
+                          properties:
+                            annotations:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            labels:
+                              additionalProperties:
+                                type: string
+                              type: object
+                          type: object
+                        hostname:
+                          description: |-
+                            Hostname is an optional field which will be used as Ingress's Host. If it is not defined,
+                            Ingress's host will be "<tenant>.<namespace>.<domain>", where domain is specified under NetworkProfileSpec
+                          type: string
+                        ingressClassName:
+                          type: string
+                      type: object
+                    route:
                       description: Defining the options for an Optional Gateway which will expose API Server of the Tenant Control Plane
                       properties:
                         additionalMetadata:
@@ -6723,8 +6746,8 @@ spec:
                                 type: string
                               type: object
                           type: object
-                        gatewayParentRefs:
-                          description: GatewayParentRefs is the class of the Gateway resource to use.
+                        gatewayParentRef:
+                          description: GatewayParentRef is the class of the Gateway resource to use.
                           items:
                             description: |-
                               ParentReference identifies an API object (usually a Gateway) that can be considered
@@ -6895,29 +6918,6 @@ spec:
                             pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                             type: string
                           type: array
-                      type: object
-                    ingress:
-                      description: Defining the options for an Optional Ingress which will expose API Server of the Tenant Control Plane
-                      properties:
-                        additionalMetadata:
-                          description: AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.
-                          properties:
-                            annotations:
-                              additionalProperties:
-                                type: string
-                              type: object
-                            labels:
-                              additionalProperties:
-                                type: string
-                              type: object
-                          type: object
-                        hostname:
-                          description: |-
-                            Hostname is an optional field which will be used as Ingress's Host. If it is not defined,
-                            Ingress's host will be "<tenant>.<namespace>.<domain>", where domain is specified under NetworkProfileSpec
-                          type: string
-                        ingressClassName:
-                          type: string
                       type: object
                     service:
                       description: Defining the options for the Tenant Control Plane Service resource.
@@ -7751,7 +7751,7 @@ spec:
                       description: KubernetesGatewayRoutesStatus defines the status for the Tenant Control Plane Gateway in the management cluster.
                       properties:
                         http_route_status:
-                          description: TLSRouteStatus contains the status of the TCPRoutes configured for the Gateway.
+                          description: TLSRouteStatus contains the status of the TLSRoutes configured for the Gateway.
                           properties:
                             parents:
                               description: |-

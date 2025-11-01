@@ -43,6 +43,18 @@
     - update
     - watch
 - apiGroups:
+    - gateway.networking.k8s.io
+  resources:
+    - tcproutes
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
     - kamaji.clastix.io
   resources:
     - datastores
