@@ -146,19 +146,6 @@ type IngressSpec struct {
 	Hostname string `json:"hostname,omitempty"`
 }
 
-// Service[LoadBalancer] --(Selector:kamaji.clastix.io/name: k8s-133)-> Pod(port: 6443,8132)
-// 6443: GRPC (??) control plane API
-// 8132: ???? konnectivity. Can it use
-// Service[LoadBalancer] <-(create) Gateway ---> HTTPRoute -> Pod
-//                                          ---> GRPCRoute -> Pod
-
-// TODO: No TLS termination on the gateway? How is this done with the Ingress?
-//       - Check that the gateway ref points to a listerner without TLS.
-//
-// TODO: Find where the tenant get it's "Control Plane Endpoint"
-// Tenant controller --- creates LoadBalancer ---> Kube API
-// Tenant controller <-- anounce the IP       ---- Kube API
-
 // GatewayRoutesSpec defines the options for the Gateway which will expose API Server of the Tenant Control Plane.
 type GatewayRoutesSpec struct {
 	// AdditionalMetadata to add Labels and Annotations support.
