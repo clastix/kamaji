@@ -33,14 +33,15 @@ func (r *KubernetesGatewayResource) GetHistogram() prometheus.Histogram {
 func (r *KubernetesGatewayResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
 	switch {
 	case tcp.Spec.ControlPlane.GatewayRoutes == nil && tcp.Status.Kubernetes.GatewayRoutes == nil:
-		// No update in case of no gateway in spec, neither in status.
 		return false
-	case tcp.Spec.ControlPlane.GatewayRoutes != nil && tcp.Status.Kubernetes.GatewayRoutes == nil: // TCP is using a Gateway, Status not tracking it
+	case tcp.Spec.ControlPlane.GatewayRoutes != nil && tcp.Status.Kubernetes.GatewayRoutes == nil:
 		return true
-	case tcp.Spec.ControlPlane.GatewayRoutes == nil && tcp.Status.Kubernetes.GatewayRoutes != nil: // Status tracks a Gateway, Spec doesn't
+	case tcp.Spec.ControlPlane.GatewayRoutes == nil && tcp.Status.Kubernetes.GatewayRoutes != nil:
 		return true
-	default:
-		// TODO: IMPLEMENT ME.
+	case tcp.Spec.ControlPlane.GatewayRoutes != nil && tcp.Status.Kubernetes.GatewayRoutes != nil:
+		// Both spec and status have gateway configuration - check if status needs updating
+		// For now, assume it always needs updating to keep status fresh
+		return true
 	}
 
 	return false
@@ -52,6 +53,11 @@ func (r *KubernetesGatewayResource) ShouldCleanup(tcp *kamajiv1alpha1.TenantCont
 
 func (r *KubernetesGatewayResource) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
+
+	if r.httpResource == nil || r.grpcResource == nil {
+		logger.Info("Gateway resources not defined, nothing to clean up")
+		return false, nil
+	}
 
 	var httpRoute gatewayv1.HTTPRoute
 	if err := r.Client.Get(ctx, client.ObjectKey{
@@ -107,22 +113,47 @@ func (r *KubernetesGatewayResource) CleanUp(ctx context.Context, tcp *kamajiv1al
 		return false, nil
 	}
 
+	logger.V(1).Info("gateway routes resource cleaned up successfully")
 	return true, nil
 }
 
-func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	// TODO: IMPLEMENT ME.
-	// if tenantControlPlane.Spec.ControlPlane.GatewayRoutes != nil {
-	// 	tenantControlPlane.Status.Kubernetes.GatewayRoutes = &kamajiv1alpha1.KubernetesGatewayRoutesStatus{
-	// 		HTTPRouteStatus: &gatewayv1.HTTPRouteStatus{
+func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	logger := log.FromContext(ctx, "resource", r.GetName())
 
-	// 		},
-	// 	}
+	logger.V(1).Info("updating TenantControlPlane status for Gateway routes")
+	if tenantControlPlane.Spec.ControlPlane.GatewayRoutes != nil {
+		// Initialize route statuses with minimal required fields
+		httpStatus := gatewayv1.HTTPRouteStatus{
+			RouteStatus: gatewayv1.RouteStatus{
+				Parents: []gatewayv1.RouteParentStatus{},
+			},
+		}
+		grpcStatus := gatewayv1.GRPCRouteStatus{
+			RouteStatus: gatewayv1.RouteStatus{
+				Parents: []gatewayv1.RouteParentStatus{},
+			},
+		}
 
-	// 	return nil
-	// }
+		// If the actual resources exist and have status, use that instead
+		if len(r.httpResource.Status.Parents) > 0 {
+			httpStatus = r.httpResource.Status
+		}
+		if len(r.grpcResource.Status.Parents) > 0 {
+			grpcStatus = r.grpcResource.Status
+		}
 
-	// tenantControlPlane.Status.Kubernetes.Ingress = nil
+		tenantControlPlane.Status.Kubernetes.GatewayRoutes = &kamajiv1alpha1.KubernetesGatewayRoutesStatus{
+			Name:            r.httpResource.GetName(),
+			Namespace:       r.httpResource.GetNamespace(),
+			HTTPRouteStatus: &httpStatus,
+			GRPCRouteStatus: &grpcStatus,
+		}
+
+		return nil
+	}
+
+	// Clean up status if Gateway routes are no longer configured
+	tenantControlPlane.Status.Kubernetes.GatewayRoutes = nil
 
 	return nil
 }
@@ -168,6 +199,11 @@ func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 		serviceName := gatewayv1.ObjectName(tenantControlPlane.Status.Kubernetes.Service.Name)
 		servicePort := gatewayv1.PortNumber(tenantControlPlane.Status.Kubernetes.Service.Port)
 
+		// Fail if no hostname is specified, same as the ingress resource.
+		if len(tenantControlPlane.Spec.ControlPlane.GatewayRoutes.Hostnames) == 0 {
+			return fmt.Errorf("missing hostname to expose the Tenant Control Plane using a Gateway resource")
+		}
+
 		httpRule := gatewayv1.HTTPRouteRule{
 			BackendRefs: []gatewayv1.HTTPBackendRef{
 				{
@@ -180,13 +216,6 @@ func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 				},
 			},
 		}
-
-		// Fail if no hostname is specified, same as the ingress resource.
-		if len(tenantControlPlane.Spec.ControlPlane.GatewayRoutes.Hostnames) == 0 {
-			return fmt.Errorf("missing hostname to expose the Tenant Control Plane using a Gateway resource")
-		}
-
-		r.httpResource.Spec.Rules = []gatewayv1.HTTPRouteRule{httpRule}
 
 		grpcRule := gatewayv1.GRPCRouteRule{
 			BackendRefs: []gatewayv1.GRPCBackendRef{
@@ -201,10 +230,10 @@ func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 			},
 		}
 
-		if len(tenantControlPlane.Spec.ControlPlane.GatewayRoutes.Hostnames) > 0 {
-			r.grpcResource.Spec.Hostnames = tenantControlPlane.Spec.ControlPlane.GatewayRoutes.Hostnames
-		}
+		r.httpResource.Spec.Hostnames = tenantControlPlane.Spec.ControlPlane.GatewayRoutes.Hostnames
+		r.httpResource.Spec.Rules = []gatewayv1.HTTPRouteRule{httpRule}
 
+		r.grpcResource.Spec.Hostnames = tenantControlPlane.Spec.ControlPlane.GatewayRoutes.Hostnames
 		r.grpcResource.Spec.Rules = []gatewayv1.GRPCRouteRule{grpcRule}
 
 		if err := controllerutil.SetControllerReference(tenantControlPlane, r.httpResource, r.Client.Scheme()); err != nil {
@@ -216,19 +245,43 @@ func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 }
 
 func (r *KubernetesGatewayResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	// Create or update HTTPRoute
-	httpResult, err := utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.httpResource, r.mutate(tenantControlPlane))
+	logger := log.FromContext(ctx, "resource", r.GetName())
+
+	if tenantControlPlane.Spec.ControlPlane.GatewayRoutes == nil {
+		return controllerutil.OperationResultNone, nil
+	}
+
+	logger.V(1).Info("creating or updating resource gateway routes")
+	
+	// Create fresh resources to avoid resourceVersion conflicts
+	httpResource := &gatewayv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      tenantControlPlane.GetName(),
+			Namespace: tenantControlPlane.GetNamespace(),
+		},
+	}
+	
+	grpcResource := &gatewayv1.GRPCRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      tenantControlPlane.GetName(),
+			Namespace: tenantControlPlane.GetNamespace(),
+		},
+	}
+	
+	// Store the fresh resources for status updates
+	r.httpResource = httpResource
+	r.grpcResource = grpcResource
+	
+	httpResult, err := utilities.CreateOrUpdateWithConflict(ctx, r.Client, httpResource, r.mutate(tenantControlPlane))
 	if err != nil {
 		return httpResult, err
 	}
 
-	// Create or update GRPCRoute
-	grpcResult, err := utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.grpcResource, r.mutate(tenantControlPlane))
+	grpcResult, err := utilities.CreateOrUpdateWithConflict(ctx, r.Client, grpcResource, r.mutate(tenantControlPlane))
 	if err != nil {
 		return grpcResult, err
 	}
 
-	// Return the most significant result
 	if httpResult != controllerutil.OperationResultNone {
 		return httpResult, nil
 	}
