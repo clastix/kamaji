@@ -33,8 +33,8 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 				Service: kamajiv1alpha1.ServiceSpec{
 					ServiceType: "ClusterIP",
 				},
-				GatewayRoutes: &kamajiv1alpha1.GatewayRoutesSpec{
-					Hostnames: []gatewayv1.Hostname{"tcp-gateway.example.com"},
+				GatewayRoute: &kamajiv1alpha1.TLSRouteSpec{
+					Hostname: []gatewayv1.Hostname{"tcp-gateway.example.com"},
 					AdditionalMetadata: kamajiv1alpha1.AdditionalMetadata{
 						Labels: map[string]string{
 							"test.kamaji.io/gateway": "true",
@@ -43,7 +43,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 							"test.kamaji.io/created-by": "e2e-test",
 						},
 					},
-					GatewayParentRefs: []gatewayv1.ParentReference{
+					GatewayParentRef: []gatewayv1.ParentReference{
 						{
 							Name: "test-gateway",
 						},
@@ -79,15 +79,14 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
 	})
 
-	// Check if GRPCRoute has been created
-	It("Should create TCPRoute resource", func() {
+	It("Should create TLSRoute resource", func() {
 		Eventually(func() error {
-			tcpRoute := &gatewayv1alpha2.TCPRoute{}
+			route := &gatewayv1alpha2.TLSRoute{}
 			// TODO: Check ownership.
 			return k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name,
 				Namespace: tcp.Namespace,
-			}, tcpRoute)
+			}, route)
 		}).WithTimeout(time.Minute).Should(Succeed())
 	})
 })

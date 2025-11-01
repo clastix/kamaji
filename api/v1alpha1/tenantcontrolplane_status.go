@@ -250,7 +250,7 @@ type KubernetesIngressStatus struct {
 
 // KubernetesGatewayRoutesStatus defines the status for the Tenant Control Plane Gateway in the management cluster.
 type KubernetesGatewayRoutesStatus struct {
-	// TLSRouteStatus contains the status of the TCPRoutes configured for the Gateway.
+	// TLSRouteStatus contains the status of the TLSRoutes configured for the Gateway.
 	TLSRouteStatus *gatewayv1alpha2.TLSRouteStatus `json:"http_route_status,omitempty"`
 	// The name of the Gateway for the given cluster.
 	Name string `json:"name"`
