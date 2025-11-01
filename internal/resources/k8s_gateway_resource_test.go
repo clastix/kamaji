@@ -60,7 +60,7 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			},
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
-					GatewayRoute: &kamajiv1alpha1.TLSRouteSpec{
+					GatewayRoute: &kamajiv1alpha1.GatewayRouteSpec{
 						Hostname: []gatewayv1alpha2.Hostname{"test.example.com"},
 						AdditionalMetadata: kamajiv1alpha1.AdditionalMetadata{
 							Labels: map[string]string{
