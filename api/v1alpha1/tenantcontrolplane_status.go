@@ -9,7 +9,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 // APIServerCertificatesStatus defines the observed state of ETCD Certificate for API server.
@@ -250,10 +250,8 @@ type KubernetesIngressStatus struct {
 
 // KubernetesGatewayRoutesStatus defines the status for the Tenant Control Plane Gateway in the management cluster.
 type KubernetesGatewayRoutesStatus struct {
-	// HTTPRouteStatus contains the status of the HTTP routes configured for the Gateway.
-	HTTPRouteStatus *gatewayv1.HTTPRouteStatus `json:"http_route_status,omitempty"`
-
-	GRPCRouteStatus *gatewayv1.GRPCRouteStatus `json:"grpc_route_status,omitempty"`
+	// TLSRouteStatus contains the status of the TCPRoutes configured for the Gateway.
+	TLSRouteStatus *gatewayv1alpha2.TLSRouteStatus `json:"http_route_status,omitempty"`
 	// The name of the Gateway for the given cluster.
 	Name string `json:"name"`
 	// The namespace which the Gateway for the given cluster is deployed.

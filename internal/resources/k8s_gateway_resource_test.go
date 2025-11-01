@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/resources"
@@ -32,7 +32,7 @@ var _ = BeforeSuite(func() {
 	runtimeScheme = runtime.NewScheme()
 	Expect(scheme.AddToScheme(runtimeScheme)).To(Succeed())
 	Expect(kamajiv1alpha1.AddToScheme(runtimeScheme)).To(Succeed())
-	Expect(gatewayv1.Install(runtimeScheme)).To(Succeed())
+	Expect(gatewayv1alpha2.Install(runtimeScheme)).To(Succeed())
 })
 
 var _ = Describe("KubernetesGatewayResource", func() {
@@ -61,13 +61,13 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					GatewayRoutes: &kamajiv1alpha1.GatewayRoutesSpec{
-						Hostnames: []gatewayv1.Hostname{"test.example.com"},
+						Hostnames: []gatewayv1alpha2.Hostname{"test.example.com"},
 						AdditionalMetadata: kamajiv1alpha1.AdditionalMetadata{
 							Labels: map[string]string{
 								"test-label": "test-value",
 							},
 						},
-						GatewayParentRefs: []gatewayv1.ParentReference{
+						GatewayParentRefs: []gatewayv1alpha2.ParentReference{
 							{
 								Name: "test-gateway",
 							},
@@ -121,7 +121,7 @@ var _ = Describe("KubernetesGatewayResource", func() {
 
 	Context("When hostname is missing", func() {
 		BeforeEach(func() {
-			tcp.Spec.ControlPlane.GatewayRoutes.Hostnames = []gatewayv1.Hostname{}
+			tcp.Spec.ControlPlane.GatewayRoutes.Hostnames = []gatewayv1alpha2.Hostname{}
 		})
 
 		It("should fail to create or update", func() {
