@@ -33,7 +33,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 				Service: kamajiv1alpha1.ServiceSpec{
 					ServiceType: "ClusterIP",
 				},
-				GatewayRoute: &kamajiv1alpha1.TLSRouteSpec{
+				GatewayRoute: &kamajiv1alpha1.GatewayRouteSpec{
 					Hostname: []gatewayv1.Hostname{"tcp-gateway.example.com"},
 					AdditionalMetadata: kamajiv1alpha1.AdditionalMetadata{
 						Labels: map[string]string{
