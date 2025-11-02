@@ -134,7 +134,7 @@ type ControlPlane struct {
 	// Defining the options for an Optional Ingress which will expose API Server of the Tenant Control Plane
 	Ingress *IngressSpec `json:"ingress,omitempty"`
 	// Defining the options for an Optional Gateway which will expose API Server of the Tenant Control Plane
-	GatewayRoutes *GatewayRoutesSpec `json:"gateway_routes,omitempty"`
+	GatewayRoute *GatewayRouteSpec `json:"route,omitempty"`
 }
 
 // IngressSpec defines the options for the ingress which will expose API Server of the Tenant Control Plane.
@@ -146,28 +146,15 @@ type IngressSpec struct {
 	Hostname string `json:"hostname,omitempty"`
 }
 
-// Service[LoadBalancer] --(Selector:kamaji.clastix.io/name: k8s-133)-> Pod(port: 6443,8132)
-// 6443: GRPC (??) control plane API
-// 8132: ???? konnectivity. Can it use
-// Service[LoadBalancer] <-(create) Gateway ---> HTTPRoute -> Pod
-//                                          ---> GRPCRoute -> Pod
-
-// TODO: No TLS termination on the gateway? How is this done with the Ingress?
-//       - Check that the gateway ref points to a listerner without TLS.
-//
-// TODO: Find where the tenant get it's "Control Plane Endpoint"
-// Tenant controller --- creates LoadBalancer ---> Kube API
-// Tenant controller <-- anounce the IP       ---- Kube API
-
-// GatewayRoutesSpec defines the options for the Gateway which will expose API Server of the Tenant Control Plane.
-type GatewayRoutesSpec struct {
+// GatewayRouteSpec defines the options for the Gateway which will expose API Server of the Tenant Control Plane.
+type GatewayRouteSpec struct {
 	// AdditionalMetadata to add Labels and Annotations support.
 	AdditionalMetadata AdditionalMetadata `json:"additionalMetadata,omitempty"`
 
 	// GatewayParentRefs is the class of the Gateway resource to use.
-	GatewayParentRefs []gatewayv1.ParentReference `json:"gatewayParentRefs,omitempty"`
+	GatewayParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
 
-	Hostnames []gatewayv1.Hostname `json:"hostname,omitempty"`
+	Hostnames []gatewayv1.Hostname `json:"hostnames,omitempty"`
 }
 
 type ControlPlaneComponentsResources struct {
