@@ -12,6 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// NOTE: These functions are extremely similar, maybe they can be merged and accept a GVK.
+// Explicit for now.
 // IsGatewayAPIAvailable checks if Gateway API is available in the cluster
 func IsGatewayAPIAvailable(ctx context.Context, discoveryClient discovery.DiscoveryInterface) (bool, error) {
 	gatewayAPIGroup := "gateway.networking.k8s.io"

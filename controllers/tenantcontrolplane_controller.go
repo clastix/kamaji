@@ -39,6 +39,7 @@ import (
 	"github.com/clastix/kamaji/internal/datastore"
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
 	"github.com/clastix/kamaji/internal/resources"
+	"github.com/clastix/kamaji/internal/utilities"
 )
 
 // TenantControlPlaneReconciler reconciles a TenantControlPlane object.
@@ -357,34 +358,12 @@ func (r *TenantControlPlaneReconciler) isGatewayAPIAvailable() bool {
 	if r.DiscoveryClient == nil {
 		return false
 	}
-
-	// Use a background context for this check since it's during setup
 	ctx := context.Background()
 
-	// Import the utilities function
-	available, err := isGatewayAPIAvailable(ctx, r.DiscoveryClient)
+	available, err := utilities.IsGatewayAPIAvailable(ctx, r.DiscoveryClient)
 	if err != nil {
-		// If there's an error checking, assume not available to be safe
 		return false
 	}
 
 	return available
-}
-
-// isGatewayAPIAvailable is a local copy of the utilities function to avoid import cycles
-func isGatewayAPIAvailable(ctx context.Context, discoveryClient discovery.DiscoveryInterface) (bool, error) {
-	gatewayAPIGroup := "gateway.networking.k8s.io"
-
-	serverGroups, err := discoveryClient.ServerGroups()
-	if err != nil {
-		return false, err
-	}
-
-	for _, group := range serverGroups.Groups {
-		if group.Name == gatewayAPIGroup {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
