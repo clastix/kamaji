@@ -73,7 +73,7 @@ help: ## Display this help.
 .PHONY: ko
 ko: $(KO) ## Download ko locally if necessary.
 $(KO): $(LOCALBIN)
-	test -s $(LOCALBIN)/ko || GOBIN=$(LOCALBIN) CGO_ENABLED=0 go install -ldflags="-s -w" github.com/google/ko@v0.18.0
+	test -s $(LOCALBIN)/ko || GOBIN=$(LOCALBIN) CGO_ENABLED=0 go install -ldflags="-s -w" github.com/google/ko@v0.14.1
 
 .PHONY: yq
 yq: $(YQ) ## Download yq locally if necessary.
@@ -264,20 +264,6 @@ e2e: env build load helm ginkgo cert-manager gateway-api ## Create a KinD cluste
 	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true"
 	$(MAKE) datastores
 	$(GINKGO) -v ./e2e
-
-kamaji-helm-install: build load helm ## Install Kamaji on a KinD cluster using Helm.
-	$(HELM) repo add clastix https://clastix.github.io/charts
-	$(HELM) dependency build ./charts/kamaji
-	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true"
-
-.PHONY: e2e-gateway
-e2e-gateway: env build load helm ginkgo cert-manager gateway-api ## Quick Gateway API e2e test
-	$(HELM) upgrade --debug --install kamaji-crds ./charts/kamaji-crds --create-namespace --namespace kamaji-system
-	$(HELM) repo add clastix https://clastix.github.io/charts
-	$(HELM) dependency build ./charts/kamaji
-	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true"
-	$(MAKE) datastores
-	$(GINKGO) -v --focus="Gateway" ./e2e
 
 ##@ Document
 
