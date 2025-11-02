@@ -23,6 +23,9 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(kamajiv1alpha1.AddToScheme(scheme))
 			utilruntime.Must(appsv1.RegisterDefaults(scheme))
+
+			// NOTE: This will succeed even if Gateway API is not installed in the cluster.
+			// Only registers the go types.
 			utilruntime.Must(gatewayv1.Install(scheme))
 			utilruntime.Must(gatewayv1alpha2.Install(scheme))
 		},
