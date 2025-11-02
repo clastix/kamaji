@@ -250,7 +250,7 @@ func (r *TenantControlPlaneReconciler) mutexSpec(obj client.Object) mutex.Spec {
 func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.clock = clock.RealClock{}
 
-	return ctrl.NewControllerManagedBy(mgr).
+	controllerBuilder := ctrl.NewControllerManagedBy(mgr).
 		WatchesRawSource(source.Channel(r.CertificateChan, handler.Funcs{GenericFunc: func(_ context.Context, genericEvent event.TypedGenericEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 			w.AddRateLimited(ctrl.Request{
 				NamespacedName: k8stypes.NamespacedName{
@@ -273,8 +273,6 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).
 		Owns(&networkingv1.Ingress{}).
-		// TODO: Conditional if not installed? Feature flag?
-		Owns(&gatewayv1alpha2.TLSRoute{}).
 		Watches(&batchv1.Job{}, handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
 			labels := object.GetLabels()
 
@@ -302,7 +300,14 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 			v, ok := labels["kamaji.clastix.io/component"]
 
 			return ok && v == "migrate"
-		}))).
+		})))
+
+	// Conditionally add Gateway API ownership if available
+	if r.isGatewayAPIAvailable() {
+		controllerBuilder = controllerBuilder.Owns(&gatewayv1alpha2.TLSRoute{})
+	}
+
+	return controllerBuilder.
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: r.MaxConcurrentReconciles,
 		}).
@@ -345,4 +350,41 @@ func (r *TenantControlPlaneReconciler) dataStore(ctx context.Context, tenantCont
 	}
 
 	return &ds, nil
+}
+
+// isGatewayAPIAvailable checks if Gateway APIs are available in the cluster
+func (r *TenantControlPlaneReconciler) isGatewayAPIAvailable() bool {
+	if r.DiscoveryClient == nil {
+		return false
+	}
+
+	// Use a background context for this check since it's during setup
+	ctx := context.Background()
+
+	// Import the utilities function
+	available, err := isGatewayAPIAvailable(ctx, r.DiscoveryClient)
+	if err != nil {
+		// If there's an error checking, assume not available to be safe
+		return false
+	}
+
+	return available
+}
+
+// isGatewayAPIAvailable is a local copy of the utilities function to avoid import cycles
+func isGatewayAPIAvailable(ctx context.Context, discoveryClient discovery.DiscoveryInterface) (bool, error) {
+	gatewayAPIGroup := "gateway.networking.k8s.io"
+
+	serverGroups, err := discoveryClient.ServerGroups()
+	if err != nil {
+		return false, err
+	}
+
+	for _, group := range serverGroups.Groups {
+		if group.Name == gatewayAPIGroup {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
