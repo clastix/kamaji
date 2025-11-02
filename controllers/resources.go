@@ -4,6 +4,7 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -20,6 +21,8 @@ import (
 	"github.com/clastix/kamaji/internal/resources"
 	ds "github.com/clastix/kamaji/internal/resources/datastore"
 	"github.com/clastix/kamaji/internal/resources/konnectivity"
+	"github.com/clastix/kamaji/internal/utilities"
+	"k8s.io/client-go/discovery"
 )
 
 type GroupResourceBuilderConfiguration struct {
@@ -34,6 +37,7 @@ type GroupResourceBuilderConfiguration struct {
 	KamajiServiceAccount string
 	KamajiService        string
 	KamajiMigrateImage   string
+	DiscoveryClient      discovery.DiscoveryInterface
 }
 
 type GroupDeletableResourceBuilderConfiguration struct {
@@ -49,7 +53,27 @@ type GroupDeletableResourceBuilderConfiguration struct {
 // Currently there is only a default approach
 // TODO: the idea of this function is to become a factory to return the group of resources according to the given configuration.
 func GetResources(config GroupResourceBuilderConfiguration) []resources.Resource {
-	return getDefaultResources(config)
+	resources := []resources.Resource{}
+
+	resources = append(resources, getDataStoreMigratingResources(config.client, config.KamajiNamespace, config.KamajiMigrateImage, config.KamajiServiceAccount, config.KamajiService)...)
+	resources = append(resources, getUpgradeResources(config.client)...)
+	resources = append(resources, getKubernetesServiceResources(config.client)...)
+	resources = append(resources, getKubeadmConfigResources(config.client, getTmpDirectory(config.tcpReconcilerConfig.TmpBaseDirectory, config.tenantControlPlane), config.DataStore)...)
+	resources = append(resources, getKubernetesCertificatesResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
+	resources = append(resources, getKubeconfigResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
+	resources = append(resources, getKubernetesStorageResources(config.client, config.Connection, config.DataStore, config.ExpirationThreshold)...)
+	resources = append(resources, getKonnectivityServerRequirementsResources(config.client, config.ExpirationThreshold)...)
+	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.DataStore)...)
+	resources = append(resources, getKonnectivityServerPatchResources(config.client)...)
+	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
+	resources = append(resources, getKubernetesIngressResources(config.client)...)
+
+	// Conditionally add Gateway resources
+	if shouldIncludeGatewayResources(config.client, config.DiscoveryClient) {
+		resources = append(resources, getKubernetesGatewayResources(config.client)...)
+	}
+
+	return resources
 }
 
 // GetDeletableResources returns a list of resources that have to be deleted when tenant control planes are deleted
@@ -86,7 +110,12 @@ func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.R
 	resources = append(resources, getKonnectivityServerPatchResources(config.client)...)
 	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
 	resources = append(resources, getKubernetesIngressResources(config.client)...)
-	resources = append(resources, getKubernetesGatewayResources(config.client)...)
+
+	// Conditionally add Gateway resources
+	if shouldIncludeGatewayResources(config.client, config.DiscoveryClient) {
+		resources = append(resources, getKubernetesGatewayResources(config.client)...)
+	}
+
 	return resources
 }
 
@@ -292,4 +321,19 @@ func getNamespacedName(namespace string, name string) k8stypes.NamespacedName {
 
 func getTmpDirectory(base string, tenantControlPlane kamajiv1alpha1.TenantControlPlane) string {
 	return fmt.Sprintf("%s/%s/%s", base, tenantControlPlane.GetName(), uuid.New())
+}
+
+func shouldIncludeGatewayResources(c client.Client, discoveryClient discovery.DiscoveryInterface) bool {
+	if discoveryClient == nil {
+		// Fallback to client-based check
+		return utilities.IsGatewayAPIAvailableViaClient(context.Background(), c)
+	}
+
+	available, err := utilities.IsGatewayAPIAvailable(context.Background(), discoveryClient)
+	if err != nil {
+		// Log error and fall back to client-based check
+		return utilities.IsGatewayAPIAvailableViaClient(context.Background(), c)
+	}
+
+	return available
 }

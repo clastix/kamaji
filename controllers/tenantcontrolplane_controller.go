@@ -17,6 +17,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/utils/clock"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -52,6 +53,7 @@ type TenantControlPlaneReconciler struct {
 	KamajiMigrateImage      string
 	MaxConcurrentReconciles int
 	ReconcileTimeout        time.Duration
+	DiscoveryClient         discovery.DiscoveryInterface
 	// CertificateChan is the channel used by the CertificateLifecycleController that is checking for
 	// certificates and kubeconfig user certs validity: a generic event for the given TCP will be triggered
 	// once the validity threshold for the given certificate is reached.
@@ -186,6 +188,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		KamajiServiceAccount: r.KamajiServiceAccount,
 		KamajiService:        r.KamajiService,
 		KamajiMigrateImage:   r.KamajiMigrateImage,
+		DiscoveryClient:      r.DiscoveryClient,
 	}
 	registeredResources := GetResources(groupResourceBuilderConfiguration)
 

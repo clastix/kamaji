@@ -214,10 +214,6 @@ func (r *KubernetesGatewayResource) CreateOrUpdate(ctx context.Context, tenantCo
 		return result, err
 	}
 
-	// TODO: DEAD CODE
-	if result != controllerutil.OperationResultNone {
-		return result, nil
-	}
 	return result, nil
 }
 
