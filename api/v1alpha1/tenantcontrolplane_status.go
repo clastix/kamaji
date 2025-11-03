@@ -248,8 +248,7 @@ type KubernetesIngressStatus struct {
 	Namespace string `json:"namespace"`
 }
 
-type KubernetesGatewayAccessPoint struct {
-	// TODO: Maybe redeclare our own type here
+type GatewayAccessPoint struct {
 	Type  *gatewayv1.AddressType `json:"type"`
 	Value string                 `json:"value"`
 	Port  int32                  `json:"port"`
@@ -258,17 +257,12 @@ type KubernetesGatewayAccessPoint struct {
 
 // KubernetesGatewayStatus defines the status for the Tenant Control Plane Gateway in the management cluster.
 type KubernetesGatewayStatus struct {
+	// The TLSRoute status as resported by the gateway controllers.
+	gatewayv1.RouteStatus `json:",inline`
+
+	// Reference to the route created for this tenant.
+	RouteRef corev1.LocalObjectReference `json:"routeRef,omitempty"`
 
 	// A list of valid access points that the route exposes.
-	AccessPoints []KubernetesGatewayAccessPoint `json:"conditions,omitempty"`
-
-	// +listType=map
-	// +listMapKey=type
-	// +patchStrategy=merge
-	// +patchMergeKey=type
-	// +optional
-	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
-
-	// Reference to the route.
-	RouteRef corev1.LocalObjectReference `json:"routeRef,omitempty"`
+	AccessPoints []GatewayAccessPoint `json:"conditions,omitempty"`
 }
