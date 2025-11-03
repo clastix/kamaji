@@ -5,12 +5,10 @@ package resources_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -44,51 +42,6 @@ var _ = Describe("KubernetesGatewayResource", func() {
 		resource *resources.KubernetesGatewayResource
 		ctx      context.Context
 	)
-
-	Describe("Status Update", func() {
-		var (
-			//gwStatus    *gatewayv1.GatewayStatus
-			route gatewayv1alpha2.TLSRouteStatus
-			tcpGw *kamajiv1alpha1.KubernetesGatewayStatus
-		)
-		BeforeEach(func() {
-			route = gatewayv1alpha2.TLSRouteStatus{}
-			tcpGw = &kamajiv1alpha1.KubernetesGatewayStatus{}
-		})
-		When("Route status is empty", func() {
-			route = gatewayv1alpha2.TLSRouteStatus{}
-			It("returns condition unknown", func() {
-				err := resources.CheckStatus(route, tcpGw)
-				Expect(err).NotTo(HaveOccurred())
-
-				cond := meta.FindStatusCondition(tcpGw.Conditions, "Ready")
-				Expect(cond).NotTo(BeNil())
-				Expect(cond.Status).To(Equal(metav1.ConditionUnknown))
-				Expect(cond.Reason).To(Equal("MissingParentStatus"))
-				Expect(cond.Message).To(Equal("The route has no parents status"))
-			})
-		})
-		When("More than one route status", func() {
-			route = gatewayv1alpha2.TLSRouteStatus{
-				RouteStatus: gatewayv1alpha2.RouteStatus{
-					Parents: []gatewayv1alpha2.RouteParentStatus{
-						{}, {},
-					},
-				},
-			}
-			It("returns condition unknown", func() {
-				err := resources.CheckStatus(route, tcpGw)
-				Expect(err).NotTo(HaveOccurred())
-				cond := meta.FindStatusCondition(tcpGw.Conditions, "Ready")
-				if Expect(cond).NotTo(BeNil()) {
-					Expect(cond.Status).To(Equal(metav1.ConditionUnknown))
-					Expect(cond.Reason).To(Equal("MissingParentStatus"))
-					Expect(cond.Message).To(Equal("The route has no parents status"))
-				}
-			})
-		})
-		When("The route is accepted")
-	})
 
 	BeforeEach(func() {
 		ctx = context.Background()
@@ -200,5 +153,86 @@ var _ = Describe("KubernetesGatewayResource", func() {
 
 	It("should return correct resource name", func() {
 		Expect(resource.GetName()).To(Equal("gateway_routes"))
+	})
+
+	Describe("findMatchingListener", func() {
+		var (
+			listeners []gatewayv1.Listener
+			ref       gatewayv1.ParentReference
+		)
+
+		BeforeEach(func() {
+			listeners = []gatewayv1.Listener{
+				{
+					Name: "first",
+					Port: gatewayv1.PortNumber(443),
+				},
+				{
+					Name: "middle",
+					Port: gatewayv1.PortNumber(6443),
+				},
+				{
+					Name: "last",
+					Port: gatewayv1.PortNumber(80),
+				},
+			}
+			ref = gatewayv1.ParentReference{
+				Name: "test-gateway",
+			}
+		})
+
+		It("should return an error when sectionName is nil", func() {
+			listener, err := resources.FindMatchingListener(listeners, ref)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("missing sectionName"))
+			Expect(listener).To(Equal(gatewayv1.Listener{}))
+		})
+		It("should return an error when sectionName is an empty string", func() {
+			sectionName := gatewayv1.SectionName("")
+			ref.SectionName = &sectionName
+
+			listener, err := resources.FindMatchingListener(listeners, ref)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("could not find listener ''"))
+			Expect(listener).To(Equal(gatewayv1.Listener{}))
+		})
+
+		It("should return the matching listener when sectionName points to an existing listener", func() {
+			sectionName := gatewayv1.SectionName("middle")
+			ref.SectionName = &sectionName
+
+			listener, err := resources.FindMatchingListener(listeners, ref)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(listener.Port).To(Equal(gatewayv1.PortNumber(6443)))
+		})
+
+		It("should return an error when sectionName points to a non-existent listener", func() {
+			sectionName := gatewayv1.SectionName("non-existent")
+			ref.SectionName = &sectionName
+
+			listener, err := resources.FindMatchingListener(listeners, ref)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("could not find listener 'non-existent'"))
+			Expect(listener).To(Equal(gatewayv1.Listener{}))
+		})
+
+		It("should return the first listener", func() {
+			sectionName := gatewayv1.SectionName("first")
+			ref.SectionName = &sectionName
+
+			listener, err := resources.FindMatchingListener(listeners, ref)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(listener.Port).To(Equal(gatewayv1.PortNumber(443)))
+		})
+
+		It("should return the last listener when matching by name", func() {
+			sectionName := gatewayv1.SectionName("last")
+			ref.SectionName = &sectionName
+
+			listener, err := resources.FindMatchingListener(listeners, ref)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(listener.Port).To(Equal(gatewayv1.PortNumber(80)))
+		})
+
 	})
 })
