@@ -60,7 +60,7 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			},
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
-					GatewayRoute: &kamajiv1alpha1.GatewayRouteSpec{
+					Gateway: &kamajiv1alpha1.GatewaySpec{
 						Hostnames: []gatewayv1alpha2.Hostname{"test.example.com"},
 						AdditionalMetadata: kamajiv1alpha1.AdditionalMetadata{
 							Labels: map[string]string{
@@ -105,7 +105,7 @@ var _ = Describe("KubernetesGatewayResource", func() {
 
 	Context("When GatewayRoutes is not configured", func() {
 		BeforeEach(func() {
-			tcp.Spec.ControlPlane.GatewayRoute = nil
+			tcp.Spec.ControlPlane.Gateway = nil
 		})
 
 		It("should cleanup", func() {
@@ -121,7 +121,7 @@ var _ = Describe("KubernetesGatewayResource", func() {
 
 	Context("When hostname is missing", func() {
 		BeforeEach(func() {
-			tcp.Spec.ControlPlane.GatewayRoute.Hostnames = []gatewayv1alpha2.Hostname{}
+			tcp.Spec.ControlPlane.Gateway.Hostnames = []gatewayv1alpha2.Hostname{}
 		})
 
 		It("should fail to create or update", func() {

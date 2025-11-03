@@ -27,7 +27,7 @@ func (t TenantControlPlaneGatewayValidation) OnCreate(object runtime.Object) Adm
 	return func(ctx context.Context, _ admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp := object.(*kamajiv1alpha1.TenantControlPlane)
 
-		if tcp.Spec.ControlPlane.GatewayRoute != nil {
+		if tcp.Spec.ControlPlane.Gateway != nil {
 			// NOTE: Do we actually want to deny here if Gateway API is not available or a warning?
 			// Seems sensible to deny to avoid anything.
 			if err := t.validateGatewayAPIAvailability(ctx); err != nil {
@@ -43,7 +43,7 @@ func (t TenantControlPlaneGatewayValidation) OnUpdate(object runtime.Object, _ r
 	return func(ctx context.Context, _ admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp := object.(*kamajiv1alpha1.TenantControlPlane)
 
-		if tcp.Spec.ControlPlane.GatewayRoute != nil {
+		if tcp.Spec.ControlPlane.Gateway != nil {
 			if err := t.validateGatewayAPIAvailability(ctx); err != nil {
 				return nil, err
 			}
