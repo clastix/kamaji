@@ -154,7 +154,8 @@ type GatewaySpec struct {
 	// GatewayParentRefs is the class of the Gateway resource to use.
 	GatewayParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
 
-	Hostnames []gatewayv1.Hostname `json:"hostnames,omitempty"`
+	// Hostname is an optional field which will be used as a route hostname.
+	Hostname gatewayv1.Hostname `json:"hostname,omitempty"`
 }
 
 type ControlPlaneComponentsResources struct {
