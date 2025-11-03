@@ -34,13 +34,13 @@ func (r *KubernetesGatewayResource) GetHistogram() prometheus.Histogram {
 
 func (r *KubernetesGatewayResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
 	switch {
-	case tcp.Spec.ControlPlane.Gateway == nil && tcp.Status.Kubernetes.GatewayRoutes == nil:
+	case tcp.Spec.ControlPlane.Gateway == nil && tcp.Status.Kubernetes.Gateway == nil:
 		return false
-	case tcp.Spec.ControlPlane.Gateway != nil && tcp.Status.Kubernetes.GatewayRoutes == nil:
+	case tcp.Spec.ControlPlane.Gateway != nil && tcp.Status.Kubernetes.Gateway == nil:
 		return true
-	case tcp.Spec.ControlPlane.Gateway == nil && tcp.Status.Kubernetes.GatewayRoutes != nil:
+	case tcp.Spec.ControlPlane.Gateway == nil && tcp.Status.Kubernetes.Gateway != nil:
 		return true
-	case tcp.Spec.ControlPlane.Gateway != nil && tcp.Status.Kubernetes.GatewayRoutes != nil:
+	case tcp.Spec.ControlPlane.Gateway != nil && tcp.Status.Kubernetes.Gateway != nil:
 		// Both spec and status have gateway configuration - check if status needs updating
 		// For now, assume it always needs updating to keep status fresh
 		return true
@@ -200,7 +200,7 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 
 	// Clean up status if Gateway routes are no longer configured
 	if tenantControlPlane.Spec.ControlPlane.Gateway == nil {
-		tenantControlPlane.Status.Kubernetes.GatewayRoutes = nil
+		tenantControlPlane.Status.Kubernetes.Gateway = nil
 		return nil
 	}
 
@@ -228,7 +228,7 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 			routeStatus = r.resource.Status
 		}
 
-		tenantControlPlane.Status.Kubernetes.GatewayRoutes = &kamajiv1alpha1.KubernetesGatewayRoutesStatus{
+		tenantControlPlane.Status.Kubernetes.Gateway = &kamajiv1alpha1.KubernetesGatewayStatus{
 			Name:           r.resource.GetName(),
 			Namespace:      r.resource.GetNamespace(),
 			TLSRouteStatus: &routeStatus,
@@ -237,7 +237,7 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 		return nil
 	}
 
-	tenantControlPlane.Status.Kubernetes.GatewayRoutes = nil
+	tenantControlPlane.Status.Kubernetes.Gateway = nil
 
 	return nil
 }

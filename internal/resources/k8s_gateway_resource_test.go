@@ -97,7 +97,7 @@ var _ = Describe("KubernetesGatewayResource", func() {
 		})
 
 		It("should require status update when GatewayRoutes is configured but status is nil", func() {
-			tcp.Status.Kubernetes.GatewayRoutes = nil
+			tcp.Status.Kubernetes.Gateway = nil
 			shouldUpdate := resource.ShouldStatusBeUpdated(ctx, tcp)
 			Expect(shouldUpdate).To(BeTrue())
 		})
@@ -113,7 +113,7 @@ var _ = Describe("KubernetesGatewayResource", func() {
 		})
 
 		It("should not require status update when both spec and status are nil", func() {
-			tcp.Status.Kubernetes.GatewayRoutes = nil
+			tcp.Status.Kubernetes.Gateway = nil
 			shouldUpdate := resource.ShouldStatusBeUpdated(ctx, tcp)
 			Expect(shouldUpdate).To(BeFalse())
 		})
