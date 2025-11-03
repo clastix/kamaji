@@ -34,13 +34,13 @@ func (r *KubernetesGatewayResource) GetHistogram() prometheus.Histogram {
 
 func (r *KubernetesGatewayResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
 	switch {
-	case tcp.Spec.ControlPlane.GatewayRoute == nil && tcp.Status.Kubernetes.GatewayRoutes == nil:
+	case tcp.Spec.ControlPlane.Gateway == nil && tcp.Status.Kubernetes.GatewayRoutes == nil:
 		return false
-	case tcp.Spec.ControlPlane.GatewayRoute != nil && tcp.Status.Kubernetes.GatewayRoutes == nil:
+	case tcp.Spec.ControlPlane.Gateway != nil && tcp.Status.Kubernetes.GatewayRoutes == nil:
 		return true
-	case tcp.Spec.ControlPlane.GatewayRoute == nil && tcp.Status.Kubernetes.GatewayRoutes != nil:
+	case tcp.Spec.ControlPlane.Gateway == nil && tcp.Status.Kubernetes.GatewayRoutes != nil:
 		return true
-	case tcp.Spec.ControlPlane.GatewayRoute != nil && tcp.Status.Kubernetes.GatewayRoutes != nil:
+	case tcp.Spec.ControlPlane.Gateway != nil && tcp.Status.Kubernetes.GatewayRoutes != nil:
 		// Both spec and status have gateway configuration - check if status needs updating
 		// For now, assume it always needs updating to keep status fresh
 		return true
@@ -50,7 +50,7 @@ func (r *KubernetesGatewayResource) ShouldStatusBeUpdated(_ context.Context, tcp
 }
 
 func (r *KubernetesGatewayResource) ShouldCleanup(tcp *kamajiv1alpha1.TenantControlPlane) bool {
-	return tcp.Spec.ControlPlane.GatewayRoute == nil
+	return tcp.Spec.ControlPlane.Gateway == nil
 }
 
 func (r *KubernetesGatewayResource) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -199,7 +199,7 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
 	// Clean up status if Gateway routes are no longer configured
-	if tenantControlPlane.Spec.ControlPlane.GatewayRoute == nil {
+	if tenantControlPlane.Spec.ControlPlane.Gateway == nil {
 		tenantControlPlane.Status.Kubernetes.GatewayRoutes = nil
 		return nil
 	}
@@ -215,7 +215,7 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 	//
 
 	logger.V(1).Info("updating TenantControlPlane status for Gateway routes")
-	if tenantControlPlane.Spec.ControlPlane.GatewayRoute != nil {
+	if tenantControlPlane.Spec.ControlPlane.Gateway != nil {
 		// TODO: Evaluate the conditions and report a better status.
 		routeStatus := gatewayv1alpha2.TLSRouteStatus{
 			RouteStatus: gatewayv1alpha2.RouteStatus{
@@ -258,17 +258,17 @@ func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 		labels := utilities.MergeMaps(
 			r.resource.GetLabels(),
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
-			tenantControlPlane.Spec.ControlPlane.GatewayRoute.AdditionalMetadata.Labels,
+			tenantControlPlane.Spec.ControlPlane.Gateway.AdditionalMetadata.Labels,
 		)
 		r.resource.SetLabels(labels)
 
 		annotations := utilities.MergeMaps(
 			r.resource.GetAnnotations(),
-			tenantControlPlane.Spec.ControlPlane.GatewayRoute.AdditionalMetadata.Annotations)
+			tenantControlPlane.Spec.ControlPlane.Gateway.AdditionalMetadata.Annotations)
 		r.resource.SetAnnotations(annotations)
 
-		if tenantControlPlane.Spec.ControlPlane.GatewayRoute.GatewayParentRefs != nil {
-			r.resource.Spec.ParentRefs = tenantControlPlane.Spec.ControlPlane.GatewayRoute.GatewayParentRefs
+		if tenantControlPlane.Spec.ControlPlane.Gateway.GatewayParentRefs != nil {
+			r.resource.Spec.ParentRefs = tenantControlPlane.Spec.ControlPlane.Gateway.GatewayParentRefs
 		}
 
 		// TODO: Make sure that we are listening on this?
@@ -282,7 +282,7 @@ func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 		servicePort := gatewayv1alpha2.PortNumber(tenantControlPlane.Status.Kubernetes.Service.Port)
 
 		// Fail if no hostname is specified, same as the ingress resource.
-		if len(tenantControlPlane.Spec.ControlPlane.GatewayRoute.Hostnames) == 0 {
+		if len(tenantControlPlane.Spec.ControlPlane.Gateway.Hostnames) == 0 {
 			return fmt.Errorf("missing hostname to expose the Tenant Control Plane using a Gateway resource")
 		}
 
@@ -298,7 +298,7 @@ func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 			},
 		}
 
-		r.resource.Spec.Hostnames = tenantControlPlane.Spec.ControlPlane.GatewayRoute.Hostnames
+		r.resource.Spec.Hostnames = tenantControlPlane.Spec.ControlPlane.Gateway.Hostnames
 		r.resource.Spec.Rules = []gatewayv1alpha2.TLSRouteRule{rule}
 
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
@@ -308,7 +308,7 @@ func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 func (r *KubernetesGatewayResource) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
-	if tenantControlPlane.Spec.ControlPlane.GatewayRoute == nil {
+	if tenantControlPlane.Spec.ControlPlane.Gateway == nil {
 		return controllerutil.OperationResultNone, nil
 	}
 
