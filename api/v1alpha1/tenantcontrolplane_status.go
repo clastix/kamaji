@@ -269,6 +269,6 @@ type KubernetesGatewayStatus struct {
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 
-	// Reference to the route for this tenant.
+	// Reference to the route.
 	RouteRef corev1.LocalObjectReference `json:"routeRef,omitempty"`
 }
