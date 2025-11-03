@@ -6,13 +6,16 @@ package resources
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/prometheus/client_golang/prometheus"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -73,7 +76,7 @@ func (r *KubernetesGatewayResource) CleanUp(ctx context.Context, tcp *kamajiv1al
 	}
 
 	if !metav1.IsControlledBy(&route, tcp) {
-		logger.Info("skipping cleanup: HTTP and gRPC Routes is not managed by Kamaji", "name", route.Name, "namespace", route.Namespace)
+		logger.Info("skipping cleanup: route is not managed by Kamaji", "name", route.Name, "namespace", route.Namespace)
 		return false, nil
 	}
 
@@ -92,10 +95,124 @@ func (r *KubernetesGatewayResource) CleanUp(ctx context.Context, tcp *kamajiv1al
 	return true, nil
 }
 
+func (r *KubernetesGatewayResource) fetchGateway(ctx context.Context, ref gatewayv1.ParentReference) (*gatewayv1.Gateway, error) {
+	if ref.Namespace == nil {
+		return nil, fmt.Errorf("missing namespace")
+	}
+
+	gateway := &gatewayv1.Gateway{}
+	err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      string(ref.Name),
+		Namespace: string(*ref.Namespace),
+	}, gateway)
+
+	return gateway, err
+}
+
+func findMatchingListener(
+	gateway *gatewayv1.Gateway,
+	ref gatewayv1.ParentReference,
+) (gatewayv1.Listener, error) {
+	if ref.SectionName == nil {
+		return gatewayv1.Listener{}, fmt.Errorf("missing sectionName")
+	}
+	name := *ref.SectionName
+	for _, listener := range gateway.Spec.Listeners {
+		if listener.Name == name {
+			return listener, nil
+		}
+	}
+
+	// TODO: Handle the cases according to the spec:
+	//  - When both Port (experimental) and SectionName are
+	//    specified, the name and port of the selected listener
+	//    must match both specified values.
+	//  - When unspecified (empty string) this will reference
+	//    the entire resource [...] an attachment is considered
+	//     successful if at least one section in the parent resource accepts it
+
+	return gatewayv1.Listener{}, fmt.Errorf("could not find listener '%s'", name)
+}
+
+func extractAddresses(status gatewayv1.GatewayStatus) (addresses []string, err error) {
+	for _, addr := range status.Addresses {
+		if addr.Type == nil || *addr.Type != gatewayv1.IPAddressType {
+			return nil, fmt.Errorf("unknown type: %v", addr.Type)
+		}
+		addresses = append(addresses, addr.Value)
+	}
+	if len(addresses) == 0 {
+		return nil, fmt.Errorf("no address")
+	}
+	return
+}
+
+func (r *KubernetesGatewayResource) computeEndpoints(
+	ctx context.Context,
+) (ipURLs []*url.URL, fqdnURLs []*url.URL, err error) {
+
+	if len(r.resource.Status.Parents) == 0 {
+		return nil, nil, fmt.Errorf("route has no gateway")
+	}
+
+	// TODO: Make singular.
+	if len(r.resource.Status.Parents) > 1 {
+		return nil, nil, fmt.Errorf("route has more than one gateway")
+	}
+
+	ref := r.resource.Status.Parents[0].ParentRef
+	gw, err := r.fetchGateway(ctx, ref)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get gateway: %w", err)
+	}
+
+	listener, err := findMatchingListener(gw, ref)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to match listener: %w", err)
+	}
+
+	addresses, err := extractAddresses(gw.Status)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to extract addresses: %w", err)
+	}
+
+	for _, addr := range addresses {
+		rawURL := fmt.Sprint("https://%s:%i", addr, listener.Port)
+		url, err := url.Parse(rawURL)
+		if err != nil {
+			return nil, nil, fmt.Errorf("invalid url: %w", err)
+		}
+		fqdnURLs = append(fqdnURLs, url)
+	}
+	for _, hostname := range r.resource.Spec.Hostnames {
+		rawURL := fmt.Sprint("https://%s:%i", hostname, listener.Port)
+		url, err := url.Parse(rawURL)
+		if err != nil {
+			return nil, nil, fmt.Errorf("invalid url: %w", err)
+		}
+		ipURLs = append(ipURLs, url)
+	}
+	return
+}
+
 func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
-	// TODO: Rework this.
+	// Clean up status if Gateway routes are no longer configured
+	if tenantControlPlane.Spec.ControlPlane.GatewayRoute == nil {
+		tenantControlPlane.Status.Kubernetes.GatewayRoutes = nil
+		return nil
+	}
+
+	// TODO: check the conditions of the route.
+
+	ipEndpoints, fqdnEndpoints, err := r.computeEndpoints(ctx)
+	if err != nil {
+		return fmt.Errorf("could not compute endpoints: %w", err)
+	}
+
+	// TODO: Ultimately, given a TLSRoute, we should be able to create a URL.
+	//
 
 	logger.V(1).Info("updating TenantControlPlane status for Gateway routes")
 	if tenantControlPlane.Spec.ControlPlane.GatewayRoute != nil {
@@ -120,7 +237,6 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 		return nil
 	}
 
-	// Clean up status if Gateway routes are no longer configured
 	tenantControlPlane.Status.Kubernetes.GatewayRoutes = nil
 
 	return nil
