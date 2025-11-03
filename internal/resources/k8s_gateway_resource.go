@@ -9,6 +9,7 @@ import (
 	"net/url"
 
 	"github.com/prometheus/client_golang/prometheus"
+	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -110,15 +111,12 @@ func (r *KubernetesGatewayResource) fetchGateway(ctx context.Context, ref gatewa
 	return gateway, err
 }
 
-func findMatchingListener(
-	gateway *gatewayv1.Gateway,
-	ref gatewayv1.ParentReference,
-) (gatewayv1.Listener, error) {
+func FindMatchingListener(listeners []gatewayv1.Listener, ref gatewayv1.ParentReference) (gatewayv1.Listener, error) {
 	if ref.SectionName == nil {
 		return gatewayv1.Listener{}, fmt.Errorf("missing sectionName")
 	}
 	name := *ref.SectionName
-	for _, listener := range gateway.Spec.Listeners {
+	for _, listener := range listeners {
 		if listener.Name == name {
 			return listener, nil
 		}
@@ -148,254 +146,111 @@ func extractAddresses(status gatewayv1.GatewayStatus) (addresses []string, err e
 	return
 }
 
-func (r *KubernetesGatewayResource) computeEndpoints(
-	ctx context.Context,
-) (ipURLs []*url.URL, fqdnURLs []*url.URL, err error) {
-
-	if len(r.resource.Status.Parents) == 0 {
-		return nil, nil, fmt.Errorf("route has no gateway")
-	}
-
-	// TODO: Make singular.
-	if len(r.resource.Status.Parents) > 1 {
-		return nil, nil, fmt.Errorf("route has more than one gateway")
-	}
-
-	ref := r.resource.Status.Parents[0].ParentRef
-	gw, err := r.fetchGateway(ctx, ref)
+func computeAccessPoints(
+	gw *gatewayv1.Gateway,
+	ref gatewayv1.RouteParentStatus,
+	hostnames []gatewayv1alpha2.Hostname,
+) ([]kamajiv1alpha1.GatewayAccessPoint, error) {
+	listener, err := FindMatchingListener(gw.Spec.Listeners, ref.ParentRef)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get gateway: %w", err)
+		return nil, fmt.Errorf("failed to match listener: %w", err)
 	}
-
-	listener, err := findMatchingListener(gw, ref)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to match listener: %w", err)
-	}
-
 	addresses, err := extractAddresses(gw.Status)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to extract addresses: %w", err)
+		return nil, fmt.Errorf("failed to extract addresses: %w", err)
 	}
+
+	fqdnURLs := []*url.URL{}
+	ipURLs := []*url.URL{}
 
 	for _, addr := range addresses {
 		rawURL := fmt.Sprintf("https://%s:%d", addr, listener.Port)
 		url, err := url.Parse(rawURL)
 		if err != nil {
-			return nil, nil, fmt.Errorf("invalid url: %w", err)
+			return nil, fmt.Errorf("invalid url: %w", err)
 		}
 		fqdnURLs = append(fqdnURLs, url)
 	}
-	for _, hostname := range r.resource.Spec.Hostnames {
+	for _, hostname := range hostnames {
 		rawURL := fmt.Sprintf("https://%s:%d", hostname, listener.Port)
 		url, err := url.Parse(rawURL)
 		if err != nil {
-			return nil, nil, fmt.Errorf("invalid url: %w", err)
+			return nil, fmt.Errorf("invalid url: %w", err)
 		}
 		ipURLs = append(ipURLs, url)
 	}
-	return
+	return nil, nil
 }
 
-// CopyConditions copies the types conditions from src to dst, updating the condition type
-// using the provided types map
-func CopyConditions(src []metav1.Condition, dst *[]metav1.Condition, types map[string]string) {
-	for srcType, dstType := range types {
-		if val := meta.FindStatusCondition(src, srcType); val != nil {
-			meta.SetStatusCondition(dst, metav1.Condition{
-				Type:    dstType,
-				Status:  val.Status,
-				Reason:  val.Reason,
-				Message: val.Message,
-			})
-		}
-	}
-}
-
-// TODO: Move to types.
-const (
-	GateayConditionReady string = "Ready"
-
-	// Tenant control plane is accessible via route
-	GatewayConditionReady string = "Ready"
-
-	// Route is not attached to a any gateway.
-	GatewayReasonRouteNotAttached string = "RouteNotAttached"
-
-	// Route was rejected by gateway.
-	GatewayReasonRouteRejected string = "RouteRejected"
-
-	// Waiting for gateway to be programmed.
-	GatewayReasonWaitingForGateway string = "WaitingForGateway"
-)
-
-func CheckStatus(
-	routeStatus gatewayv1alpha2.TLSRouteStatus,
-	fetchGwStatus func(ref gatewayv1alpha2.ParentReference) (*gatewayv1.GatewayStatus, error),
-	tcpGwStatus *kamajiv1alpha1.KubernetesGatewayStatus) error {
-
-	tcpGwStatus.Conditions = []metav1.Condition{}
-
-	if len(routeStatus.Parents) == 0 {
-		meta.SetStatusCondition(
-			&tcpGwStatus.Conditions,
-			metav1.Condition{
-				Type:    "Ready",
-				Status:  metav1.ConditionUnknown,
-				Reason:  "MissingParentStatus",
-				Message: "The route has no parents status",
-			},
-		)
-		return nil
-	}
-
-	if len(routeStatus.Parents) > 1 {
-		meta.SetStatusCondition(
-			&tcpGwStatus.Conditions,
-			metav1.Condition{
-				Type:    "Ready",
-				Status:  metav1.ConditionFalse,
-				Reason:  "TooManyParentStatus",
-				Message: "The route has too many parents",
-			},
-		)
-		return nil
-	}
-
-	status := routeStatus.Parents[0]
-
-	CopyConditions(status.Conditions, &tcpGwStatus.Conditions, map[string]string{
-		string(gatewayv1.RouteConditionAccepted):     "RouteAccepted",
-		string(gatewayv1.RouteConditionResolvedRefs): "RouteResolvedRefs",
-	})
-
-	gwStatus, err := fetchGwStatus(status.ParentRef)
-	if err != nil {
-		meta.SetStatusCondition(
-			&tcpGwStatus.Conditions,
-			metav1.Condition{
-				Type:    "Ready",
-				Status:  metav1.ConditionFalse,
-				Reason:  "GatewayStatusFetchFailed",
-				Message: fmt.Sprintf("Failed to fetch parent status: %v", err),
-			},
-		)
-		return nil
-	}
-
-	CopyConditions(gwStatus.Conditions, &tcpGwStatus.Conditions, map[string]string{
-		string(gatewayv1.GatewayConditionAccepted):   "GatewayAccepted",
-		string(gatewayv1.GatewayConditionProgrammed): "GatewayProgrammed",
-	})
-
-	if meta.IsStatusConditionFalse(tcpGwStatus.Conditions, "GatewayAccepted") {
-		meta.SetStatusCondition(&tcpGwStatus.Conditions, metav1.Condition{
-			Type:    "Ready",
-			Status:  metav1.ConditionFalse,
-			Reason:  "GatewayNotAccepted",
-			Message: "The gateway is not accepted",
-		},
-		)
-		return nil
-	}
-
-	if meta.IsStatusConditionFalse(tcpGwStatus.Conditions, "GatewayProgrammed") {
-		meta.SetStatusCondition(&tcpGwStatus.Conditions, metav1.Condition{
-			Type:    "Ready",
-			Status:  metav1.ConditionFalse,
-			Reason:  "WaitingForGateway",
-			Message: "Waiting for the gateway",
-		})
-		return nil
-	}
-
-	if meta.IsStatusConditionFalse(tcpGwStatus.Conditions, "RouteAccepted") {
-		meta.SetStatusCondition(&tcpGwStatus.Conditions, metav1.Condition{
-			Type:    "Ready",
-			Status:  metav1.ConditionFalse,
-			Reason:  "RouteRejected",
-			Message: "The route was rejected",
-		})
-		return nil
-	} else {
-		meta.SetStatusCondition(&tcpGwStatus.Conditions, metav1.Condition{
-			Type:    "Ready",
-			Status:  metav1.ConditionTrue,
-			Reason:  "Ready",
-			Message: "The tenant route is ready",
-		})
-	}
-
-	return nil
-}
-
-func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
 	// Clean up status if Gateway routes are no longer configured
-	if tenantControlPlane.Spec.ControlPlane.Gateway == nil {
-		tenantControlPlane.Status.Kubernetes.Gateway = nil
+	if tcp.Spec.ControlPlane.Gateway == nil {
+		tcp.Status.Kubernetes.Gateway = nil
 		return nil
 	}
 
-	routeAccepted := meta.IsStatusConditionTrue(parentStatus.Conditions,
-		string(gatewayv1.RouteConditionAccepted))
-	if !routeAccepted {
-		meta.SetStatusCondition(
-			&tenantControlPlane.Status.Kubernetes.Gateway.Conditions,
-			metav1.Condition{
-				Type:    "Accepted",
-				Status:  metav1.ConditionFalse,
-				Reason:  "NotAccepted",
-				Message: "route is not accepted",
-			},
+	tcp.Status.Kubernetes.Gateway = &kamajiv1alpha1.KubernetesGatewayStatus{
+		RouteStatus: r.resource.Status.RouteStatus,
+		RouteRef: v1.LocalObjectReference{
+			Name: r.resource.Name,
+		},
+	}
+
+	routeStatuses := tcp.Status.Kubernetes.Gateway.RouteStatus
+
+	// TODO: Investigate the implications of having multiple parents
+	// TODO: Use condition to report?
+	if len(routeStatuses.Parents) == 0 {
+		return fmt.Errorf("no parents")
+	}
+	if len(routeStatuses.Parents) > 1 {
+		return fmt.Errorf("too many parents")
+	}
+
+	accessPoints := []kamajiv1alpha1.GatewayAccessPoint{}
+	for _, routeStatus := range routeStatuses.Parents {
+		routeAccepted := meta.IsStatusConditionTrue(
+			routeStatus.Conditions,
+			string(gatewayv1.GatewayConditionAccepted),
 		)
-		return fmt.Errorf("parent not accepted")
-	}
+		if !routeAccepted {
+			continue
+		}
 
-	routeResolvedRefs := meta.IsStatusConditionTrue(parentStatus.Conditions,
-		string(gatewayv1.RouteConditionResolvedRefs))
-	if !routeResolvedRefs {
-		meta.SetStatusCondition(
-			&tenantControlPlane.Status.Kubernetes.Gateway.Conditions,
-			metav1.Condition{
-				Type:    "ResolvedRefs",
-				Status:  metav1.ConditionTrue,
-				Reason:  "ResolvedRefs",
-				Message: "route references are resolved",
-			},
+		gateway, err := r.fetchGateway(ctx, routeStatus.ParentRef)
+		if err != nil {
+			return fmt.Errorf("could not fetch gateway '%s': %w",
+				routeStatus.ParentRef.Name, err)
+		}
+		gatewayProgrammed := meta.IsStatusConditionTrue(
+			gateway.Status.Conditions,
+			string(gatewayv1.GatewayConditionProgrammed),
 		)
+		if !gatewayProgrammed {
+			continue
+		}
+		routeAccessPoints, err := computeAccessPoints(gateway, routeStatus, r.resource.Spec.Hostnames)
+		if err != nil {
+			return fmt.Errorf("could not compute access points for route '%s': %w",
+				routeStatus.ParentRef.Name, err)
+		}
+		accessPoints = append(
+			accessPoints,
+			routeAccessPoints...,
+		)
+
 	}
-
-	// Report the status of the gateway in the context of the TenantControlPlane
-	// Statuses are:
-	//
-
-	// Only support a single attached gateway for now.
-	newVar := r.resource.Status.Parents
-	if len(newVar) == 0 {
-		return fmt.Errorf("route has no gateway")
-	}
-
-	if len(r.resource.Status.Parents) > 1 {
-		return fmt.Errorf("route is attached to more than one gateway")
-	}
-
-	_, _, err := r.computeEndpoints(ctx)
-	if err != nil {
-		return fmt.Errorf("could not compute endpoints: %w", err)
-	}
-
-	// TODO: Ultimately, given a TLSRoute, we should be able to create a URL.
-	//
 
 	logger.V(1).Info("updating TenantControlPlane status for Gateway routes")
-	if tenantControlPlane.Spec.ControlPlane.Gateway != nil {
+	if tcp.Spec.ControlPlane.Gateway != nil {
 		// TODO: Evaluate the conditions and report a better status.
 		// If the actual resources exist and have status, use that instead
 		return nil
 	}
 
-	tenantControlPlane.Status.Kubernetes.Gateway = nil
+	tcp.Status.Kubernetes.Gateway = nil
 
 	return nil
 }
