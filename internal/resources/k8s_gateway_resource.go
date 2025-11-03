@@ -282,7 +282,7 @@ func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 		servicePort := gatewayv1alpha2.PortNumber(tenantControlPlane.Status.Kubernetes.Service.Port)
 
 		// Fail if no hostname is specified, same as the ingress resource.
-		if len(tenantControlPlane.Spec.ControlPlane.Gateway.Hostnames) == 0 {
+		if len(tenantControlPlane.Spec.ControlPlane.Gateway.Hostname) == 0 {
 			return fmt.Errorf("missing hostname to expose the Tenant Control Plane using a Gateway resource")
 		}
 
@@ -298,7 +298,7 @@ func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 			},
 		}
 
-		r.resource.Spec.Hostnames = tenantControlPlane.Spec.ControlPlane.Gateway.Hostnames
+		r.resource.Spec.Hostnames = []gatewayv1.Hostname{tenantControlPlane.Spec.ControlPlane.Gateway.Hostname}
 		r.resource.Spec.Rules = []gatewayv1alpha2.TLSRouteRule{rule}
 
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())

@@ -6708,30 +6708,7 @@ spec:
                             type: object
                           type: array
                       type: object
-                    ingress:
-                      description: Defining the options for an Optional Ingress which will expose API Server of the Tenant Control Plane
-                      properties:
-                        additionalMetadata:
-                          description: AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.
-                          properties:
-                            annotations:
-                              additionalProperties:
-                                type: string
-                              type: object
-                            labels:
-                              additionalProperties:
-                                type: string
-                              type: object
-                          type: object
-                        hostname:
-                          description: |-
-                            Hostname is an optional field which will be used as Ingress's Host. If it is not defined,
-                            Ingress's host will be "<tenant>.<namespace>.<domain>", where domain is specified under NetworkProfileSpec
-                          type: string
-                        ingressClassName:
-                          type: string
-                      type: object
-                    route:
+                    gateway:
                       description: Defining the options for an Optional Gateway which will expose API Server of the Tenant Control Plane
                       properties:
                         additionalMetadata:
@@ -6746,28 +6723,12 @@ spec:
                                 type: string
                               type: object
                           type: object
-                        hostnames:
-                          items:
-                            description: |-
-                              Hostname is the fully qualified domain name of a network host. This matches
-                              the RFC 1123 definition of a hostname with 2 notable exceptions:
-
-                               1. IPs are not allowed.
-                               2. A hostname may be prefixed with a wildcard label (`*.`). The wildcard
-                                  label must appear by itself as the first label.
-
-                              Hostname can be "precise" which is a domain name without the terminating
-                              dot of a network host (e.g. "foo.example.com") or "wildcard", which is a
-                              domain name prefixed with a single wildcard label (e.g. `*.example.com`).
-
-                              Note that as per RFC1035 and RFC1123, a *label* must consist of lower case
-                              alphanumeric characters or '-', and must start and end with an alphanumeric
-                              character. No other punctuation is allowed.
-                            maxLength: 253
-                            minLength: 1
-                            pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                            type: string
-                          type: array
+                        hostname:
+                          description: Hostname is an optional field which will be used as a route hostname.
+                          maxLength: 253
+                          minLength: 1
+                          pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                          type: string
                         parentRefs:
                           description: GatewayParentRefs is the class of the Gateway resource to use.
                           items:
@@ -6918,6 +6879,29 @@ spec:
                               - name
                             type: object
                           type: array
+                      type: object
+                    ingress:
+                      description: Defining the options for an Optional Ingress which will expose API Server of the Tenant Control Plane
+                      properties:
+                        additionalMetadata:
+                          description: AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.
+                          properties:
+                            annotations:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            labels:
+                              additionalProperties:
+                                type: string
+                              type: object
+                          type: object
+                        hostname:
+                          description: |-
+                            Hostname is an optional field which will be used as Ingress's Host. If it is not defined,
+                            Ingress's host will be "<tenant>.<namespace>.<domain>", where domain is specified under NetworkProfileSpec
+                          type: string
+                        ingressClassName:
+                          type: string
                       type: object
                     service:
                       description: Defining the options for the Tenant Control Plane Service resource.
