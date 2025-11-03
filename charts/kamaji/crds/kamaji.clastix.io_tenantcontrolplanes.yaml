@@ -7793,7 +7793,7 @@ spec:
                             - type
                           x-kubernetes-list-type: map
                         routeRef:
-                          description: Reference to the route for this tenant.
+                          description: Reference to the route.
                           properties:
                             name:
                               default: ""

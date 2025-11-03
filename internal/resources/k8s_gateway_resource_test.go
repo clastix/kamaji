@@ -5,14 +5,17 @@ package resources_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -41,6 +44,51 @@ var _ = Describe("KubernetesGatewayResource", func() {
 		resource *resources.KubernetesGatewayResource
 		ctx      context.Context
 	)
+
+	Describe("Status Update", func() {
+		var (
+			//gwStatus    *gatewayv1.GatewayStatus
+			route gatewayv1alpha2.TLSRouteStatus
+			tcpGw *kamajiv1alpha1.KubernetesGatewayStatus
+		)
+		BeforeEach(func() {
+			route = gatewayv1alpha2.TLSRouteStatus{}
+			tcpGw = &kamajiv1alpha1.KubernetesGatewayStatus{}
+		})
+		When("Route status is empty", func() {
+			route = gatewayv1alpha2.TLSRouteStatus{}
+			It("returns condition unknown", func() {
+				err := resources.CheckStatus(route, tcpGw)
+				Expect(err).NotTo(HaveOccurred())
+
+				cond := meta.FindStatusCondition(tcpGw.Conditions, "Ready")
+				Expect(cond).NotTo(BeNil())
+				Expect(cond.Status).To(Equal(metav1.ConditionUnknown))
+				Expect(cond.Reason).To(Equal("MissingParentStatus"))
+				Expect(cond.Message).To(Equal("The route has no parents status"))
+			})
+		})
+		When("More than one route status", func() {
+			route = gatewayv1alpha2.TLSRouteStatus{
+				RouteStatus: gatewayv1alpha2.RouteStatus{
+					Parents: []gatewayv1alpha2.RouteParentStatus{
+						{}, {},
+					},
+				},
+			}
+			It("returns condition unknown", func() {
+				err := resources.CheckStatus(route, tcpGw)
+				Expect(err).NotTo(HaveOccurred())
+				cond := meta.FindStatusCondition(tcpGw.Conditions, "Ready")
+				if Expect(cond).NotTo(BeNil()) {
+					Expect(cond.Status).To(Equal(metav1.ConditionUnknown))
+					Expect(cond.Reason).To(Equal("MissingParentStatus"))
+					Expect(cond.Message).To(Equal("The route has no parents status"))
+				}
+			})
+		})
+		When("The route is accepted")
+	})
 
 	BeforeEach(func() {
 		ctx = context.Background()
@@ -91,7 +139,7 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			Expect(resource.ShouldCleanup(tcp)).To(BeFalse())
 		})
 
-		It("should define HTTPRoute and GRPCRoute resources", func() {
+		It("should define route resources", func() {
 			err := resource.Define(ctx, tcp)
 			Expect(err).NotTo(HaveOccurred())
 		})
