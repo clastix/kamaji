@@ -189,7 +189,7 @@ type KubernetesStatus struct {
 	Deployment KubernetesDeploymentStatus `json:"deployment,omitempty"`
 	Service    KubernetesServiceStatus    `json:"service,omitempty"`
 	Ingress    *KubernetesIngressStatus   `json:"ingress,omitempty"`
-	Gateway    *KubernetesGatewayStatus   `json:"gateway_routes,omitempty"`
+	Gateway    *KubernetesGatewayStatus   `json:"gateway,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Unknown;Provisioning;CertificateAuthorityRotating;Upgrading;Migrating;Ready;NotReady;Sleeping;WriteLimited
@@ -267,5 +267,5 @@ type KubernetesGatewayStatus struct {
 	RouteRef corev1.LocalObjectReference `json:"routeRef,omitempty"`
 
 	// A list of valid access points that the route exposes.
-	AccessPoints []GatewayAccessPoint `json:"conditions,omitempty"`
+	AccessPoints []GatewayAccessPoint `json:"accessPoints,omitempty"`
 }

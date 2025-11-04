@@ -7723,10 +7723,10 @@ versions:
                       - namespace
                       - selector
                     type: object
-                  gateway_routes:
+                  gateway:
                     description: KubernetesGatewayStatus defines the status for the Tenant Control Plane Gateway in the management cluster.
                     properties:
-                      conditions:
+                      accessPoints:
                         description: A list of valid access points that the route exposes.
                         items:
                           properties:
