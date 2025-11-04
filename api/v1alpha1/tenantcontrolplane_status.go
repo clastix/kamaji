@@ -255,10 +255,12 @@ type GatewayAccessPoint struct {
 	URLs  []string               `json:"urls,omitempty"`
 }
 
+type RouteStatus = gatewayv1.RouteStatus
+
 // KubernetesGatewayStatus defines the status for the Tenant Control Plane Gateway in the management cluster.
 type KubernetesGatewayStatus struct {
 	// The TLSRoute status as resported by the gateway controllers.
-	gatewayv1.RouteStatus `json:",inline`
+	RouteStatus `json:",inline"`
 
 	// Reference to the route created for this tenant.
 	RouteRef corev1.LocalObjectReference `json:"routeRef,omitempty"`
