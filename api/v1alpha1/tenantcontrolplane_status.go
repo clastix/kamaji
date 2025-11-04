@@ -255,6 +255,7 @@ type GatewayAccessPoint struct {
 	URLs  []string               `json:"urls,omitempty"`
 }
 
+// +k8s:deepcopy-gen=false
 type RouteStatus = gatewayv1.RouteStatus
 
 // KubernetesGatewayStatus defines the status for the Tenant Control Plane Gateway in the management cluster.
