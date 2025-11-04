@@ -29,7 +29,7 @@ func (t TenantControlPlaneGatewayValidation) OnCreate(object runtime.Object) Adm
 
 		if tcp.Spec.ControlPlane.GatewayRoute != nil {
 			// NOTE: Do we actually want to deny here if Gateway API is not available or a warning?
-			// Seems sensbile to deny to avoid anything.
+			// Seems sensible to deny to avoid anything.
 			if err := t.validateGatewayAPIAvailability(ctx); err != nil {
 				return nil, err
 			}
@@ -68,8 +68,7 @@ func (t TenantControlPlaneGatewayValidation) validateGatewayAPIAvailability(ctx 
 	}
 
 	// Additional check for TLSRoute specifically
-	// NOTE: Unsure if this is needed and if checking for the Gateway alone is good enough.
-	tlsRouteAvailable, err := utilities.IsTLSRouteAvailable(ctx, t.DiscoveryClient)
+	tlsRouteAvailable, err := utilities.IsTLSRouteAPIAvailable(ctx, t.DiscoveryClient)
 	if err != nil {
 		return fmt.Errorf("failed to check TLSRoute availability: %w", err)
 	}

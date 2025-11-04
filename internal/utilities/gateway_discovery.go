@@ -32,8 +32,8 @@ func IsGatewayAPIAvailable(ctx context.Context, discoveryClient discovery.Discov
 	return false, nil
 }
 
-// IsTLSRouteAvailable checks specifically for TLSRoute resource availability
-func IsTLSRouteAvailable(ctx context.Context, discoveryClient discovery.DiscoveryInterface) (bool, error) {
+// IsTLSRouteAPIAvailable checks specifically for TLSRoute resource availability
+func IsTLSRouteAPIAvailable(ctx context.Context, discoveryClient discovery.DiscoveryInterface) (bool, error) {
 	gv := schema.GroupVersion{Group: "gateway.networking.k8s.io", Version: "v1alpha2"}
 
 	resourceList, err := discoveryClient.ServerResourcesForGroupVersion(gv.String())
