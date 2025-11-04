@@ -210,6 +210,7 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 			accessPoints = append(accessPoints, kamajiv1alpha1.GatewayAccessPoint{
 				Type:  &hostnameAddressType,
 				Value: url.String(),
+				Port:  int32(listener.Port),
 			})
 		}
 	}
