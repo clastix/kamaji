@@ -133,20 +133,8 @@ func FindMatchingListener(listeners []gatewayv1.Listener, ref gatewayv1.ParentRe
 	return gatewayv1.Listener{}, fmt.Errorf("could not find listener '%s'", name)
 }
 
-func extractAddresses(status gatewayv1.GatewayStatus) (addresses []string, err error) {
-	for _, addr := range status.Addresses {
-		if addr.Type == nil || *addr.Type != gatewayv1.IPAddressType {
-			return nil, fmt.Errorf("unknown type: %v", addr.Type)
-		}
-		addresses = append(addresses, addr.Value)
-	}
-	if len(addresses) == 0 {
-		return nil, fmt.Errorf("no address")
-	}
-	return
-}
-
-func computeAccessPoints(
+// ComputeAccessPoints finds the listener of the
+func ComputeAccessPoints(
 	gw *gatewayv1.Gateway,
 	ref gatewayv1.RouteParentStatus,
 	hostnames []gatewayv1alpha2.Hostname,
@@ -155,31 +143,35 @@ func computeAccessPoints(
 	if err != nil {
 		return nil, fmt.Errorf("failed to match listener: %w", err)
 	}
-	addresses, err := extractAddresses(gw.Status)
-	if err != nil {
-		return nil, fmt.Errorf("failed to extract addresses: %w", err)
-	}
 
-	fqdnURLs := []*url.URL{}
-	ipURLs := []*url.URL{}
-
-	for _, addr := range addresses {
-		rawURL := fmt.Sprintf("https://%s:%d", addr, listener.Port)
-		url, err := url.Parse(rawURL)
-		if err != nil {
-			return nil, fmt.Errorf("invalid url: %w", err)
-		}
-		fqdnURLs = append(fqdnURLs, url)
-	}
+	res := []kamajiv1alpha1.GatewayAccessPoint{}
 	for _, hostname := range hostnames {
 		rawURL := fmt.Sprintf("https://%s:%d", hostname, listener.Port)
 		url, err := url.Parse(rawURL)
 		if err != nil {
 			return nil, fmt.Errorf("invalid url: %w", err)
 		}
-		ipURLs = append(ipURLs, url)
+
+		hostnameAddressType := gatewayv1.HostnameAddressType
+		res = append(res, kamajiv1alpha1.GatewayAccessPoint{
+			Type:  &hostnameAddressType,
+			Value: url.String(),
+		})
 	}
-	return nil, nil
+
+	for _, addr := range gw.Status.Addresses {
+		rawURL := fmt.Sprintf("https://%s:%d", addr.Value, listener.Port)
+		url, err := url.Parse(rawURL)
+		if err != nil {
+			return nil, fmt.Errorf("invalid url: %w", err)
+		}
+
+		res = append(res, kamajiv1alpha1.GatewayAccessPoint{
+			Type:  addr.Type,
+			Value: url.String(),
+		})
+	}
+	return res, nil
 }
 
 func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error {
@@ -200,15 +192,22 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 
 	routeStatuses := tcp.Status.Kubernetes.Gateway.RouteStatus
 
-	// TODO: Investigate the implications of having multiple parents
+	// TODO: Investigate the implications of having multiple parents / hostnames
 	// TODO: Use condition to report?
 	if len(routeStatuses.Parents) == 0 {
-		return fmt.Errorf("no parents")
+		return fmt.Errorf("no gateway attached to the route")
 	}
 	if len(routeStatuses.Parents) > 1 {
-		return fmt.Errorf("too many parents")
+		return fmt.Errorf("too many gateway attached to the route")
+	}
+	if len(r.resource.Spec.Hostnames) == 0 {
+		return fmt.Errorf("no hostname in the route")
+	}
+	if len(r.resource.Spec.Hostnames) > 1 {
+		return fmt.Errorf("too many hostnames in the route")
 	}
 
+	logger.V(1).Info("updating TenantControlPlane status for Gateway routes")
 	accessPoints := []kamajiv1alpha1.GatewayAccessPoint{}
 	for _, routeStatus := range routeStatuses.Parents {
 		routeAccepted := meta.IsStatusConditionTrue(
@@ -231,27 +230,31 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 		if !gatewayProgrammed {
 			continue
 		}
-		routeAccessPoints, err := computeAccessPoints(gateway, routeStatus, r.resource.Spec.Hostnames)
-		if err != nil {
-			return fmt.Errorf("could not compute access points for route '%s': %w",
-				routeStatus.ParentRef.Name, err)
-		}
-		accessPoints = append(
-			accessPoints,
-			routeAccessPoints...,
+
+		// Assuming the gateway controller populates the name, namespace, and
+		// sectionName such that we can find the listener.
+		listener, err := FindMatchingListener(
+			gateway.Spec.Listeners, routeStatus.ParentRef,
 		)
+		if err != nil {
+			return fmt.Errorf("failed to match listener: %w", err)
+		}
 
+		for _, hostname := range r.resource.Spec.Hostnames {
+			rawURL := fmt.Sprintf("https://%s:%d", hostname, listener.Port)
+			url, err := url.Parse(rawURL)
+			if err != nil {
+				return fmt.Errorf("invalid url: %w", err)
+			}
+
+			hostnameAddressType := gatewayv1.HostnameAddressType
+			accessPoints = append(accessPoints, kamajiv1alpha1.GatewayAccessPoint{
+				Type:  &hostnameAddressType,
+				Value: url.String(),
+			})
+		}
 	}
-
-	logger.V(1).Info("updating TenantControlPlane status for Gateway routes")
-	if tcp.Spec.ControlPlane.Gateway != nil {
-		// TODO: Evaluate the conditions and report a better status.
-		// If the actual resources exist and have status, use that instead
-		return nil
-	}
-
-	tcp.Status.Kubernetes.Gateway = nil
-
+	tcp.Status.Kubernetes.Gateway.AccessPoints = accessPoints
 	return nil
 }
 
