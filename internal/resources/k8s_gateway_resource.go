@@ -133,47 +133,6 @@ func FindMatchingListener(listeners []gatewayv1.Listener, ref gatewayv1.ParentRe
 	return gatewayv1.Listener{}, fmt.Errorf("could not find listener '%s'", name)
 }
 
-// ComputeAccessPoints finds the listener of the
-func ComputeAccessPoints(
-	gw *gatewayv1.Gateway,
-	ref gatewayv1.RouteParentStatus,
-	hostnames []gatewayv1alpha2.Hostname,
-) ([]kamajiv1alpha1.GatewayAccessPoint, error) {
-	listener, err := FindMatchingListener(gw.Spec.Listeners, ref.ParentRef)
-	if err != nil {
-		return nil, fmt.Errorf("failed to match listener: %w", err)
-	}
-
-	res := []kamajiv1alpha1.GatewayAccessPoint{}
-	for _, hostname := range hostnames {
-		rawURL := fmt.Sprintf("https://%s:%d", hostname, listener.Port)
-		url, err := url.Parse(rawURL)
-		if err != nil {
-			return nil, fmt.Errorf("invalid url: %w", err)
-		}
-
-		hostnameAddressType := gatewayv1.HostnameAddressType
-		res = append(res, kamajiv1alpha1.GatewayAccessPoint{
-			Type:  &hostnameAddressType,
-			Value: url.String(),
-		})
-	}
-
-	for _, addr := range gw.Status.Addresses {
-		rawURL := fmt.Sprintf("https://%s:%d", addr.Value, listener.Port)
-		url, err := url.Parse(rawURL)
-		if err != nil {
-			return nil, fmt.Errorf("invalid url: %w", err)
-		}
-
-		res = append(res, kamajiv1alpha1.GatewayAccessPoint{
-			Type:  addr.Type,
-			Value: url.String(),
-		})
-	}
-	return res, nil
-}
-
 func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
@@ -212,7 +171,7 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 	for _, routeStatus := range routeStatuses.Parents {
 		routeAccepted := meta.IsStatusConditionTrue(
 			routeStatus.Conditions,
-			string(gatewayv1.GatewayConditionAccepted),
+			string(gatewayv1.RouteConditionAccepted),
 		)
 		if !routeAccepted {
 			continue
