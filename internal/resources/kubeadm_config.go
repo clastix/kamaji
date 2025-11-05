@@ -100,7 +100,10 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 			return fmt.Errorf("using both gateway and ingress is not supported")
 		}
 		if ks.Gateway != nil {
-			if len(ks.Gateway.AccessPoints) != 1 {
+			if len(ks.Gateway.AccessPoints) == 0 {
+				return fmt.Errorf("gateway configured but status not yet available, will retry")
+			}
+			if len(ks.Gateway.AccessPoints) > 1 {
 				return fmt.Errorf("gateway has more than one endpoint")
 			}
 			rawUrl := ks.Gateway.AccessPoints[0].Value
