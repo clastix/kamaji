@@ -5,7 +5,9 @@ package resources
 
 import (
 	"context"
+	"fmt"
 	"net"
+	"net/url"
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -77,14 +79,6 @@ func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(_ context.Context
 	return nil
 }
 
-func (r *KubeadmConfigResource) getControlPlaneEndpoint(ingress *kamajiv1alpha1.IngressSpec, address string, port int32) string {
-	if ingress != nil && len(ingress.Hostname) > 0 {
-		address, port = utilities.GetControlPlaneAddressAndPortFromHostname(ingress.Hostname, port)
-	}
-
-	return net.JoinHostPort(address, strconv.FormatInt(int64(port), 10))
-}
-
 func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
@@ -98,12 +92,38 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
+		// TODO: This logic should be part of the status update logic of the
+		// tenant I think. Ie, tenant should tell the URL.
+		endpoint := net.JoinHostPort(address, strconv.FormatInt(int64(port), 10))
+		ks := tenantControlPlane.Status.Kubernetes
+		if (ks.Gateway != nil) && (ks.Ingress != nil) {
+			return fmt.Errorf("using both gateway and ingress is not supported")
+		}
+		if ks.Gateway != nil {
+			if len(ks.Gateway.AccessPoints) != 1 {
+				return fmt.Errorf("gateway has more than one endpoint")
+			}
+			rawUrl := ks.Gateway.AccessPoints[0].Value
+			parsedURL, err := url.Parse(rawUrl)
+			if err != nil {
+				return fmt.Errorf("invalid endpoint '%s': %w ", rawUrl, err)
+			}
+			endpoint = net.JoinHostPort(parsedURL.Hostname(), parsedURL.Port())
+		}
+		if ks.Ingress != nil {
+			ingress := tenantControlPlane.Spec.ControlPlane.Ingress
+			if ingress != nil && len(ingress.Hostname) > 0 {
+				iaddr, iport := utilities.GetControlPlaneAddressAndPortFromHostname(ingress.Hostname, port)
+				endpoint = net.JoinHostPort(iaddr, strconv.FormatInt(int64(iport), 10))
+			}
+		}
+
 		params := kubeadm.Parameters{
 			TenantControlPlaneAddress:       address,
 			TenantControlPlanePort:          port,
 			TenantControlPlaneName:          tenantControlPlane.GetName(),
 			TenantControlPlaneNamespace:     tenantControlPlane.GetNamespace(),
-			TenantControlPlaneEndpoint:      r.getControlPlaneEndpoint(tenantControlPlane.Spec.ControlPlane.Ingress, address, port),
+			TenantControlPlaneEndpoint:      endpoint,
 			TenantControlPlaneCertSANs:      tenantControlPlane.Spec.NetworkProfile.CertSANs,
 			TenantControlPlaneClusterDomain: tenantControlPlane.Spec.NetworkProfile.ClusterDomain,
 			TenantControlPlanePodCIDR:       tenantControlPlane.Spec.NetworkProfile.PodCIDR,
