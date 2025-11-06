@@ -92,31 +92,37 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
-		// TODO: This logic should be part of the status update logic of the
-		// tenant I think. Ie, tenant should tell the URL.
+		// TODO: If using the status only, the kubeconfig is not getting updated when this resource is
+		// updated. This might be by design? Need some input from the authors.
 		endpoint := net.JoinHostPort(address, strconv.FormatInt(int64(port), 10))
-		ks := tenantControlPlane.Status.Kubernetes
-		if (ks.Gateway != nil) && (ks.Ingress != nil) {
+		status := tenantControlPlane.Status.Kubernetes
+		spec := tenantControlPlane.Spec.ControlPlane
+		if (spec.Gateway != nil) && (spec.Ingress != nil) {
 			return fmt.Errorf("using both gateway and ingress is not supported")
 		}
-		if ks.Gateway != nil {
-			if len(ks.Gateway.AccessPoints) == 0 {
+		if spec.Gateway != nil {
+			if status.Gateway == nil {
+				return fmt.Errorf("gateway not ready")
+			}
+			if len(status.Gateway.AccessPoints) == 0 {
 				return fmt.Errorf("gateway configured but status not yet available, will retry")
 			}
-			if len(ks.Gateway.AccessPoints) > 1 {
+			if len(status.Gateway.AccessPoints) > 1 {
 				return fmt.Errorf("gateway has more than one endpoint")
 			}
-			rawUrl := ks.Gateway.AccessPoints[0].Value
+			rawUrl := status.Gateway.AccessPoints[0].Value
 			parsedURL, err := url.Parse(rawUrl)
 			if err != nil {
 				return fmt.Errorf("invalid endpoint '%s': %w ", rawUrl, err)
 			}
 			endpoint = net.JoinHostPort(parsedURL.Hostname(), parsedURL.Port())
 		}
-		if ks.Ingress != nil {
-			ingress := tenantControlPlane.Spec.ControlPlane.Ingress
-			if ingress != nil && len(ingress.Hostname) > 0 {
-				iaddr, iport := utilities.GetControlPlaneAddressAndPortFromHostname(ingress.Hostname, port)
+		if spec.Ingress != nil {
+			if status.Ingress == nil {
+				return fmt.Errorf("ingress not ready")
+			}
+			if len(spec.Ingress.Hostname) > 0 {
+				iaddr, iport := utilities.GetControlPlaneAddressAndPortFromHostname(spec.Ingress.Hostname, port)
 				endpoint = net.JoinHostPort(iaddr, strconv.FormatInt(int64(iport), 10))
 			}
 		}
