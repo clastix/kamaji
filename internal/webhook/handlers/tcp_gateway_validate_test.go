@@ -97,8 +97,8 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 
 	Context("when TenantControlPlane has Gateway configuration", func() {
 		BeforeEach(func() {
-			tcp.Spec.ControlPlane.GatewayRoute = &kamajiv1alpha1.GatewayRouteSpec{
-				Hostnames: []gatewayv1.Hostname{"api.example.com"},
+			tcp.Spec.ControlPlane.Gateway = &kamajiv1alpha1.GatewaySpec{
+				Hostname: gatewayv1.Hostname("api.example.com"),
 			}
 		})
 
@@ -201,8 +201,8 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 		It("should validate Gateway APIs when adding Gateway configuration", func() {
 			oldTcp := tcp.DeepCopy()
 
-			tcp.Spec.ControlPlane.GatewayRoute = &kamajiv1alpha1.GatewayRouteSpec{
-				Hostnames: []gatewayv1.Hostname{"api.example.com"},
+			tcp.Spec.ControlPlane.Gateway = &kamajiv1alpha1.GatewaySpec{
+				Hostname: gatewayv1.Hostname("api.example.com"),
 			}
 
 			mockDiscovery.serverGroups = &metav1.APIGroupList{
@@ -217,8 +217,8 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 		It("should allow removing Gateway configuration", func() {
 			// Start with Gateway configuration
 			oldTcp := tcp.DeepCopy()
-			oldTcp.Spec.ControlPlane.GatewayRoute = &kamajiv1alpha1.GatewayRouteSpec{
-				Hostnames: []gatewayv1.Hostname{"api.example.com"},
+			oldTcp.Spec.ControlPlane.Gateway = &kamajiv1alpha1.GatewaySpec{
+				Hostname: gatewayv1.Hostname("api.example.com"),
 			}
 
 			mockDiscovery.serverGroups = &metav1.APIGroupList{
@@ -232,8 +232,8 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 
 	Context("OnDelete operations", func() {
 		It("should always allow delete operations", func() {
-			tcp.Spec.ControlPlane.GatewayRoute = &kamajiv1alpha1.GatewayRouteSpec{
-				Hostnames: []gatewayv1.Hostname{"api.example.com"},
+			tcp.Spec.ControlPlane.Gateway = &kamajiv1alpha1.GatewaySpec{
+				Hostname: gatewayv1.Hostname("api.example.com"),
 			}
 
 			mockDiscovery.serverGroups = &metav1.APIGroupList{
@@ -248,8 +248,8 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 
 	Context("with different Gateway API versions", func() {
 		BeforeEach(func() {
-			tcp.Spec.ControlPlane.GatewayRoute = &kamajiv1alpha1.GatewayRouteSpec{
-				Hostnames: []gatewayv1.Hostname{"api.example.com"},
+			tcp.Spec.ControlPlane.Gateway = &kamajiv1alpha1.GatewaySpec{
+				Hostname: gatewayv1.Hostname("api.example.com"),
 			}
 			mockDiscovery.serverGroups = &metav1.APIGroupList{
 				Groups: []metav1.APIGroup{

@@ -134,7 +134,7 @@ type ControlPlane struct {
 	// Defining the options for an Optional Ingress which will expose API Server of the Tenant Control Plane
 	Ingress *IngressSpec `json:"ingress,omitempty"`
 	// Defining the options for an Optional Gateway which will expose API Server of the Tenant Control Plane
-	GatewayRoute *GatewayRouteSpec `json:"route,omitempty"`
+	Gateway *GatewaySpec `json:"gateway,omitempty"`
 }
 
 // IngressSpec defines the options for the ingress which will expose API Server of the Tenant Control Plane.
@@ -146,15 +146,16 @@ type IngressSpec struct {
 	Hostname string `json:"hostname,omitempty"`
 }
 
-// GatewayRouteSpec defines the options for the Gateway which will expose API Server of the Tenant Control Plane.
-type GatewayRouteSpec struct {
+// GatewaySpec defines the options for the Gateway which will expose API Server of the Tenant Control Plane.
+type GatewaySpec struct {
 	// AdditionalMetadata to add Labels and Annotations support.
 	AdditionalMetadata AdditionalMetadata `json:"additionalMetadata,omitempty"`
 
 	// GatewayParentRefs is the class of the Gateway resource to use.
 	GatewayParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
 
-	Hostnames []gatewayv1.Hostname `json:"hostnames,omitempty"`
+	// Hostname is an optional field which will be used as a route hostname.
+	Hostname gatewayv1.Hostname `json:"hostname,omitempty"`
 }
 
 type ControlPlaneComponentsResources struct {
