@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"net/url"
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -92,35 +91,20 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
-		// TODO: If using the status only, the kubeconfig is not getting updated when this resource is
+		// TODO: If using the status, the kubeconfig is not getting updated when this resource is
 		// updated. This might be by design? Need some input from the authors.
 		endpoint := net.JoinHostPort(address, strconv.FormatInt(int64(port), 10))
-		status := tenantControlPlane.Status.Kubernetes
 		spec := tenantControlPlane.Spec.ControlPlane
 		if (spec.Gateway != nil) && (spec.Ingress != nil) {
 			return fmt.Errorf("using both gateway and ingress is not supported")
 		}
 		if spec.Gateway != nil {
-			if status.Gateway == nil {
-				return fmt.Errorf("gateway not ready")
+			if len(spec.Gateway.Hostname) > 0 {
+				gaddr, gport := utilities.GetControlPlaneAddressAndPortFromHostname(string(spec.Gateway.Hostname), port)
+				endpoint = net.JoinHostPort(gaddr, strconv.FormatInt(int64(gport), 10))
 			}
-			if len(status.Gateway.AccessPoints) == 0 {
-				return fmt.Errorf("gateway configured but status not yet available, will retry")
-			}
-			if len(status.Gateway.AccessPoints) > 1 {
-				return fmt.Errorf("gateway has more than one endpoint")
-			}
-			rawUrl := status.Gateway.AccessPoints[0].Value
-			parsedURL, err := url.Parse(rawUrl)
-			if err != nil {
-				return fmt.Errorf("invalid endpoint '%s': %w ", rawUrl, err)
-			}
-			endpoint = net.JoinHostPort(parsedURL.Hostname(), parsedURL.Port())
 		}
 		if spec.Ingress != nil {
-			if status.Ingress == nil {
-				return fmt.Errorf("ingress not ready")
-			}
 			if len(spec.Ingress.Hostname) > 0 {
 				iaddr, iport := utilities.GetControlPlaneAddressAndPortFromHostname(spec.Ingress.Hostname, port)
 				endpoint = net.JoinHostPort(iaddr, strconv.FormatInt(int64(iport), 10))
