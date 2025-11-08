@@ -6981,6 +6981,9 @@ spec:
                   required:
                     - service
                   type: object
+                  x-kubernetes-validations:
+                    - message: using both ingress and gateway is not supported
+                      rule: '!(has(self.ingress) && has(self.gateway))'
                 dataStore:
                   description: |-
                     DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.

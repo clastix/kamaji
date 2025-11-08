@@ -193,7 +193,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		KamajiMigrateImage:   r.KamajiMigrateImage,
 		DiscoveryClient:      r.DiscoveryClient,
 	}
-	registeredResources := GetResources(groupResourceBuilderConfiguration)
+	registeredResources := GetResources(ctx, groupResourceBuilderConfiguration)
 
 	for _, resource := range registeredResources {
 		result, err := resources.Handle(ctx, resource, tenantControlPlane)
@@ -366,7 +366,7 @@ func (r *TenantControlPlaneReconciler) isGatewayAPIAvailable() bool {
 	}
 	ctx := context.Background()
 
-	available, err := utilities.IsGatewayAPIAvailable(ctx, r.DiscoveryClient)
+	available, err := utilities.GatewayAPIResourcesAvailable(ctx, r.DiscoveryClient)
 	if err != nil {
 		return false
 	}

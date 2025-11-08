@@ -126,6 +126,7 @@ type AdditionalMetadata struct {
 
 // ControlPlane defines how the Tenant Control Plane Kubernetes resources must be created in the Admin Cluster,
 // such as the number of Pod replicas, the Service resource, or the Ingress.
+// +kubebuilder:validation:XValidation:rule="!(has(self.ingress) && has(self.gateway))",message="using both ingress and gateway is not supported"
 type ControlPlane struct {
 	// Defining the options for the deployed Tenant Control Plane as Deployment resource.
 	Deployment DeploymentSpec `json:"deployment,omitempty"`
