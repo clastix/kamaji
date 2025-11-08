@@ -250,7 +250,7 @@ func (r *TenantControlPlaneReconciler) mutexSpec(obj client.Object) mutex.Spec {
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	r.clock = clock.RealClock{}
 
 	controllerBuilder := ctrl.NewControllerManagedBy(mgr).
@@ -306,7 +306,7 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 		})))
 
 	// Conditionally add Gateway API ownership if available
-	if r.isGatewayAPIAvailable() {
+	if utilities.AreGatewayResourcesAvaialble(ctx, r.Client, r.DiscoveryClient) {
 		controllerBuilder = controllerBuilder.
 			Owns(&gatewayv1alpha2.TLSRoute{}).
 			Watches(&gatewayv1.Gateway{}, handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
@@ -357,19 +357,4 @@ func (r *TenantControlPlaneReconciler) dataStore(ctx context.Context, tenantCont
 	}
 
 	return &ds, nil
-}
-
-// isGatewayAPIAvailable checks if Gateway APIs are available in the cluster
-func (r *TenantControlPlaneReconciler) isGatewayAPIAvailable() bool {
-	if r.DiscoveryClient == nil {
-		return false
-	}
-	ctx := context.Background()
-
-	available, err := utilities.GatewayAPIResourcesAvailable(ctx, r.DiscoveryClient)
-	if err != nil {
-		return false
-	}
-
-	return available
 }
