@@ -52,7 +52,7 @@ type GroupDeletableResourceBuilderConfiguration struct {
 // GetResources returns a list of resources that will be used to provide tenant control planes
 // Currently there is only a default approach
 // TODO: the idea of this function is to become a factory to return the group of resources according to the given configuration.
-func GetResources(config GroupResourceBuilderConfiguration) []resources.Resource {
+func GetResources(ctx context.Context, config GroupResourceBuilderConfiguration) []resources.Resource {
 	resources := []resources.Resource{}
 
 	resources = append(resources, getDataStoreMigratingResources(config.client, config.KamajiNamespace, config.KamajiMigrateImage, config.KamajiServiceAccount, config.KamajiService)...)
@@ -69,7 +69,7 @@ func GetResources(config GroupResourceBuilderConfiguration) []resources.Resource
 	resources = append(resources, getKubernetesIngressResources(config.client)...)
 
 	// Conditionally add Gateway resources
-	if shouldIncludeGatewayResources(config.client, config.DiscoveryClient) {
+	if utilities.ShouldIncludeGatewayResources(ctx, config.client, config.DiscoveryClient) {
 		resources = append(resources, getKubernetesGatewayResources(config.client)...)
 	}
 
@@ -95,28 +95,6 @@ func GetDeletableResources(tcp *kamajiv1alpha1.TenantControlPlane, config GroupD
 	}
 
 	return res
-}
-
-func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.Resource {
-	resources := getDataStoreMigratingResources(config.client, config.KamajiNamespace, config.KamajiMigrateImage, config.KamajiServiceAccount, config.KamajiService)
-	resources = append(resources, getUpgradeResources(config.client)...)
-	resources = append(resources, getKubernetesServiceResources(config.client)...)
-	resources = append(resources, getKubeadmConfigResources(config.client, getTmpDirectory(config.tcpReconcilerConfig.TmpBaseDirectory, config.tenantControlPlane), config.DataStore)...)
-	resources = append(resources, getKubernetesCertificatesResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
-	resources = append(resources, getKubeconfigResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
-	resources = append(resources, getKubernetesStorageResources(config.client, config.Connection, config.DataStore, config.ExpirationThreshold)...)
-	resources = append(resources, getKonnectivityServerRequirementsResources(config.client, config.ExpirationThreshold)...)
-	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.DataStore)...)
-	resources = append(resources, getKonnectivityServerPatchResources(config.client)...)
-	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
-	resources = append(resources, getKubernetesIngressResources(config.client)...)
-
-	// Conditionally add Gateway resources
-	if shouldIncludeGatewayResources(config.client, config.DiscoveryClient) {
-		resources = append(resources, getKubernetesGatewayResources(config.client)...)
-	}
-
-	return resources
 }
 
 func getDataStoreMigratingCleanup(c client.Client, kamajiNamespace string) []resources.Resource {
@@ -321,19 +299,4 @@ func getNamespacedName(namespace string, name string) k8stypes.NamespacedName {
 
 func getTmpDirectory(base string, tenantControlPlane kamajiv1alpha1.TenantControlPlane) string {
 	return fmt.Sprintf("%s/%s/%s", base, tenantControlPlane.GetName(), uuid.New())
-}
-
-func shouldIncludeGatewayResources(c client.Client, discoveryClient discovery.DiscoveryInterface) bool {
-	if discoveryClient == nil {
-		// Fallback to client-based check
-		return utilities.IsGatewayAPIAvailableViaClient(context.Background(), c)
-	}
-
-	available, err := utilities.IsGatewayAPIAvailable(context.Background(), discoveryClient)
-	if err != nil {
-		// Log error and fall back to client-based check
-		return utilities.IsGatewayAPIAvailableViaClient(context.Background(), c)
-	}
-
-	return available
 }

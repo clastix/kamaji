@@ -5,7 +5,6 @@ package resources
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"strconv"
 
@@ -95,9 +94,6 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 		// updated. This might be by design? Need some input from the authors.
 		endpoint := net.JoinHostPort(address, strconv.FormatInt(int64(port), 10))
 		spec := tenantControlPlane.Spec.ControlPlane
-		if (spec.Gateway != nil) && (spec.Ingress != nil) {
-			return fmt.Errorf("using both gateway and ingress is not supported")
-		}
 		if spec.Gateway != nil {
 			if len(spec.Gateway.Hostname) > 0 {
 				gaddr, gport := utilities.GetControlPlaneAddressAndPortFromHostname(string(spec.Gateway.Hostname), port)

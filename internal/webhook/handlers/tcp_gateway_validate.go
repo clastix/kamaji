@@ -58,7 +58,7 @@ func (t TenantControlPlaneGatewayValidation) OnDelete(object runtime.Object) Adm
 }
 
 func (t TenantControlPlaneGatewayValidation) validateGatewayAPIAvailability(ctx context.Context) error {
-	available, err := utilities.IsGatewayAPIAvailable(ctx, t.DiscoveryClient)
+	available, err := utilities.GatewayAPIResourcesAvailable(ctx, t.DiscoveryClient)
 	if err != nil {
 		return fmt.Errorf("failed to check Gateway API availability: %w", err)
 	}
@@ -68,7 +68,7 @@ func (t TenantControlPlaneGatewayValidation) validateGatewayAPIAvailability(ctx 
 	}
 
 	// Additional check for TLSRoute specifically
-	tlsRouteAvailable, err := utilities.IsTLSRouteAPIAvailable(ctx, t.DiscoveryClient)
+	tlsRouteAvailable, err := utilities.TLSRouteAPIAvailable(ctx, t.DiscoveryClient)
 	if err != nil {
 		return fmt.Errorf("failed to check TLSRoute availability: %w", err)
 	}
