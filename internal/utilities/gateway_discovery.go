@@ -14,9 +14,9 @@ import (
 	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-// ShouldIncludeGatewayResources checks if Gateway API is available in the cluster through a discovery Client,
+// AreGatewayResourcesAvaialble checks if Gateway API is available in the cluster through a discovery Client,
 // with fallback to client-based check
-func ShouldIncludeGatewayResources(ctx context.Context, c client.Client, discoveryClient discovery.DiscoveryInterface) bool {
+func AreGatewayResourcesAvaialble(ctx context.Context, c client.Client, discoveryClient discovery.DiscoveryInterface) bool {
 	if discoveryClient == nil {
 		return IsGatewayAPIAvailableViaClient(ctx, c)
 	}
