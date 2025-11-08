@@ -150,10 +150,8 @@ type IngressSpec struct {
 type GatewaySpec struct {
 	// AdditionalMetadata to add Labels and Annotations support.
 	AdditionalMetadata AdditionalMetadata `json:"additionalMetadata,omitempty"`
-
 	// GatewayParentRefs is the class of the Gateway resource to use.
 	GatewayParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
-
 	// Hostname is an optional field which will be used as a route hostname.
 	Hostname gatewayv1.Hostname `json:"hostname,omitempty"`
 }
