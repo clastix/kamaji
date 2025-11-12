@@ -30,6 +30,7 @@ Feel free to open a Pull-Request to get yours listed.
 | R&D | IONOS Cloud | 2024 | [link](https://cloud.ionos.com/) | IONOS Cloud is a German Cloud Provider evaluating Kamaji for its [Managed Kubernetes platform](https://cloud.ionos.com/managed/kubernetes). |
 | Vendor | OVHCloud | 2025 | [link](https://www.ovhcloud.com/) | OVHCloud is a European Cloud Provider that will use Kamaji for its Managed Kubernetes Service offer. |
 | Vendor | WOBCOM GmbH | 2024 | [link](https://www.wobcom.de/) | WOBCOM provides an [**Open Digital Platform**](https://www.wobcom.de/geschaeftskunden/odp/) solution for Smart Cities, which is provided for customers in a Managed Kubernetes provided by Kamaji. |
+| Vendor | Mistral AI | 2025 | [link](https://mistral.ai/products/mistral-compute) | Mistral provides a baremetal kubernetes service that uses Kamaji for control plane management. |
 
 ### Adopter Types
 
