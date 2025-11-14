@@ -14,14 +14,17 @@ To use the Proxmox Cluster API provider, you must connect and authenticate to a 
 
 ```bash
 # The Proxmox VE host
-export PROXMOX_URL: "https://pve.example:8006"
+export PROXMOX_URL="https://pve.example:8006"
 
 # The Proxmox VE TokenID for authentication
-export PROXMOX_TOKEN: "clastix@pam!capi"
+export PROXMOX_TOKEN='clastix@pam!capi'
 
 # The secret associated with the TokenID
-export PROXMOX_SECRET: "REDACTED"
+export PROXMOX_SECRET="REDACTED"
 ```
+
+!!! warning "Env escaping "
+    Pay attention to escape special characters, such as `\` and `!`
 
 Install the Infrastructure Provider:
 
@@ -72,6 +75,14 @@ Set the following environment variables to configure the workload machines:
 # Node Configuration
 export SSH_USER="clastix"
 export SSH_AUTHORIZED_KEY="ssh-rsa AAAAB3Nz ..."
+export NODE_LABELS="datacenter=us-west,instance-type=large"
+export NODE_TAINTS="environment=production:PreferNoSchedule"
+
+# You can add additional cloud-init configuration to further customize
+# the worker nodes by setting the CLOUD_INIT_CONFIG environment variable:
+export CLOUD_INIT_CONFIG="#cloud-config package_update: true packages: - net-tools"
+
+# Number of worker nodes
 export NODE_REPLICAS=2
 
 # Resource Configuration
@@ -85,6 +96,7 @@ export BOOT_VOLUME_DEVICE="scsi0"
 export BOOT_VOLUME_SIZE=20
 export FILE_STORAGE_FORMAT="qcow2"
 export STORAGE_NODE="local"
+export POOL_NAME="sample-pool"
 ```
 
 Use the following command to generate a cluster manifest based on the [`capi-kamaji-proxmox-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/proxmox/capi-kamaji-proxmox-template.yaml) template file:
@@ -95,38 +107,8 @@ clusterctl generate cluster $CLUSTER_NAME \
     > capi-kamaji-proxmox-cluster.yaml
 ```
 
-### Additional cloud-init configuration
-
-Cluster API requires machine templates based on `cloud-init`. You can add additional `cloud-init` configuration to further customize the worker nodes by including an additional `cloud-init` file in the `KubeadmConfigTemplate`:
-
-```yaml
-kind: KubeadmConfigTemplate
-apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
-metadata:
-  name: ${CLUSTER_NAME}-md-0
-spec:
-  template:
-    spec:
-      files:
-      - path: "/etc/cloud/cloud.cfg.d/99-custom.cfg"
-        content: "${CLOUD_INIT_CONFIG:-}"
-        owner: "root:root"
-        permissions: "0644"
-```
-
-You can then set the `CLOUD_INIT_CONFIG` environment variable to include the additional configuration:
-
-```bash
-export CLOUD_INIT_CONFIG="#cloud-config package_update: true packages: - net-tools"
-```
-
-and include it in the `clusterctl generate cluster` command:
-
-```bash
-clusterctl generate cluster $CLUSTER_NAME \
-    --from capi-kamaji-proxmox-template.yaml \
-    > capi-kamaji-proxmox-cluster.yaml
-```
+!!! warning "Customize the Template"
+    Before to generate cluster manifest, review and edit the template `capi-kamaji-proxmox-template.yaml` to customize.
 
 ### Apply the Cluster Manifest
 

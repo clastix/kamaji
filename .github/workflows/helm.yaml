@@ -11,16 +11,19 @@ jobs:
     name: diff
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - run: make -C charts/kamaji docs
-      - name: Checking if Helm docs is not aligned
+      - name: Checking if Kamaji Helm Chart docs is not aligned
+        run: if [[ $(git diff | wc -l) -gt 0 ]]; then echo ">>> Untracked changes have not been committed" && git --no-pager diff && exit 1; fi
+      - run: make -C charts/kamaji-crds docs
+      - name: Checking if Kamaji CRDs Helm Chart docs is not aligned
         run: if [[ $(git diff | wc -l) -gt 0 ]]; then echo ">>> Untracked changes have not been committed" && git --no-pager diff && exit 1; fi
   lint:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: azure/setup-helm@v4
         with:
           version: 3.3.4
@@ -28,14 +31,16 @@ jobs:
         run: |-
           helm repo add clastix https://clastix.github.io/charts 
           helm dependency build ./charts/kamaji
-      - name: Linting Chart
+      - name: Linting Kamaji Helm Chart
         run: helm lint ./charts/kamaji
+      - name: Linting Kamaji CRDS Helm Chart
+        run: helm lint ./charts/kamaji-crds
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: [ "lint", "diff" ]
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Publish Helm chart
         uses: stefanprodan/helm-gh-pages@master
         with:

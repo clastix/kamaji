@@ -5,8 +5,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -125,19 +123,6 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 		default:
 			password = []byte(uuid.New().String())
 		}
-		// the coalesce function prioritizes the return value stored in the TenantControlPlane status,
-		// although this is going to be populated by the UpdateTenantControlPlaneStatus handler of the resource datastore-setup:
-		// the default value will be used for fresh new configurations, and preserving a previous one:
-		// this will keep us safe from naming changes cases as occurred with the following commit:
-		// https://github.com/clastix/kamaji/pull/203/commits/09ce38f489cccca72ab728a259bc8fb2cf6e4770
-		coalesceFn := func(fromStatus string) []byte {
-			if len(fromStatus) > 0 {
-				return []byte(fromStatus)
-			}
-			// The dash character (-) must be replaced with an underscore, PostgreSQL is complaining about it:
-			// https://github.com/clastix/kamaji/issues/328
-			return []byte(strings.ReplaceAll(fmt.Sprintf("%s_%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName()), "-", "_"))
-		}
 
 		finalizersList := sets.New[string](r.resource.GetFinalizers()...)
 		finalizersList.Insert(finalizers.DatastoreSecretFinalizer)
@@ -161,7 +146,24 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 			username = u
 			password = p
 		} else {
-			username = coalesceFn(tenantControlPlane.Status.Storage.Setup.User)
+			// prioritize the username stored in the TenantControlPlane status,
+			// although this is going to be populated by the UpdateTenantControlPlaneStatus handler of the resource datastore-setup:
+			// the default value will be used for fresh new configurations, and preserving a previous one:
+			// this will keep us safe from naming changes cases as occurred with the following commit:
+			// https://github.com/clastix/kamaji/pull/203/commits/09ce38f489cccca72ab728a259bc8fb2cf6e4770
+			switch {
+			case len(tenantControlPlane.Status.Storage.Setup.User) > 0:
+				// for existing TCPs, the dataStoreSchema will be adopted from the status,
+				// as the mutating webhook only takes care of TCP creations, not updates
+				username = []byte(tenantControlPlane.Status.Storage.Setup.User)
+				tenantControlPlane.Spec.DataStoreUsername = string(username)
+			case len(tenantControlPlane.Spec.DataStoreUsername) > 0:
+				// for new TCPs, the spec field will have been provided by the user
+				// or defaulted by the defaulting webhook
+				username = []byte(tenantControlPlane.Spec.DataStoreUsername)
+			default:
+				username = []byte(tenantControlPlane.GetDefaultDatastoreUsername())
+			}
 		}
 
 		var dataStoreSchema string
@@ -176,8 +178,7 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 			// or defaulted by the defaulting webhook
 			dataStoreSchema = tenantControlPlane.Spec.DataStoreSchema
 		default:
-			// this can only happen on TCP creations when the webhook is not installed
-			return fmt.Errorf("cannot build datastore storage config, schema name must either exist in Spec or Status")
+			dataStoreSchema = tenantControlPlane.GetDefaultDatastoreSchema()
 		}
 
 		r.resource.Data = map[string][]byte{
@@ -189,7 +190,7 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
-		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
+		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}

@@ -9,6 +9,15 @@ repo: github.com/clastix/kamaji
 resources:
 - api:
     crdVersion: v1
+    namespaced: false
+  controller: true
+  domain: clastix.io
+  group: kamaji
+  kind: KubeconfigGenerator
+  path: github.com/clastix/kamaji/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
     namespaced: true
   controller: true
   domain: clastix.io

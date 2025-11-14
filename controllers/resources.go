@@ -5,6 +5,7 @@ package controllers
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
@@ -26,6 +27,7 @@ type GroupResourceBuilderConfiguration struct {
 	log                  logr.Logger
 	tcpReconcilerConfig  TenantControlPlaneReconcilerConfig
 	tenantControlPlane   kamajiv1alpha1.TenantControlPlane
+	ExpirationThreshold  time.Duration
 	Connection           datastore.Connection
 	DataStore            kamajiv1alpha1.DataStore
 	KamajiNamespace      string
@@ -78,8 +80,8 @@ func getDefaultResources(config GroupResourceBuilderConfiguration) []resources.R
 	resources = append(resources, getKubeadmConfigResources(config.client, getTmpDirectory(config.tcpReconcilerConfig.TmpBaseDirectory, config.tenantControlPlane), config.DataStore)...)
 	resources = append(resources, getKubernetesCertificatesResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubeconfigResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
-	resources = append(resources, getKubernetesStorageResources(config.client, config.Connection, config.DataStore)...)
-	resources = append(resources, getKonnectivityServerRequirementsResources(config.client)...)
+	resources = append(resources, getKubernetesStorageResources(config.client, config.Connection, config.DataStore, config.ExpirationThreshold)...)
+	resources = append(resources, getKonnectivityServerRequirementsResources(config.client, config.ExpirationThreshold)...)
 	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.DataStore)...)
 	resources = append(resources, getKonnectivityServerPatchResources(config.client)...)
 	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
@@ -148,28 +150,33 @@ func getKubeadmConfigResources(c client.Client, tmpDirectory string, dataStore k
 func getKubernetesCertificatesResources(c client.Client, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
 	return []resources.Resource{
 		&resources.CACertificate{
-			Client:       c,
-			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			Client:                  c,
+			TmpDirectory:            getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			CertExpirationThreshold: tcpReconcilerConfig.CertExpirationThreshold,
 		},
 		&resources.FrontProxyCACertificate{
-			Client:       c,
-			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			Client:                  c,
+			TmpDirectory:            getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			CertExpirationThreshold: tcpReconcilerConfig.CertExpirationThreshold,
 		},
 		&resources.SACertificate{
 			Client:       c,
 			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
 		},
 		&resources.APIServerCertificate{
-			Client:       c,
-			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			Client:                  c,
+			TmpDirectory:            getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			CertExpirationThreshold: tcpReconcilerConfig.CertExpirationThreshold,
 		},
 		&resources.APIServerKubeletClientCertificate{
-			Client:       c,
-			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			Client:                  c,
+			TmpDirectory:            getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			CertExpirationThreshold: tcpReconcilerConfig.CertExpirationThreshold,
 		},
 		&resources.FrontProxyClientCertificate{
-			Client:       c,
-			TmpDirectory: getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			Client:                  c,
+			TmpDirectory:            getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			CertExpirationThreshold: tcpReconcilerConfig.CertExpirationThreshold,
 		},
 	}
 }
@@ -177,33 +184,37 @@ func getKubernetesCertificatesResources(c client.Client, tcpReconcilerConfig Ten
 func getKubeconfigResources(c client.Client, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, tenantControlPlane kamajiv1alpha1.TenantControlPlane) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubeconfigResource{
-			Name:               "admin-kubeconfig",
-			Client:             c,
-			KubeConfigFileName: resources.AdminKubeConfigFileName,
-			TmpDirectory:       getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			Client:                  c,
+			Name:                    "admin-kubeconfig",
+			KubeConfigFileName:      resources.AdminKubeConfigFileName,
+			TmpDirectory:            getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			CertExpirationThreshold: tcpReconcilerConfig.CertExpirationThreshold,
 		},
 		&resources.KubeconfigResource{
-			Name:               "admin-kubeconfig",
-			Client:             c,
-			KubeConfigFileName: resources.SuperAdminKubeConfigFileName,
-			TmpDirectory:       getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			Client:                  c,
+			Name:                    "admin-kubeconfig",
+			KubeConfigFileName:      resources.SuperAdminKubeConfigFileName,
+			TmpDirectory:            getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			CertExpirationThreshold: tcpReconcilerConfig.CertExpirationThreshold,
 		},
 		&resources.KubeconfigResource{
-			Name:               "controller-manager-kubeconfig",
-			Client:             c,
-			KubeConfigFileName: resources.ControllerManagerKubeConfigFileName,
-			TmpDirectory:       getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			Client:                  c,
+			Name:                    "controller-manager-kubeconfig",
+			KubeConfigFileName:      resources.ControllerManagerKubeConfigFileName,
+			TmpDirectory:            getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			CertExpirationThreshold: tcpReconcilerConfig.CertExpirationThreshold,
 		},
 		&resources.KubeconfigResource{
-			Name:               "scheduler-kubeconfig",
-			Client:             c,
-			KubeConfigFileName: resources.SchedulerKubeConfigFileName,
-			TmpDirectory:       getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			Client:                  c,
+			Name:                    "scheduler-kubeconfig",
+			KubeConfigFileName:      resources.SchedulerKubeConfigFileName,
+			TmpDirectory:            getTmpDirectory(tcpReconcilerConfig.TmpBaseDirectory, tenantControlPlane),
+			CertExpirationThreshold: tcpReconcilerConfig.CertExpirationThreshold,
 		},
 	}
 }
 
-func getKubernetesStorageResources(c client.Client, dbConnection datastore.Connection, datastore kamajiv1alpha1.DataStore) []resources.Resource {
+func getKubernetesStorageResources(c client.Client, dbConnection datastore.Connection, datastore kamajiv1alpha1.DataStore, threshold time.Duration) []resources.Resource {
 	return []resources.Resource{
 		&ds.MultiTenancy{
 			DataStore: datastore,
@@ -219,8 +230,9 @@ func getKubernetesStorageResources(c client.Client, dbConnection datastore.Conne
 			DataStore:  datastore,
 		},
 		&ds.Certificate{
-			Client:    c,
-			DataStore: datastore,
+			Client:                  c,
+			DataStore:               datastore,
+			CertExpirationThreshold: threshold,
 		},
 	}
 }
@@ -251,10 +263,10 @@ func GetExternalKonnectivityResources(c client.Client) []resources.Resource {
 	}
 }
 
-func getKonnectivityServerRequirementsResources(c client.Client) []resources.Resource {
+func getKonnectivityServerRequirementsResources(c client.Client, threshold time.Duration) []resources.Resource {
 	return []resources.Resource{
 		&konnectivity.EgressSelectorConfigurationResource{Client: c},
-		&konnectivity.CertificateResource{Client: c},
+		&konnectivity.CertificateResource{Client: c, CertExpirationThreshold: threshold},
 		&konnectivity.KubeconfigResource{Client: c},
 	}
 }

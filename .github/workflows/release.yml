@@ -1,0 +1,75 @@
+name: Weekly Edge Release
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'  # Every Monday at 9 AM CET
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: generating date metadata
+        id: date
+        run: |
+          CURRENT_DATE=$(date -u +'%Y-%m-%d')
+          YY=$(date -u +'%y')
+          M=$(date -u +'%_m' | sed 's/ //g')
+          FIRST_OF_MONTH=$(date -u -d "$CURRENT_DATE" +%Y-%m-01)
+          WEEK_NUM=$(( (($(date -u +%s) - $(date -u -d "$FIRST_OF_MONTH" +%s)) / 86400 + $(date -u -d "$FIRST_OF_MONTH" +%u) - 1) / 7 + 1 ))
+
+          echo "yy=$YY" >> $GITHUB_OUTPUT
+          echo "month=$M" >> $GITHUB_OUTPUT
+          echo "week=$WEEK_NUM" >> $GITHUB_OUTPUT
+          echo "date=$CURRENT_DATE" >> $GITHUB_OUTPUT
+      - name: generating tag metadata
+        id: tag
+        run: |
+          TAG="edge-${{ steps.date.outputs.yy }}.${{ steps.date.outputs.month }}.${{ steps.date.outputs.week }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+      - name: generate release notes from template
+        run: |
+          export TAG="${{ steps.tag.outputs.tag }}"
+          envsubst < .github/release-template.md > release-notes.md
+      - name: generate release notes from template
+        run: |
+          export TAG="${{ steps.tag.outputs.tag }}"
+          envsubst < .github/release-template.md > release-notes-header.md
+      - name: generate GitHub release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release --repo "$GITHUB_REPOSITORY" \
+            create "${{ steps.tag.outputs.tag }}" \
+            --generate-notes \
+            --draft \
+            --title "temp" \
+            --notes "temp" > /dev/null || true
+          
+          gh release view "${{ steps.tag.outputs.tag }}" \
+            --json body --jq .body > auto-notes.md
+          
+          gh release delete "${{ steps.tag.outputs.tag }}" --yes || true
+      - name: combine notes
+        run: |
+          cat release-notes-header.md auto-notes.md > release-notes.md
+      - name: create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.tag.outputs.tag }}" \
+            --title "${{ steps.tag.outputs.tag }}" \
+            --notes-file release-notes.md
+      - name: trigger container build workflow
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+        run: |
+          gh workflow run "Container image build" \
+            --ref master \
+            -f tag="${{ steps.tag.outputs.tag }}"

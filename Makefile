@@ -139,9 +139,18 @@ webhook: controller-gen yq
 	$(YQ) -i 'map(.clientConfig.service.namespace |= "{{ .Release.Namespace }}")' ./charts/kamaji/controller-gen/validating-webhook.yaml
 
 crds: controller-gen yq
+	# kamaji chart
 	$(CONTROLLER_GEN) crd webhook paths="./..." output:stdout | $(YQ) 'select(documentIndex == 0)' > ./charts/kamaji/crds/kamaji.clastix.io_datastores.yaml
-	$(CONTROLLER_GEN) crd webhook paths="./..." output:stdout | $(YQ) 'select(documentIndex == 1)' > ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml
+	$(CONTROLLER_GEN) crd webhook paths="./..." output:stdout | $(YQ) 'select(documentIndex == 1)' > ./charts/kamaji/crds/kamaji.clastix.io_kubeconfiggenerators.yaml
+	$(CONTROLLER_GEN) crd webhook paths="./..." output:stdout | $(YQ) 'select(documentIndex == 2)' > ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml
 	$(YQ) -i '. *n load("./charts/kamaji/controller-gen/crd-conversion.yaml")' ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml
+	# kamaji-crds chart
+	cp ./charts/kamaji/controller-gen/crd-conversion.yaml ./charts/kamaji-crds/hack/crd-conversion.yaml
+	$(YQ) '.spec' ./charts/kamaji/crds/kamaji.clastix.io_datastores.yaml > ./charts/kamaji-crds/hack/kamaji.clastix.io_datastores_spec.yaml
+	$(YQ) '.spec' ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml > ./charts/kamaji-crds/hack/kamaji.clastix.io_tenantcontrolplanes_spec.yaml
+	$(YQ) '.spec' ./charts/kamaji/crds/kamaji.clastix.io_kubeconfiggenerators.yaml > ./charts/kamaji-crds/hack/kamaji.clastix.io_kubeconfiggenerators_spec.yaml
+	$(YQ) -i '.conversion.webhook.clientConfig.service.name = "{{ .Values.kamajiService }}"' ./charts/kamaji-crds/hack/kamaji.clastix.io_tenantcontrolplanes_spec.yaml
+	$(YQ) -i '.conversion.webhook.clientConfig.service.namespace = "{{ .Values.kamajiNamespace }}"' ./charts/kamaji-crds/hack/kamaji.clastix.io_tenantcontrolplanes_spec.yaml
 
 manifests: rbac webhook crds ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 
@@ -252,6 +261,7 @@ env: kind
 
 .PHONY: e2e
 e2e: env build load helm ginkgo cert-manager ## Create a KinD cluster, install Kamaji on it and run the test suite.
+	$(HELM) upgrade --debug --install kamaji-crds ./charts/kamaji-crds --create-namespace --namespace kamaji-system
 	$(HELM) repo add clastix https://clastix.github.io/charts
 	$(HELM) dependency build ./charts/kamaji
 	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true"

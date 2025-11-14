@@ -122,7 +122,11 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			kubeadmconstants.ServiceAccountPrivateKeyName: sa.PrivateKey,
 		}
 
-		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
+		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
+
+		if isRotationRequested {
+			utilities.SetLastRotationTimestamp(r.resource)
+		}
 
 		if isRotationRequested {
 			utilities.SetLastRotationTimestamp(r.resource)

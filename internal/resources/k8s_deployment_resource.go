@@ -36,7 +36,9 @@ func (r *KubernetesDeploymentResource) isStatusEqual(tenantControlPlane *kamajiv
 }
 
 func (r *KubernetesDeploymentResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
-	return !r.isStatusEqual(tenantControlPlane) || tenantControlPlane.Spec.Kubernetes.Version != tenantControlPlane.Status.Kubernetes.Version.Version
+	return !r.isStatusEqual(tenantControlPlane) ||
+		tenantControlPlane.Spec.Kubernetes.Version != tenantControlPlane.Status.Kubernetes.Version.Version ||
+		*r.computeStatus(tenantControlPlane) != ptr.Deref(tenantControlPlane.Status.Kubernetes.Version.Status, kamajiv1alpha1.VersionUnknown)
 }
 
 func (r *KubernetesDeploymentResource) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
@@ -78,19 +80,29 @@ func (r *KubernetesDeploymentResource) GetName() string {
 	return "deployment"
 }
 
-func (r *KubernetesDeploymentResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubernetesDeploymentResource) computeStatus(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) *kamajiv1alpha1.KubernetesVersionStatus {
 	switch {
 	case ptr.Deref(tenantControlPlane.Spec.ControlPlane.Deployment.Replicas, 2) == 0:
-		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionSleeping
-	case !r.isProgressingUpgrade():
-		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionReady
-		tenantControlPlane.Status.Kubernetes.Version.Version = tenantControlPlane.Spec.Kubernetes.Version
-	case r.isUpgrading(tenantControlPlane):
-		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionUpgrading
-	case r.isProvisioning(tenantControlPlane):
-		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionProvisioning
+		return &kamajiv1alpha1.VersionSleeping
 	case r.isNotReady():
-		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionNotReady
+		return &kamajiv1alpha1.VersionNotReady
+	case tenantControlPlane.Spec.WritePermissions.HasAnyLimitation():
+		return &kamajiv1alpha1.VersionWriteLimited
+	case !r.isProgressingUpgrade():
+		return &kamajiv1alpha1.VersionReady
+	case r.isUpgrading(tenantControlPlane):
+		return &kamajiv1alpha1.VersionUpgrading
+	case r.isProvisioning(tenantControlPlane):
+		return &kamajiv1alpha1.VersionProvisioning
+	default:
+		return &kamajiv1alpha1.VersionUnknown
+	}
+}
+
+func (r *KubernetesDeploymentResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	tenantControlPlane.Status.Kubernetes.Version.Status = r.computeStatus(tenantControlPlane)
+	if *tenantControlPlane.Status.Kubernetes.Version.Status == kamajiv1alpha1.VersionReady {
+		tenantControlPlane.Status.Kubernetes.Version.Version = tenantControlPlane.Spec.Kubernetes.Version
 	}
 
 	tenantControlPlane.Status.Kubernetes.Deployment = kamajiv1alpha1.KubernetesDeploymentStatus{

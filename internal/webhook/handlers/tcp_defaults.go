@@ -5,9 +5,7 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net"
-	"strings"
 
 	"github.com/pkg/errors"
 	"gomodules.xyz/jsonpatch/v2"
@@ -73,7 +71,10 @@ func (t TenantControlPlaneDefaults) defaultUnsetFields(tcp *kamajiv1alpha1.Tenan
 	}
 
 	if len(tcp.Spec.DataStoreSchema) == 0 {
-		dss := strings.ReplaceAll(fmt.Sprintf("%s_%s", tcp.GetNamespace(), tcp.GetName()), "-", "_")
-		tcp.Spec.DataStoreSchema = dss
+		tcp.Spec.DataStoreSchema = tcp.GetDefaultDatastoreSchema()
+	}
+
+	if len(tcp.Spec.DataStoreUsername) == 0 {
+		tcp.Spec.DataStoreUsername = tcp.GetDefaultDatastoreUsername()
 	}
 }

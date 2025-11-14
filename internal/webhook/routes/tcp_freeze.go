@@ -4,7 +4,6 @@
 package routes
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -15,5 +14,5 @@ func (t TenantControlPlaneMigrate) GetPath() string {
 }
 
 func (t TenantControlPlaneMigrate) GetObject() runtime.Object {
-	return &corev1.Namespace{}
+	return nil
 }

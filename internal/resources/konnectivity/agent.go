@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/blang/semver"
 	"github.com/prometheus/client_golang/prometheus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,6 +35,19 @@ func (r *Agent) GetHistogram() prometheus.Histogram {
 	agentCollector = resources.LazyLoadHistogramFromResource(agentCollector, r)
 
 	return agentCollector
+}
+
+func (r *Agent) agentVersion(tcp *kamajiv1alpha1.TenantControlPlane) string {
+	if tcp.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Version != "" {
+		return tcp.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Version
+	}
+
+	version, parsedErr := semver.ParseTolerant(tcp.Spec.Kubernetes.Version)
+	if parsedErr != nil {
+		return ""
+	}
+
+	return fmt.Sprintf("v0.%d.0", version.Minor)
 }
 
 func (r *Agent) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
@@ -116,7 +130,7 @@ func (r *Agent) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 			obj.SetName(r.resource.GetName())
 			obj.SetNamespace(r.resource.GetNamespace())
 
-			if cleanupErr := r.tenantClient.Delete(ctx, &obj); cleanupErr != nil {
+			if cleanupErr := r.tenantClient.Delete(ctx, &obj); cleanupErr != nil && !k8serrors.IsNotFound(cleanupErr) {
 				log.FromContext(ctx, "resource", r.GetName()).Error(cleanupErr, "cannot cleanup older appsv1.Deployment")
 			}
 		case tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode == kamajiv1alpha1.KonnectivityAgentModeDeployment &&
@@ -125,7 +139,7 @@ func (r *Agent) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 			obj.SetName(r.resource.GetName())
 			obj.SetNamespace(r.resource.GetNamespace())
 
-			if cleanupErr := r.tenantClient.Delete(ctx, &obj); cleanupErr != nil {
+			if cleanupErr := r.tenantClient.Delete(ctx, &obj); cleanupErr != nil && !k8serrors.IsNotFound(cleanupErr) {
 				log.FromContext(ctx, "resource", r.GetName()).Error(cleanupErr, "cannot cleanup older appsv1.DaemonSet")
 			}
 		}
@@ -190,6 +204,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		podTemplateSpec.SetLabels(utilities.MergeMaps(podTemplateSpec.GetLabels(), specSelector.MatchLabels))
 		podTemplateSpec.Spec.PriorityClassName = "system-cluster-critical"
 		podTemplateSpec.Spec.Tolerations = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Tolerations
+		podTemplateSpec.Spec.HostNetwork = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.HostNetwork
 		podTemplateSpec.Spec.NodeSelector = map[string]string{
 			"kubernetes.io/os": "linux",
 		}
@@ -218,7 +233,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			podTemplateSpec.Spec.Containers = make([]corev1.Container, 1)
 		}
 
-		podTemplateSpec.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Image, tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Version)
+		podTemplateSpec.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Image, r.agentVersion(tenantControlPlane))
 		podTemplateSpec.Spec.Containers[0].Name = AgentName
 		podTemplateSpec.Spec.Containers[0].Command = []string{"/proxy-agent"}
 		podTemplateSpec.Spec.HostNetwork = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.UseHostNetwork

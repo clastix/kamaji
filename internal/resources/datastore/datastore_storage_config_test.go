@@ -5,6 +5,7 @@ package datastore_test
 
 import (
 	"context"
+	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -60,16 +61,27 @@ var _ = Describe("DatastoreStorageConfig", func() {
 		}
 	})
 
-	When("TCP has no dataStoreSchema defined", func() {
+	When("TCP has neither dataStoreSchema nor dataStoreUsername defined, fallback to default value", func() {
 		It("should return an error", func() {
-			_, err := resources.Handle(ctx, dsc, tcp)
-			Expect(err).To(HaveOccurred())
+			op, err := resources.Handle(ctx, dsc, tcp)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(op).To(Equal(controllerutil.OperationResultCreated))
+
+			var secrets corev1.SecretList
+			Expect(fakeClient.List(ctx, &secrets)).To(Succeed())
+			Expect(secrets.Items).To(HaveLen(1))
+
+			expectedValue := []byte(fmt.Sprintf("%s_%s", tcp.Namespace, tcp.Name))
+
+			Expect(secrets.Items[0].Data["DB_SCHEMA"]).To(Equal(expectedValue))
+			Expect(secrets.Items[0].Data["DB_USER"]).To(Equal(expectedValue))
 		})
 	})
 
-	When("TCP has dataStoreSchema set in spec", func() {
+	When("TCP has dataStoreSchema and dataStoreUsername set in spec", func() {
 		BeforeEach(func() {
 			tcp.Spec.DataStoreSchema = "custom-prefix"
+			tcp.Spec.DataStoreUsername = "custom-user"
 		})
 
 		It("should create the datastore secret with the schema name from the spec", func() {
@@ -81,10 +93,11 @@ var _ = Describe("DatastoreStorageConfig", func() {
 			Expect(fakeClient.List(ctx, secrets)).To(Succeed())
 			Expect(secrets.Items).To(HaveLen(1))
 			Expect(secrets.Items[0].Data["DB_SCHEMA"]).To(Equal([]byte("custom-prefix")))
+			Expect(secrets.Items[0].Data["DB_USER"]).To(Equal([]byte("custom-user")))
 		})
 	})
 
-	When("TCP has dataStoreSchema set in status, but not in spec", func() {
+	When("TCP has dataStoreSchema and dataStoreUsername set in status, but not in spec", func() {
 		// this test case ensures that existing TCPs (created in a CRD version without
 		// the dataStoreSchema field) correctly adopt the spec field from the status.
 
@@ -92,6 +105,7 @@ var _ = Describe("DatastoreStorageConfig", func() {
 			By("updating the TCP status")
 			Expect(fakeClient.Get(ctx, client.ObjectKeyFromObject(tcp), tcp)).To(Succeed())
 			tcp.Status.Storage.Setup.Schema = "existing-schema-name"
+			tcp.Status.Storage.Setup.User = "existing-username"
 			Expect(fakeClient.Status().Update(ctx, tcp)).To(Succeed())
 
 			By("handling the resource")
@@ -104,12 +118,14 @@ var _ = Describe("DatastoreStorageConfig", func() {
 			Expect(fakeClient.List(ctx, secrets)).To(Succeed())
 			Expect(secrets.Items).To(HaveLen(1))
 			Expect(secrets.Items[0].Data["DB_SCHEMA"]).To(Equal([]byte("existing-schema-name")))
+			Expect(secrets.Items[0].Data["DB_USER"]).To(Equal([]byte("existing-username")))
 
 			By("checking the TCP spec")
 			// we have to check the modified struct here (instead of retrieving the object
 			// via the fakeClient), as the TCP resource update is not done by the resources.
 			// Instead, the TCP controller will handle TCP updates after handling all resources
 			tcp.Spec.DataStoreSchema = "existing-schema-name"
+			tcp.Spec.DataStoreUsername = "existing-username"
 		})
 	})
 })

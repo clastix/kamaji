@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -26,9 +27,16 @@ import (
 )
 
 type APIServerKubeletClientCertificate struct {
-	resource     *corev1.Secret
-	Client       client.Client
-	TmpDirectory string
+	resource                *corev1.Secret
+	Client                  client.Client
+	TmpDirectory            string
+	CertExpirationThreshold time.Duration
+}
+
+func (r *APIServerKubeletClientCertificate) GetHistogram() prometheus.Histogram {
+	clientcertificateCollector = LazyLoadHistogramFromResource(clientcertificateCollector, r)
+
+	return clientcertificateCollector
 }
 
 func (r *APIServerKubeletClientCertificate) GetHistogram() prometheus.Histogram {
@@ -102,6 +110,7 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 		}
 
 		r.resource.SetLabels(utilities.MergeMaps(
+			r.resource.GetLabels(),
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 			map[string]string{
 				constants.ControllerLabelResource: utilities.CertificateX509Label,
@@ -125,6 +134,7 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
 				r.resource.Data[kubeadmconstants.APIServerKubeletClientCertName],
 				r.resource.Data[kubeadmconstants.APIServerKubeletClientKeyName],
+				r.CertExpirationThreshold,
 			)
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.APIServerKubeletClientCertAndKeyBaseName, err.Error()))

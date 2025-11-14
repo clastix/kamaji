@@ -5,7 +5,9 @@ package konnectivity
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -27,8 +29,15 @@ import (
 )
 
 type CertificateResource struct {
-	resource *corev1.Secret
-	Client   client.Client
+	resource                *corev1.Secret
+	Client                  client.Client
+	CertExpirationThreshold time.Duration
+}
+
+func (r *CertificateResource) GetHistogram() prometheus.Histogram {
+	certificateCollector = resources.LazyLoadHistogramFromResource(certificateCollector, r)
+
+	return certificateCollector
 }
 
 func (r *CertificateResource) GetHistogram() prometheus.Histogram {
@@ -100,6 +109,16 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
+		// Retrieving the TenantControlPlane CA:
+		// this is required to trigger a new generation in case of Certificate Authority rotation.
+		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
+		secretCA := &corev1.Secret{}
+		if err := r.Client.Get(ctx, namespacedName, secretCA); err != nil {
+			logger.Error(err, "cannot retrieve the CA secret")
+
+			return err
+		}
+
 		r.resource.SetLabels(utilities.MergeMaps(
 			r.resource.GetLabels(),
 			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
@@ -117,21 +136,18 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 		isRotationRequested := utilities.IsRotationRequested(r.resource)
 
 		if checksum := tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.CalculateMapChecksum(r.resource.Data)) {
-			isValid, err := crypto.IsValidCertificateKeyPairBytes(r.resource.Data[corev1.TLSCertKey], r.resource.Data[corev1.TLSPrivateKeyKey])
+			isCAValid, err := crypto.VerifyCertificate(r.resource.Data[corev1.TLSCertKey], secretCA.Data[kubeadmconstants.CACertName], x509.ExtKeyUsageServerAuth)
+			if err != nil {
+				logger.Info(fmt.Sprintf("certificate-authority verify failed: %s", err.Error()))
+			}
+
+			isValid, err := crypto.IsValidCertificateKeyPairBytes(r.resource.Data[corev1.TLSCertKey], r.resource.Data[corev1.TLSPrivateKeyKey], r.CertExpirationThreshold)
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", konnectivityCertAndKeyBaseName, err.Error()))
 			}
-			if isValid {
+			if isCAValid && isValid {
 				return nil
 			}
-		}
-
-		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
-		secretCA := &corev1.Secret{}
-		if err := r.Client.Get(ctx, namespacedName, secretCA); err != nil {
-			logger.Error(err, "cannot retrieve the CA secret")
-
-			return err
 		}
 
 		ca := kubeadm.CertificatePrivateKeyPair{

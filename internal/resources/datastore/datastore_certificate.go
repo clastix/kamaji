@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -24,10 +25,17 @@ import (
 )
 
 type Certificate struct {
-	resource  *corev1.Secret
-	Client    client.Client
-	Name      string
-	DataStore kamajiv1alpha1.DataStore
+	resource                *corev1.Secret
+	Client                  client.Client
+	Name                    string
+	DataStore               kamajiv1alpha1.DataStore
+	CertExpirationThreshold time.Duration
+}
+
+func (r *Certificate) GetHistogram() prometheus.Histogram {
+	certificateCollector = resources.LazyLoadHistogramFromResource(certificateCollector, r)
+
+	return certificateCollector
 }
 
 func (r *Certificate) GetHistogram() prometheus.Histogram {
@@ -104,6 +112,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 			r.resource.Data["ca.crt"] = ca
 
 			r.resource.SetLabels(utilities.MergeMaps(
+				r.resource.GetLabels(),
 				utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
 				map[string]string{
 					constants.ControllerLabelResource: utilities.CertificateX509Label,
@@ -118,7 +127,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 
 			if utilities.GetObjectChecksum(r.resource) == utilities.CalculateMapChecksum(r.resource.Data) {
 				if r.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
-					if isValid, _ := crypto.IsValidCertificateKeyPairBytes(r.resource.Data["server.crt"], r.resource.Data["server.key"]); isValid && !isRotationRequested {
+					if isValid, _ := crypto.IsValidCertificateKeyPairBytes(r.resource.Data["server.crt"], r.resource.Data["server.key"], r.CertExpirationThreshold); isValid && !isRotationRequested {
 						return nil
 					}
 				}

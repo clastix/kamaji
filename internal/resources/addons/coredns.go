@@ -292,87 +292,25 @@ func (c *CoreDNS) mutateClusterRoleBinding(ctx context.Context, tenantClient cli
 }
 
 func (c *CoreDNS) mutateDeployment(ctx context.Context, tenantClient client.Client) (controllerutil.OperationResult, error) {
-	d := &appsv1.Deployment{}
-	d.SetName(c.deployment.GetName())
-	d.SetNamespace(c.deployment.GetNamespace())
+	var deployment appsv1.Deployment
+	deployment.Name = c.deployment.Name
+	deployment.Namespace = c.deployment.Namespace
 
-	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, d, func() error {
-		d.SetLabels(utilities.MergeMaps(d.GetLabels(), c.deployment.GetLabels()))
-		d.SetAnnotations(utilities.MergeMaps(d.GetAnnotations(), c.deployment.GetAnnotations()))
-		d.Spec.Replicas = c.deployment.Spec.Replicas
-		d.Spec.Selector = c.deployment.Spec.Selector
-		d.Spec.Template.Labels = c.deployment.Spec.Selector.MatchLabels
-		if len(d.Spec.Template.Spec.Volumes) != 1 {
-			d.Spec.Template.Spec.Volumes = make([]corev1.Volume, 1)
+	if err := tenantClient.Get(ctx, client.ObjectKeyFromObject(&deployment), &deployment); err != nil {
+		if k8serrors.IsNotFound(err) {
+			return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, c.deployment, func() error {
+				return controllerutil.SetControllerReference(c.clusterRoleBinding, c.deployment, tenantClient.Scheme())
+			})
 		}
-		d.Spec.Template.Spec.Volumes[0].Name = c.deployment.Spec.Template.Spec.Volumes[0].Name
-		if d.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap == nil {
-			d.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap = &corev1.ConfigMapVolumeSource{}
-		}
-		d.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap.LocalObjectReference.Name = c.deployment.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap.LocalObjectReference.Name
-		if len(d.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap.Items) == 0 {
-			d.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap.Items = make([]corev1.KeyToPath, 1)
-		}
-		d.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap.Items[0].Key = c.deployment.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap.Items[0].Key
-		d.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap.Items[0].Path = c.deployment.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap.Items[0].Path
-		if len(d.Spec.Template.Spec.Containers) == 0 {
-			d.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
-		}
-		d.Spec.Template.Spec.Containers[0].Name = c.deployment.Spec.Template.Spec.Containers[0].Name
-		d.Spec.Template.Spec.Containers[0].Image = c.deployment.Spec.Template.Spec.Containers[0].Image
-		d.Spec.Template.Spec.Containers[0].Args = c.deployment.Spec.Template.Spec.Containers[0].Args
-		if len(d.Spec.Template.Spec.Containers[0].Ports) != 3 {
-			d.Spec.Template.Spec.Containers[0].Ports = make([]corev1.ContainerPort, 3)
-		}
-		d.Spec.Template.Spec.Containers[0].Ports[0].Name = c.deployment.Spec.Template.Spec.Containers[0].Ports[0].Name
-		d.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = c.deployment.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort
-		d.Spec.Template.Spec.Containers[0].Ports[0].Protocol = c.deployment.Spec.Template.Spec.Containers[0].Ports[0].Protocol
-		d.Spec.Template.Spec.Containers[0].Ports[1].Name = c.deployment.Spec.Template.Spec.Containers[0].Ports[1].Name
-		d.Spec.Template.Spec.Containers[0].Ports[1].ContainerPort = c.deployment.Spec.Template.Spec.Containers[0].Ports[1].ContainerPort
-		d.Spec.Template.Spec.Containers[0].Ports[1].Protocol = c.deployment.Spec.Template.Spec.Containers[0].Ports[1].Protocol
-		d.Spec.Template.Spec.Containers[0].Ports[2].Name = c.deployment.Spec.Template.Spec.Containers[0].Ports[2].Name
-		d.Spec.Template.Spec.Containers[0].Ports[2].ContainerPort = c.deployment.Spec.Template.Spec.Containers[0].Ports[2].ContainerPort
-		d.Spec.Template.Spec.Containers[0].Ports[2].Protocol = c.deployment.Spec.Template.Spec.Containers[0].Ports[2].Protocol
-		d.Spec.Template.Spec.Containers[0].Resources = c.deployment.Spec.Template.Spec.Containers[0].Resources
-		if len(d.Spec.Template.Spec.Containers[0].VolumeMounts) == 0 {
-			d.Spec.Template.Spec.Containers[0].VolumeMounts = make([]corev1.VolumeMount, 1)
-		}
-		d.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name = c.deployment.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name
-		d.Spec.Template.Spec.Containers[0].VolumeMounts[0].ReadOnly = c.deployment.Spec.Template.Spec.Containers[0].VolumeMounts[0].ReadOnly
-		d.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath = c.deployment.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
-		if d.Spec.Template.Spec.Containers[0].LivenessProbe == nil {
-			d.Spec.Template.Spec.Containers[0].LivenessProbe = &corev1.Probe{}
-		}
-		d.Spec.Template.Spec.Containers[0].LivenessProbe.HTTPGet = c.deployment.Spec.Template.Spec.Containers[0].LivenessProbe.HTTPGet
-		d.Spec.Template.Spec.Containers[0].LivenessProbe.InitialDelaySeconds = c.deployment.Spec.Template.Spec.Containers[0].LivenessProbe.InitialDelaySeconds
-		d.Spec.Template.Spec.Containers[0].LivenessProbe.TimeoutSeconds = c.deployment.Spec.Template.Spec.Containers[0].LivenessProbe.TimeoutSeconds
-		d.Spec.Template.Spec.Containers[0].LivenessProbe.SuccessThreshold = c.deployment.Spec.Template.Spec.Containers[0].LivenessProbe.SuccessThreshold
-		d.Spec.Template.Spec.Containers[0].LivenessProbe.FailureThreshold = c.deployment.Spec.Template.Spec.Containers[0].LivenessProbe.FailureThreshold
-		if d.Spec.Template.Spec.Containers[0].ReadinessProbe == nil {
-			d.Spec.Template.Spec.Containers[0].ReadinessProbe = &corev1.Probe{}
-		}
-		d.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet = c.deployment.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet
-		if d.Spec.Template.Spec.Containers[0].SecurityContext == nil {
-			d.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{}
-		}
-		d.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities = c.deployment.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities
-		d.Spec.Template.Spec.Containers[0].SecurityContext.ReadOnlyRootFilesystem = c.deployment.Spec.Template.Spec.Containers[0].SecurityContext.ReadOnlyRootFilesystem
-		d.Spec.Template.Spec.Containers[0].SecurityContext.AllowPrivilegeEscalation = c.deployment.Spec.Template.Spec.Containers[0].SecurityContext.AllowPrivilegeEscalation
-		d.Spec.Template.Spec.DNSPolicy = c.deployment.Spec.Template.Spec.DNSPolicy
-		d.Spec.Template.Spec.NodeSelector = c.deployment.Spec.Template.Spec.NodeSelector
-		d.Spec.Template.Spec.ServiceAccountName = c.deployment.Spec.Template.Spec.ServiceAccountName
-		if d.Spec.Template.Spec.Affinity == nil {
-			d.Spec.Template.Spec.Affinity = &corev1.Affinity{
-				PodAntiAffinity: &corev1.PodAntiAffinity{},
-			}
-		}
-		d.Spec.Template.Spec.Affinity.PodAffinity = c.deployment.Spec.Template.Spec.Affinity.PodAffinity
-		d.Spec.Template.Spec.Tolerations = c.deployment.Spec.Template.Spec.Tolerations
-		d.Spec.Template.Spec.PriorityClassName = c.deployment.Spec.Template.Spec.PriorityClassName
-		d.Spec.Strategy.Type = c.deployment.Spec.Strategy.Type
 
-		return controllerutil.SetControllerReference(c.clusterRoleBinding, d, tenantClient.Scheme())
-	})
+		return controllerutil.OperationResultNone, err
+	}
+
+	if err := controllerutil.SetControllerReference(c.clusterRoleBinding, c.deployment, tenantClient.Scheme()); err != nil {
+		return controllerutil.OperationResultNone, err
+	}
+
+	return controllerutil.OperationResultNone, tenantClient.Patch(ctx, c.deployment, client.Apply, client.FieldOwner("kamaji"), client.ForceOwnership)
 }
 
 func (c *CoreDNS) mutateConfigMap(ctx context.Context, tenantClient client.Client) (controllerutil.OperationResult, error) {
@@ -390,20 +328,25 @@ func (c *CoreDNS) mutateConfigMap(ctx context.Context, tenantClient client.Clien
 }
 
 func (c *CoreDNS) mutateService(ctx context.Context, tenantClient client.Client) (controllerutil.OperationResult, error) {
-	svc := &corev1.Service{}
-	svc.SetName(c.service.GetName())
-	svc.SetNamespace(c.service.GetNamespace())
+	var svc corev1.Service
+	svc.Name = c.service.Name
+	svc.Namespace = c.service.Namespace
 
-	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, svc, func() error {
-		svc.SetLabels(utilities.MergeMaps(svc.GetLabels(), c.service.GetLabels()))
-		svc.SetAnnotations(utilities.MergeMaps(svc.GetAnnotations(), c.service.GetAnnotations()))
+	if err := tenantClient.Get(ctx, client.ObjectKeyFromObject(&svc), &svc); err != nil {
+		if k8serrors.IsNotFound(err) {
+			return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, c.service, func() error {
+				return controllerutil.SetControllerReference(c.clusterRoleBinding, c.service, tenantClient.Scheme())
+			})
+		}
 
-		svc.Spec.Ports = c.service.Spec.Ports
-		svc.Spec.Selector = c.service.Spec.Selector
-		svc.Spec.ClusterIP = c.service.Spec.ClusterIP
+		return controllerutil.OperationResultNone, err
+	}
 
-		return controllerutil.SetControllerReference(c.clusterRoleBinding, svc, tenantClient.Scheme())
-	})
+	if err := controllerutil.SetControllerReference(c.clusterRoleBinding, c.service, tenantClient.Scheme()); err != nil {
+		return controllerutil.OperationResultNone, err
+	}
+
+	return controllerutil.OperationResultNone, tenantClient.Patch(ctx, c.service, client.Apply, client.FieldOwner("kamaji"), client.ForceOwnership)
 }
 
 func (c *CoreDNS) mutateClusterRole(ctx context.Context, tenantClient client.Client) (controllerutil.OperationResult, error) {

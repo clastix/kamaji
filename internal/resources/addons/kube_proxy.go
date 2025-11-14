@@ -15,7 +15,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -298,81 +297,25 @@ func (k *KubeProxy) mutateConfigMap(ctx context.Context, tenantClient client.Cli
 }
 
 func (k *KubeProxy) mutateDaemonSet(ctx context.Context, tenantClient client.Client) (controllerutil.OperationResult, error) {
-	ds := &appsv1.DaemonSet{}
-	ds.SetName(k.daemonSet.GetName())
-	ds.SetNamespace(k.daemonSet.GetNamespace())
+	var ds appsv1.DaemonSet
+	ds.Name = k.daemonSet.Name
+	ds.Namespace = k.daemonSet.Namespace
 
-	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, ds, func() error {
-		ds.SetLabels(utilities.MergeMaps(ds.GetLabels(), k.daemonSet.GetLabels()))
-		ds.SetAnnotations(utilities.MergeMaps(ds.GetAnnotations(), k.daemonSet.GetAnnotations()))
-		ds.Spec.Selector = k.daemonSet.Spec.Selector
-		if len(ds.Spec.Template.Spec.Volumes) != 3 {
-			ds.Spec.Template.Spec.Volumes = make([]corev1.Volume, 3)
-		}
-		ds.Spec.Template.ObjectMeta.SetLabels(k.daemonSet.Spec.Template.GetLabels())
-		ds.Spec.Template.Spec.Volumes[0].Name = k.daemonSet.Spec.Template.Spec.Volumes[0].Name
-		ds.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap = &corev1.ConfigMapVolumeSource{
-			LocalObjectReference: corev1.LocalObjectReference{Name: k.daemonSet.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap.Name},
-			DefaultMode:          pointer.To(int32(420)),
+	if err := tenantClient.Get(ctx, client.ObjectKeyFromObject(&ds), &ds); err != nil {
+		if k8serrors.IsNotFound(err) {
+			return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, k.daemonSet, func() error {
+				return controllerutil.SetControllerReference(k.clusterRoleBinding, k.daemonSet, tenantClient.Scheme())
+			})
 		}
 
-		ds.Spec.Template.Spec.Volumes[1].Name = k.daemonSet.Spec.Template.Spec.Volumes[1].Name
-		ds.Spec.Template.Spec.Volumes[1].VolumeSource.HostPath = &corev1.HostPathVolumeSource{
-			Path: k.daemonSet.Spec.Template.Spec.Volumes[1].VolumeSource.HostPath.Path,
-			Type: func(v corev1.HostPathType) *corev1.HostPathType {
-				return &v
-			}(corev1.HostPathFileOrCreate),
-		}
+		return controllerutil.OperationResultNone, err
+	}
 
-		ds.Spec.Template.Spec.Volumes[2].Name = k.daemonSet.Spec.Template.Spec.Volumes[2].Name
-		ds.Spec.Template.Spec.Volumes[2].VolumeSource.HostPath = &corev1.HostPathVolumeSource{
-			Path: k.daemonSet.Spec.Template.Spec.Volumes[2].VolumeSource.HostPath.Path,
-			Type: func(v corev1.HostPathType) *corev1.HostPathType {
-				return &v
-			}(""),
-		}
+	if err := controllerutil.SetControllerReference(k.clusterRoleBinding, k.daemonSet, tenantClient.Scheme()); err != nil {
+		return controllerutil.OperationResultNone, err
+	}
 
-		if len(ds.Spec.Template.Spec.Containers) == 0 {
-			ds.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
-		}
-		ds.Spec.Template.Spec.Containers[0].Name = k.daemonSet.Spec.Template.Spec.Containers[0].Name
-		ds.Spec.Template.Spec.Containers[0].Image = k.daemonSet.Spec.Template.Spec.Containers[0].Image
-		ds.Spec.Template.Spec.Containers[0].Command = k.daemonSet.Spec.Template.Spec.Containers[0].Command
-		if len(ds.Spec.Template.Spec.Containers[0].Env) == 0 {
-			ds.Spec.Template.Spec.Containers[0].Env = make([]corev1.EnvVar, 1)
-		}
-		ds.Spec.Template.Spec.Containers[0].Env[0].Name = k.daemonSet.Spec.Template.Spec.Containers[0].Env[0].Name
-		if ds.Spec.Template.Spec.Containers[0].Env[0].ValueFrom == nil {
-			ds.Spec.Template.Spec.Containers[0].Env[0].ValueFrom = &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{},
-			}
-		}
-		ds.Spec.Template.Spec.Containers[0].Env[0].ValueFrom.FieldRef.FieldPath = k.daemonSet.Spec.Template.Spec.Containers[0].Env[0].ValueFrom.FieldRef.FieldPath
-		if len(ds.Spec.Template.Spec.Containers[0].VolumeMounts) != 3 {
-			ds.Spec.Template.Spec.Containers[0].VolumeMounts = make([]corev1.VolumeMount, 3)
-		}
-		ds.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name = k.daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name
-		ds.Spec.Template.Spec.Containers[0].VolumeMounts[0].ReadOnly = k.daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts[0].ReadOnly
-		ds.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath = k.daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
-		ds.Spec.Template.Spec.Containers[0].VolumeMounts[1].Name = k.daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts[1].Name
-		ds.Spec.Template.Spec.Containers[0].VolumeMounts[1].ReadOnly = k.daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts[1].ReadOnly
-		ds.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath = k.daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath
-		ds.Spec.Template.Spec.Containers[0].VolumeMounts[2].Name = k.daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts[2].Name
-		ds.Spec.Template.Spec.Containers[0].VolumeMounts[2].ReadOnly = k.daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts[2].ReadOnly
-		ds.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath = k.daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath
-		if ds.Spec.Template.Spec.Containers[0].SecurityContext == nil {
-			ds.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{}
-		}
-		ds.Spec.Template.Spec.Containers[0].SecurityContext.Privileged = k.daemonSet.Spec.Template.Spec.Containers[0].SecurityContext.Privileged
-		ds.Spec.Template.Spec.NodeSelector = k.daemonSet.Spec.Template.Spec.NodeSelector
-		ds.Spec.Template.Spec.ServiceAccountName = k.daemonSet.Spec.Template.Spec.ServiceAccountName
-		ds.Spec.Template.Spec.HostNetwork = k.daemonSet.Spec.Template.Spec.HostNetwork
-		ds.Spec.Template.Spec.Tolerations = k.daemonSet.Spec.Template.Spec.Tolerations
-		ds.Spec.Template.Spec.PriorityClassName = k.daemonSet.Spec.Template.Spec.PriorityClassName
-		ds.Spec.UpdateStrategy.Type = k.daemonSet.Spec.UpdateStrategy.Type
-
-		return controllerutil.SetControllerReference(k.clusterRoleBinding, ds, tenantClient.Scheme())
-	})
+	return controllerutil.OperationResultNone, tenantClient.Patch(ctx, k.daemonSet, client.Apply, client.FieldOwner("kamaji"), client.ForceOwnership)
 }
 
 func (k *KubeProxy) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error {

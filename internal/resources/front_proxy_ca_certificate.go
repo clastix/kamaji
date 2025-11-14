@@ -6,6 +6,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -23,9 +24,16 @@ import (
 )
 
 type FrontProxyCACertificate struct {
-	resource     *corev1.Secret
-	Client       client.Client
-	TmpDirectory string
+	resource                *corev1.Secret
+	Client                  client.Client
+	TmpDirectory            string
+	CertExpirationThreshold time.Duration
+}
+
+func (r *FrontProxyCACertificate) GetHistogram() prometheus.Histogram {
+	frontproxycaCollector = LazyLoadHistogramFromResource(frontproxycaCollector, r)
+
+	return frontproxycaCollector
 }
 
 func (r *FrontProxyCACertificate) GetHistogram() prometheus.Histogram {
@@ -95,6 +103,7 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
 				r.resource.Data[kubeadmconstants.FrontProxyCACertName],
 				r.resource.Data[kubeadmconstants.FrontProxyCAKeyName],
+				r.CertExpirationThreshold,
 			)
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.FrontProxyCACertAndKeyBaseName, err.Error()))
@@ -123,7 +132,11 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 			kubeadmconstants.FrontProxyCAKeyName:  ca.PrivateKey,
 		}
 
-		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
+		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
+
+		if isRotationRequested {
+			utilities.SetLastRotationTimestamp(r.resource)
+		}
 
 		if isRotationRequested {
 			utilities.SetLastRotationTimestamp(r.resource)

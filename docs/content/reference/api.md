@@ -148,6 +148,16 @@ Retrieve the list of the allowed ones by issuing "kubectl get datastores.kamaji.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>dataStoreUsername</b></td>
+        <td>string</td>
+        <td>
+          DataStoreUsername allows to specify the username of the database (for relational DataStores). This
+value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreUsername values are unique. It's up
+to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
+DataStoreUsername by concatenating the namespace and name of the TenantControlPlane.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#kamajicontrolplanespecdeployment">deployment</a></b></td>
         <td>object</td>
         <td>
@@ -316,7 +326,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent version:v0.28.6]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet version:v0.28.6]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -357,12 +367,44 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>hostNetwork</b></td>
+        <td>boolean</td>
+        <td>
+          HostNetwork enables the konnectivity agent to use the Host network namespace.
+By enabling this mode, the Agent doesn't need to wait for the CNI initialisation,
+enabling a sort of out-of-band access to nodes for troubleshooting scenarios,
+or when the agent needs direct access to the host network.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
           AgentImage defines the container image for Konnectivity's agent.<br/>
           <br/>
             <i>Default</i>: registry.k8s.io/kas-network-proxy/proxy-agent<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>enum</td>
+        <td>
+          Mode allows specifying the Agent deployment mode: Deployment, or DaemonSet (default).<br/>
+          <br/>
+            <i>Enum</i>: DaemonSet, Deployment<br/>
+            <i>Default</i>: DaemonSet<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          Replicas defines the number of replicas when Mode is Deployment.
+Must be 0 if Mode is DaemonSet.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -536,7 +578,7 @@ Resources define the amount of CPU and memory to allocate to the Konnectivity se
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -796,7 +838,7 @@ ResourceRequirements describes the compute resource requirements.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -1055,7 +1097,7 @@ ResourceRequirements describes the compute resource requirements.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -2262,8 +2304,8 @@ a node that violates one or more of the expressions. The node that is
 most preferred is the one with the greatest sum of weights, i.e.
 for each node that meets all of the scheduling requirements (resource
 request, requiredDuringScheduling anti-affinity expressions, etc.),
-compute a sum by iterating through the elements of this field and adding
-"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+compute a sum by iterating through the elements of this field and subtracting
+"weight" from the sum if the node has pods which matches the corresponding podAffinityTerm; the
 node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
@@ -2932,8 +2974,8 @@ Cannot be updated.<br/>
         <td>[]object</td>
         <td>
           List of sources to populate environment variables in the container.
-The keys defined within a source must be a C_IDENTIFIER. All invalid keys
-will be reported as an event when the container is starting. When a key exists in multiple
+The keys defined within a source may consist of any printable ASCII characters except '='.
+When a key exists in multiple
 sources, the value associated with the last source will take precedence.
 Values defined by an Env with a duplicate key will take precedence.
 Cannot be updated.<br/>
@@ -3022,10 +3064,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td>string</td>
         <td>
           RestartPolicy defines the restart behavior of individual containers in a pod.
-This field may only be set for init containers, and the only allowed value is "Always".
-For non-init containers or when this field is not specified,
+This overrides the pod-level restart policy. When this field is not specified,
 the restart behavior is defined by the Pod's restart policy and the container type.
-Setting the RestartPolicy as "Always" for the init container will have the following effect:
+Additionally, setting the RestartPolicy as "Always" for the init container will
+have the following effect:
 this init container will be continually restarted on
 exit until all regular containers have terminated. Once all regular
 containers have completed, all init containers with restartPolicy "Always"
@@ -3036,6 +3078,23 @@ for the container to complete before proceeding to the next init
 container. Instead, the next init container starts immediately after this
 init container is started, or after any startupProbe has successfully
 completed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecdeploymentextracontainersindexrestartpolicyrulesindex">restartPolicyRules</a></b></td>
+        <td>[]object</td>
+        <td>
+          Represents a list of rules to be checked to determine if the
+container should be restarted on exit. The rules are evaluated in
+order. Once a rule matches a container exit condition, the remaining
+rules are ignored. If no rule matches the container exit condition,
+the Container-level restart policy determines the whether the container
+is restarted or not. Constraints on the rules:
+- At most 20 rules are allowed.
+- Rules can have the same action.
+- Identical rules are not forbidden in validations.
+When rules are specified, container MUST set RestartPolicy explicitly
+even it if matches the Pod's RestartPolicy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3163,7 +3222,8 @@ EnvVar represents an environment variable present in a Container.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+          Name of the environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -3219,6 +3279,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
 spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecdeploymentextracontainersindexenvindexvaluefromfilekeyref">fileKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3312,6 +3380,64 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podI
         <td>string</td>
         <td>
           Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecdeploymentextracontainersindexenvindexvaluefromfilekeyref">`KamajiControlPlane.spec.deployment.extraContainers[index].env[index].valueFrom.fileKeyRef`</span>
+
+
+FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key within the env file. An invalid key will prevent the pod from starting.
+The keys defined within a source may consist of any printable ASCII characters except '='.
+During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          The path within the volume from which to select the file.
+Must be relative and may not contain the '..' path or start with '..'.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          The name of the volume mount containing the env file.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the file or its key must be defined. If the file or key
+does not exist, then the env var is not published.
+If optional is set to true and the specified key does not exist,
+the environment variable will not be set in the Pod's containers.
+
+If optional is set to false and the specified key does not exist,
+an error will be returned during Pod creation.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3428,7 +3554,8 @@ EnvFromSource represents the source of a set of ConfigMaps or Secrets
         <td><b>prefix</b></td>
         <td>string</td>
         <td>
-          Optional text to prepend to the name of each environment variable. Must be a C_IDENTIFIER.<br/>
+          Optional text to prepend to the name of each environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4785,7 +4912,7 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -4843,6 +4970,78 @@ inside a container.<br/>
           Request is the name chosen for a request in the referenced claim.
 If empty, everything from the claim is made available, otherwise
 only the result of this request.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecdeploymentextracontainersindexrestartpolicyrulesindex">`KamajiControlPlane.spec.deployment.extraContainers[index].restartPolicyRules[index]`</span>
+
+
+ContainerRestartRule describes how a container exit is handled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>action</b></td>
+        <td>string</td>
+        <td>
+          Specifies the action taken on a container exit if the requirements
+are satisfied. The only possible value is "Restart" to restart the
+container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecdeploymentextracontainersindexrestartpolicyrulesindexexitcodes">exitCodes</a></b></td>
+        <td>object</td>
+        <td>
+          Represents the exit codes to check on container exits.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecdeploymentextracontainersindexrestartpolicyrulesindexexitcodes">`KamajiControlPlane.spec.deployment.extraContainers[index].restartPolicyRules[index].exitCodes`</span>
+
+
+Represents the exit codes to check on container exits.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Represents the relationship between the container exit code(s) and the
+specified values. Possible values are:
+- In: the requirement is satisfied if the container exit code is in the
+  set of specified values.
+- NotIn: the requirement is satisfied if the container exit code is
+  not in the set of specified values.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]integer</td>
+        <td>
+          Specifies the set of values to check for container exit codes.
+At most 255 elements are allowed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5726,8 +5925,8 @@ Cannot be updated.<br/>
         <td>[]object</td>
         <td>
           List of sources to populate environment variables in the container.
-The keys defined within a source must be a C_IDENTIFIER. All invalid keys
-will be reported as an event when the container is starting. When a key exists in multiple
+The keys defined within a source may consist of any printable ASCII characters except '='.
+When a key exists in multiple
 sources, the value associated with the last source will take precedence.
 Values defined by an Env with a duplicate key will take precedence.
 Cannot be updated.<br/>
@@ -5816,10 +6015,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td>string</td>
         <td>
           RestartPolicy defines the restart behavior of individual containers in a pod.
-This field may only be set for init containers, and the only allowed value is "Always".
-For non-init containers or when this field is not specified,
+This overrides the pod-level restart policy. When this field is not specified,
 the restart behavior is defined by the Pod's restart policy and the container type.
-Setting the RestartPolicy as "Always" for the init container will have the following effect:
+Additionally, setting the RestartPolicy as "Always" for the init container will
+have the following effect:
 this init container will be continually restarted on
 exit until all regular containers have terminated. Once all regular
 containers have completed, all init containers with restartPolicy "Always"
@@ -5830,6 +6029,23 @@ for the container to complete before proceeding to the next init
 container. Instead, the next init container starts immediately after this
 init container is started, or after any startupProbe has successfully
 completed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecdeploymentextrainitcontainersindexrestartpolicyrulesindex">restartPolicyRules</a></b></td>
+        <td>[]object</td>
+        <td>
+          Represents a list of rules to be checked to determine if the
+container should be restarted on exit. The rules are evaluated in
+order. Once a rule matches a container exit condition, the remaining
+rules are ignored. If no rule matches the container exit condition,
+the Container-level restart policy determines the whether the container
+is restarted or not. Constraints on the rules:
+- At most 20 rules are allowed.
+- Rules can have the same action.
+- Identical rules are not forbidden in validations.
+When rules are specified, container MUST set RestartPolicy explicitly
+even it if matches the Pod's RestartPolicy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5957,7 +6173,8 @@ EnvVar represents an environment variable present in a Container.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+          Name of the environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -6013,6 +6230,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
 spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecdeploymentextrainitcontainersindexenvindexvaluefromfilekeyref">fileKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6106,6 +6331,64 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podI
         <td>string</td>
         <td>
           Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecdeploymentextrainitcontainersindexenvindexvaluefromfilekeyref">`KamajiControlPlane.spec.deployment.extraInitContainers[index].env[index].valueFrom.fileKeyRef`</span>
+
+
+FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key within the env file. An invalid key will prevent the pod from starting.
+The keys defined within a source may consist of any printable ASCII characters except '='.
+During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          The path within the volume from which to select the file.
+Must be relative and may not contain the '..' path or start with '..'.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          The name of the volume mount containing the env file.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the file or its key must be defined. If the file or key
+does not exist, then the env var is not published.
+If optional is set to true and the specified key does not exist,
+the environment variable will not be set in the Pod's containers.
+
+If optional is set to false and the specified key does not exist,
+an error will be returned during Pod creation.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6222,7 +6505,8 @@ EnvFromSource represents the source of a set of ConfigMaps or Secrets
         <td><b>prefix</b></td>
         <td>string</td>
         <td>
-          Optional text to prepend to the name of each environment variable. Must be a C_IDENTIFIER.<br/>
+          Optional text to prepend to the name of each environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7579,7 +7863,7 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -7637,6 +7921,78 @@ inside a container.<br/>
           Request is the name chosen for a request in the referenced claim.
 If empty, everything from the claim is made available, otherwise
 only the result of this request.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecdeploymentextrainitcontainersindexrestartpolicyrulesindex">`KamajiControlPlane.spec.deployment.extraInitContainers[index].restartPolicyRules[index]`</span>
+
+
+ContainerRestartRule describes how a container exit is handled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>action</b></td>
+        <td>string</td>
+        <td>
+          Specifies the action taken on a container exit if the requirements
+are satisfied. The only possible value is "Restart" to restart the
+container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecdeploymentextrainitcontainersindexrestartpolicyrulesindexexitcodes">exitCodes</a></b></td>
+        <td>object</td>
+        <td>
+          Represents the exit codes to check on container exits.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecdeploymentextrainitcontainersindexrestartpolicyrulesindexexitcodes">`KamajiControlPlane.spec.deployment.extraInitContainers[index].restartPolicyRules[index].exitCodes`</span>
+
+
+Represents the exit codes to check on container exits.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Represents the relationship between the container exit code(s) and the
+specified values. Possible values are:
+- In: the requirement is satisfied if the container exit code is in the
+  set of specified values.
+- NotIn: the requirement is satisfied if the container exit code is
+  not in the set of specified values.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]integer</td>
+        <td>
+          Specifies the set of values to check for container exit codes.
+At most 255 elements are allowed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8635,8 +8991,7 @@ into the Pod's container.<br/>
         <td>object</td>
         <td>
           glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
-Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.
-More info: https://examples.k8s.io/volumes/glusterfs/README.md<br/>
+Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8676,7 +9031,7 @@ The field spec.securityContext.fsGroupChangePolicy has no effect on this volume 
         <td>
           iscsi represents an ISCSI Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://examples.k8s.io/volumes/iscsi/README.md<br/>
+More info: https://kubernetes.io/docs/concepts/storage/volumes/#iscsi<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8734,8 +9089,7 @@ Deprecated: Quobyte is deprecated and the in-tree quobyte type is no longer supp
         <td>object</td>
         <td>
           rbd represents a Rados Block Device mount on the host that shares a pod's lifetime.
-Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.
-More info: https://examples.k8s.io/volumes/rbd/README.md<br/>
+Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9779,15 +10133,13 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-
           volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
 If specified, the CSI driver will create or update the volume with the attributes defined
 in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
-If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
-will be set by the persistentvolume controller if it exists.
+it can be changed after the claim is created. An empty string or nil value indicates that no
+VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+this field can be reset to its previous value (including nil) to cancel the modification.
 If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
 set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
 exists.
-More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-(Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).<br/>
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10349,7 +10701,6 @@ the subdirectory with the given name.<br/>
 
 glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
 Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.
-More info: https://examples.k8s.io/volumes/glusterfs/README.md
 
 <table>
     <thead>
@@ -10364,8 +10715,7 @@ More info: https://examples.k8s.io/volumes/glusterfs/README.md
         <td><b>endpoints</b></td>
         <td>string</td>
         <td>
-          endpoints is the endpoint name that details Glusterfs topology.
-More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod<br/>
+          endpoints is the endpoint name that details Glusterfs topology.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -10488,7 +10838,7 @@ container images in workload controllers like Deployments and StatefulSets.<br/>
 
 iscsi represents an ISCSI Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://examples.k8s.io/volumes/iscsi/README.md
+More info: https://kubernetes.io/docs/concepts/storage/volumes/#iscsi
 
 <table>
     <thead>
@@ -10870,6 +11220,46 @@ may change the order over time.<br/>
         <td>object</td>
         <td>
           downwardAPI information about the downwardAPI data to project<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecdeploymentextravolumesindexprojectedsourcesindexpodcertificate">podCertificate</a></b></td>
+        <td>object</td>
+        <td>
+          Projects an auto-rotating credential bundle (private key and certificate
+chain) that the pod can use either as a TLS client or server.
+
+Kubelet generates a private key and uses it to send a
+PodCertificateRequest to the named signer.  Once the signer approves the
+request and issues a certificate chain, Kubelet writes the key and
+certificate chain to the pod filesystem.  The pod does not start until
+certificates have been issued for each podCertificate projected volume
+source in its spec.
+
+Kubelet will begin trying to rotate the certificate at the time indicated
+by the signer using the PodCertificateRequest.Status.BeginRefreshAt
+timestamp.
+
+Kubelet can write a single file, indicated by the credentialBundlePath
+field, or separate files, indicated by the keyPath and
+certificateChainPath fields.
+
+The credential bundle is a single file in PEM format.  The first PEM
+entry is the private key (in PKCS#8 format), and the remaining PEM
+entries are the certificate chain issued by the signer (typically,
+signers will return their certificate chain in leaf-to-root order).
+
+Prefer using the credential bundle format, since your application code
+can read it atomically.  If you use keyPath and certificateChainPath,
+your application must make two separate file reads. If these coincide
+with a certificate rotation, it is possible that the private key and leaf
+certificate you read may not correspond to each other.  Your application
+will need to check for this condition, and re-read until they are
+consistent.
+
+The named signer controls chooses the format of the certificate it
+issues; consult the signer implementation's documentation to learn how to
+use the certificates it issues.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11297,6 +11687,140 @@ Selects a resource of the container: only resources limits and requests
 </table>
 
 
+<span id="kamajicontrolplanespecdeploymentextravolumesindexprojectedsourcesindexpodcertificate">`KamajiControlPlane.spec.deployment.extraVolumes[index].projected.sources[index].podCertificate`</span>
+
+
+Projects an auto-rotating credential bundle (private key and certificate
+chain) that the pod can use either as a TLS client or server.
+
+Kubelet generates a private key and uses it to send a
+PodCertificateRequest to the named signer.  Once the signer approves the
+request and issues a certificate chain, Kubelet writes the key and
+certificate chain to the pod filesystem.  The pod does not start until
+certificates have been issued for each podCertificate projected volume
+source in its spec.
+
+Kubelet will begin trying to rotate the certificate at the time indicated
+by the signer using the PodCertificateRequest.Status.BeginRefreshAt
+timestamp.
+
+Kubelet can write a single file, indicated by the credentialBundlePath
+field, or separate files, indicated by the keyPath and
+certificateChainPath fields.
+
+The credential bundle is a single file in PEM format.  The first PEM
+entry is the private key (in PKCS#8 format), and the remaining PEM
+entries are the certificate chain issued by the signer (typically,
+signers will return their certificate chain in leaf-to-root order).
+
+Prefer using the credential bundle format, since your application code
+can read it atomically.  If you use keyPath and certificateChainPath,
+your application must make two separate file reads. If these coincide
+with a certificate rotation, it is possible that the private key and leaf
+certificate you read may not correspond to each other.  Your application
+will need to check for this condition, and re-read until they are
+consistent.
+
+The named signer controls chooses the format of the certificate it
+issues; consult the signer implementation's documentation to learn how to
+use the certificates it issues.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keyType</b></td>
+        <td>string</td>
+        <td>
+          The type of keypair Kubelet will generate for the pod.
+
+Valid values are "RSA3072", "RSA4096", "ECDSAP256", "ECDSAP384",
+"ECDSAP521", and "ED25519".<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>signerName</b></td>
+        <td>string</td>
+        <td>
+          Kubelet's generated CSRs will be addressed to this signer.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateChainPath</b></td>
+        <td>string</td>
+        <td>
+          Write the certificate chain at this path in the projected volume.
+
+Most applications should use credentialBundlePath.  When using keyPath
+and certificateChainPath, your application needs to check that the key
+and leaf certificate are consistent, because it is possible to read the
+files mid-rotation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>credentialBundlePath</b></td>
+        <td>string</td>
+        <td>
+          Write the credential bundle at this path in the projected volume.
+
+The credential bundle is a single file that contains multiple PEM blocks.
+The first PEM block is a PRIVATE KEY block, containing a PKCS#8 private
+key.
+
+The remaining blocks are CERTIFICATE blocks, containing the issued
+certificate chain from the signer (leaf and any intermediates).
+
+Using credentialBundlePath lets your Pod's application code make a single
+atomic read that retrieves a consistent key and certificate chain.  If you
+project them to separate files, your application code will need to
+additionally check that the leaf certificate was issued to the key.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>keyPath</b></td>
+        <td>string</td>
+        <td>
+          Write the key at this path in the projected volume.
+
+Most applications should use credentialBundlePath.  When using keyPath
+and certificateChainPath, your application needs to check that the key
+and leaf certificate are consistent, because it is possible to read the
+files mid-rotation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxExpirationSeconds</b></td>
+        <td>integer</td>
+        <td>
+          maxExpirationSeconds is the maximum lifetime permitted for the
+certificate.
+
+Kubelet copies this value verbatim into the PodCertificateRequests it
+generates for this projection.
+
+If omitted, kube-apiserver will set it to 86400(24 hours). kube-apiserver
+will reject values shorter than 3600 (1 hour).  The maximum allowable
+value is 7862400 (91 days).
+
+The signer implementation is then free to issue a certificate with any
+lifetime *shorter* than MaxExpirationSeconds, but no shorter than 3600
+seconds (1 hour).  This constraint is enforced by kube-apiserver.
+`kubernetes.io` signers will never issue certificates with a lifetime
+longer than 24 hours.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 <span id="kamajicontrolplanespecdeploymentextravolumesindexprojectedsourcesindexsecret">`KamajiControlPlane.spec.deployment.extraVolumes[index].projected.sources[index].secret`</span>
 
 
@@ -11519,7 +12043,6 @@ Defaults to serivceaccount user<br/>
 
 rbd represents a Rados Block Device mount on the host that shares a pod's lifetime.
 Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.
-More info: https://examples.k8s.io/volumes/rbd/README.md
 
 <table>
     <thead>
@@ -12512,7 +13035,7 @@ ResourceRequirements describes the compute resource requirements.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -12594,7 +13117,7 @@ Configure the Kubelet options, such as the preferred address types, or the expec
         <td><b>cgroupfs</b></td>
         <td>enum</td>
         <td>
-          CGroupFS defines the  cgroup driver for Kubelet
+          CGroupFS defines the cgroup driver for Kubelet
 https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/<br/>
           <br/>
             <i>Enum</i>: systemd, cgroupfs<br/>
@@ -12605,10 +13128,10 @@ https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-dri
         <td>[]enum</td>
         <td>
           Ordered list of the preferred NodeAddressTypes to use for kubelet connections.
-Default to Hostname, InternalIP, ExternalIP.<br/>
+Default to InternalIP, ExternalIP, Hostname.<br/>
           <br/>
             <i>Enum</i>: Hostname, InternalIP, ExternalIP, InternalDNS, ExternalDNS<br/>
-            <i>Default</i>: [Hostname InternalIP ExternalIP]<br/>
+            <i>Default</i>: [InternalIP ExternalIP Hostname]<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12946,7 +13469,7 @@ ResourceRequirements describes the compute resource requirements.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -13364,6 +13887,16 @@ Retrieve the list of the allowed ones by issuing "kubectl get datastores.kamaji.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>dataStoreUsername</b></td>
+        <td>string</td>
+        <td>
+          DataStoreUsername allows to specify the username of the database (for relational DataStores). This
+value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreUsername values are unique. It's up
+to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
+DataStoreUsername by concatenating the namespace and name of the TenantControlPlane.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeployment">deployment</a></b></td>
         <td>object</td>
         <td>
@@ -13521,7 +14054,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent version:v0.28.6]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet version:v0.28.6]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13562,12 +14095,44 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>hostNetwork</b></td>
+        <td>boolean</td>
+        <td>
+          HostNetwork enables the konnectivity agent to use the Host network namespace.
+By enabling this mode, the Agent doesn't need to wait for the CNI initialisation,
+enabling a sort of out-of-band access to nodes for troubleshooting scenarios,
+or when the agent needs direct access to the host network.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
           AgentImage defines the container image for Konnectivity's agent.<br/>
           <br/>
             <i>Default</i>: registry.k8s.io/kas-network-proxy/proxy-agent<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>enum</td>
+        <td>
+          Mode allows specifying the Agent deployment mode: Deployment, or DaemonSet (default).<br/>
+          <br/>
+            <i>Enum</i>: DaemonSet, Deployment<br/>
+            <i>Default</i>: DaemonSet<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          Replicas defines the number of replicas when Mode is Deployment.
+Must be 0 if Mode is DaemonSet.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13741,7 +14306,7 @@ Resources define the amount of CPU and memory to allocate to the Konnectivity se
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -14001,7 +14566,7 @@ ResourceRequirements describes the compute resource requirements.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -14226,7 +14791,7 @@ ResourceRequirements describes the compute resource requirements.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -15433,8 +15998,8 @@ a node that violates one or more of the expressions. The node that is
 most preferred is the one with the greatest sum of weights, i.e.
 for each node that meets all of the scheduling requirements (resource
 request, requiredDuringScheduling anti-affinity expressions, etc.),
-compute a sum by iterating through the elements of this field and adding
-"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+compute a sum by iterating through the elements of this field and subtracting
+"weight" from the sum if the node has pods which matches the corresponding podAffinityTerm; the
 node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
@@ -16103,8 +16668,8 @@ Cannot be updated.<br/>
         <td>[]object</td>
         <td>
           List of sources to populate environment variables in the container.
-The keys defined within a source must be a C_IDENTIFIER. All invalid keys
-will be reported as an event when the container is starting. When a key exists in multiple
+The keys defined within a source may consist of any printable ASCII characters except '='.
+When a key exists in multiple
 sources, the value associated with the last source will take precedence.
 Values defined by an Env with a duplicate key will take precedence.
 Cannot be updated.<br/>
@@ -16193,10 +16758,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td>string</td>
         <td>
           RestartPolicy defines the restart behavior of individual containers in a pod.
-This field may only be set for init containers, and the only allowed value is "Always".
-For non-init containers or when this field is not specified,
+This overrides the pod-level restart policy. When this field is not specified,
 the restart behavior is defined by the Pod's restart policy and the container type.
-Setting the RestartPolicy as "Always" for the init container will have the following effect:
+Additionally, setting the RestartPolicy as "Always" for the init container will
+have the following effect:
 this init container will be continually restarted on
 exit until all regular containers have terminated. Once all regular
 containers have completed, all init containers with restartPolicy "Always"
@@ -16207,6 +16772,23 @@ for the container to complete before proceeding to the next init
 container. Instead, the next init container starts immediately after this
 init container is started, or after any startupProbe has successfully
 completed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentextracontainersindexrestartpolicyrulesindex">restartPolicyRules</a></b></td>
+        <td>[]object</td>
+        <td>
+          Represents a list of rules to be checked to determine if the
+container should be restarted on exit. The rules are evaluated in
+order. Once a rule matches a container exit condition, the remaining
+rules are ignored. If no rule matches the container exit condition,
+the Container-level restart policy determines the whether the container
+is restarted or not. Constraints on the rules:
+- At most 20 rules are allowed.
+- Rules can have the same action.
+- Identical rules are not forbidden in validations.
+When rules are specified, container MUST set RestartPolicy explicitly
+even it if matches the Pod's RestartPolicy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16334,7 +16916,8 @@ EnvVar represents an environment variable present in a Container.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+          Name of the environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -16390,6 +16973,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
 spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentextracontainersindexenvindexvaluefromfilekeyref">fileKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16483,6 +17074,64 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podI
         <td>string</td>
         <td>
           Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecdeploymentextracontainersindexenvindexvaluefromfilekeyref">`KamajiControlPlaneTemplate.spec.template.spec.deployment.extraContainers[index].env[index].valueFrom.fileKeyRef`</span>
+
+
+FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key within the env file. An invalid key will prevent the pod from starting.
+The keys defined within a source may consist of any printable ASCII characters except '='.
+During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          The path within the volume from which to select the file.
+Must be relative and may not contain the '..' path or start with '..'.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          The name of the volume mount containing the env file.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the file or its key must be defined. If the file or key
+does not exist, then the env var is not published.
+If optional is set to true and the specified key does not exist,
+the environment variable will not be set in the Pod's containers.
+
+If optional is set to false and the specified key does not exist,
+an error will be returned during Pod creation.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -16599,7 +17248,8 @@ EnvFromSource represents the source of a set of ConfigMaps or Secrets
         <td><b>prefix</b></td>
         <td>string</td>
         <td>
-          Optional text to prepend to the name of each environment variable. Must be a C_IDENTIFIER.<br/>
+          Optional text to prepend to the name of each environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -17956,7 +18606,7 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -18014,6 +18664,78 @@ inside a container.<br/>
           Request is the name chosen for a request in the referenced claim.
 If empty, everything from the claim is made available, otherwise
 only the result of this request.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecdeploymentextracontainersindexrestartpolicyrulesindex">`KamajiControlPlaneTemplate.spec.template.spec.deployment.extraContainers[index].restartPolicyRules[index]`</span>
+
+
+ContainerRestartRule describes how a container exit is handled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>action</b></td>
+        <td>string</td>
+        <td>
+          Specifies the action taken on a container exit if the requirements
+are satisfied. The only possible value is "Restart" to restart the
+container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentextracontainersindexrestartpolicyrulesindexexitcodes">exitCodes</a></b></td>
+        <td>object</td>
+        <td>
+          Represents the exit codes to check on container exits.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecdeploymentextracontainersindexrestartpolicyrulesindexexitcodes">`KamajiControlPlaneTemplate.spec.template.spec.deployment.extraContainers[index].restartPolicyRules[index].exitCodes`</span>
+
+
+Represents the exit codes to check on container exits.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Represents the relationship between the container exit code(s) and the
+specified values. Possible values are:
+- In: the requirement is satisfied if the container exit code is in the
+  set of specified values.
+- NotIn: the requirement is satisfied if the container exit code is
+  not in the set of specified values.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]integer</td>
+        <td>
+          Specifies the set of values to check for container exit codes.
+At most 255 elements are allowed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -18897,8 +19619,8 @@ Cannot be updated.<br/>
         <td>[]object</td>
         <td>
           List of sources to populate environment variables in the container.
-The keys defined within a source must be a C_IDENTIFIER. All invalid keys
-will be reported as an event when the container is starting. When a key exists in multiple
+The keys defined within a source may consist of any printable ASCII characters except '='.
+When a key exists in multiple
 sources, the value associated with the last source will take precedence.
 Values defined by an Env with a duplicate key will take precedence.
 Cannot be updated.<br/>
@@ -18987,10 +19709,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td>string</td>
         <td>
           RestartPolicy defines the restart behavior of individual containers in a pod.
-This field may only be set for init containers, and the only allowed value is "Always".
-For non-init containers or when this field is not specified,
+This overrides the pod-level restart policy. When this field is not specified,
 the restart behavior is defined by the Pod's restart policy and the container type.
-Setting the RestartPolicy as "Always" for the init container will have the following effect:
+Additionally, setting the RestartPolicy as "Always" for the init container will
+have the following effect:
 this init container will be continually restarted on
 exit until all regular containers have terminated. Once all regular
 containers have completed, all init containers with restartPolicy "Always"
@@ -19001,6 +19723,23 @@ for the container to complete before proceeding to the next init
 container. Instead, the next init container starts immediately after this
 init container is started, or after any startupProbe has successfully
 completed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentextrainitcontainersindexrestartpolicyrulesindex">restartPolicyRules</a></b></td>
+        <td>[]object</td>
+        <td>
+          Represents a list of rules to be checked to determine if the
+container should be restarted on exit. The rules are evaluated in
+order. Once a rule matches a container exit condition, the remaining
+rules are ignored. If no rule matches the container exit condition,
+the Container-level restart policy determines the whether the container
+is restarted or not. Constraints on the rules:
+- At most 20 rules are allowed.
+- Rules can have the same action.
+- Identical rules are not forbidden in validations.
+When rules are specified, container MUST set RestartPolicy explicitly
+even it if matches the Pod's RestartPolicy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19128,7 +19867,8 @@ EnvVar represents an environment variable present in a Container.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+          Name of the environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -19184,6 +19924,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
 spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentextrainitcontainersindexenvindexvaluefromfilekeyref">fileKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19277,6 +20025,64 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podI
         <td>string</td>
         <td>
           Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecdeploymentextrainitcontainersindexenvindexvaluefromfilekeyref">`KamajiControlPlaneTemplate.spec.template.spec.deployment.extraInitContainers[index].env[index].valueFrom.fileKeyRef`</span>
+
+
+FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key within the env file. An invalid key will prevent the pod from starting.
+The keys defined within a source may consist of any printable ASCII characters except '='.
+During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          The path within the volume from which to select the file.
+Must be relative and may not contain the '..' path or start with '..'.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          The name of the volume mount containing the env file.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the file or its key must be defined. If the file or key
+does not exist, then the env var is not published.
+If optional is set to true and the specified key does not exist,
+the environment variable will not be set in the Pod's containers.
+
+If optional is set to false and the specified key does not exist,
+an error will be returned during Pod creation.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19393,7 +20199,8 @@ EnvFromSource represents the source of a set of ConfigMaps or Secrets
         <td><b>prefix</b></td>
         <td>string</td>
         <td>
-          Optional text to prepend to the name of each environment variable. Must be a C_IDENTIFIER.<br/>
+          Optional text to prepend to the name of each environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20750,7 +21557,7 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -20808,6 +21615,78 @@ inside a container.<br/>
           Request is the name chosen for a request in the referenced claim.
 If empty, everything from the claim is made available, otherwise
 only the result of this request.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecdeploymentextrainitcontainersindexrestartpolicyrulesindex">`KamajiControlPlaneTemplate.spec.template.spec.deployment.extraInitContainers[index].restartPolicyRules[index]`</span>
+
+
+ContainerRestartRule describes how a container exit is handled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>action</b></td>
+        <td>string</td>
+        <td>
+          Specifies the action taken on a container exit if the requirements
+are satisfied. The only possible value is "Restart" to restart the
+container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentextrainitcontainersindexrestartpolicyrulesindexexitcodes">exitCodes</a></b></td>
+        <td>object</td>
+        <td>
+          Represents the exit codes to check on container exits.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecdeploymentextrainitcontainersindexrestartpolicyrulesindexexitcodes">`KamajiControlPlaneTemplate.spec.template.spec.deployment.extraInitContainers[index].restartPolicyRules[index].exitCodes`</span>
+
+
+Represents the exit codes to check on container exits.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Represents the relationship between the container exit code(s) and the
+specified values. Possible values are:
+- In: the requirement is satisfied if the container exit code is in the
+  set of specified values.
+- NotIn: the requirement is satisfied if the container exit code is
+  not in the set of specified values.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]integer</td>
+        <td>
+          Specifies the set of values to check for container exit codes.
+At most 255 elements are allowed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21806,8 +22685,7 @@ into the Pod's container.<br/>
         <td>object</td>
         <td>
           glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
-Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.
-More info: https://examples.k8s.io/volumes/glusterfs/README.md<br/>
+Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21847,7 +22725,7 @@ The field spec.securityContext.fsGroupChangePolicy has no effect on this volume 
         <td>
           iscsi represents an ISCSI Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://examples.k8s.io/volumes/iscsi/README.md<br/>
+More info: https://kubernetes.io/docs/concepts/storage/volumes/#iscsi<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21905,8 +22783,7 @@ Deprecated: Quobyte is deprecated and the in-tree quobyte type is no longer supp
         <td>object</td>
         <td>
           rbd represents a Rados Block Device mount on the host that shares a pod's lifetime.
-Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.
-More info: https://examples.k8s.io/volumes/rbd/README.md<br/>
+Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22950,15 +23827,13 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-
           volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
 If specified, the CSI driver will create or update the volume with the attributes defined
 in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
-If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
-will be set by the persistentvolume controller if it exists.
+it can be changed after the claim is created. An empty string or nil value indicates that no
+VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+this field can be reset to its previous value (including nil) to cancel the modification.
 If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
 set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
 exists.
-More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-(Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).<br/>
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23520,7 +24395,6 @@ the subdirectory with the given name.<br/>
 
 glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
 Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.
-More info: https://examples.k8s.io/volumes/glusterfs/README.md
 
 <table>
     <thead>
@@ -23535,8 +24409,7 @@ More info: https://examples.k8s.io/volumes/glusterfs/README.md
         <td><b>endpoints</b></td>
         <td>string</td>
         <td>
-          endpoints is the endpoint name that details Glusterfs topology.
-More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod<br/>
+          endpoints is the endpoint name that details Glusterfs topology.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -23659,7 +24532,7 @@ container images in workload controllers like Deployments and StatefulSets.<br/>
 
 iscsi represents an ISCSI Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://examples.k8s.io/volumes/iscsi/README.md
+More info: https://kubernetes.io/docs/concepts/storage/volumes/#iscsi
 
 <table>
     <thead>
@@ -24041,6 +24914,46 @@ may change the order over time.<br/>
         <td>object</td>
         <td>
           downwardAPI information about the downwardAPI data to project<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentextravolumesindexprojectedsourcesindexpodcertificate">podCertificate</a></b></td>
+        <td>object</td>
+        <td>
+          Projects an auto-rotating credential bundle (private key and certificate
+chain) that the pod can use either as a TLS client or server.
+
+Kubelet generates a private key and uses it to send a
+PodCertificateRequest to the named signer.  Once the signer approves the
+request and issues a certificate chain, Kubelet writes the key and
+certificate chain to the pod filesystem.  The pod does not start until
+certificates have been issued for each podCertificate projected volume
+source in its spec.
+
+Kubelet will begin trying to rotate the certificate at the time indicated
+by the signer using the PodCertificateRequest.Status.BeginRefreshAt
+timestamp.
+
+Kubelet can write a single file, indicated by the credentialBundlePath
+field, or separate files, indicated by the keyPath and
+certificateChainPath fields.
+
+The credential bundle is a single file in PEM format.  The first PEM
+entry is the private key (in PKCS#8 format), and the remaining PEM
+entries are the certificate chain issued by the signer (typically,
+signers will return their certificate chain in leaf-to-root order).
+
+Prefer using the credential bundle format, since your application code
+can read it atomically.  If you use keyPath and certificateChainPath,
+your application must make two separate file reads. If these coincide
+with a certificate rotation, it is possible that the private key and leaf
+certificate you read may not correspond to each other.  Your application
+will need to check for this condition, and re-read until they are
+consistent.
+
+The named signer controls chooses the format of the certificate it
+issues; consult the signer implementation's documentation to learn how to
+use the certificates it issues.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24468,6 +25381,140 @@ Selects a resource of the container: only resources limits and requests
 </table>
 
 
+<span id="kamajicontrolplanetemplatespectemplatespecdeploymentextravolumesindexprojectedsourcesindexpodcertificate">`KamajiControlPlaneTemplate.spec.template.spec.deployment.extraVolumes[index].projected.sources[index].podCertificate`</span>
+
+
+Projects an auto-rotating credential bundle (private key and certificate
+chain) that the pod can use either as a TLS client or server.
+
+Kubelet generates a private key and uses it to send a
+PodCertificateRequest to the named signer.  Once the signer approves the
+request and issues a certificate chain, Kubelet writes the key and
+certificate chain to the pod filesystem.  The pod does not start until
+certificates have been issued for each podCertificate projected volume
+source in its spec.
+
+Kubelet will begin trying to rotate the certificate at the time indicated
+by the signer using the PodCertificateRequest.Status.BeginRefreshAt
+timestamp.
+
+Kubelet can write a single file, indicated by the credentialBundlePath
+field, or separate files, indicated by the keyPath and
+certificateChainPath fields.
+
+The credential bundle is a single file in PEM format.  The first PEM
+entry is the private key (in PKCS#8 format), and the remaining PEM
+entries are the certificate chain issued by the signer (typically,
+signers will return their certificate chain in leaf-to-root order).
+
+Prefer using the credential bundle format, since your application code
+can read it atomically.  If you use keyPath and certificateChainPath,
+your application must make two separate file reads. If these coincide
+with a certificate rotation, it is possible that the private key and leaf
+certificate you read may not correspond to each other.  Your application
+will need to check for this condition, and re-read until they are
+consistent.
+
+The named signer controls chooses the format of the certificate it
+issues; consult the signer implementation's documentation to learn how to
+use the certificates it issues.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keyType</b></td>
+        <td>string</td>
+        <td>
+          The type of keypair Kubelet will generate for the pod.
+
+Valid values are "RSA3072", "RSA4096", "ECDSAP256", "ECDSAP384",
+"ECDSAP521", and "ED25519".<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>signerName</b></td>
+        <td>string</td>
+        <td>
+          Kubelet's generated CSRs will be addressed to this signer.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateChainPath</b></td>
+        <td>string</td>
+        <td>
+          Write the certificate chain at this path in the projected volume.
+
+Most applications should use credentialBundlePath.  When using keyPath
+and certificateChainPath, your application needs to check that the key
+and leaf certificate are consistent, because it is possible to read the
+files mid-rotation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>credentialBundlePath</b></td>
+        <td>string</td>
+        <td>
+          Write the credential bundle at this path in the projected volume.
+
+The credential bundle is a single file that contains multiple PEM blocks.
+The first PEM block is a PRIVATE KEY block, containing a PKCS#8 private
+key.
+
+The remaining blocks are CERTIFICATE blocks, containing the issued
+certificate chain from the signer (leaf and any intermediates).
+
+Using credentialBundlePath lets your Pod's application code make a single
+atomic read that retrieves a consistent key and certificate chain.  If you
+project them to separate files, your application code will need to
+additionally check that the leaf certificate was issued to the key.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>keyPath</b></td>
+        <td>string</td>
+        <td>
+          Write the key at this path in the projected volume.
+
+Most applications should use credentialBundlePath.  When using keyPath
+and certificateChainPath, your application needs to check that the key
+and leaf certificate are consistent, because it is possible to read the
+files mid-rotation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxExpirationSeconds</b></td>
+        <td>integer</td>
+        <td>
+          maxExpirationSeconds is the maximum lifetime permitted for the
+certificate.
+
+Kubelet copies this value verbatim into the PodCertificateRequests it
+generates for this projection.
+
+If omitted, kube-apiserver will set it to 86400(24 hours). kube-apiserver
+will reject values shorter than 3600 (1 hour).  The maximum allowable
+value is 7862400 (91 days).
+
+The signer implementation is then free to issue a certificate with any
+lifetime *shorter* than MaxExpirationSeconds, but no shorter than 3600
+seconds (1 hour).  This constraint is enforced by kube-apiserver.
+`kubernetes.io` signers will never issue certificates with a lifetime
+longer than 24 hours.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 <span id="kamajicontrolplanetemplatespectemplatespecdeploymentextravolumesindexprojectedsourcesindexsecret">`KamajiControlPlaneTemplate.spec.template.spec.deployment.extraVolumes[index].projected.sources[index].secret`</span>
 
 
@@ -24690,7 +25737,6 @@ Defaults to serivceaccount user<br/>
 
 rbd represents a Rados Block Device mount on the host that shares a pod's lifetime.
 Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.
-More info: https://examples.k8s.io/volumes/rbd/README.md
 
 <table>
     <thead>
@@ -25683,7 +26729,7 @@ ResourceRequirements describes the compute resource requirements.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -25765,7 +26811,7 @@ Configure the Kubelet options, such as the preferred address types, or the expec
         <td><b>cgroupfs</b></td>
         <td>enum</td>
         <td>
-          CGroupFS defines the  cgroup driver for Kubelet
+          CGroupFS defines the cgroup driver for Kubelet
 https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/<br/>
           <br/>
             <i>Enum</i>: systemd, cgroupfs<br/>
@@ -25776,10 +26822,10 @@ https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-dri
         <td>[]enum</td>
         <td>
           Ordered list of the preferred NodeAddressTypes to use for kubelet connections.
-Default to Hostname, InternalIP, ExternalIP.<br/>
+Default to InternalIP, ExternalIP, Hostname.<br/>
           <br/>
             <i>Enum</i>: Hostname, InternalIP, ExternalIP, InternalDNS, ExternalDNS<br/>
-            <i>Default</i>: [Hostname InternalIP ExternalIP]<br/>
+            <i>Default</i>: [InternalIP ExternalIP Hostname]<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -26117,7 +27163,7 @@ ResourceRequirements describes the compute resource requirements.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -26224,6 +27270,8 @@ More info: http://kubernetes.io/docs/user-guide/labels<br/>
 Resource Types:
 
 - [DataStore](#datastore)
+
+- [KubeconfigGenerator](#kubeconfiggenerator)
 
 - [TenantControlPlane](#tenantcontrolplane)
 
@@ -26939,6 +27987,415 @@ DataStoreStatus defines the observed state of DataStore.
       </tr></tbody>
 </table>
 
+### KubeconfigGenerator
+
+
+
+
+
+KubeconfigGenerator is the Schema for the kubeconfiggenerators API.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+      <td><b>apiVersion</b></td>
+      <td>string</td>
+      <td>kamaji.clastix.io/v1alpha1</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b>kind</b></td>
+      <td>string</td>
+      <td>KubeconfigGenerator</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td>object</td>
+      <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
+      <td>true</td>
+      </tr><tr>
+        <td><b><a href="#kubeconfiggeneratorspec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kubeconfiggeneratorstatus">status</a></b></td>
+        <td>object</td>
+        <td>
+          KubeconfigGeneratorStatus defines the observed state of KubeconfigGenerator.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspec">`KubeconfigGenerator.spec`</span>
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kubeconfiggeneratorspecuser">user</a></b></td>
+        <td>object</td>
+        <td>
+          User resolves to a string to identify the client, assigned to the x509 Common Name field.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>controlPlaneEndpointFrom</b></td>
+        <td>string</td>
+        <td>
+          ControlPlaneEndpointFrom is the key used to extract the Tenant Control Plane endpoint that must be used by the generator.
+The targeted Secret is the `${TCP}-admin-kubeconfig` one, default to `admin.svc`.<br/>
+          <br/>
+            <i>Default</i>: admin.svc<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kubeconfiggeneratorspecgroupsindex">groups</a></b></td>
+        <td>[]object</td>
+        <td>
+          Groups is resolved a set of strings used to assign the x509 organisations field.
+It will be recognised by Kubernetes as user groups.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kubeconfiggeneratorspecnamespaceselector">namespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          NamespaceSelector is used to filter Namespaces from which the generator should extract TenantControlPlane objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kubeconfiggeneratorspectenantcontrolplaneselector">tenantControlPlaneSelector</a></b></td>
+        <td>object</td>
+        <td>
+          TenantControlPlaneSelector is used to filter the TenantControlPlane objects that should be address by the generator.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspecuser">`KubeconfigGenerator.spec.user`</span>
+
+
+User resolves to a string to identify the client, assigned to the x509 Common Name field.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fromDefinition</b></td>
+        <td>string</td>
+        <td>
+          FromDefinition is used to generate a dynamic value,
+it uses the dot notation to access fields from the referenced TenantControlPlane object:
+e.g.: metadata.name<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>stringValue</b></td>
+        <td>string</td>
+        <td>
+          StringValue is a static string value.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspecgroupsindex">`KubeconfigGenerator.spec.groups[index]`</span>
+
+
+CompoundValue allows defining a static, or a dynamic value.
+Options are mutually exclusive, just one should be picked up.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fromDefinition</b></td>
+        <td>string</td>
+        <td>
+          FromDefinition is used to generate a dynamic value,
+it uses the dot notation to access fields from the referenced TenantControlPlane object:
+e.g.: metadata.name<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>stringValue</b></td>
+        <td>string</td>
+        <td>
+          StringValue is a static string value.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspecnamespaceselector">`KubeconfigGenerator.spec.namespaceSelector`</span>
+
+
+NamespaceSelector is used to filter Namespaces from which the generator should extract TenantControlPlane objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kubeconfiggeneratorspecnamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspecnamespaceselectormatchexpressionsindex">`KubeconfigGenerator.spec.namespaceSelector.matchExpressions[index]`</span>
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspectenantcontrolplaneselector">`KubeconfigGenerator.spec.tenantControlPlaneSelector`</span>
+
+
+TenantControlPlaneSelector is used to filter the TenantControlPlane objects that should be address by the generator.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kubeconfiggeneratorspectenantcontrolplaneselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorspectenantcontrolplaneselectormatchexpressionsindex">`KubeconfigGenerator.spec.tenantControlPlaneSelector.matchExpressions[index]`</span>
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorstatus">`KubeconfigGenerator.status`</span>
+
+
+KubeconfigGeneratorStatus defines the observed state of KubeconfigGenerator.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>availableResources</b></td>
+        <td>integer</td>
+        <td>
+          AvailableResources is the sum of successfully generated resources.
+In case of a different value compared to Resources, check the field errors.<br/>
+          <br/>
+            <i>Default</i>: 0<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>resources</b></td>
+        <td>integer</td>
+        <td>
+          Resources is the sum of targeted TenantControlPlane objects.<br/>
+          <br/>
+            <i>Default</i>: 0<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#kubeconfiggeneratorstatuserrorsindex">errors</a></b></td>
+        <td>[]object</td>
+        <td>
+          Errors is the list of failed kubeconfig generations.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kubeconfiggeneratorstatuserrorsindex">`KubeconfigGenerator.status.errors[index]`</span>
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>message</b></td>
+        <td>string</td>
+        <td>
+          Message is the error message recorded upon the last generator run.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Resource is the Namespaced name of the errored resource.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
 ### TenantControlPlane
 
 
@@ -27050,10 +28507,32 @@ DataStoreSchema by concatenating the namespace and name of the TenantControlPlan
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>dataStoreUsername</b></td>
+        <td>string</td>
+        <td>
+          DataStoreUsername allows to specify the username of the database (for relational DataStores). This
+value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreUsername values are unique. It's up
+to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
+DataStoreUsername by concatenating the namespace and name of the TenantControlPlane.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespecnetworkprofile">networkProfile</a></b></td>
         <td>object</td>
         <td>
           NetworkProfile specifies how the network is<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecwritepermissions">writePermissions</a></b></td>
+        <td>object</td>
+        <td>
+          WritePermissions allows to select which operations (create, delete, update) must be blocked:
+by default, all actions are allowed, and API Server can write to its Datastore.
+
+By blocking all actions, the Tenant Control Plane can enter in a Read Only mode:
+this phase can be used to prevent Datastore quota exhaustion or for your own business logic
+(e.g.: blocking creation and update, but allowing deletion to "clean up" space).<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -27130,6 +28609,14 @@ Defining the options for the Tenant Control Plane Service resource.
           AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplaneserviceadditionalportsindex">additionalPorts</a></b></td>
+        <td>[]object</td>
+        <td>
+          AdditionalPorts allows adding additional ports to the Service generated Kamaji
+which targets the Tenant Control Plane pods.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -27160,6 +28647,75 @@ AdditionalMetadata defines which additional metadata, such as labels and annotat
         <td>map[string]string</td>
         <td>
           <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespeccontrolplaneserviceadditionalportsindex">`TenantControlPlane.spec.controlPlane.service.additionalPorts[index]`</span>
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of this port within the Service created by Kamaji.
+This must be a DNS_LABEL, must have unique names, and cannot be `kube-apiserver`, or `konnectivity-server`.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          The port that will be exposed by this service.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>targetPort</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the pods of the Tenant Control Plane.
+Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+If this is a string, it will be looked up as a named port in the
+target Pod's container ports. If this is not specified, the value
+of the 'port' field is used (an identity map).<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>appProtocol</b></td>
+        <td>string</td>
+        <td>
+          The application protocol for this port.
+This is used as a hint for implementations to offer richer behavior for protocols that they understand.
+This field follows standard Kubernetes label syntax.
+Valid values are either:
+
+* Un-prefixed protocol names - reserved for IANA standard service names (as per
+RFC-6335 and https://www.iana.org/assignments/service-names).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>enum</td>
+        <td>
+          The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".<br/>
+          <br/>
+            <i>Enum</i>: TCP, UDP, SCTP<br/>
+            <i>Default</i>: TCP<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -27394,8 +28950,8 @@ Cannot be updated.<br/>
         <td>[]object</td>
         <td>
           List of sources to populate environment variables in the container.
-The keys defined within a source must be a C_IDENTIFIER. All invalid keys
-will be reported as an event when the container is starting. When a key exists in multiple
+The keys defined within a source may consist of any printable ASCII characters except '='.
+When a key exists in multiple
 sources, the value associated with the last source will take precedence.
 Values defined by an Env with a duplicate key will take precedence.
 Cannot be updated.<br/>
@@ -27484,10 +29040,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td>string</td>
         <td>
           RestartPolicy defines the restart behavior of individual containers in a pod.
-This field may only be set for init containers, and the only allowed value is "Always".
-For non-init containers or when this field is not specified,
+This overrides the pod-level restart policy. When this field is not specified,
 the restart behavior is defined by the Pod's restart policy and the container type.
-Setting the RestartPolicy as "Always" for the init container will have the following effect:
+Additionally, setting the RestartPolicy as "Always" for the init container will
+have the following effect:
 this init container will be continually restarted on
 exit until all regular containers have terminated. Once all regular
 containers have completed, all init containers with restartPolicy "Always"
@@ -27498,6 +29054,23 @@ for the container to complete before proceeding to the next init
 container. Instead, the next init container starts immediately after this
 init container is started, or after any startupProbe has successfully
 completed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexrestartpolicyrulesindex">restartPolicyRules</a></b></td>
+        <td>[]object</td>
+        <td>
+          Represents a list of rules to be checked to determine if the
+container should be restarted on exit. The rules are evaluated in
+order. Once a rule matches a container exit condition, the remaining
+rules are ignored. If no rule matches the container exit condition,
+the Container-level restart policy determines the whether the container
+is restarted or not. Constraints on the rules:
+- At most 20 rules are allowed.
+- Rules can have the same action.
+- Identical rules are not forbidden in validations.
+When rules are specified, container MUST set RestartPolicy explicitly
+even it if matches the Pod's RestartPolicy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -27625,7 +29198,8 @@ EnvVar represents an environment variable present in a Container.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+          Name of the environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -27681,6 +29255,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
 spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexenvindexvaluefromfilekeyref">fileKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -27774,6 +29356,64 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podI
         <td>string</td>
         <td>
           Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexenvindexvaluefromfilekeyref">`TenantControlPlane.spec.controlPlane.deployment.additionalContainers[index].env[index].valueFrom.fileKeyRef`</span>
+
+
+FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key within the env file. An invalid key will prevent the pod from starting.
+The keys defined within a source may consist of any printable ASCII characters except '='.
+During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          The path within the volume from which to select the file.
+Must be relative and may not contain the '..' path or start with '..'.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          The name of the volume mount containing the env file.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the file or its key must be defined. If the file or key
+does not exist, then the env var is not published.
+If optional is set to true and the specified key does not exist,
+the environment variable will not be set in the Pod's containers.
+
+If optional is set to false and the specified key does not exist,
+an error will be returned during Pod creation.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -27890,7 +29530,8 @@ EnvFromSource represents the source of a set of ConfigMaps or Secrets
         <td><b>prefix</b></td>
         <td>string</td>
         <td>
-          Optional text to prepend to the name of each environment variable. Must be a C_IDENTIFIER.<br/>
+          Optional text to prepend to the name of each environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -29247,7 +30888,7 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -29305,6 +30946,78 @@ inside a container.<br/>
           Request is the name chosen for a request in the referenced claim.
 If empty, everything from the claim is made available, otherwise
 only the result of this request.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexrestartpolicyrulesindex">`TenantControlPlane.spec.controlPlane.deployment.additionalContainers[index].restartPolicyRules[index]`</span>
+
+
+ContainerRestartRule describes how a container exit is handled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>action</b></td>
+        <td>string</td>
+        <td>
+          Specifies the action taken on a container exit if the requirements
+are satisfied. The only possible value is "Restart" to restart the
+container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexrestartpolicyrulesindexexitcodes">exitCodes</a></b></td>
+        <td>object</td>
+        <td>
+          Represents the exit codes to check on container exits.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexrestartpolicyrulesindexexitcodes">`TenantControlPlane.spec.controlPlane.deployment.additionalContainers[index].restartPolicyRules[index].exitCodes`</span>
+
+
+Represents the exit codes to check on container exits.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Represents the relationship between the container exit code(s) and the
+specified values. Possible values are:
+- In: the requirement is satisfied if the container exit code is in the
+  set of specified values.
+- NotIn: the requirement is satisfied if the container exit code is
+  not in the set of specified values.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]integer</td>
+        <td>
+          Specifies the set of values to check for container exit codes.
+At most 255 elements are allowed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -30188,8 +31901,8 @@ Cannot be updated.<br/>
         <td>[]object</td>
         <td>
           List of sources to populate environment variables in the container.
-The keys defined within a source must be a C_IDENTIFIER. All invalid keys
-will be reported as an event when the container is starting. When a key exists in multiple
+The keys defined within a source may consist of any printable ASCII characters except '='.
+When a key exists in multiple
 sources, the value associated with the last source will take precedence.
 Values defined by an Env with a duplicate key will take precedence.
 Cannot be updated.<br/>
@@ -30278,10 +31991,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td>string</td>
         <td>
           RestartPolicy defines the restart behavior of individual containers in a pod.
-This field may only be set for init containers, and the only allowed value is "Always".
-For non-init containers or when this field is not specified,
+This overrides the pod-level restart policy. When this field is not specified,
 the restart behavior is defined by the Pod's restart policy and the container type.
-Setting the RestartPolicy as "Always" for the init container will have the following effect:
+Additionally, setting the RestartPolicy as "Always" for the init container will
+have the following effect:
 this init container will be continually restarted on
 exit until all regular containers have terminated. Once all regular
 containers have completed, all init containers with restartPolicy "Always"
@@ -30292,6 +32005,23 @@ for the container to complete before proceeding to the next init
 container. Instead, the next init container starts immediately after this
 init container is started, or after any startupProbe has successfully
 completed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexrestartpolicyrulesindex">restartPolicyRules</a></b></td>
+        <td>[]object</td>
+        <td>
+          Represents a list of rules to be checked to determine if the
+container should be restarted on exit. The rules are evaluated in
+order. Once a rule matches a container exit condition, the remaining
+rules are ignored. If no rule matches the container exit condition,
+the Container-level restart policy determines the whether the container
+is restarted or not. Constraints on the rules:
+- At most 20 rules are allowed.
+- Rules can have the same action.
+- Identical rules are not forbidden in validations.
+When rules are specified, container MUST set RestartPolicy explicitly
+even it if matches the Pod's RestartPolicy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30419,7 +32149,8 @@ EnvVar represents an environment variable present in a Container.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+          Name of the environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -30475,6 +32206,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
 spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexenvindexvaluefromfilekeyref">fileKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30568,6 +32307,64 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podI
         <td>string</td>
         <td>
           Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexenvindexvaluefromfilekeyref">`TenantControlPlane.spec.controlPlane.deployment.additionalInitContainers[index].env[index].valueFrom.fileKeyRef`</span>
+
+
+FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key within the env file. An invalid key will prevent the pod from starting.
+The keys defined within a source may consist of any printable ASCII characters except '='.
+During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          The path within the volume from which to select the file.
+Must be relative and may not contain the '..' path or start with '..'.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          The name of the volume mount containing the env file.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the file or its key must be defined. If the file or key
+does not exist, then the env var is not published.
+If optional is set to true and the specified key does not exist,
+the environment variable will not be set in the Pod's containers.
+
+If optional is set to false and the specified key does not exist,
+an error will be returned during Pod creation.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -30684,7 +32481,8 @@ EnvFromSource represents the source of a set of ConfigMaps or Secrets
         <td><b>prefix</b></td>
         <td>string</td>
         <td>
-          Optional text to prepend to the name of each environment variable. Must be a C_IDENTIFIER.<br/>
+          Optional text to prepend to the name of each environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -32041,7 +33839,7 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -32099,6 +33897,78 @@ inside a container.<br/>
           Request is the name chosen for a request in the referenced claim.
 If empty, everything from the claim is made available, otherwise
 only the result of this request.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexrestartpolicyrulesindex">`TenantControlPlane.spec.controlPlane.deployment.additionalInitContainers[index].restartPolicyRules[index]`</span>
+
+
+ContainerRestartRule describes how a container exit is handled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>action</b></td>
+        <td>string</td>
+        <td>
+          Specifies the action taken on a container exit if the requirements
+are satisfied. The only possible value is "Restart" to restart the
+container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexrestartpolicyrulesindexexitcodes">exitCodes</a></b></td>
+        <td>object</td>
+        <td>
+          Represents the exit codes to check on container exits.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexrestartpolicyrulesindexexitcodes">`TenantControlPlane.spec.controlPlane.deployment.additionalInitContainers[index].restartPolicyRules[index].exitCodes`</span>
+
+
+Represents the exit codes to check on container exits.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Represents the relationship between the container exit code(s) and the
+specified values. Possible values are:
+- In: the requirement is satisfied if the container exit code is in the
+  set of specified values.
+- NotIn: the requirement is satisfied if the container exit code is
+  not in the set of specified values.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]integer</td>
+        <td>
+          Specifies the set of values to check for container exit codes.
+At most 255 elements are allowed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -33448,8 +35318,7 @@ into the Pod's container.<br/>
         <td>object</td>
         <td>
           glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
-Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.
-More info: https://examples.k8s.io/volumes/glusterfs/README.md<br/>
+Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -33489,7 +35358,7 @@ The field spec.securityContext.fsGroupChangePolicy has no effect on this volume 
         <td>
           iscsi represents an ISCSI Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://examples.k8s.io/volumes/iscsi/README.md<br/>
+More info: https://kubernetes.io/docs/concepts/storage/volumes/#iscsi<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -33547,8 +35416,7 @@ Deprecated: Quobyte is deprecated and the in-tree quobyte type is no longer supp
         <td>object</td>
         <td>
           rbd represents a Rados Block Device mount on the host that shares a pod's lifetime.
-Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.
-More info: https://examples.k8s.io/volumes/rbd/README.md<br/>
+Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -34592,15 +36460,13 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-
           volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
 If specified, the CSI driver will create or update the volume with the attributes defined
 in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
-If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
-will be set by the persistentvolume controller if it exists.
+it can be changed after the claim is created. An empty string or nil value indicates that no
+VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+this field can be reset to its previous value (including nil) to cancel the modification.
 If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
 set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
 exists.
-More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-(Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).<br/>
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -35162,7 +37028,6 @@ the subdirectory with the given name.<br/>
 
 glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
 Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.
-More info: https://examples.k8s.io/volumes/glusterfs/README.md
 
 <table>
     <thead>
@@ -35177,8 +37042,7 @@ More info: https://examples.k8s.io/volumes/glusterfs/README.md
         <td><b>endpoints</b></td>
         <td>string</td>
         <td>
-          endpoints is the endpoint name that details Glusterfs topology.
-More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod<br/>
+          endpoints is the endpoint name that details Glusterfs topology.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -35301,7 +37165,7 @@ container images in workload controllers like Deployments and StatefulSets.<br/>
 
 iscsi represents an ISCSI Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://examples.k8s.io/volumes/iscsi/README.md
+More info: https://kubernetes.io/docs/concepts/storage/volumes/#iscsi
 
 <table>
     <thead>
@@ -35683,6 +37547,46 @@ may change the order over time.<br/>
         <td>object</td>
         <td>
           downwardAPI information about the downwardAPI data to project<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalvolumesindexprojectedsourcesindexpodcertificate">podCertificate</a></b></td>
+        <td>object</td>
+        <td>
+          Projects an auto-rotating credential bundle (private key and certificate
+chain) that the pod can use either as a TLS client or server.
+
+Kubelet generates a private key and uses it to send a
+PodCertificateRequest to the named signer.  Once the signer approves the
+request and issues a certificate chain, Kubelet writes the key and
+certificate chain to the pod filesystem.  The pod does not start until
+certificates have been issued for each podCertificate projected volume
+source in its spec.
+
+Kubelet will begin trying to rotate the certificate at the time indicated
+by the signer using the PodCertificateRequest.Status.BeginRefreshAt
+timestamp.
+
+Kubelet can write a single file, indicated by the credentialBundlePath
+field, or separate files, indicated by the keyPath and
+certificateChainPath fields.
+
+The credential bundle is a single file in PEM format.  The first PEM
+entry is the private key (in PKCS#8 format), and the remaining PEM
+entries are the certificate chain issued by the signer (typically,
+signers will return their certificate chain in leaf-to-root order).
+
+Prefer using the credential bundle format, since your application code
+can read it atomically.  If you use keyPath and certificateChainPath,
+your application must make two separate file reads. If these coincide
+with a certificate rotation, it is possible that the private key and leaf
+certificate you read may not correspond to each other.  Your application
+will need to check for this condition, and re-read until they are
+consistent.
+
+The named signer controls chooses the format of the certificate it
+issues; consult the signer implementation's documentation to learn how to
+use the certificates it issues.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -36110,6 +38014,140 @@ Selects a resource of the container: only resources limits and requests
 </table>
 
 
+<span id="tenantcontrolplanespeccontrolplanedeploymentadditionalvolumesindexprojectedsourcesindexpodcertificate">`TenantControlPlane.spec.controlPlane.deployment.additionalVolumes[index].projected.sources[index].podCertificate`</span>
+
+
+Projects an auto-rotating credential bundle (private key and certificate
+chain) that the pod can use either as a TLS client or server.
+
+Kubelet generates a private key and uses it to send a
+PodCertificateRequest to the named signer.  Once the signer approves the
+request and issues a certificate chain, Kubelet writes the key and
+certificate chain to the pod filesystem.  The pod does not start until
+certificates have been issued for each podCertificate projected volume
+source in its spec.
+
+Kubelet will begin trying to rotate the certificate at the time indicated
+by the signer using the PodCertificateRequest.Status.BeginRefreshAt
+timestamp.
+
+Kubelet can write a single file, indicated by the credentialBundlePath
+field, or separate files, indicated by the keyPath and
+certificateChainPath fields.
+
+The credential bundle is a single file in PEM format.  The first PEM
+entry is the private key (in PKCS#8 format), and the remaining PEM
+entries are the certificate chain issued by the signer (typically,
+signers will return their certificate chain in leaf-to-root order).
+
+Prefer using the credential bundle format, since your application code
+can read it atomically.  If you use keyPath and certificateChainPath,
+your application must make two separate file reads. If these coincide
+with a certificate rotation, it is possible that the private key and leaf
+certificate you read may not correspond to each other.  Your application
+will need to check for this condition, and re-read until they are
+consistent.
+
+The named signer controls chooses the format of the certificate it
+issues; consult the signer implementation's documentation to learn how to
+use the certificates it issues.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keyType</b></td>
+        <td>string</td>
+        <td>
+          The type of keypair Kubelet will generate for the pod.
+
+Valid values are "RSA3072", "RSA4096", "ECDSAP256", "ECDSAP384",
+"ECDSAP521", and "ED25519".<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>signerName</b></td>
+        <td>string</td>
+        <td>
+          Kubelet's generated CSRs will be addressed to this signer.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateChainPath</b></td>
+        <td>string</td>
+        <td>
+          Write the certificate chain at this path in the projected volume.
+
+Most applications should use credentialBundlePath.  When using keyPath
+and certificateChainPath, your application needs to check that the key
+and leaf certificate are consistent, because it is possible to read the
+files mid-rotation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>credentialBundlePath</b></td>
+        <td>string</td>
+        <td>
+          Write the credential bundle at this path in the projected volume.
+
+The credential bundle is a single file that contains multiple PEM blocks.
+The first PEM block is a PRIVATE KEY block, containing a PKCS#8 private
+key.
+
+The remaining blocks are CERTIFICATE blocks, containing the issued
+certificate chain from the signer (leaf and any intermediates).
+
+Using credentialBundlePath lets your Pod's application code make a single
+atomic read that retrieves a consistent key and certificate chain.  If you
+project them to separate files, your application code will need to
+additionally check that the leaf certificate was issued to the key.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>keyPath</b></td>
+        <td>string</td>
+        <td>
+          Write the key at this path in the projected volume.
+
+Most applications should use credentialBundlePath.  When using keyPath
+and certificateChainPath, your application needs to check that the key
+and leaf certificate are consistent, because it is possible to read the
+files mid-rotation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxExpirationSeconds</b></td>
+        <td>integer</td>
+        <td>
+          maxExpirationSeconds is the maximum lifetime permitted for the
+certificate.
+
+Kubelet copies this value verbatim into the PodCertificateRequests it
+generates for this projection.
+
+If omitted, kube-apiserver will set it to 86400(24 hours). kube-apiserver
+will reject values shorter than 3600 (1 hour).  The maximum allowable
+value is 7862400 (91 days).
+
+The signer implementation is then free to issue a certificate with any
+lifetime *shorter* than MaxExpirationSeconds, but no shorter than 3600
+seconds (1 hour).  This constraint is enforced by kube-apiserver.
+`kubernetes.io` signers will never issue certificates with a lifetime
+longer than 24 hours.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 <span id="tenantcontrolplanespeccontrolplanedeploymentadditionalvolumesindexprojectedsourcesindexsecret">`TenantControlPlane.spec.controlPlane.deployment.additionalVolumes[index].projected.sources[index].secret`</span>
 
 
@@ -36332,7 +38370,6 @@ Defaults to serivceaccount user<br/>
 
 rbd represents a Rados Block Device mount on the host that shares a pod's lifetime.
 Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.
-More info: https://examples.k8s.io/volumes/rbd/README.md
 
 <table>
     <thead>
@@ -37846,8 +39883,8 @@ a node that violates one or more of the expressions. The node that is
 most preferred is the one with the greatest sum of weights, i.e.
 for each node that meets all of the scheduling requirements (resource
 request, requiredDuringScheduling anti-affinity expressions, etc.),
-compute a sum by iterating through the elements of this field and adding
-"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+compute a sum by iterating through the elements of this field and subtracting
+"weight" from the sum if the node has pods which matches the corresponding podAffinityTerm; the
 node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
@@ -38615,7 +40652,7 @@ ResourceRequirements describes the compute resource requirements.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -38700,7 +40737,7 @@ ResourceRequirements describes the compute resource requirements.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -38786,7 +40823,7 @@ Available only if Kamaji is running using Kine as backing storage.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -38871,7 +40908,7 @@ ResourceRequirements describes the compute resource requirements.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -39576,7 +41613,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet version:v0.28.6]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -39585,7 +41622,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-server port:8132 version:v0.28.6]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-server port:8132]<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -39614,6 +41651,18 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
 WARNING - This option can override existing konnectivity
 parameters and cause konnectivity components to misbehave in
 unxpected ways. Only modify if you know what you are doing.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>hostNetwork</b></td>
+        <td>boolean</td>
+        <td>
+          HostNetwork enables the konnectivity agent to use the Host network namespace.
+By enabling this mode, the Agent doesn't need to wait for the CNI initialisation,
+enabling a sort of out-of-band access to nodes for troubleshooting scenarios,
+or when the agent needs direct access to the host network.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -39668,9 +41717,10 @@ Can be customized to start the konnectivity-agent even if the nodes are not read
         <td><b>version</b></td>
         <td>string</td>
         <td>
-          Version for Konnectivity agent.<br/>
-          <br/>
-            <i>Default</i>: v0.28.6<br/>
+          Version for Konnectivity agent.
+If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
+
+WARNING: for last cut-off releases, the container image could be not available.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -39795,9 +41845,10 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         <td><b>version</b></td>
         <td>string</td>
         <td>
-          Container image version of the Konnectivity server.<br/>
-          <br/>
-            <i>Default</i>: v0.28.6<br/>
+          Container image version of the Konnectivity server.
+If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
+
+WARNING: for last cut-off releases, the container image could be not available.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -39825,7 +41876,7 @@ Resources define the amount of CPU and memory to allocate to the Konnectivity se
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -40028,6 +42079,50 @@ Example: {"192.168.1.0/24", "10.0.0.0/8"}<br/>
           CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.<br/>
           <br/>
             <i>Default</i>: 10.96.0.0/16<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecwritepermissions">`TenantControlPlane.spec.writePermissions`</span>
+
+
+WritePermissions allows to select which operations (create, delete, update) must be blocked:
+by default, all actions are allowed, and API Server can write to its Datastore.
+
+By blocking all actions, the Tenant Control Plane can enter in a Read Only mode:
+this phase can be used to prevent Datastore quota exhaustion or for your own business logic
+(e.g.: blocking creation and update, but allowing deletion to "clean up" space).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>blockCreation</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>blockDeletion</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>blockUpdate</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -42158,7 +44253,7 @@ KubernetesVersion contains the information regarding the running Kubernetes vers
         <td>
           Status returns the current status of the Kubernetes version, such as its provisioning state, or completed upgrade.<br/>
           <br/>
-            <i>Enum</i>: Provisioning, CertificateAuthorityRotating, Upgrading, Migrating, Ready, NotReady, Sleeping<br/>
+            <i>Enum</i>: Unknown, Provisioning, CertificateAuthorityRotating, Upgrading, Migrating, Ready, NotReady, Sleeping, WriteLimited<br/>
             <i>Default</i>: Provisioning<br/>
         </td>
         <td>false</td>

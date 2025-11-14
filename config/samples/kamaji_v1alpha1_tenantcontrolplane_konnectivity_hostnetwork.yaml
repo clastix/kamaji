@@ -1,0 +1,36 @@
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: example-hostnetwork-tcp
+  namespace: tenant-system
+spec:
+  controlPlane:
+    deployment:
+      replicas: 2
+    service:
+      serviceType: LoadBalancer
+  kubernetes:
+    version: v1.29.0
+    kubelet:
+      cgroupfs: systemd
+      preferredAddressTypes: ["InternalIP", "ExternalIP"]
+  networkProfile:
+    address: "10.0.0.100"
+    port: 6443
+    serviceCidr: "10.96.0.0/16"
+    podCidr: "10.244.0.0/16"
+  addons:
+    coreDNS: {}
+    konnectivity:
+      server:
+        port: 8132
+      agent:
+        hostNetwork: true
+        tolerations:
+          - key: "CriticalAddonsOnly"
+            operator: "Exists"
+          - key: "node.kubernetes.io/not-ready"
+            operator: "Exists"
+            effect: "NoExecute"
+            tolerationSeconds: 300
+    kubeProxy: {}

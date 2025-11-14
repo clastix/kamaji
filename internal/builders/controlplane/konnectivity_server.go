@@ -6,6 +6,7 @@ package controlplane
 import (
 	"fmt"
 
+	"github.com/blang/semver"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -33,7 +34,20 @@ type Konnectivity struct {
 	Scheme runtime.Scheme
 }
 
-func (k Konnectivity) buildKonnectivityContainer(addon *kamajiv1alpha1.KonnectivitySpec, replicas int32, podSpec *corev1.PodSpec) {
+func (k Konnectivity) serverVersion(tcpVersion, addonVersion string) string {
+	if addonVersion != "" {
+		return addonVersion
+	}
+
+	version, parsedErr := semver.ParseTolerant(tcpVersion)
+	if parsedErr != nil {
+		return ""
+	}
+
+	return fmt.Sprintf("v0.%d.0", version.Minor)
+}
+
+func (k Konnectivity) buildKonnectivityContainer(tcpVersion string, addon *kamajiv1alpha1.KonnectivitySpec, replicas int32, podSpec *corev1.PodSpec) {
 	found, index := utilities.HasNamedContainer(podSpec.Containers, konnectivityServerName)
 	if !found {
 		index = len(podSpec.Containers)
@@ -41,7 +55,7 @@ func (k Konnectivity) buildKonnectivityContainer(addon *kamajiv1alpha1.Konnectiv
 	}
 
 	podSpec.Containers[index].Name = konnectivityServerName
-	podSpec.Containers[index].Image = fmt.Sprintf("%s:%s", addon.KonnectivityServerSpec.Image, addon.KonnectivityServerSpec.Version)
+	podSpec.Containers[index].Image = fmt.Sprintf("%s:%s", addon.KonnectivityServerSpec.Image, k.serverVersion(tcpVersion, addon.KonnectivityServerSpec.Version))
 	podSpec.Containers[index].Command = []string{"/proxy-server"}
 
 	args := utilities.ArgsFromSliceToMap(addon.KonnectivityServerSpec.ExtraArgs)
@@ -70,7 +84,7 @@ func (k Konnectivity) buildKonnectivityContainer(addon *kamajiv1alpha1.Konnectiv
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/healthz",
-				Port:   intstr.FromInt(8134),
+				Port:   intstr.FromInt32(8134),
 				Scheme: corev1.URISchemeHTTP,
 			},
 		},
@@ -254,7 +268,7 @@ func (k Konnectivity) buildVolumes(status kamajiv1alpha1.KonnectivityStatus, pod
 }
 
 func (k Konnectivity) Build(deployment *appsv1.Deployment, tenantControlPlane kamajiv1alpha1.TenantControlPlane) {
-	k.buildKonnectivityContainer(tenantControlPlane.Spec.Addons.Konnectivity, *tenantControlPlane.Spec.ControlPlane.Deployment.Replicas, &deployment.Spec.Template.Spec)
+	k.buildKonnectivityContainer(tenantControlPlane.Spec.Kubernetes.Version, tenantControlPlane.Spec.Addons.Konnectivity, *tenantControlPlane.Spec.ControlPlane.Deployment.Replicas, &deployment.Spec.Template.Spec)
 	k.buildVolumeMounts(&deployment.Spec.Template.Spec)
 	k.buildVolumes(tenantControlPlane.Status.Addons.Konnectivity, &deployment.Spec.Template.Spec)
 

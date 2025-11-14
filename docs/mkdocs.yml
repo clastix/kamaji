@@ -63,20 +63,22 @@ nav:
 - 'Cluster API':
   - cluster-api/index.md
   - cluster-api/control-plane-provider.md
-  - cluster-api/cluster-class.md
-  - cluster-api/cluster-autoscaler.md
   - cluster-api/vsphere-infra-provider.md
   - cluster-api/proxmox-infra-provider.md
   - cluster-api/other-providers.md
+  - cluster-api/cluster-autoscaler.md
+  - cluster-api/cluster-class.md
 - 'Guides':
   - guides/index.md
   - guides/alternative-datastore.md
   - guides/backup-and-restore.md
   - guides/certs-lifecycle.md
   - guides/pausing.md
+  - guides/write-permissions.md
   - guides/datastore-migration.md
   - guides/gitops.md
   - guides/console.md
+  - guides/kubeconfig-generator.md
   - guides/upgrade.md
   - guides/monitoring.md
   - guides/terraform.md

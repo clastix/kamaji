@@ -7,6 +7,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // NetworkProfileSpec defines the desired state of NetworkProfile.
@@ -87,6 +88,32 @@ type KubernetesSpec struct {
 	// Full reference available here: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers
 	//+kubebuilder:default=CertificateApproval;CertificateSigning;CertificateSubjectRestriction;DefaultIngressClass;DefaultStorageClass;DefaultTolerationSeconds;LimitRanger;MutatingAdmissionWebhook;NamespaceLifecycle;PersistentVolumeClaimResize;Priority;ResourceQuota;RuntimeClass;ServiceAccount;StorageObjectInUseProtection;TaintNodesByCondition;ValidatingAdmissionWebhook
 	AdmissionControllers AdmissionControllers `json:"admissionControllers,omitempty"`
+}
+
+type AdditionalPort struct {
+	// The name of this port within the Service created by Kamaji.
+	// This must be a DNS_LABEL, must have unique names, and cannot be `kube-apiserver`, or `konnectivity-server`.
+	Name string `json:"name"`
+	// The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
+	//+kubebuilder:validation:Enum=TCP;UDP;SCTP
+	//+kubebuilder:default=TCP
+	Protocol corev1.Protocol `json:"protocol,omitempty"`
+	// The application protocol for this port.
+	// This is used as a hint for implementations to offer richer behavior for protocols that they understand.
+	// This field follows standard Kubernetes label syntax.
+	// Valid values are either:
+	//
+	// * Un-prefixed protocol names - reserved for IANA standard service names (as per
+	// RFC-6335 and https://www.iana.org/assignments/service-names).
+	AppProtocol *string `json:"appProtocol,omitempty"`
+	// The port that will be exposed by this service.
+	Port int32 `json:"port"`
+	// Number or name of the port to access on the pods of the Tenant Control Plane.
+	// Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+	// If this is a string, it will be looked up as a named port in the
+	// target Pod's container ports. If this is not specified, the value
+	// of the 'port' field is used (an identity map).
+	TargetPort intstr.IntOrString `json:"targetPort"`
 }
 
 // AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.
@@ -198,6 +225,9 @@ type ControlPlaneExtraArgs struct {
 
 type ServiceSpec struct {
 	AdditionalMetadata AdditionalMetadata `json:"additionalMetadata,omitempty"`
+	// AdditionalPorts allows adding additional ports to the Service generated Kamaji
+	// which targets the Tenant Control Plane pods.
+	AdditionalPorts []AdditionalPort `json:"additionalPorts,omitempty"`
 	// ServiceType allows specifying how to expose the Tenant Control Plane.
 	ServiceType ServiceType `json:"serviceType"`
 }
@@ -226,7 +256,9 @@ type KonnectivityServerSpec struct {
 	// The port which Konnectivity server is listening to.
 	Port int32 `json:"port"`
 	// Container image version of the Konnectivity server.
-	//+kubebuilder:default=v0.28.6
+	// If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
+	//
+	// WARNING: for last cut-off releases, the container image could be not available.
 	Version string `json:"version,omitempty"`
 	// Container image used by the Konnectivity server.
 	//+kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-server
@@ -250,7 +282,9 @@ type KonnectivityAgentSpec struct {
 	//+kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-agent
 	Image string `json:"image,omitempty"`
 	// Version for Konnectivity agent.
-	//+kubebuilder:default=v0.28.6
+	// If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
+	//
+	// WARNING: for last cut-off releases, the container image could be not available.
 	Version string `json:"version,omitempty"`
 	// UseHostNetwork for Konnectivity agent.
 	//+kubebuilder:default=false
@@ -260,6 +294,12 @@ type KonnectivityAgentSpec struct {
 	//+kubebuilder:default={{key: "CriticalAddonsOnly", operator: "Exists"}}
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 	ExtraArgs   ExtraArgs           `json:"extraArgs,omitempty"`
+	// HostNetwork enables the konnectivity agent to use the Host network namespace.
+	// By enabling this mode, the Agent doesn't need to wait for the CNI initialisation,
+	// enabling a sort of out-of-band access to nodes for troubleshooting scenarios,
+	// or when the agent needs direct access to the host network.
+	//+kubebuilder:default=false
+	HostNetwork bool `json:"hostNetwork,omitempty"`
 	// Mode allows specifying the Agent deployment mode: Deployment, or DaemonSet (default).
 	//+kubebuilder:default="DaemonSet"
 	//+kubebuilder:validation:Enum=DaemonSet;Deployment
@@ -272,9 +312,9 @@ type KonnectivityAgentSpec struct {
 
 // KonnectivitySpec defines the spec for Konnectivity.
 type KonnectivitySpec struct {
-	//+kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-server",port:8132}
+	//+kubebuilder:default={image:"registry.k8s.io/kas-network-proxy/proxy-server",port:8132}
 	KonnectivityServerSpec KonnectivityServerSpec `json:"server,omitempty"`
-	//+kubebuilder:default={version:"v0.28.6",image:"registry.k8s.io/kas-network-proxy/proxy-agent",mode:"DaemonSet"}
+	//+kubebuilder:default={image:"registry.k8s.io/kas-network-proxy/proxy-agent",mode:"DaemonSet"}
 	KonnectivityAgentSpec KonnectivityAgentSpec `json:"agent,omitempty"`
 }
 
@@ -290,14 +330,36 @@ type AddonsSpec struct {
 	KubeProxy *AddonSpec `json:"kubeProxy,omitempty"`
 }
 
+type Permissions struct {
+	BlockCreate bool `json:"blockCreation,omitempty"`
+	BlockUpdate bool `json:"blockUpdate,omitempty"`
+	BlockDelete bool `json:"blockDeletion,omitempty"`
+}
+
+func (p *Permissions) HasAnyLimitation() bool {
+	if p.BlockCreate || p.BlockUpdate || p.BlockDelete {
+		return true
+	}
+
+	return false
+}
+
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStore) || has(self.dataStore)", message="unsetting the dataStore is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"
+// +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreUsername) || has(self.dataStoreUsername)", message="unsetting the dataStoreUsername is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == 'LoadBalancer')", message="LoadBalancer source ranges are supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == 'LoadBalancer'", message="LoadBalancerClass is supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)",message="LoadBalancerClass cannot be set or unset at runtime"
 
 type TenantControlPlaneSpec struct {
+	// WritePermissions allows to select which operations (create, delete, update) must be blocked:
+	// by default, all actions are allowed, and API Server can write to its Datastore.
+	//
+	// By blocking all actions, the Tenant Control Plane can enter in a Read Only mode:
+	// this phase can be used to prevent Datastore quota exhaustion or for your own business logic
+	// (e.g.: blocking creation and update, but allowing deletion to "clean up" space).
+	WritePermissions Permissions `json:"writePermissions,omitempty"`
 	// DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
 	// When Kamaji runs with the default DataStore flag, all empty values will inherit the default value.
 	// By leaving it empty and running Kamaji with no default DataStore flag, it is possible to achieve automatic assignment to a specific DataStore object.
@@ -310,8 +372,14 @@ type TenantControlPlaneSpec struct {
 	// to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
 	// DataStoreSchema by concatenating the namespace and name of the TenantControlPlane.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="changing the dataStoreSchema is not supported"
-	DataStoreSchema string       `json:"dataStoreSchema,omitempty"`
-	ControlPlane    ControlPlane `json:"controlPlane"`
+	DataStoreSchema string `json:"dataStoreSchema,omitempty"`
+	// DataStoreUsername allows to specify the username of the database (for relational DataStores). This
+	// value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreUsername values are unique. It's up
+	// to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
+	// DataStoreUsername by concatenating the namespace and name of the TenantControlPlane.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="changing the dataStoreUsername is not supported"
+	DataStoreUsername string       `json:"dataStoreUsername,omitempty"`
+	ControlPlane      ControlPlane `json:"controlPlane"`
 	// Kubernetes specification for tenant control plane
 	Kubernetes KubernetesSpec `json:"kubernetes"`
 	// NetworkProfile specifies how the network is
