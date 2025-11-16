@@ -90,8 +90,6 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
-		// TODO: If using the status, the kubeconfig is not getting updated when this resource is
-		// updated. This might be by design? Need some input from the authors.
 		endpoint := net.JoinHostPort(address, strconv.FormatInt(int64(port), 10))
 		spec := tenantControlPlane.Spec.ControlPlane
 		if spec.Gateway != nil {
