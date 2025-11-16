@@ -223,6 +223,12 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
+			if err = (&kamajiv1alpha1.GatewayListener{}).SetupWithManager(ctx, mgr); err != nil {
+				setupLog.Error(err, "unable to create indexer", "indexer", "GatewayListener")
+
+				return err
+			}
+
 			err = webhook.Register(mgr, map[routes.Route][]handlers.Handler{
 				routes.TenantControlPlaneMigrate{}: {
 					handlers.Freeze{},

@@ -13,7 +13,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -163,18 +163,37 @@ func (r *KubernetesGatewayResource) CleanUp(ctx context.Context, tcp *kamajiv1al
 	return true, nil
 }
 
-func (r *KubernetesGatewayResource) fetchGateway(ctx context.Context, ref gatewayv1.ParentReference) (*gatewayv1.Gateway, error) {
+// fetchGatewayByListener uses the indexer to efficiently find a gateway with a specific listener.
+// This avoids the need to iterate through all listeners in a gateway.
+func (r *KubernetesGatewayResource) fetchGatewayByListener(ctx context.Context, ref gatewayv1.ParentReference) (*gatewayv1.Gateway, error) {
 	if ref.Namespace == nil {
 		return nil, fmt.Errorf("missing namespace")
 	}
+	if ref.SectionName == nil {
+		return nil, fmt.Errorf("missing sectionName")
+	}
 
-	gateway := &gatewayv1.Gateway{}
-	err := r.Client.Get(ctx, types.NamespacedName{
-		Name:      string(ref.Name),
-		Namespace: string(*ref.Namespace),
-	}, gateway)
+	// Build the composite key that matches our indexer format: namespace/gatewayName/listenerName
+	listenerKey := fmt.Sprintf("%s/%s/%s", *ref.Namespace, ref.Name, *ref.SectionName)
 
-	return gateway, err
+	// Query gateways using the indexer
+	gatewayList := &gatewayv1.GatewayList{}
+	if err := r.Client.List(ctx, gatewayList, client.MatchingFieldsSelector{
+		Selector: fields.OneTermEqualSelector(kamajiv1alpha1.GatewayListenerNameKey, listenerKey),
+	}); err != nil {
+		return nil, fmt.Errorf("failed to list gateways by listener: %w", err)
+	}
+
+	if len(gatewayList.Items) == 0 {
+		return nil, fmt.Errorf("no gateway found with listener '%s'", *ref.SectionName)
+	}
+
+	// Since we're using a composite key with namespace/name/listener, we should get exactly one result
+	if len(gatewayList.Items) > 1 {
+		return nil, fmt.Errorf("found multiple gateways with listener '%s', expected exactly one", *ref.SectionName)
+	}
+
+	return &gatewayList.Items[0], nil
 }
 
 func FindMatchingListener(listeners []gatewayv1.Listener, ref gatewayv1.ParentReference) (gatewayv1.Listener, error) {
@@ -243,10 +262,11 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 			continue
 		}
 
-		gateway, err := r.fetchGateway(ctx, routeStatus.ParentRef)
+		// Use the indexer to efficiently find the gateway with the specific listener
+		gateway, err := r.fetchGatewayByListener(ctx, routeStatus.ParentRef)
 		if err != nil {
-			return fmt.Errorf("could not fetch gateway '%s': %w",
-				routeStatus.ParentRef.Name, err)
+			return fmt.Errorf("could not fetch gateway with listener '%v': %w",
+				routeStatus.ParentRef.SectionName, err)
 		}
 		gatewayProgrammed := meta.IsStatusConditionTrue(
 			gateway.Status.Conditions,
@@ -256,8 +276,8 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 			continue
 		}
 
-		// Assuming the gateway controller populates the name, namespace, and
-		// sectionName such that we can find the listener.
+		// Since we fetched the gateway using the indexer, we know the listener exists
+		// but we still need to get its details from the gateway spec
 		listener, err := FindMatchingListener(
 			gateway.Spec.Listeners, routeStatus.ParentRef,
 		)
@@ -284,40 +304,44 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 	return nil
 }
 
-func (r *KubernetesGatewayResource) Define(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+func (r *KubernetesGatewayResource) Define(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error {
 	r.resource = &gatewayv1alpha2.TLSRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      tenantControlPlane.GetName(),
-			Namespace: tenantControlPlane.GetNamespace(),
+			Name:      tcp.GetName(),
+			Namespace: tcp.GetNamespace(),
 		},
 	}
 
 	return nil
 }
 
-func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
+func (r *KubernetesGatewayResource) mutate(tcp *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
 		labels := utilities.MergeMaps(
 			r.resource.GetLabels(),
-			utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()),
-			tenantControlPlane.Spec.ControlPlane.Gateway.AdditionalMetadata.Labels,
+			utilities.KamajiLabels(tcp.GetName(), r.GetName()),
+			tcp.Spec.ControlPlane.Gateway.AdditionalMetadata.Labels,
 		)
 		r.resource.SetLabels(labels)
 
 		annotations := utilities.MergeMaps(
 			r.resource.GetAnnotations(),
-			tenantControlPlane.Spec.ControlPlane.Gateway.AdditionalMetadata.Annotations)
+			tcp.Spec.ControlPlane.Gateway.AdditionalMetadata.Annotations)
 		r.resource.SetAnnotations(annotations)
 
-		if tenantControlPlane.Spec.ControlPlane.Gateway.GatewayParentRefs != nil {
-			r.resource.Spec.ParentRefs = tenantControlPlane.Spec.ControlPlane.Gateway.GatewayParentRefs
+		if tcp.Spec.ControlPlane.Gateway.GatewayParentRefs != nil {
+			r.resource.Spec.ParentRefs = tcp.Spec.ControlPlane.Gateway.GatewayParentRefs
 		}
 
-		serviceName := gatewayv1alpha2.ObjectName(tenantControlPlane.Status.Kubernetes.Service.Name)
-		servicePort := gatewayv1alpha2.PortNumber(tenantControlPlane.Status.Kubernetes.Service.Port)
+		serviceName := gatewayv1alpha2.ObjectName(tcp.Status.Kubernetes.Service.Name)
+		servicePort := gatewayv1alpha2.PortNumber(tcp.Status.Kubernetes.Service.Port)
+
+		if serviceName == "" || servicePort == 0 {
+			return fmt.Errorf("service not ready")
+		}
 
 		// Fail if no hostname is specified, same as the ingress resource.
-		if len(tenantControlPlane.Spec.ControlPlane.Gateway.Hostname) == 0 {
+		if len(tcp.Spec.ControlPlane.Gateway.Hostname) == 0 {
 			return fmt.Errorf("missing hostname to expose the Tenant Control Plane using a Gateway resource")
 		}
 
@@ -333,10 +357,10 @@ func (r *KubernetesGatewayResource) mutate(tenantControlPlane *kamajiv1alpha1.Te
 			},
 		}
 
-		r.resource.Spec.Hostnames = []gatewayv1.Hostname{tenantControlPlane.Spec.ControlPlane.Gateway.Hostname}
+		r.resource.Spec.Hostnames = []gatewayv1.Hostname{tcp.Spec.ControlPlane.Gateway.Hostname}
 		r.resource.Spec.Rules = []gatewayv1alpha2.TLSRouteRule{rule}
 
-		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
+		return controllerutil.SetControllerReference(tcp, r.resource, r.Client.Scheme())
 	}
 }
 
@@ -356,9 +380,6 @@ func (r *KubernetesGatewayResource) CreateOrUpdate(ctx context.Context, tenantCo
 			Namespace: tenantControlPlane.GetNamespace(),
 		},
 	}
-
-	// Store the fresh resources for status updates
-	r.resource = route
 
 	result, err := utilities.CreateOrUpdateWithConflict(ctx, r.Client, route, r.mutate(tenantControlPlane))
 	if err != nil {
