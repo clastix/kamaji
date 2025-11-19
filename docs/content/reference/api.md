@@ -326,7 +326,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet version:v0.28.6]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -335,7 +335,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-server port:8132 version:v0.28.6]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-server port:8132]<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -421,9 +421,10 @@ Can be customized to start the konnectivity-agent even if the nodes are not read
         <td><b>version</b></td>
         <td>string</td>
         <td>
-          Version for Konnectivity agent.<br/>
-          <br/>
-            <i>Default</i>: v0.28.6<br/>
+          Version for Konnectivity agent.
+If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
+
+WARNING: for last cut-off releases, the container image could be not available.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -548,9 +549,10 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         <td><b>version</b></td>
         <td>string</td>
         <td>
-          Container image version of the Konnectivity server.<br/>
-          <br/>
-            <i>Default</i>: v0.28.6<br/>
+          Container image version of the Konnectivity server.
+If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
+
+WARNING: for last cut-off releases, the container image could be not available.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14054,7 +14056,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet version:v0.28.6]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14063,7 +14065,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-server port:8132 version:v0.28.6]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-server port:8132]<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14149,9 +14151,10 @@ Can be customized to start the konnectivity-agent even if the nodes are not read
         <td><b>version</b></td>
         <td>string</td>
         <td>
-          Version for Konnectivity agent.<br/>
-          <br/>
-            <i>Default</i>: v0.28.6<br/>
+          Version for Konnectivity agent.
+If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
+
+WARNING: for last cut-off releases, the container image could be not available.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14276,9 +14279,10 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         <td><b>version</b></td>
         <td>string</td>
         <td>
-          Container image version of the Konnectivity server.<br/>
-          <br/>
-            <i>Default</i>: v0.28.6<br/>
+          Container image version of the Konnectivity server.
+If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
+
+WARNING: for last cut-off releases, the container image could be not available.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
