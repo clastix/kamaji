@@ -29,6 +29,8 @@ func (t TenantControlPlaneVersion) OnCreate(object runtime.Object) AdmissionResp
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to parse the desired Kubernetes version")
 		}
+		// No need to check if the patch version
+		ver.Patch = 0
 
 		supportedVer, supportedErr := semver.Make(t.normalizeKubernetesVersion(upgrade.KubeadmVersion))
 		if supportedErr != nil {
@@ -36,7 +38,7 @@ func (t TenantControlPlaneVersion) OnCreate(object runtime.Object) AdmissionResp
 		}
 
 		if ver.GT(supportedVer) {
-			return nil, fmt.Errorf("unable to create a TenantControlPlane with a Kubernetes version greater than the supported one, actually %s", supportedVer.String())
+			return nil, fmt.Errorf("unable to create a TenantControlPlane with a Kubernetes version greater than the supported one, actually v%d.%d", supportedVer.Major, supportedVer.Minor)
 		}
 
 		return nil, nil
@@ -59,15 +61,23 @@ func (t TenantControlPlaneVersion) OnUpdate(object runtime.Object, oldObject run
 	return func(context.Context, admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		newTCP, oldTCP := object.(*kamajiv1alpha1.TenantControlPlane), oldObject.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
+		if newTCP.DeletionTimestamp != nil {
+			return nil, nil
+		}
+
 		oldVer, oldErr := semver.Make(t.normalizeKubernetesVersion(oldTCP.Spec.Kubernetes.Version))
 		if oldErr != nil {
 			return nil, errors.Wrap(oldErr, "unable to parse the previous Kubernetes version")
 		}
+		// No need to check if the patch version
+		oldVer.Patch = 0
 
 		newVer, newErr := semver.New(t.normalizeKubernetesVersion(newTCP.Spec.Kubernetes.Version))
 		if newErr != nil {
 			return nil, errors.Wrap(newErr, "unable to parse the desired Kubernetes version")
 		}
+		// No need to check if the patch version
+		newVer.Patch = 0
 
 		supportedVer, supportedErr := semver.Make(t.normalizeKubernetesVersion(upgrade.KubeadmVersion))
 		if supportedErr != nil {
@@ -76,7 +86,7 @@ func (t TenantControlPlaneVersion) OnUpdate(object runtime.Object, oldObject run
 
 		switch {
 		case newVer.GT(supportedVer):
-			return nil, fmt.Errorf("unable to upgrade to a version greater than the supported one, actually %s", supportedVer.String())
+			return nil, fmt.Errorf("unable to upgrade to a version greater than the supported one (v%d.%d)", supportedVer.Major, supportedVer.Minor)
 		case newVer.LT(oldVer):
 			return nil, fmt.Errorf("unable to downgrade a TenantControlPlane from %s to %s", oldVer.String(), newVer.String())
 		case newVer.Minor-oldVer.Minor > 1:
