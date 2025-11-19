@@ -128,3 +128,47 @@ Apply the workload to the Tenant cluster and simulate a load spike by increasing
 
 !!! warning "Possible Resource Wastage"
     With the Cluster Autoscaler, new machines may be created very quickly, which can lead to over-provisioning and potentially wasted resources. The official Cluster Autoscaler documentation should be consulted to configure appropriate values based on your infrastructure and provisioning times.
+
+##  `ProvisioningRequest` support
+
+The [ProvisioningRequest](https://github.com/kubernetes/autoscaler/blob/cluster-autoscaler-1.34.1/cluster-autoscaler/proposals/provisioning-request.md) introduces a Kubernetes-native way for Cluster Autoscaler to request new capacity without talking directly to cloud provider APIs.
+Instead of embedding provider-specific logic, the autoscaler simply describes the capacity it needs, and an external provisioner decides how to create the required nodes.
+This makes scaling portable across clouds, on-prem platforms, and custom provisioning systems, while greatly reducing complexity inside the autoscaler.
+
+Once the cluster has been provisioned, install the `ProvisioningRequest` definition.
+
+```
+kubectl kamaji kubeconfig get capi-quickstart-kubevirt > /tmp/capi-quickstart-kubevirt
+KUBECONFIG=/tmp/capi-quickstart-kubevirt kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/refs/tags/cluster-autoscaler-1.34.1/cluster-autoscaler/apis/config/crd/autoscaling.x-k8s.io_provisioningrequests.yaml
+```
+
+Proceed with the installation of Cluster Autoscaler by enabling some additional parameters: YMMV.
+
+```yaml
+cloudProvider: clusterapi
+autoDiscovery:
+  namespace: default
+  labels:
+  - autoscaling.x-k8s.io: enabled
+
+clusterAPIKubeconfigSecret: capi-quickstart-kubeconfig
+clusterAPIMode: kubeconfig-incluster
+
+extraArgs:
+  enable-provisioning-requests: true
+  kube-api-content-type: "application/json"
+  cloud-config: /etc/kubernetes/management/kubeconfig
+
+extraVolumeSecrets:
+  # Mount the management kubeconfig to talk with the management cluster:
+  # the in-rest configuration doesn't work
+  management-kubeconfig:
+    name: management-kubeconfig
+    mountPath: /etc/kubernetes/management
+    items:
+    - key: kubeconfig
+      path: kubeconfig
+```
+
+The Cluster Autoscaler should be up and running, enabled to connect to the management and tenant cluster API Server:
+follow the [official example](https://github.com/kubernetes/autoscaler/blob/cluster-autoscaler-1.34.1/cluster-autoscaler/FAQ.md#example-usage) from the repository to assess the `ProvisioningRequest` feature.
