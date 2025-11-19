@@ -1,24 +1,24 @@
 # Cluster Autoscaler
 
-The [Cluster Autoscaler](https://github.com/kubernetes/autoscaler) is a tool that automatically adjusts the size of a Kubernetes cluster so that all pods have a place to run and there are no unneeded nodes.
+The [Cluster Autoscaler](https://github.com/kubernetes/autoscaler) is a tool that automatically adjusts the size of a Kubernetes cluster so that all pods have a place to run and no unneeded nodes remain.
 
-When pods are unschedulable because there are not enough resources, Cluster Autoscaler scales up the cluster. When nodes are underutilized, Cluster Autoscaler scales down the cluster.
+When pods are unschedulable because there are not enough resources, the Cluster Autoscaler scales up the cluster. When nodes are underutilized, the Cluster Autoscaler scales the cluster down.
 
 Cluster API supports the Cluster Autoscaler. See the [Cluster Autoscaler on Cluster API](https://cluster-api.sigs.k8s.io/tasks/automated-machine-management/autoscaling) for more information.
 
 ## Getting started with the Cluster Autoscaler on Kamaji
 
-Kamaji supports the Cluster Autoscaler through Cluster API. There are several way to run the Cluster autoscaler with Cluster API. In this guide, we're leveraging the unique features of Kamaji to run the Cluster Autoscaler as part of Hosted Control Plane.
+Kamaji supports the Cluster Autoscaler through Cluster API. There are several ways to run the Cluster Autoscaler with Cluster API. In this guide, we leverage the unique features of Kamaji to run the Cluster Autoscaler as part of the Hosted Control Plane.
 
-In other words, the Cluster Autoscaler is running as a pod in the Kamaji Management Cluster, side by side with the Tenant Control Plane pods, and connecting directly to the apiserver of the workload cluster, hiding sensitive data and information from the tenant: this can be done by mounting the kubeconfig of the tenant cluster in the Cluster Autoscaler pod.
+In other words, the Cluster Autoscaler runs as a pod in the Kamaji Management Cluster, alongside the Tenant Control Plane pods, and connects directly to the API server of the workload cluster. This approach hides sensitive data from the tenant. It works by mounting the kubeconfig of the tenant cluster into the Cluster Autoscaler pod.
 
 ### Create the workload cluster
 
-Create a workload cluster using the Kamaji Control Plane Provider and the Infrastructure Provider of choice. The following example creates a workload cluster using the vSphere Infrastructure Provider:
+Create a workload cluster using the Kamaji Control Plane Provider and the Infrastructure Provider of your choice. The following example creates a workload cluster using the vSphere Infrastructure Provider.
 
-The template file [`capi-kamaji-vsphere-autoscaler-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/vsphere/capi-kamaji-vsphere-autoscaler-template.yaml) provides a full example of a cluster with autoscaler enabled. You can generate the cluster manifest using `clusterctl`.
+The template file [`capi-kamaji-vsphere-autoscaler-template.yaml`](https://raw.githubusercontent.com/clastix/cluster-api-control-plane-provider-kamaji/master/templates/vsphere/capi-kamaji-vsphere-autoscaler-template.yaml) provides a full example of a cluster with the autoscaler enabled. You can generate the cluster manifest using `clusterctl`.
 
-Before you need to list all the variables in the template file:
+Before doing so, list all the variables in the template file:
 
 ```bash
 cat capi-kamaji-vsphere-autoscaler-template.yaml | clusterctl generate yaml --list-variables
@@ -40,10 +40,10 @@ kubectl apply -f capi-kamaji-vsphere-cluster.yaml
 
 ### Install the Cluster Autoscaler
 
-Install the Cluster Autoscaler via Helm in the Management Cluster, in the same namespace where workload cluster is deployed.
+Install the Cluster Autoscaler via Helm in the Management Cluster, in the same namespace where the workload cluster is deployed.
 
-!!! info "Options for install Cluster Autoscaler"
-    Cluster Autoscaler works on a single cluster: it means every cluster must have its own Cluster Autoscaler instance. This could be solved by leveraging on Project Sveltos automations, by deploying a Cluster Autoscaler instance for each Kamaji Cluster API instance.
+!!! info "Options for installing the Cluster Autoscaler"
+    The Cluster Autoscaler works on a single cluster, meaning every cluster must have its own Cluster Autoscaler instance. This can be addressed by leveraging Project Sveltos automations to deploy a Cluster Autoscaler instance for each Kamaji Cluster API instance.
 
 ```bash
 helm repo add autoscaler https://kubernetes.github.io/autoscaler
@@ -56,9 +56,9 @@ helm upgrade --install ${CLUSTER_NAME}-autoscaler autoscaler/cluster-autoscaler 
     --set clusterAPIMode=kubeconfig-incluster
 ```
 
-The `autoDiscovery.labels` values are used to pick dynamically clusters to autoscale.
+The `autoDiscovery.labels` values are used to dynamically select clusters to autoscale.
 
-Such labels must be set on the workload cluster, in the `Cluster` and `MachineDeployment` resources.
+These labels must be set on the workload cluster, specifically in the `Cluster` and `MachineDeployment` resources.
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -79,6 +79,9 @@ metadata:
     # Cluster Autoscaler annotations
     cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "0"
     cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "6"
+    capacity.cluster-autoscaler.kubernetes.io/cpu: "2"  # YMMV
+    capacity.cluster-autoscaler.kubernetes.io/memory: 4Gi  # YMMV
+    capacity.cluster-autoscaler.kubernetes.io/maxPods: "110"  # YMMV
   labels:
     cluster.x-k8s.io/cluster-name: sample
     # Cluster Autoscaler labels
@@ -90,10 +93,9 @@ metadata:
 # other Cluster API resources omitted for brevity
 ```
 
-
 ### Verify the Cluster Autoscaler
 
-To verify the Cluster Autoscaler is working as expected, you can deploy a workload in the Tenant cluster with some CPU requirements in order to simulate workload requiring resources.
+To verify that the Cluster Autoscaler is working as expected, deploy a workload in the Tenant cluster with specific CPU requirements to simulate resource demand.
 
 ```yaml
 apiVersion: apps/v1
@@ -122,7 +124,51 @@ spec:
             cpu: 500m
 ```
 
-Apply the workload to the Tenant cluster and simulate the load spike by increasing the replicas. The Cluster Autoscaler should scale up the cluster to accommodate the workload. Cooldown time must be configured properly on a cluster basis. 
+Apply the workload to the Tenant cluster and simulate a load spike by increasing the number of replicas. The Cluster Autoscaler should scale up the cluster to accommodate the workload. Cooldown times must be configured correctly on a per-cluster basis.
 
-!!! warning "Possible Resource Wasting"
-    With Cluster Autoscaler, new machines are automatically created in a very short time, ending up with some up-provisioning and potentially wasting resources. The official Cluster Autosclaler documentation must be understood to provide correct values according to the infrastructure and provisioning times.
+!!! warning "Possible Resource Wastage"
+    With the Cluster Autoscaler, new machines may be created very quickly, which can lead to over-provisioning and potentially wasted resources. The official Cluster Autoscaler documentation should be consulted to configure appropriate values based on your infrastructure and provisioning times.
+
+##  `ProvisioningRequest` support
+
+The [ProvisioningRequest](https://github.com/kubernetes/autoscaler/blob/cluster-autoscaler-1.34.1/cluster-autoscaler/proposals/provisioning-request.md) introduces a Kubernetes-native way for Cluster Autoscaler to request new capacity without talking directly to cloud provider APIs.
+Instead of embedding provider-specific logic, the autoscaler simply describes the capacity it needs, and an external provisioner decides how to create the required nodes.
+This makes scaling portable across clouds, on-prem platforms, and custom provisioning systems, while greatly reducing complexity inside the autoscaler.
+
+Once the cluster has been provisioned, install the `ProvisioningRequest` definition.
+
+```
+kubectl kamaji kubeconfig get capi-quickstart-kubevirt > /tmp/capi-quickstart-kubevirt
+KUBECONFIG=/tmp/capi-quickstart-kubevirt kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/refs/tags/cluster-autoscaler-1.34.1/cluster-autoscaler/apis/config/crd/autoscaling.x-k8s.io_provisioningrequests.yaml
+```
+
+Proceed with the installation of Cluster Autoscaler by enabling some additional parameters: YMMV.
+
+```yaml
+cloudProvider: clusterapi
+autoDiscovery:
+  namespace: default
+  labels:
+  - autoscaling.x-k8s.io: enabled
+
+clusterAPIKubeconfigSecret: capi-quickstart-kubeconfig
+clusterAPIMode: kubeconfig-incluster
+
+extraArgs:
+  enable-provisioning-requests: true
+  kube-api-content-type: "application/json"
+  cloud-config: /etc/kubernetes/management/kubeconfig
+
+extraVolumeSecrets:
+  # Mount the management kubeconfig to talk with the management cluster:
+  # the in-rest configuration doesn't work
+  management-kubeconfig:
+    name: management-kubeconfig
+    mountPath: /etc/kubernetes/management
+    items:
+    - key: kubeconfig
+      path: kubeconfig
+```
+
+The Cluster Autoscaler should be up and running, enabled to connect to the management and tenant cluster API Server:
+follow the [official example](https://github.com/kubernetes/autoscaler/blob/cluster-autoscaler-1.34.1/cluster-autoscaler/FAQ.md#example-usage) from the repository to assess the `ProvisioningRequest` feature.
