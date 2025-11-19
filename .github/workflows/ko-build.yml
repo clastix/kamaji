@@ -6,13 +6,16 @@ on:
       - edge-*
       - v*
     branches:
-      - master
+      - main
   workflow_dispatch:
     inputs:
       tag:
         description: "Tag to build"
         required: true
         type: string
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
 jobs:
   ko:
@@ -31,7 +34,8 @@ jobs:
       - name: "ko: login to docker.io container registry"
         run: ./bin/ko login docker.io -u ${{ secrets.DOCKER_IO_USERNAME }} -p ${{ secrets.DOCKER_IO_TOKEN }}
       - name: "ko: build and push tag"
-        run: make VERSION=${{ github.event.inputs.tag }} KO_LOCAL=false KO_PUSH=true build
-        if: github.event_name == 'workflow_dispatch'
+        run: CONTAINER_REPOSITORY=quay.io/platform9/kamaji make VERSION=${{ env.TAG }} KO_LOCAL=false KO_PUSH=true build
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
       - name: "ko: build and push latest"
-        run: make VERSION=latest KO_LOCAL=false KO_PUSH=true build
+        run: CONTAINER_REPOSITORY=quay.io/platform9/kamaji make VERSION=latest KO_LOCAL=false KO_PUSH=true build
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'

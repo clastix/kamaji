@@ -2,7 +2,7 @@ name: Helm Chart
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "*" ]
 
@@ -36,7 +36,7 @@ jobs:
       - name: Linting Kamaji CRDS Helm Chart
         run: helm lint ./charts/kamaji-crds
   release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [ "lint", "diff" ]
     runs-on: ubuntu-22.04
     steps:
@@ -45,11 +45,3 @@ jobs:
         uses: stefanprodan/helm-gh-pages@master
         with:
           token: ${{ secrets.BOT_GITHUB_TOKEN }}
-          charts_dir: charts
-          charts_url: https://clastix.github.io/charts
-          owner: clastix
-          repository: charts
-          branch: gh-pages
-          target_dir: .
-          commit_username: prometherion
-          commit_email: dario@tranchitella.eu

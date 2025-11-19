@@ -1,0 +1,32 @@
+name: Pf9-kamaji Helm Chart
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "edge-*", "v*" ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Used as Chart Version(must be semver2 compatible)"
+        required: true
+        type: string
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  helm:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: helm login
+        run: helm registry login quay.io -u ${{ secrets.QUAY_IO_USERNAME }} -p ${{ secrets.QUAY_IO_TOKEN }}
+      - name: helm build & push with tag
+        run: APP_VERSION=${{ env.TAG }} CHART_VERSION=${{ env.TAG }} make helm-push
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+      - name: helm build & push latest
+        run: APP_VERSION=latest CHART_VERSION=0.0.0+latest make helm-push
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+

@@ -38,3 +38,6 @@ bin
 !deploy/kine/mysql/server-csr.json
 !deploy/kine/nats/server-csr.json
 charts/kamaji/charts
+
+# dependencies
+vendor/
