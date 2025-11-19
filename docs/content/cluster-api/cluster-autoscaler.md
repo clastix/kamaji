@@ -79,6 +79,9 @@ metadata:
     # Cluster Autoscaler annotations
     cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "0"
     cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "6"
+    capacity.cluster-autoscaler.kubernetes.io/cpu: "2"  # YMMV
+    capacity.cluster-autoscaler.kubernetes.io/memory: 4Gi  # YMMV
+    capacity.cluster-autoscaler.kubernetes.io/maxPods: "110"  # YMMV
   labels:
     cluster.x-k8s.io/cluster-name: sample
     # Cluster Autoscaler labels
