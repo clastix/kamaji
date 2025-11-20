@@ -46,5 +46,9 @@ jobs:
           sudo apt-get install -y golang-cfssl
           sudo swapoff -a
           sudo modprobe br_netfilter
+      - name: install required Go tools
+        run: make kind ko helm ginkgo
+      - name: cleaning up go mod
+        run: go clean -modcache
       - name: e2e testing
         run: make e2e
