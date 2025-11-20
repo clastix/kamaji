@@ -23,14 +23,14 @@ var _ = Describe("using an unsupported TenantControlPlane Kubernetes version", f
 	v, err := semver.Make(upgrade.KubeadmVersion[1:])
 	Expect(err).ToNot(HaveOccurred())
 
-	unsupported, err := semver.Make(fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch+1))
+	unsupported, err := semver.Make(fmt.Sprintf("%d.%d.%d", v.Major, v.Minor+1, 0))
 	Expect(err).ToNot(HaveOccurred())
 
 	It("should be blocked on creation", func() {
 		Consistently(func() error {
 			tcp := kamajiv1alpha1.TenantControlPlane{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "non-linear-update",
+					Name:      "unsupported-version",
 					Namespace: "default",
 				},
 				Spec: kamajiv1alpha1.TenantControlPlaneSpec{
