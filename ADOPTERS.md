@@ -13,6 +13,7 @@ Feel free to open a Pull-Request to get yours listed.
 | Vendor | Coredge | 2025 | [link](https://coredge.io/) | Coredge uses Kamaji in its K8saaS offering to save infrastructure costs in its Sovereign Cloud & AI Infrastructure Platform for end-user organisations. |
 | Vendor | DCloud | 2024 | [link](https://dcloud.co.id) | DCloud is an Indonesian Cloud Provider using Kamaji to build and offer [Managed Kubernetes Service](https://dcloud.co.id/dkubes.html). |
 | Vendor | Dinova | 2025 | [link](https://dinova.one/) | Dinova is an Italian cloud services provider that integrates Kamaji in its datacenters to offer fully managed Kubernetes clusters. |
+| Vendor | Hikube | 2024 | [link](https://hikube.cloud/) | Hikube.cloud is a Swiss sovereign cloud platform with triple replication across three Swiss datacenters, offering enterprise-grade infrastructure with full data sovereignty. |
 | End-user | KINX | 2024 | [link](https://kinx.net/?lang=en) | KINX is an Internet infrastructure service provider and will use kamaji for its new [Managed Kubernetes Service](https://kinx.net/service/cloud/kubernetes/intro/?lang=en). |
 | Vendor | Netalia | 2025 | [link](https://www.netalia.it) | Netalia uses Kamaji for the Italian cloud 
 | Vendor | Netsons | 2023 | [link](https://www.netsons.com) | Netsons is an Italian hosting and cloud provider and uses Kamaji in its [Managed Kubernetes](https://www.netsons.com/kubernetes) offering. |
