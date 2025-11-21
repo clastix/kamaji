@@ -59,8 +59,21 @@ func GetRESTClientConfig(ctx context.Context, client client.Client, tenantContro
 		return nil, err
 	}
 
+	// Use Service DNS by default for in-cluster access
+	host := fmt.Sprintf("https://%s.%s.svc:%d", tenantControlPlane.GetName(), tenantControlPlane.GetNamespace(), tenantControlPlane.Spec.NetworkProfile.Port)
+
+	// Use external endpoint service (-ext) if LoadBalancer is assigned
+	// This enables cross-VPC deployments where controller cannot reach Service ClusterIP
+	// kube-dc automatically creates <service>-ext endpoints for LoadBalancer services
+	if tenantControlPlane.Status.ControlPlaneEndpoint != "" {
+		host = fmt.Sprintf("https://%s-ext.%s.svc.cluster.local:%d",
+			tenantControlPlane.GetName(),
+			tenantControlPlane.GetNamespace(),
+			tenantControlPlane.Spec.NetworkProfile.Port)
+	}
+
 	config := &restclient.Config{
-		Host: fmt.Sprintf("https://%s.%s.svc:%d", tenantControlPlane.GetName(), tenantControlPlane.GetNamespace(), tenantControlPlane.Spec.NetworkProfile.Port),
+		Host: host,
 		TLSClientConfig: restclient.TLSClientConfig{
 			CAData:   kubeconfig.Clusters[0].Cluster.CertificateAuthorityData,
 			CertData: kubeconfig.AuthInfos[0].AuthInfo.ClientCertificateData,
