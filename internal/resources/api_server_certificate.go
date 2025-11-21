@@ -131,8 +131,13 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 		}
 
 		isRotationRequested := utilities.IsRotationRequested(r.resource)
+		checksum := tenantControlPlane.Status.Certificates.APIServer.Checksum
+		objectChecksum := utilities.GetObjectChecksum(r.resource)
+		hasUID := len(r.resource.UID) > 0
 
-		if checksum := tenantControlPlane.Status.Certificates.APIServer.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0) {
+		logger.Info("Certificate check entry", "isRotationRequested", isRotationRequested, "checksum", checksum, "objectChecksum", objectChecksum, "hasUID", hasUID, "willEnterValidation", !isRotationRequested && (len(checksum) > 0 && checksum == objectChecksum || hasUID))
+
+		if !isRotationRequested && (len(checksum) > 0 && checksum == objectChecksum || hasUID) {
 			isCAValid, err := crypto.VerifyCertificate(r.resource.Data[kubeadmconstants.APIServerCertName], secretCA.Data[kubeadmconstants.CACertName], x509.ExtKeyUsageServerAuth)
 			if err != nil {
 				logger.Info(fmt.Sprintf("certificate-authority verify failed: %s", err.Error()))
@@ -152,18 +157,16 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 			addr, _, aErr := tenantControlPlane.AssignedControlPlaneAddress()
 			if aErr == nil {
 				commonNames = append(commonNames, addr)
-				// Add external endpoint DNS name for kube-dc cross-VPC access
-				// Format: <service>-ext.<namespace>.svc.cluster.local
-				extDNS := fmt.Sprintf("%s-ext.%s.svc.cluster.local", 
-					tenantControlPlane.GetName(), 
-					tenantControlPlane.GetNamespace())
-				commonNames = append(commonNames, extDNS)
 			}
+
+			logger.Info("Certificate SAN validation", "isCAValid", isCAValid, "isCertValid", isCertValid, "addr", addr, "aErr", aErr, "commonNamesCount", len(commonNames))
 
 			dnsNamesMatches, dnsErr := crypto.CheckCertificateNamesAndIPs(r.resource.Data[kubeadmconstants.APIServerCertName], commonNames)
 			if dnsErr != nil {
-				logger.Info(fmt.Sprintf("%s SAN check returned an error: %s", kubeadmconstants.APIServerCertAndKeyBaseName, err.Error()))
+				logger.Info(fmt.Sprintf("%s SAN check returned an error: %s", kubeadmconstants.APIServerCertAndKeyBaseName, dnsErr.Error()))
 			}
+
+			logger.Info("Certificate validation result", "dnsNamesMatches", dnsNamesMatches, "dnsErr", dnsErr, "willRegenerate", !(isCAValid && isCertValid && dnsNamesMatches))
 
 			if isCAValid && isCertValid && dnsNamesMatches {
 				return nil
