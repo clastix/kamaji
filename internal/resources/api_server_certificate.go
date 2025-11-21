@@ -131,13 +131,8 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 		}
 
 		isRotationRequested := utilities.IsRotationRequested(r.resource)
-		checksum := tenantControlPlane.Status.Certificates.APIServer.Checksum
-		objectChecksum := utilities.GetObjectChecksum(r.resource)
-		hasUID := len(r.resource.UID) > 0
 
-		logger.Info("Certificate check entry", "isRotationRequested", isRotationRequested, "checksum", checksum, "objectChecksum", objectChecksum, "hasUID", hasUID, "willEnterValidation", !isRotationRequested && (len(checksum) > 0 && checksum == objectChecksum || hasUID))
-
-		if !isRotationRequested && (len(checksum) > 0 && checksum == objectChecksum || hasUID) {
+		if checksum := tenantControlPlane.Status.Certificates.APIServer.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0) {
 			isCAValid, err := crypto.VerifyCertificate(r.resource.Data[kubeadmconstants.APIServerCertName], secretCA.Data[kubeadmconstants.CACertName], x509.ExtKeyUsageServerAuth)
 			if err != nil {
 				logger.Info(fmt.Sprintf("certificate-authority verify failed: %s", err.Error()))
@@ -159,14 +154,10 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 				commonNames = append(commonNames, addr)
 			}
 
-			logger.Info("Certificate SAN validation", "isCAValid", isCAValid, "isCertValid", isCertValid, "addr", addr, "aErr", aErr, "commonNamesCount", len(commonNames))
-
 			dnsNamesMatches, dnsErr := crypto.CheckCertificateNamesAndIPs(r.resource.Data[kubeadmconstants.APIServerCertName], commonNames)
 			if dnsErr != nil {
-				logger.Info(fmt.Sprintf("%s SAN check returned an error: %s", kubeadmconstants.APIServerCertAndKeyBaseName, dnsErr.Error()))
+				logger.Error(dnsErr, "%s SAN check returned an error", kubeadmconstants.APIServerCertAndKeyBaseName)
 			}
-
-			logger.Info("Certificate validation result", "dnsNamesMatches", dnsNamesMatches, "dnsErr", dnsErr, "willRegenerate", !(isCAValid && isCertValid && dnsNamesMatches))
 
 			if isCAValid && isCertValid && dnsNamesMatches {
 				return nil
