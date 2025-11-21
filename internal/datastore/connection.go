@@ -38,6 +38,10 @@ func NewStorageConnection(ctx context.Context, client client.Client, ds kamajiv1
 
 		return NewPostgreSQLConnection(*cc)
 	case kamajiv1alpha1.EtcdDriver:
+		if ds.Spec.TLSConfig != nil {
+			cc.TLSConfig.ServerName = cc.Endpoints[0].Host
+		}
+
 		return NewETCDConnection(*cc)
 	case kamajiv1alpha1.KineNatsDriver:
 		return NewNATSConnection(*cc)
