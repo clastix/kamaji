@@ -61,6 +61,8 @@ func GetRESTClientConfig(ctx context.Context, client client.Client, tenantContro
 
 	// Use Service DNS by default for in-cluster access
 	host := fmt.Sprintf("https://%s.%s.svc:%d", tenantControlPlane.GetName(), tenantControlPlane.GetNamespace(), tenantControlPlane.Spec.NetworkProfile.Port)
+	// ServerName for TLS verification (always uses the original service name)
+	serverName := fmt.Sprintf("%s.%s.svc.cluster.local", tenantControlPlane.GetName(), tenantControlPlane.GetNamespace())
 
 	// Use external endpoint service (-ext) if LoadBalancer is assigned
 	// This enables cross-VPC deployments where controller cannot reach Service ClusterIP
@@ -70,14 +72,17 @@ func GetRESTClientConfig(ctx context.Context, client client.Client, tenantContro
 			tenantControlPlane.GetName(),
 			tenantControlPlane.GetNamespace(),
 			tenantControlPlane.Spec.NetworkProfile.Port)
+		// Keep ServerName as the original service for TLS certificate validation
+		// The certificate is issued for the original service name, not the -ext endpoint
 	}
 
 	config := &restclient.Config{
 		Host: host,
 		TLSClientConfig: restclient.TLSClientConfig{
-			CAData:   kubeconfig.Clusters[0].Cluster.CertificateAuthorityData,
-			CertData: kubeconfig.AuthInfos[0].AuthInfo.ClientCertificateData,
-			KeyData:  kubeconfig.AuthInfos[0].AuthInfo.ClientKeyData,
+			CAData:     kubeconfig.Clusters[0].Cluster.CertificateAuthorityData,
+			CertData:   kubeconfig.AuthInfos[0].AuthInfo.ClientCertificateData,
+			KeyData:    kubeconfig.AuthInfos[0].AuthInfo.ClientKeyData,
+			ServerName: serverName,
 		},
 		Timeout: 10 * time.Second,
 	}
