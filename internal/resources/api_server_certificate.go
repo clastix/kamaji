@@ -152,6 +152,12 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 			addr, _, aErr := tenantControlPlane.AssignedControlPlaneAddress()
 			if aErr == nil {
 				commonNames = append(commonNames, addr)
+				// Add external endpoint DNS name for kube-dc cross-VPC access
+				// Format: <service>-ext.<namespace>.svc.cluster.local
+				extDNS := fmt.Sprintf("%s-ext.%s.svc.cluster.local", 
+					tenantControlPlane.GetName(), 
+					tenantControlPlane.GetNamespace())
+				commonNames = append(commonNames, extDNS)
 			}
 
 			dnsNamesMatches, dnsErr := crypto.CheckCertificateNamesAndIPs(r.resource.Data[kubeadmconstants.APIServerCertName], commonNames)
