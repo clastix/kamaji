@@ -77,14 +77,6 @@ func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(_ context.Context
 	return nil
 }
 
-func (r *KubeadmConfigResource) getControlPlaneEndpoint(ingress *kamajiv1alpha1.IngressSpec, address string, port int32) string {
-	if ingress != nil && len(ingress.Hostname) > 0 {
-		address, port = utilities.GetControlPlaneAddressAndPortFromHostname(ingress.Hostname, port)
-	}
-
-	return net.JoinHostPort(address, strconv.FormatInt(int64(port), 10))
-}
-
 func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
@@ -98,12 +90,27 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
+		endpoint := net.JoinHostPort(address, strconv.FormatInt(int64(port), 10))
+		spec := tenantControlPlane.Spec.ControlPlane
+		if spec.Gateway != nil {
+			if len(spec.Gateway.Hostname) > 0 {
+				gaddr, gport := utilities.GetControlPlaneAddressAndPortFromHostname(string(spec.Gateway.Hostname), port)
+				endpoint = net.JoinHostPort(gaddr, strconv.FormatInt(int64(gport), 10))
+			}
+		}
+		if spec.Ingress != nil {
+			if len(spec.Ingress.Hostname) > 0 {
+				iaddr, iport := utilities.GetControlPlaneAddressAndPortFromHostname(spec.Ingress.Hostname, port)
+				endpoint = net.JoinHostPort(iaddr, strconv.FormatInt(int64(iport), 10))
+			}
+		}
+
 		params := kubeadm.Parameters{
 			TenantControlPlaneAddress:       address,
 			TenantControlPlanePort:          port,
 			TenantControlPlaneName:          tenantControlPlane.GetName(),
 			TenantControlPlaneNamespace:     tenantControlPlane.GetNamespace(),
-			TenantControlPlaneEndpoint:      r.getControlPlaneEndpoint(tenantControlPlane.Spec.ControlPlane.Ingress, address, port),
+			TenantControlPlaneEndpoint:      endpoint,
 			TenantControlPlaneCertSANs:      tenantControlPlane.Spec.NetworkProfile.CertSANs,
 			TenantControlPlaneClusterDomain: tenantControlPlane.Spec.NetworkProfile.ClusterDomain,
 			TenantControlPlanePodCIDR:       tenantControlPlane.Spec.NetworkProfile.PodCIDR,

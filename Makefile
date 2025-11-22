@@ -240,6 +240,12 @@ cert-manager:
 	$(HELM) repo add jetstack https://charts.jetstack.io
 	$(HELM) upgrade --install cert-manager jetstack/cert-manager --namespace certmanager-system --create-namespace --set "installCRDs=true"
 
+gateway-api:
+	kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+# 	Required for the TLSRoutes. Experimentals.
+	kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
+	kubectl wait --for=condition=Established crd/gateways.gateway.networking.k8s.io --timeout=60s
+
 load: kind
 	$(KIND) load docker-image --name kamaji ${CONTAINER_REPOSITORY}:${VERSION}
 
@@ -249,8 +255,11 @@ load: kind
 env: kind
 	$(KIND) create cluster --name kamaji
 
+cleanup: kind
+	$(KIND) delete cluster --name kamaji
+
 .PHONY: e2e
-e2e: env build load helm ginkgo cert-manager ## Create a KinD cluster, install Kamaji on it and run the test suite.
+e2e: env build load helm ginkgo cert-manager gateway-api ## Create a KinD cluster, install Kamaji on it and run the test suite.
 	$(HELM) upgrade --debug --install kamaji-crds ./charts/kamaji-crds --create-namespace --namespace kamaji-system
 	$(HELM) repo add clastix https://clastix.github.io/charts
 	$(HELM) dependency build ./charts/kamaji

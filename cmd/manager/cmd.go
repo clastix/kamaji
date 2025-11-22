@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -146,6 +147,12 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
+			discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
+			if err != nil {
+				setupLog.Error(err, "unable to create discovery client")
+				os.Exit(1)
+			}
+
 			reconciler := &controllers.TenantControlPlaneReconciler{
 				Client:    mgr.GetClient(),
 				APIReader: mgr.GetAPIReader(),
@@ -163,9 +170,10 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				KamajiService:           managerServiceName,
 				KamajiMigrateImage:      migrateJobImage,
 				MaxConcurrentReconciles: maxConcurrentReconciles,
+				DiscoveryClient:         discoveryClient,
 			}
 
-			if err = reconciler.SetupWithManager(mgr); err != nil {
+			if err = reconciler.SetupWithManager(ctx, mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Namespace")
 
 				return err
@@ -215,6 +223,12 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
+			if err = (&kamajiv1alpha1.GatewayListener{}).SetupWithManager(ctx, mgr); err != nil {
+				setupLog.Error(err, "unable to create indexer", "indexer", "GatewayListener")
+
+				return err
+			}
+
 			err = webhook.Register(mgr, map[routes.Route][]handlers.Handler{
 				routes.TenantControlPlaneMigrate{}: {
 					handlers.Freeze{},
@@ -244,6 +258,10 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 					},
 					handlers.TenantControlPlaneServiceCIDR{},
 					handlers.TenantControlPlaneLoadBalancerSourceRanges{},
+					handlers.TenantControlPlaneGatewayValidation{
+						Client:          mgr.GetClient(),
+						DiscoveryClient: discoveryClient,
+					},
 				},
 				routes.TenantControlPlaneTelemetry{}: {
 					handlers.TenantControlPlaneTelemetry{
