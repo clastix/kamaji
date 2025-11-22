@@ -118,16 +118,11 @@ func (r *KubernetesGatewayResource) gatewayStatusNeedsUpdate(tcp *kamajiv1alpha1
 }
 
 func (r *KubernetesGatewayResource) ShouldCleanup(tcp *kamajiv1alpha1.TenantControlPlane) bool {
-	return tcp.Spec.ControlPlane.Gateway == nil
+	return tcp.Spec.ControlPlane.Gateway == nil && tcp.Status.Kubernetes.Gateway != nil
 }
 
 func (r *KubernetesGatewayResource) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
-
-	if r.resource == nil {
-		logger.Info("TLSRoute is not defined, nothing to clean up")
-		return false, nil
-	}
 
 	var route = gatewayv1alpha2.TLSRoute{}
 	if err := r.Client.Get(ctx, client.ObjectKey{
