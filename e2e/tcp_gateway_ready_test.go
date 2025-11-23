@@ -81,6 +81,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 				Name:      tcp.Name,
 				Namespace: tcp.Namespace,
 			}, &kamajiv1alpha1.TenantControlPlane{})
+
 			return err != nil // Returns true when object is not found (deleted)
 		}).WithTimeout(time.Minute).Should(BeTrue())
 	})

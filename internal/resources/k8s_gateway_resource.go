@@ -51,7 +51,7 @@ func (r *KubernetesGatewayResource) ShouldStatusBeUpdated(_ context.Context, tcp
 	return false
 }
 
-// gatewayStatusNeedsUpdate compares the current gateway resource status with the stored status
+// gatewayStatusNeedsUpdate compares the current gateway resource status with the stored status.
 func (r *KubernetesGatewayResource) gatewayStatusNeedsUpdate(tcp *kamajiv1alpha1.TenantControlPlane) bool {
 	currentStatus := tcp.Status.Kubernetes.Gateway
 
@@ -125,7 +125,7 @@ func (r *KubernetesGatewayResource) ShouldCleanup(tcp *kamajiv1alpha1.TenantCont
 func (r *KubernetesGatewayResource) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
-	var route = gatewayv1alpha2.TLSRoute{}
+	route := gatewayv1alpha2.TLSRoute{}
 	if err := r.Client.Get(ctx, client.ObjectKey{
 		Namespace: r.resource.GetNamespace(),
 		Name:      r.resource.GetName(),
@@ -222,6 +222,7 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 	// Clean up status if Gateway routes are no longer configured
 	if tcp.Spec.ControlPlane.Gateway == nil {
 		tcp.Status.Kubernetes.Gateway = nil
+
 		return nil
 	}
 
@@ -299,6 +300,7 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 		}
 	}
 	tcp.Status.Kubernetes.Gateway.AccessPoints = accessPoints
+
 	return nil
 }
 

@@ -25,9 +25,7 @@ func TestGatewayResource(t *testing.T) {
 	RunSpecs(t, "Gateway Resource Suite")
 }
 
-var (
-	runtimeScheme *runtime.Scheme
-)
+var runtimeScheme *runtime.Scheme
 
 var _ = BeforeSuite(func() {
 	runtimeScheme = runtime.NewScheme()
@@ -107,6 +105,9 @@ var _ = Describe("KubernetesGatewayResource", func() {
 	Context("When GatewayRoutes is not configured", func() {
 		BeforeEach(func() {
 			tcp.Spec.ControlPlane.Gateway = nil
+			tcp.Status.Kubernetes.Gateway = &kamajiv1alpha1.KubernetesGatewayStatus{
+				AccessPoints: nil,
+			}
 		})
 
 		It("should cleanup", func() {
@@ -233,6 +234,5 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(listener.Port).To(Equal(gatewayv1.PortNumber(80)))
 		})
-
 	})
 })

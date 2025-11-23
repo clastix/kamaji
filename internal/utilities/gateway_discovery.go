@@ -14,8 +14,8 @@ import (
 	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-// AreGatewayResourcesAvaialble checks if Gateway API is available in the cluster through a discovery Client,
-// with fallback to client-based check
+// AreGatewayResourcesAvaialble checks if Gateway API is available in the cluster through a discovery Client
+// with fallback to client-based check.
 func AreGatewayResourcesAvaialble(ctx context.Context, c client.Client, discoveryClient discovery.DiscoveryInterface) bool {
 	if discoveryClient == nil {
 		return IsGatewayAPIAvailableViaClient(ctx, c)
@@ -49,7 +49,7 @@ func GatewayAPIResourcesAvailable(ctx context.Context, discoveryClient discovery
 	return false, nil
 }
 
-// TLSRouteAPIAvailable checks specifically for TLSRoute resource availability
+// TLSRouteAPIAvailable checks specifically for TLSRoute resource availability.
 func TLSRouteAPIAvailable(ctx context.Context, discoveryClient discovery.DiscoveryInterface) (bool, error) {
 	gv := gatewayv1alpha2.SchemeGroupVersion
 
@@ -67,7 +67,7 @@ func TLSRouteAPIAvailable(ctx context.Context, discoveryClient discovery.Discove
 	return false, nil
 }
 
-// IsGatewayAPIAvailableViaClient uses client to check Gateway API availability
+// IsGatewayAPIAvailableViaClient uses client to check Gateway API availability.
 func IsGatewayAPIAvailableViaClient(ctx context.Context, c client.Client) bool {
 	// Try to check if TLSRoute GVK can be resolved
 	gvk := schema.GroupVersionKind{

@@ -19,7 +19,7 @@ import (
 	"github.com/clastix/kamaji/internal/webhook/handlers"
 )
 
-// Mock discovery client for testing
+// Mock discovery client for testing.
 type mockDiscoveryClient struct {
 	discovery.DiscoveryInterface
 	serverGroups         *metav1.APIGroupList
@@ -39,6 +39,7 @@ func (m *mockDiscoveryClient) ServerResourcesForGroupVersion(groupVersion string
 	if resources, exists := m.serverResources[groupVersion]; exists {
 		return resources, nil
 	}
+
 	return &metav1.APIResourceList{}, nil
 }
 
@@ -122,8 +123,8 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 			})
 
 			It("should allow updates", func() {
-				oldTcp := tcp.DeepCopy()
-				_, err := handler.OnUpdate(tcp, oldTcp)(ctx, admission.Request{})
+				oldTCP := tcp.DeepCopy()
+				_, err := handler.OnUpdate(tcp, oldTCP)(ctx, admission.Request{})
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})
@@ -142,8 +143,8 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 			})
 
 			It("should deny updates with clear error message", func() {
-				oldTcp := tcp.DeepCopy()
-				_, err := handler.OnUpdate(tcp, oldTcp)(ctx, admission.Request{})
+				oldTCP := tcp.DeepCopy()
+				_, err := handler.OnUpdate(tcp, oldTCP)(ctx, admission.Request{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Gateway API is not available in this cluster"))
 			})
@@ -216,8 +217,8 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 
 		It("should allow removing Gateway configuration", func() {
 			// Start with Gateway configuration
-			oldTcp := tcp.DeepCopy()
-			oldTcp.Spec.ControlPlane.Gateway = &kamajiv1alpha1.GatewaySpec{
+			oldTCP := tcp.DeepCopy()
+			oldTCP.Spec.ControlPlane.Gateway = &kamajiv1alpha1.GatewaySpec{
 				Hostname: gatewayv1.Hostname("api.example.com"),
 			}
 
@@ -225,7 +226,7 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 				Groups: []metav1.APIGroup{},
 			}
 
-			_, err := handler.OnUpdate(tcp, oldTcp)(ctx, admission.Request{})
+			_, err := handler.OnUpdate(tcp, oldTCP)(ctx, admission.Request{})
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
