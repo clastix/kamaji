@@ -31,6 +31,7 @@ type KubernetesGatewayResource struct {
 
 func (r *KubernetesGatewayResource) GetHistogram() prometheus.Histogram {
 	gatewayCollector = LazyLoadHistogramFromResource(gatewayCollector, r)
+
 	return gatewayCollector
 }
 
@@ -140,6 +141,7 @@ func (r *KubernetesGatewayResource) CleanUp(ctx context.Context, tcp *kamajiv1al
 
 	if !metav1.IsControlledBy(&route, tcp) {
 		logger.Info("skipping cleanup: route is not managed by Kamaji", "name", route.Name, "namespace", route.Namespace)
+
 		return false, nil
 	}
 
@@ -155,6 +157,7 @@ func (r *KubernetesGatewayResource) CleanUp(ctx context.Context, tcp *kamajiv1al
 	}
 
 	logger.V(1).Info("tcp route cleaned up successfully")
+
 	return true, nil
 }
 
@@ -291,7 +294,7 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 			accessPoints = append(accessPoints, kamajiv1alpha1.GatewayAccessPoint{
 				Type:  &hostnameAddressType,
 				Value: url.String(),
-				Port:  int32(listener.Port),
+				Port:  listener.Port,
 			})
 		}
 	}
@@ -329,7 +332,7 @@ func (r *KubernetesGatewayResource) mutate(tcp *kamajiv1alpha1.TenantControlPlan
 		}
 
 		serviceName := gatewayv1alpha2.ObjectName(tcp.Status.Kubernetes.Service.Name)
-		servicePort := gatewayv1alpha2.PortNumber(tcp.Status.Kubernetes.Service.Port)
+		servicePort := tcp.Status.Kubernetes.Service.Port
 
 		if serviceName == "" || servicePort == 0 {
 			return fmt.Errorf("service not ready")

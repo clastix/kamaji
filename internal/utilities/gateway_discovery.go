@@ -31,7 +31,7 @@ func AreGatewayResourcesAvaialble(ctx context.Context, c client.Client, discover
 
 // NOTE: These functions are extremely similar, maybe they can be merged and accept a GVK.
 // Explicit for now.
-// GatewayAPIResourcesAvailable checks if Gateway API is available in the cluster
+// GatewayAPIResourcesAvailable checks if Gateway API is available in the cluster.
 func GatewayAPIResourcesAvailable(ctx context.Context, discoveryClient discovery.DiscoveryInterface) (bool, error) {
 	gatewayAPIGroup := gatewayv1.GroupName
 

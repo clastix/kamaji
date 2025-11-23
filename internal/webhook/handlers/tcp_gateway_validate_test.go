@@ -199,7 +199,7 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 
 	Context("when Gateway configuration is added in update", func() {
 		It("should validate Gateway APIs when adding Gateway configuration", func() {
-			oldTcp := tcp.DeepCopy()
+			oldTCP := tcp.DeepCopy()
 
 			tcp.Spec.ControlPlane.Gateway = &kamajiv1alpha1.GatewaySpec{
 				Hostname: gatewayv1.Hostname("api.example.com"),
@@ -209,7 +209,7 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 				Groups: []metav1.APIGroup{},
 			}
 
-			_, err := handler.OnUpdate(tcp, oldTcp)(ctx, admission.Request{})
+			_, err := handler.OnUpdate(tcp, oldTCP)(ctx, admission.Request{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Gateway API is not available"))
 		})
