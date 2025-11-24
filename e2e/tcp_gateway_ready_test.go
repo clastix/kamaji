@@ -22,7 +22,6 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 	var tcp *kamajiv1alpha1.TenantControlPlane
 
 	JustBeforeEach(func() {
-		// Fill TenantControlPlane object with Gateway configuration
 		tcp = &kamajiv1alpha1.TenantControlPlane{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "tcp-gateway",

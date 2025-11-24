@@ -337,12 +337,7 @@ func (r *KubernetesGatewayResource) mutate(tcp *kamajiv1alpha1.TenantControlPlan
 		servicePort := tcp.Status.Kubernetes.Service.Port
 
 		if serviceName == "" || servicePort == 0 {
-			return fmt.Errorf("service not ready")
-		}
-
-		// Fail if no hostname is specified, same as the ingress resource.
-		if len(tcp.Spec.ControlPlane.Gateway.Hostname) == 0 {
-			return fmt.Errorf("missing hostname to expose the Tenant Control Plane using a Gateway resource")
+			return fmt.Errorf("service not ready, cannot create TLSRoute")
 		}
 
 		rule := gatewayv1alpha2.TLSRouteRule{
@@ -350,7 +345,6 @@ func (r *KubernetesGatewayResource) mutate(tcp *kamajiv1alpha1.TenantControlPlan
 				{
 					BackendObjectReference: gatewayv1alpha2.BackendObjectReference{
 						Name: serviceName,
-						// TODO: Why a pointer here?
 						Port: &servicePort,
 					},
 				},
@@ -371,17 +365,13 @@ func (r *KubernetesGatewayResource) CreateOrUpdate(ctx context.Context, tenantCo
 		return controllerutil.OperationResultNone, nil
 	}
 
-	logger.V(1).Info("creating or updating resource gateway routes")
-
-	// Create fresh resources to avoid resourceVersion conflicts
-	route := &gatewayv1alpha2.TLSRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      tenantControlPlane.GetName(),
-			Namespace: tenantControlPlane.GetNamespace(),
-		},
+	if len(tenantControlPlane.Spec.ControlPlane.Gateway.Hostname) == 0 {
+		return controllerutil.OperationResultNone, fmt.Errorf("missing hostname to expose the Tenant Control Plane using a Gateway resource")
 	}
 
-	result, err := utilities.CreateOrUpdateWithConflict(ctx, r.Client, route, r.mutate(tenantControlPlane))
+	logger.V(1).Info("creating or updating resource gateway routes")
+
+	result, err := utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(tenantControlPlane))
 	if err != nil {
 		return result, err
 	}

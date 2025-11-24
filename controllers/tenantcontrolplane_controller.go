@@ -81,6 +81,8 @@ type TenantControlPlaneReconcilerConfig struct {
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;delete
+//+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=httproutes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=grpcroutes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=tlsroutes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gateways,verbs=get;list;watch
 
@@ -276,8 +278,6 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).
 		Owns(&networkingv1.Ingress{}).
-		Owns(&gatewayv1.HTTPRoute{}).
-		Owns(&gatewayv1.GRPCRoute{}).
 		Watches(&batchv1.Job{}, handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
 			labels := object.GetLabels()
 
@@ -308,8 +308,10 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr
 		})))
 
 	// Conditionally add Gateway API ownership if available
-	if utilities.AreGatewayResourcesAvaialble(ctx, r.Client, r.DiscoveryClient) {
+	if utilities.AreGatewayResourcesAvailable(ctx, r.Client, r.DiscoveryClient) {
 		controllerBuilder = controllerBuilder.
+			Owns(&gatewayv1.HTTPRoute{}).
+			Owns(&gatewayv1.GRPCRoute{}).
 			Owns(&gatewayv1alpha2.TLSRoute{}).
 			Watches(&gatewayv1.Gateway{}, handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
 				return nil

@@ -150,7 +150,8 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
 			if err != nil {
 				setupLog.Error(err, "unable to create discovery client")
-				os.Exit(1)
+
+				return err
 			}
 
 			reconciler := &controllers.TenantControlPlaneReconciler{

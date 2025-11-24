@@ -53,6 +53,8 @@
 - apiGroups:
     - gateway.networking.k8s.io
   resources:
+    - grpcroutes
+    - httproutes
     - tlsroutes
   verbs:
     - create
