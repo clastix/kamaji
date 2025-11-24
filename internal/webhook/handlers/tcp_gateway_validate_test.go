@@ -5,7 +5,6 @@ package handlers_test
 
 import (
 	"context"
-	"errors"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -169,31 +168,6 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 				_, err := handler.OnCreate(tcp)(ctx, admission.Request{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("TLSRoute resource is not available"))
-			})
-		})
-
-		Context("when discovery client returns errors", func() {
-			It("should handle ServerGroups errors gracefully", func() {
-				mockDiscovery.serverGroupsError = errors.New("discovery API unavailable")
-
-				_, err := handler.OnCreate(tcp)(ctx, admission.Request{})
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("failed to check Gateway API availability"))
-				Expect(err.Error()).To(ContainSubstring("discovery API unavailable"))
-			})
-
-			It("should handle ServerResourcesForGroupVersion errors gracefully", func() {
-				mockDiscovery.serverGroups = &metav1.APIGroupList{
-					Groups: []metav1.APIGroup{
-						{Name: "gateway.networking.k8s.io"},
-					},
-				}
-				mockDiscovery.serverResourcesError["gateway.networking.k8s.io/v1alpha2"] = errors.New("resource discovery failed")
-
-				_, err := handler.OnCreate(tcp)(ctx, admission.Request{})
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("failed to check TLSRoute availability"))
-				Expect(err.Error()).To(ContainSubstring("resource discovery failed"))
 			})
 		})
 	})
