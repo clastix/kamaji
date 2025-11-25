@@ -35,6 +35,7 @@ import (
 	"github.com/clastix/kamaji/internal"
 	"github.com/clastix/kamaji/internal/builders/controlplane"
 	datastoreutils "github.com/clastix/kamaji/internal/datastore/utils"
+	"github.com/clastix/kamaji/internal/utilities"
 	"github.com/clastix/kamaji/internal/webhook"
 	"github.com/clastix/kamaji/internal/webhook/handlers"
 	"github.com/clastix/kamaji/internal/webhook/routes"
@@ -224,10 +225,12 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
-			if err = (&kamajiv1alpha1.GatewayListener{}).SetupWithManager(ctx, mgr); err != nil {
-				setupLog.Error(err, "unable to create indexer", "indexer", "GatewayListener")
+			if utilities.AreGatewayResourcesAvailable(ctx, mgr.GetClient(), discoveryClient) {
+				if err = (&kamajiv1alpha1.GatewayListener{}).SetupWithManager(ctx, mgr); err != nil {
+					setupLog.Error(err, "unable to create indexer", "indexer", "GatewayListener")
 
-				return err
+					return err
+				}
 			}
 
 			err = webhook.Register(mgr, map[routes.Route][]handlers.Handler{
