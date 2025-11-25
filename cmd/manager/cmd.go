@@ -225,6 +225,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
+			// Only requires to look for the core api group.
 			if utilities.AreGatewayResourcesAvailable(ctx, mgr.GetClient(), discoveryClient) {
 				if err = (&kamajiv1alpha1.GatewayListener{}).SetupWithManager(ctx, mgr); err != nil {
 					setupLog.Error(err, "unable to create indexer", "indexer", "GatewayListener")
