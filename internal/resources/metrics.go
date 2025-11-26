@@ -16,6 +16,7 @@ var (
 	frontproxycaCollector              prometheus.Histogram
 	deploymentCollector                prometheus.Histogram
 	ingressCollector                   prometheus.Histogram
+	gatewayCollector                   prometheus.Histogram
 	serviceCollector                   prometheus.Histogram
 	kubeadmconfigCollector             prometheus.Histogram
 	kubeadmupgradeCollector            prometheus.Histogram

@@ -6700,6 +6700,178 @@ versions:
                           type: object
                         type: array
                     type: object
+                  gateway:
+                    description: Defining the options for an Optional Gateway which will expose API Server of the Tenant Control Plane
+                    properties:
+                      additionalMetadata:
+                        description: AdditionalMetadata to add Labels and Annotations support.
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                        type: object
+                      hostname:
+                        description: Hostname is an optional field which will be used as a route hostname.
+                        maxLength: 253
+                        minLength: 1
+                        pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                        type: string
+                      parentRefs:
+                        description: GatewayParentRefs is the class of the Gateway resource to use.
+                        items:
+                          description: |-
+                            ParentReference identifies an API object (usually a Gateway) that can be considered
+                            a parent of this resource (usually a route). There are two kinds of parent resources
+                            with "Core" support:
+
+                            * Gateway (Gateway conformance profile)
+                            * Service (Mesh conformance profile, ClusterIP Services only)
+
+                            This API may be extended in the future to support additional kinds of parent
+                            resources.
+
+                            The API object must be valid in the cluster; the Group and Kind must
+                            be registered in the cluster for this reference to be valid.
+                          properties:
+                            group:
+                              default: gateway.networking.k8s.io
+                              description: |-
+                                Group is the group of the referent.
+                                When unspecified, "gateway.networking.k8s.io" is inferred.
+                                To set the core API group (such as for a "Service" kind referent),
+                                Group must be explicitly set to "" (empty string).
+
+                                Support: Core
+                              maxLength: 253
+                              pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                              type: string
+                            kind:
+                              default: Gateway
+                              description: |-
+                                Kind is kind of the referent.
+
+                                There are two kinds of parent resources with "Core" support:
+
+                                * Gateway (Gateway conformance profile)
+                                * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                Support for other resources is Implementation-Specific.
+                              maxLength: 63
+                              minLength: 1
+                              pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                              type: string
+                            name:
+                              description: |-
+                                Name is the name of the referent.
+
+                                Support: Core
+                              maxLength: 253
+                              minLength: 1
+                              type: string
+                            namespace:
+                              description: |-
+                                Namespace is the namespace of the referent. When unspecified, this refers
+                                to the local namespace of the Route.
+
+                                Note that there are specific rules for ParentRefs which cross namespace
+                                boundaries. Cross-namespace references are only valid if they are explicitly
+                                allowed by something in the namespace they are referring to. For example:
+                                Gateway has the AllowedRoutes field, and ReferenceGrant provides a
+                                generic way to enable any other kind of cross-namespace reference.
+
+                                <gateway:experimental:description>
+                                ParentRefs from a Route to a Service in the same namespace are "producer"
+                                routes, which apply default routing rules to inbound connections from
+                                any namespace to the Service.
+
+                                ParentRefs from a Route to a Service in a different namespace are
+                                "consumer" routes, and these routing rules are only applied to outbound
+                                connections originating from the same namespace as the Route, for which
+                                the intended destination of the connections are a Service targeted as a
+                                ParentRef of the Route.
+                                </gateway:experimental:description>
+
+                                Support: Core
+                              maxLength: 63
+                              minLength: 1
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                              type: string
+                            port:
+                              description: |-
+                                Port is the network port this Route targets. It can be interpreted
+                                differently based on the type of parent resource.
+
+                                When the parent resource is a Gateway, this targets all listeners
+                                listening on the specified port that also support this kind of Route(and
+                                select this Route). It's not recommended to set `Port` unless the
+                                networking behaviors specified in a Route must apply to a specific port
+                                as opposed to a listener(s) whose port(s) may be changed. When both Port
+                                and SectionName are specified, the name and port of the selected listener
+                                must match both specified values.
+
+                                <gateway:experimental:description>
+                                When the parent resource is a Service, this targets a specific port in the
+                                Service spec. When both Port (experimental) and SectionName are specified,
+                                the name and port of the selected port must match both specified values.
+                                </gateway:experimental:description>
+
+                                Implementations MAY choose to support other parent resources.
+                                Implementations supporting other types of parent resources MUST clearly
+                                document how/if Port is interpreted.
+
+                                For the purpose of status, an attachment is considered successful as
+                                long as the parent resource accepts it partially. For example, Gateway
+                                listeners can restrict which Routes can attach to them by Route kind,
+                                namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
+                                from the referencing Route, the Route MUST be considered successfully
+                                attached. If no Gateway listeners accept attachment from this Route,
+                                the Route MUST be considered detached from the Gateway.
+
+                                Support: Extended
+                              format: int32
+                              maximum: 65535
+                              minimum: 1
+                              type: integer
+                            sectionName:
+                              description: |-
+                                SectionName is the name of a section within the target resource. In the
+                                following resources, SectionName is interpreted as the following:
+
+                                * Gateway: Listener name. When both Port (experimental) and SectionName
+                                are specified, the name and port of the selected listener must match
+                                both specified values.
+                                * Service: Port name. When both Port (experimental) and SectionName
+                                are specified, the name and port of the selected listener must match
+                                both specified values.
+
+                                Implementations MAY choose to support attaching Routes to other resources.
+                                If that is the case, they MUST clearly document how SectionName is
+                                interpreted.
+
+                                When unspecified (empty string), this will reference the entire resource.
+                                For the purpose of status, an attachment is considered successful if at
+                                least one section in the parent resource accepts it. For example, Gateway
+                                listeners can restrict which Routes can attach to them by Route kind,
+                                namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
+                                the referencing Route, the Route MUST be considered successfully
+                                attached. If no Gateway listeners accept attachment from this Route, the
+                                Route MUST be considered detached from the Gateway.
+
+                                Support: Core
+                              maxLength: 253
+                              minLength: 1
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                              type: string
+                          required:
+                            - name
+                          type: object
+                        type: array
+                    type: object
                   ingress:
                     description: Defining the options for an Optional Ingress which will expose API Server of the Tenant Control Plane
                     properties:
@@ -6801,6 +6973,9 @@ versions:
                 required:
                   - service
                 type: object
+                x-kubernetes-validations:
+                  - message: using both ingress and gateway is not supported
+                    rule: '!(has(self.ingress) && has(self.gateway))'
               dataStore:
                 description: |-
                   DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
@@ -7550,6 +7725,383 @@ versions:
                       - name
                       - namespace
                       - selector
+                    type: object
+                  gateway:
+                    description: KubernetesGatewayStatus defines the status for the Tenant Control Plane Gateway in the management cluster.
+                    properties:
+                      accessPoints:
+                        description: A list of valid access points that the route exposes.
+                        items:
+                          properties:
+                            port:
+                              format: int32
+                              type: integer
+                            type:
+                              description: |-
+                                AddressType defines how a network address is represented as a text string.
+                                This may take two possible forms:
+
+                                * A predefined CamelCase string identifier (currently limited to `IPAddress` or `Hostname`)
+                                * A domain-prefixed string identifier (like `acme.io/CustomAddressType`)
+
+                                Values `IPAddress` and `Hostname` have Extended support.
+
+                                The `NamedAddress` value has been deprecated in favor of implementation
+                                specific domain-prefixed strings.
+
+                                All other values, including domain-prefixed values have Implementation-specific support,
+                                which are used in implementation-specific behaviors. Support for additional
+                                predefined CamelCase identifiers may be added in future releases.
+                              maxLength: 253
+                              minLength: 1
+                              pattern: ^Hostname|IPAddress|NamedAddress|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-._~%!$&'()*+,;=:]+$
+                              type: string
+                            urls:
+                              items:
+                                type: string
+                              type: array
+                            value:
+                              type: string
+                          required:
+                            - port
+                            - type
+                            - value
+                          type: object
+                        type: array
+                      parents:
+                        description: |-
+                          Parents is a list of parent resources (usually Gateways) that are
+                          associated with the route, and the status of the route with respect to
+                          each parent. When this route attaches to a parent, the controller that
+                          manages the parent must add an entry to this list when the controller
+                          first sees the route and should update the entry as appropriate when the
+                          route or gateway is modified.
+
+                          Note that parent references that cannot be resolved by an implementation
+                          of this API will not be added to this list. Implementations of this API
+                          can only populate Route status for the Gateways/parent resources they are
+                          responsible for.
+
+                          A maximum of 32 Gateways will be represented in this list. An empty list
+                          means the route has not been attached to any Gateway.
+
+                          <gateway:util:excludeFromCRD>
+                          Notes for implementors:
+
+                          While parents is not a listType `map`, this is due to the fact that the
+                          list key is not scalar, and Kubernetes is unable to represent this.
+
+                          Parent status MUST be considered to be namespaced by the combination of
+                          the parentRef and controllerName fields, and implementations should keep
+                          the following rules in mind when updating this status:
+
+                          * Implementations MUST update only entries that have a matching value of
+                            `controllerName` for that implementation.
+                          * Implementations MUST NOT update entries with non-matching `controllerName`
+                            fields.
+                          * Implementations MUST treat each `parentRef`` in the Route separately and
+                            update its status based on the relationship with that parent.
+                          * Implementations MUST perform a read-modify-write cycle on this field
+                            before modifying it. That is, when modifying this field, implementations
+                            must be confident they have fetched the most recent version of this field,
+                            and ensure that changes they make are on that recent version.
+
+                          </gateway:util:excludeFromCRD>
+                        items:
+                          description: |-
+                            RouteParentStatus describes the status of a route with respect to an
+                            associated Parent.
+                          properties:
+                            conditions:
+                              description: |-
+                                Conditions describes the status of the route with respect to the Gateway.
+                                Note that the route's availability is also subject to the Gateway's own
+                                status conditions and listener status.
+
+                                If the Route's ParentRef specifies an existing Gateway that supports
+                                Routes of this kind AND that Gateway's controller has sufficient access,
+                                then that Gateway's controller MUST set the "Accepted" condition on the
+                                Route, to indicate whether the route has been accepted or rejected by the
+                                Gateway, and why.
+
+                                A Route MUST be considered "Accepted" if at least one of the Route's
+                                rules is implemented by the Gateway.
+
+                                There are a number of cases where the "Accepted" condition may not be set
+                                due to lack of controller visibility, that includes when:
+
+                                * The Route refers to a nonexistent parent.
+                                * The Route is of a type that the controller does not support.
+                                * The Route is in a namespace the controller does not have access to.
+
+                                <gateway:util:excludeFromCRD>
+
+                                Notes for implementors:
+
+                                Conditions are a listType `map`, which means that they function like a
+                                map with a key of the `type` field _in the k8s apiserver_.
+
+                                This means that implementations must obey some rules when updating this
+                                section.
+
+                                * Implementations MUST perform a read-modify-write cycle on this field
+                                  before modifying it. That is, when modifying this field, implementations
+                                  must be confident they have fetched the most recent version of this field,
+                                  and ensure that changes they make are on that recent version.
+                                * Implementations MUST NOT remove or reorder Conditions that they are not
+                                  directly responsible for. For example, if an implementation sees a Condition
+                                  with type `special.io/SomeField`, it MUST NOT remove, change or update that
+                                  Condition.
+                                * Implementations MUST always _merge_ changes into Conditions of the same Type,
+                                  rather than creating more than one Condition of the same Type.
+                                * Implementations MUST always update the `observedGeneration` field of the
+                                  Condition to the `metadata.generation` of the Gateway at the time of update creation.
+                                * If the `observedGeneration` of a Condition is _greater than_ the value the
+                                  implementation knows about, then it MUST NOT perform the update on that Condition,
+                                  but must wait for a future reconciliation and status update. (The assumption is that
+                                  the implementation's copy of the object is stale and an update will be re-triggered
+                                  if relevant.)
+
+                                </gateway:util:excludeFromCRD>
+                              items:
+                                description: Condition contains details for one aspect of the current state of this API Resource.
+                                properties:
+                                  lastTransitionTime:
+                                    description: |-
+                                      lastTransitionTime is the last time the condition transitioned from one status to another.
+                                      This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                                    format: date-time
+                                    type: string
+                                  message:
+                                    description: |-
+                                      message is a human readable message indicating details about the transition.
+                                      This may be an empty string.
+                                    maxLength: 32768
+                                    type: string
+                                  observedGeneration:
+                                    description: |-
+                                      observedGeneration represents the .metadata.generation that the condition was set based upon.
+                                      For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                                      with respect to the current state of the instance.
+                                    format: int64
+                                    minimum: 0
+                                    type: integer
+                                  reason:
+                                    description: |-
+                                      reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                                      Producers of specific condition types may define expected values and meanings for this field,
+                                      and whether the values are considered a guaranteed API.
+                                      The value should be a CamelCase string.
+                                      This field may not be empty.
+                                    maxLength: 1024
+                                    minLength: 1
+                                    pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                                    type: string
+                                  status:
+                                    description: status of the condition, one of True, False, Unknown.
+                                    enum:
+                                      - "True"
+                                      - "False"
+                                      - Unknown
+                                    type: string
+                                  type:
+                                    description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                                    maxLength: 316
+                                    pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                                    type: string
+                                required:
+                                  - lastTransitionTime
+                                  - message
+                                  - reason
+                                  - status
+                                  - type
+                                type: object
+                              maxItems: 8
+                              minItems: 1
+                              type: array
+                              x-kubernetes-list-map-keys:
+                                - type
+                              x-kubernetes-list-type: map
+                            controllerName:
+                              description: |-
+                                ControllerName is a domain/path string that indicates the name of the
+                                controller that wrote this status. This corresponds with the
+                                controllerName field on GatewayClass.
+
+                                Example: "example.net/gateway-controller".
+
+                                The format of this field is DOMAIN "/" PATH, where DOMAIN and PATH are
+                                valid Kubernetes names
+                                (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names).
+
+                                Controllers MUST populate this field when writing status. Controllers should ensure that
+                                entries to status populated with their ControllerName are cleaned up when they are no
+                                longer necessary.
+                              maxLength: 253
+                              minLength: 1
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9\/\-._~%!$&'()*+,;=:]+$
+                              type: string
+                            parentRef:
+                              description: |-
+                                ParentRef corresponds with a ParentRef in the spec that this
+                                RouteParentStatus struct describes the status of.
+                              properties:
+                                group:
+                                  default: gateway.networking.k8s.io
+                                  description: |-
+                                    Group is the group of the referent.
+                                    When unspecified, "gateway.networking.k8s.io" is inferred.
+                                    To set the core API group (such as for a "Service" kind referent),
+                                    Group must be explicitly set to "" (empty string).
+
+                                    Support: Core
+                                  maxLength: 253
+                                  pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                  type: string
+                                kind:
+                                  default: Gateway
+                                  description: |-
+                                    Kind is kind of the referent.
+
+                                    There are two kinds of parent resources with "Core" support:
+
+                                    * Gateway (Gateway conformance profile)
+                                    * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                    Support for other resources is Implementation-Specific.
+                                  maxLength: 63
+                                  minLength: 1
+                                  pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                  type: string
+                                name:
+                                  description: |-
+                                    Name is the name of the referent.
+
+                                    Support: Core
+                                  maxLength: 253
+                                  minLength: 1
+                                  type: string
+                                namespace:
+                                  description: |-
+                                    Namespace is the namespace of the referent. When unspecified, this refers
+                                    to the local namespace of the Route.
+
+                                    Note that there are specific rules for ParentRefs which cross namespace
+                                    boundaries. Cross-namespace references are only valid if they are explicitly
+                                    allowed by something in the namespace they are referring to. For example:
+                                    Gateway has the AllowedRoutes field, and ReferenceGrant provides a
+                                    generic way to enable any other kind of cross-namespace reference.
+
+                                    <gateway:experimental:description>
+                                    ParentRefs from a Route to a Service in the same namespace are "producer"
+                                    routes, which apply default routing rules to inbound connections from
+                                    any namespace to the Service.
+
+                                    ParentRefs from a Route to a Service in a different namespace are
+                                    "consumer" routes, and these routing rules are only applied to outbound
+                                    connections originating from the same namespace as the Route, for which
+                                    the intended destination of the connections are a Service targeted as a
+                                    ParentRef of the Route.
+                                    </gateway:experimental:description>
+
+                                    Support: Core
+                                  maxLength: 63
+                                  minLength: 1
+                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                  type: string
+                                port:
+                                  description: |-
+                                    Port is the network port this Route targets. It can be interpreted
+                                    differently based on the type of parent resource.
+
+                                    When the parent resource is a Gateway, this targets all listeners
+                                    listening on the specified port that also support this kind of Route(and
+                                    select this Route). It's not recommended to set `Port` unless the
+                                    networking behaviors specified in a Route must apply to a specific port
+                                    as opposed to a listener(s) whose port(s) may be changed. When both Port
+                                    and SectionName are specified, the name and port of the selected listener
+                                    must match both specified values.
+
+                                    <gateway:experimental:description>
+                                    When the parent resource is a Service, this targets a specific port in the
+                                    Service spec. When both Port (experimental) and SectionName are specified,
+                                    the name and port of the selected port must match both specified values.
+                                    </gateway:experimental:description>
+
+                                    Implementations MAY choose to support other parent resources.
+                                    Implementations supporting other types of parent resources MUST clearly
+                                    document how/if Port is interpreted.
+
+                                    For the purpose of status, an attachment is considered successful as
+                                    long as the parent resource accepts it partially. For example, Gateway
+                                    listeners can restrict which Routes can attach to them by Route kind,
+                                    namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
+                                    from the referencing Route, the Route MUST be considered successfully
+                                    attached. If no Gateway listeners accept attachment from this Route,
+                                    the Route MUST be considered detached from the Gateway.
+
+                                    Support: Extended
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
+                                sectionName:
+                                  description: |-
+                                    SectionName is the name of a section within the target resource. In the
+                                    following resources, SectionName is interpreted as the following:
+
+                                    * Gateway: Listener name. When both Port (experimental) and SectionName
+                                    are specified, the name and port of the selected listener must match
+                                    both specified values.
+                                    * Service: Port name. When both Port (experimental) and SectionName
+                                    are specified, the name and port of the selected listener must match
+                                    both specified values.
+
+                                    Implementations MAY choose to support attaching Routes to other resources.
+                                    If that is the case, they MUST clearly document how SectionName is
+                                    interpreted.
+
+                                    When unspecified (empty string), this will reference the entire resource.
+                                    For the purpose of status, an attachment is considered successful if at
+                                    least one section in the parent resource accepts it. For example, Gateway
+                                    listeners can restrict which Routes can attach to them by Route kind,
+                                    namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
+                                    the referencing Route, the Route MUST be considered successfully
+                                    attached. If no Gateway listeners accept attachment from this Route, the
+                                    Route MUST be considered detached from the Gateway.
+
+                                    Support: Core
+                                  maxLength: 253
+                                  minLength: 1
+                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                  type: string
+                              required:
+                                - name
+                              type: object
+                          required:
+                            - conditions
+                            - controllerName
+                            - parentRef
+                          type: object
+                        maxItems: 32
+                        type: array
+                        x-kubernetes-list-type: atomic
+                      routeRef:
+                        description: Reference to the route created for this tenant.
+                        properties:
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    required:
+                      - parents
                     type: object
                   ingress:
                     description: KubernetesIngressStatus defines the status for the Tenant Control Plane Ingress in the management cluster.

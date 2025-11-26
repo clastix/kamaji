@@ -17,6 +17,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/utils/clock"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -30,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers/finalizers"
@@ -37,6 +40,7 @@ import (
 	"github.com/clastix/kamaji/internal/datastore"
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
 	"github.com/clastix/kamaji/internal/resources"
+	"github.com/clastix/kamaji/internal/utilities"
 )
 
 // TenantControlPlaneReconciler reconciles a TenantControlPlane object.
@@ -51,6 +55,7 @@ type TenantControlPlaneReconciler struct {
 	KamajiMigrateImage      string
 	MaxConcurrentReconciles int
 	ReconcileTimeout        time.Duration
+	DiscoveryClient         discovery.DiscoveryInterface
 	// CertificateChan is the channel used by the CertificateLifecycleController that is checking for
 	// certificates and kubeconfig user certs validity: a generic event for the given TCP will be triggered
 	// once the validity threshold for the given certificate is reached.
@@ -76,6 +81,10 @@ type TenantControlPlaneReconcilerConfig struct {
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;delete
+//+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=httproutes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=grpcroutes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=tlsroutes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gateways,verbs=get;list;watch
 
 func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
@@ -184,8 +193,9 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		KamajiServiceAccount: r.KamajiServiceAccount,
 		KamajiService:        r.KamajiService,
 		KamajiMigrateImage:   r.KamajiMigrateImage,
+		DiscoveryClient:      r.DiscoveryClient,
 	}
-	registeredResources := GetResources(groupResourceBuilderConfiguration)
+	registeredResources := GetResources(ctx, groupResourceBuilderConfiguration)
 
 	for _, resource := range registeredResources {
 		result, err := resources.Handle(ctx, resource, tenantControlPlane)
@@ -242,10 +252,10 @@ func (r *TenantControlPlaneReconciler) mutexSpec(obj client.Object) mutex.Spec {
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	r.clock = clock.RealClock{}
 
-	return ctrl.NewControllerManagedBy(mgr).
+	controllerBuilder := ctrl.NewControllerManagedBy(mgr).
 		WatchesRawSource(source.Channel(r.CertificateChan, handler.Funcs{GenericFunc: func(_ context.Context, genericEvent event.TypedGenericEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 			w.AddRateLimited(ctrl.Request{
 				NamespacedName: k8stypes.NamespacedName{
@@ -295,7 +305,20 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 			v, ok := labels["kamaji.clastix.io/component"]
 
 			return ok && v == "migrate"
-		}))).
+		})))
+
+	// Conditionally add Gateway API ownership if available
+	if utilities.AreGatewayResourcesAvailable(ctx, r.Client, r.DiscoveryClient) {
+		controllerBuilder = controllerBuilder.
+			Owns(&gatewayv1.HTTPRoute{}).
+			Owns(&gatewayv1.GRPCRoute{}).
+			Owns(&gatewayv1alpha2.TLSRoute{}).
+			Watches(&gatewayv1.Gateway{}, handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
+				return nil
+			}))
+	}
+
+	return controllerBuilder.
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: r.MaxConcurrentReconciles,
 		}).

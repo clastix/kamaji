@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // APIServerCertificatesStatus defines the observed state of ETCD Certificate for API server.
@@ -187,6 +188,7 @@ type KubernetesStatus struct {
 	Deployment KubernetesDeploymentStatus `json:"deployment,omitempty"`
 	Service    KubernetesServiceStatus    `json:"service,omitempty"`
 	Ingress    *KubernetesIngressStatus   `json:"ingress,omitempty"`
+	Gateway    *KubernetesGatewayStatus   `json:"gateway,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Unknown;Provisioning;CertificateAuthorityRotating;Upgrading;Migrating;Ready;NotReady;Sleeping;WriteLimited
@@ -243,4 +245,26 @@ type KubernetesIngressStatus struct {
 	Name string `json:"name"`
 	// The namespace which the Ingress for the given cluster is deployed.
 	Namespace string `json:"namespace"`
+}
+
+type GatewayAccessPoint struct {
+	Type  *gatewayv1.AddressType `json:"type"`
+	Value string                 `json:"value"`
+	Port  int32                  `json:"port"`
+	URLs  []string               `json:"urls,omitempty"`
+}
+
+// +k8s:deepcopy-gen=false
+type RouteStatus = gatewayv1.RouteStatus
+
+// KubernetesGatewayStatus defines the status for the Tenant Control Plane Gateway in the management cluster.
+type KubernetesGatewayStatus struct {
+	// The TLSRoute status as resported by the gateway controllers.
+	RouteStatus `json:",inline"`
+
+	// Reference to the route created for this tenant.
+	RouteRef corev1.LocalObjectReference `json:"routeRef,omitempty"`
+
+	// A list of valid access points that the route exposes.
+	AccessPoints []GatewayAccessPoint `json:"accessPoints,omitempty"`
 }

@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // NetworkProfileSpec defines the desired state of NetworkProfile.
@@ -124,6 +125,7 @@ type AdditionalMetadata struct {
 
 // ControlPlane defines how the Tenant Control Plane Kubernetes resources must be created in the Admin Cluster,
 // such as the number of Pod replicas, the Service resource, or the Ingress.
+// +kubebuilder:validation:XValidation:rule="!(has(self.ingress) && has(self.gateway))",message="using both ingress and gateway is not supported"
 type ControlPlane struct {
 	// Defining the options for the deployed Tenant Control Plane as Deployment resource.
 	Deployment DeploymentSpec `json:"deployment,omitempty"`
@@ -131,6 +133,8 @@ type ControlPlane struct {
 	Service ServiceSpec `json:"service"`
 	// Defining the options for an Optional Ingress which will expose API Server of the Tenant Control Plane
 	Ingress *IngressSpec `json:"ingress,omitempty"`
+	// Defining the options for an Optional Gateway which will expose API Server of the Tenant Control Plane
+	Gateway *GatewaySpec `json:"gateway,omitempty"`
 }
 
 // IngressSpec defines the options for the ingress which will expose API Server of the Tenant Control Plane.
@@ -140,6 +144,16 @@ type IngressSpec struct {
 	// Hostname is an optional field which will be used as Ingress's Host. If it is not defined,
 	// Ingress's host will be "<tenant>.<namespace>.<domain>", where domain is specified under NetworkProfileSpec
 	Hostname string `json:"hostname,omitempty"`
+}
+
+// GatewaySpec defines the options for the Gateway which will expose API Server of the Tenant Control Plane.
+type GatewaySpec struct {
+	// AdditionalMetadata to add Labels and Annotations support.
+	AdditionalMetadata AdditionalMetadata `json:"additionalMetadata,omitempty"`
+	// GatewayParentRefs is the class of the Gateway resource to use.
+	GatewayParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
+	// Hostname is an optional field which will be used as a route hostname.
+	Hostname gatewayv1.Hostname `json:"hostname,omitempty"`
 }
 
 type ControlPlaneComponentsResources struct {
