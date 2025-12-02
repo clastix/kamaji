@@ -167,7 +167,7 @@ func (c *MySQLConnection) CreateDB(ctx context.Context, dbName string) error {
 }
 
 func (c *MySQLConnection) GrantPrivileges(ctx context.Context, user, dbName string) error {
-	if err := c.mutate(ctx, mysqlGrantPrivilegesStatement, user, dbName); err != nil {
+	if err := c.mutate(ctx, mysqlGrantPrivilegesStatement, dbName, user); err != nil {
 		return errors.NewGrantPrivilegesError(err)
 	}
 
@@ -229,7 +229,7 @@ func (c *MySQLConnection) GrantPrivilegesExists(_ context.Context, user, dbName 
 		return false, errors.NewGrantPrivilegesError(err)
 	}
 
-	expected := fmt.Sprintf(mysqlGrantPrivilegesStatement, user, dbName)
+	expected := fmt.Sprintf(mysqlGrantPrivilegesStatement, dbName, user)
 	var grant string
 
 	for rows.Next() {
@@ -262,7 +262,7 @@ func (c *MySQLConnection) DeleteDB(ctx context.Context, dbName string) error {
 }
 
 func (c *MySQLConnection) RevokePrivileges(ctx context.Context, user, dbName string) error {
-	if err := c.mutate(ctx, mysqlRevokePrivilegesStatement, user, dbName); err != nil {
+	if err := c.mutate(ctx, mysqlRevokePrivilegesStatement, dbName, user); err != nil {
 		return errors.NewRevokePrivilegesError(err)
 	}
 
