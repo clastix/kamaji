@@ -15,7 +15,8 @@ Feel free to open a Pull-Request to get yours listed.
 | Vendor | Dinova | 2025 | [link](https://dinova.one/) | Dinova is an Italian cloud services provider that integrates Kamaji in its datacenters to offer fully managed Kubernetes clusters. |
 | Vendor | Hikube | 2024 | [link](https://hikube.cloud/) | Hikube.cloud is a Swiss sovereign cloud platform with triple replication across three Swiss datacenters, offering enterprise-grade infrastructure with full data sovereignty. |
 | End-user | KINX | 2024 | [link](https://kinx.net/?lang=en) | KINX is an Internet infrastructure service provider and will use kamaji for its new [Managed Kubernetes Service](https://kinx.net/service/cloud/kubernetes/intro/?lang=en). |
-| Vendor | Netalia | 2025 | [link](https://www.netalia.it) | Netalia uses Kamaji for the Italian cloud 
+| End-user | Namecheap | 2025 | [link](https://www.namecheap.com/) | Namecheap is an ICANN-accredited domain registrar and web hosting company that provides a wide range of internet-related services and uses Kamaji for both internal and external services. |
+| Vendor | Netalia | 2025 | [link](https://www.netalia.it) | Netalia uses Kamaji for the Italian cloud
 | Vendor | Netsons | 2023 | [link](https://www.netsons.com) | Netsons is an Italian hosting and cloud provider and uses Kamaji in its [Managed Kubernetes](https://www.netsons.com/kubernetes) offering. |
 | Vendor | NVIDIA | 2024 | [link](https://github.com/NVIDIA/doca-platform) | DOCA Platform Framework manages provisioning and service orchestration for NVIDIA Bluefield DPUs. |
 | R&D | Orange | 2024 | [link](https://gitlab.com/Orange-OpenSource/kanod) | Orange is a French telecommunications company using Kamaji for experimental research purpose, with Kanod research solution. |
