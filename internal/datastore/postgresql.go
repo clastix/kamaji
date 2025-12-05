@@ -25,7 +25,7 @@ const (
 	postgresqlShowOwnershipStatement      = "SELECT 't' FROM pg_catalog.pg_database AS d WHERE d.datname = ? AND pg_catalog.pg_get_userbyid(d.datdba) = ?"
 	postgresqlShowTableOwnershipStatement = "SELECT 't' from pg_tables where tableowner = ? AND tablename = ?"
 	postgresqlKineTableExistsStatement    = "SELECT 't' FROM pg_tables WHERE schemaname = ? AND tablename  = ?"
-	postgresqlGrantPrivilegesStatement    = "GRANT ALL PRIVILEGES ON DATABASE %s TO %s"
+	postgresqlGrantPrivilegesStatement    = "GRANT CONNECT, CREATE ON DATABASE %s TO %s"
 	postgresqlChangeOwnerStatement        = "ALTER DATABASE %s OWNER TO %s"
 	postgresqlRevokePrivilegesStatement   = "REVOKE ALL PRIVILEGES ON DATABASE %s FROM %s"
 	postgresqlDropRoleStatement           = "DROP ROLE %s"
