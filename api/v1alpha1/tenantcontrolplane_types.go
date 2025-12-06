@@ -355,6 +355,14 @@ func (p *Permissions) HasAnyLimitation() bool {
 	return false
 }
 
+// DataStoreOverride defines which kubernetes resource will be stored in a dedicated datastore.
+type DataStoreOverride struct {
+	// Resource specifies which kubernetes resource to target.
+	Resource string `json:"resource,omitempty"`
+	// DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Resource.
+	DataStore string `json:"dataStore,omitempty"`
+}
+
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStore) || has(self.dataStore)", message="unsetting the dataStore is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"
@@ -389,8 +397,10 @@ type TenantControlPlaneSpec struct {
 	// to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
 	// DataStoreUsername by concatenating the namespace and name of the TenantControlPlane.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="changing the dataStoreUsername is not supported"
-	DataStoreUsername string       `json:"dataStoreUsername,omitempty"`
-	ControlPlane      ControlPlane `json:"controlPlane"`
+	DataStoreUsername string `json:"dataStoreUsername,omitempty"`
+	// DataStoreOverride defines which kubernetes resources will be stored in dedicated datastores.
+	DataStoreOverrides []DataStoreOverride `json:"dataStoreOverrides,omitempty"`
+	ControlPlane       ControlPlane        `json:"controlPlane"`
 	// Kubernetes specification for tenant control plane
 	Kubernetes KubernetesSpec `json:"kubernetes"`
 	// NetworkProfile specifies how the network is

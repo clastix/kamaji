@@ -28501,6 +28501,13 @@ Migration from one DataStore to another backed by a different Driver is not supp
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecdatastoreoverridesindex">dataStoreOverrides</a></b></td>
+        <td>[]object</td>
+        <td>
+          DataStoreOverride defines which kubernetes resources will be stored in dedicated datastores.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>dataStoreSchema</b></td>
         <td>string</td>
         <td>
@@ -42208,6 +42215,38 @@ if not set, the default ImageRepository will be used instead.<br/>
         <td>
           ImageTag allows to specify a tag for the image.
 In case this value is set, kubeadm does not change automatically the version of the above components during upgrades.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecdatastoreoverridesindex">`TenantControlPlane.spec.dataStoreOverrides[index]`</span>
+
+
+DataStoreOverride defines which kubernetes resource will be stored in a dedicated datastore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>dataStore</b></td>
+        <td>string</td>
+        <td>
+          DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Resource specifies which kubernetes resource to target.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

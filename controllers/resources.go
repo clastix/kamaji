@@ -26,18 +26,20 @@ import (
 )
 
 type GroupResourceBuilderConfiguration struct {
-	client               client.Client
-	log                  logr.Logger
-	tcpReconcilerConfig  TenantControlPlaneReconcilerConfig
-	tenantControlPlane   kamajiv1alpha1.TenantControlPlane
-	ExpirationThreshold  time.Duration
-	Connection           datastore.Connection
-	DataStore            kamajiv1alpha1.DataStore
-	KamajiNamespace      string
-	KamajiServiceAccount string
-	KamajiService        string
-	KamajiMigrateImage   string
-	DiscoveryClient      discovery.DiscoveryInterface
+	client                        client.Client
+	log                           logr.Logger
+	tcpReconcilerConfig           TenantControlPlaneReconcilerConfig
+	tenantControlPlane            kamajiv1alpha1.TenantControlPlane
+	ExpirationThreshold           time.Duration
+	Connection                    datastore.Connection
+	DataStore                     kamajiv1alpha1.DataStore
+	DataStoreOverrides            []builder.DataStoreOverrides
+	DataStoreOverriedsConnections map[string]datastore.Connection
+	KamajiNamespace               string
+	KamajiServiceAccount          string
+	KamajiService                 string
+	KamajiMigrateImage            string
+	DiscoveryClient               discovery.DiscoveryInterface
 }
 
 type GroupDeletableResourceBuilderConfiguration struct {
@@ -62,8 +64,9 @@ func GetResources(ctx context.Context, config GroupResourceBuilderConfiguration)
 	resources = append(resources, getKubernetesCertificatesResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubeconfigResources(config.client, config.tcpReconcilerConfig, config.tenantControlPlane)...)
 	resources = append(resources, getKubernetesStorageResources(config.client, config.Connection, config.DataStore, config.ExpirationThreshold)...)
+	resources = append(resources, getKubernetesAdditionalStorageResources(config.client, config.DataStoreOverriedsConnections, config.DataStoreOverrides, config.ExpirationThreshold)...)
 	resources = append(resources, getKonnectivityServerRequirementsResources(config.client, config.ExpirationThreshold)...)
-	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.DataStore)...)
+	resources = append(resources, getKubernetesDeploymentResources(config.client, config.tcpReconcilerConfig, config.DataStore, config.DataStoreOverrides)...)
 	resources = append(resources, getKonnectivityServerPatchResources(config.client)...)
 	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
 	resources = append(resources, getKubernetesIngressResources(config.client)...)
@@ -252,12 +255,42 @@ func getKubernetesStorageResources(c client.Client, dbConnection datastore.Conne
 	}
 }
 
-func getKubernetesDeploymentResources(c client.Client, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, dataStore kamajiv1alpha1.DataStore) []resources.Resource {
+func getKubernetesAdditionalStorageResources(c client.Client, dbConnections map[string]datastore.Connection, dataStoreOverrides []builder.DataStoreOverrides, threshold time.Duration) []resources.Resource {
+	res := make([]resources.Resource, 0, len(dataStoreOverrides))
+	for _, dso := range dataStoreOverrides {
+		datastore := dso.DataStore
+		res = append(res,
+			&ds.MultiTenancy{
+				DataStore: datastore,
+			},
+			&ds.Config{
+				Client:     c,
+				ConnString: dbConnections[dso.Resource].GetConnectionString(),
+				DataStore:  datastore,
+				IsOverride: true,
+			},
+			&ds.Setup{
+				Client:     c,
+				Connection: dbConnections[dso.Resource],
+				DataStore:  datastore,
+			},
+			&ds.Certificate{
+				Client:                  c,
+				DataStore:               datastore,
+				CertExpirationThreshold: threshold,
+			})
+	}
+
+	return res
+}
+
+func getKubernetesDeploymentResources(c client.Client, tcpReconcilerConfig TenantControlPlaneReconcilerConfig, dataStore kamajiv1alpha1.DataStore, dataStoreOverrides []builder.DataStoreOverrides) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubernetesDeploymentResource{
 			Client:             c,
 			DataStore:          dataStore,
 			KineContainerImage: tcpReconcilerConfig.KineContainerImage,
+			DataStoreOverrides: dataStoreOverrides,
 		},
 	}
 }
