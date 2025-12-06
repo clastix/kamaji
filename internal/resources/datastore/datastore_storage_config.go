@@ -30,6 +30,7 @@ type Config struct {
 	Client     client.Client
 	ConnString string
 	DataStore  kamajiv1alpha1.DataStore
+	IsOverride bool
 }
 
 func (r *Config) GetHistogram() prometheus.Histogram {
@@ -103,10 +104,12 @@ func (r *Config) GetName() string {
 }
 
 func (r *Config) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	tenantControlPlane.Status.Storage.Driver = string(r.DataStore.Spec.Driver)
-	tenantControlPlane.Status.Storage.DataStoreName = r.DataStore.GetName()
-	tenantControlPlane.Status.Storage.Config.SecretName = r.resource.GetName()
-	tenantControlPlane.Status.Storage.Config.Checksum = utilities.GetObjectChecksum(r.resource)
+	if !r.IsOverride {
+		tenantControlPlane.Status.Storage.Driver = string(r.DataStore.Spec.Driver)
+		tenantControlPlane.Status.Storage.DataStoreName = r.DataStore.GetName()
+		tenantControlPlane.Status.Storage.Config.SecretName = r.resource.GetName()
+		tenantControlPlane.Status.Storage.Config.Checksum = utilities.GetObjectChecksum(r.resource)
+	}
 
 	return nil
 }
