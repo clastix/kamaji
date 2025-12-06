@@ -67,6 +67,20 @@ func (t TenantControlPlaneDeployment) OnUpdate(newObject runtime.Object, oldObje
 		}
 		t.DeploymentBuilder.DataStore = ds
 
+		dataStoreOverrides := make([]controlplane.DataStoreOverrides, 0, len(tcp.Spec.DataStoreOverrides))
+
+		for _, dso := range tcp.Spec.DataStoreOverrides {
+			ds := kamajiv1alpha1.DataStore{}
+			if err := t.Client.Get(ctx, types.NamespacedName{Name: dso.DataStore}, &ds); err != nil {
+				return nil, err
+			}
+			dataStoreOverrides = append(dataStoreOverrides, controlplane.DataStoreOverrides{
+				Resource:  dso.Resource,
+				DataStore: ds,
+			})
+		}
+		t.DeploymentBuilder.DataStoreOverrides = dataStoreOverrides
+
 		deployment := appsv1.Deployment{}
 		deployment.Name = tcp.Name
 		deployment.Namespace = tcp.Namespace

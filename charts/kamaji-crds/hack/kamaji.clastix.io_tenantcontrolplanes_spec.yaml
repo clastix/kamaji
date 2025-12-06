@@ -6985,6 +6985,19 @@ versions:
                   Migration from one DataStore to another backed by the same Driver is possible. See: https://kamaji.clastix.io/guides/datastore-migration/
                   Migration from one DataStore to another backed by a different Driver is not supported.
                 type: string
+              dataStoreOverrides:
+                description: DataStoreOverride defines which kubernetes resources will be stored in dedicated datastores.
+                items:
+                  description: DataStoreOverride defines which kubernetes resource will be stored in a dedicated datastore.
+                  properties:
+                    dataStore:
+                      description: DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Resource.
+                      type: string
+                    resource:
+                      description: Resource specifies which kubernetes resource to target.
+                      type: string
+                  type: object
+                type: array
               dataStoreSchema:
                 description: |-
                   DataStoreSchema allows to specify the name of the database (for relational DataStores) or the key prefix (for etcd). This

@@ -22,6 +22,7 @@ type KubernetesDeploymentResource struct {
 	resource           *appsv1.Deployment
 	Client             client.Client
 	DataStore          kamajiv1alpha1.DataStore
+	DataStoreOverrides []builder.DataStoreOverrides
 	KineContainerImage string
 }
 
@@ -66,6 +67,7 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 			Client:             r.Client,
 			DataStore:          r.DataStore,
 			KineContainerImage: r.KineContainerImage,
+			DataStoreOverrides: r.DataStoreOverrides,
 		}).Build(ctx, r.resource, *tenantControlPlane)
 
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())

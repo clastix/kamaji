@@ -52,9 +52,15 @@ const (
 	kineInitContainerName     = "chmod"
 )
 
+type DataStoreOverrides struct {
+	Resource  string
+	DataStore kamajiv1alpha1.DataStore
+}
+
 type Deployment struct {
 	KineContainerImage string
 	DataStore          kamajiv1alpha1.DataStore
+	DataStoreOverrides []DataStoreOverrides
 	Client             client.Client
 }
 
@@ -711,9 +717,27 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 		desiredArgs["--etcd-keyfile"] = "/etc/kubernetes/pki/etcd/server.key"
 	}
 
+	if len(d.DataStoreOverrides) != 0 {
+		desiredArgs["--etcd-servers-overrides"] = d.etcdServersOverrides()
+	}
+
 	// Order matters, here: extraArgs could try to overwrite some arguments managed by Kamaji and that would be crucial.
 	// Adding as first element of the array of maps, we're sure that these overrides will be sanitized by our configuration.
 	return utilities.MergeMaps(current, desiredArgs, extraArgs)
+}
+
+func (d Deployment) etcdServersOverrides() string {
+	dataStoreOverridesEndpoints := make([]string, 0, len(d.DataStoreOverrides))
+	for _, dso := range d.DataStoreOverrides {
+		httpsEndpoints := make([]string, 0, len(dso.DataStore.Spec.Endpoints))
+
+		for _, ep := range dso.DataStore.Spec.Endpoints {
+			httpsEndpoints = append(httpsEndpoints, fmt.Sprintf("https://%s", ep))
+		}
+		dataStoreOverridesEndpoints = append(dataStoreOverridesEndpoints, fmt.Sprintf("%s#%s", dso.Resource, strings.Join(httpsEndpoints, ";")))
+	}
+
+	return strings.Join(dataStoreOverridesEndpoints, ",")
 }
 
 func (d Deployment) secretProjection(secretName, certKeyName, keyName string) *corev1.SecretProjection {
