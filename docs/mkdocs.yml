@@ -76,6 +76,7 @@ nav:
   - guides/pausing.md
   - guides/write-permissions.md
   - guides/datastore-migration.md
+  - guides/datastore-overrides.md
   - guides/gitops.md
   - guides/console.md
   - guides/kubeconfig-generator.md

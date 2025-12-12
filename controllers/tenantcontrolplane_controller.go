@@ -37,6 +37,7 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers/finalizers"
 	"github.com/clastix/kamaji/controllers/utils"
+	controlplanebuilder "github.com/clastix/kamaji/internal/builders/controlplane"
 	"github.com/clastix/kamaji/internal/datastore"
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
 	"github.com/clastix/kamaji/internal/resources"
@@ -157,6 +158,25 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 	defer dsConnection.Close()
 
+	dso, err := r.dataStoreOverride(ctx, tenantControlPlane)
+	if err != nil {
+		log.Error(err, "cannot retrieve the DataStoreOverrides for the given instance")
+
+		return ctrl.Result{}, err
+	}
+	dsoConnections := make(map[string]datastore.Connection, len(dso))
+	for _, ds := range dso {
+		dsoConnection, err := datastore.NewStorageConnection(ctx, r.Client, ds.DataStore)
+		if err != nil {
+			log.Error(err, "cannot generate the DataStoreOverride connection for the given instance")
+
+			return ctrl.Result{}, err
+		}
+		defer dsoConnection.Close()
+
+		dsoConnections[ds.Resource] = dsoConnection
+	}
+
 	if markedToBeDeleted && controllerutil.ContainsFinalizer(tenantControlPlane, finalizers.DatastoreFinalizer) {
 		log.Info("marked for deletion, performing clean-up")
 
@@ -183,17 +203,19 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	groupResourceBuilderConfiguration := GroupResourceBuilderConfiguration{
-		client:               r.Client,
-		log:                  log,
-		tcpReconcilerConfig:  r.Config,
-		tenantControlPlane:   *tenantControlPlane,
-		Connection:           dsConnection,
-		DataStore:            *ds,
-		KamajiNamespace:      r.KamajiNamespace,
-		KamajiServiceAccount: r.KamajiServiceAccount,
-		KamajiService:        r.KamajiService,
-		KamajiMigrateImage:   r.KamajiMigrateImage,
-		DiscoveryClient:      r.DiscoveryClient,
+		client:                        r.Client,
+		log:                           log,
+		tcpReconcilerConfig:           r.Config,
+		tenantControlPlane:            *tenantControlPlane,
+		Connection:                    dsConnection,
+		DataStore:                     *ds,
+		DataStoreOverrides:            dso,
+		DataStoreOverriedsConnections: dsoConnections,
+		KamajiNamespace:               r.KamajiNamespace,
+		KamajiServiceAccount:          r.KamajiServiceAccount,
+		KamajiService:                 r.KamajiService,
+		KamajiMigrateImage:            r.KamajiMigrateImage,
+		DiscoveryClient:               r.DiscoveryClient,
 	}
 	registeredResources := GetResources(ctx, groupResourceBuilderConfiguration)
 
@@ -361,4 +383,22 @@ func (r *TenantControlPlaneReconciler) dataStore(ctx context.Context, tenantCont
 	}
 
 	return &ds, nil
+}
+
+func (r *TenantControlPlaneReconciler) dataStoreOverride(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) ([]controlplanebuilder.DataStoreOverrides, error) {
+	datastores := make([]controlplanebuilder.DataStoreOverrides, 0, len(tenantControlPlane.Spec.DataStoreOverrides))
+
+	for _, dso := range tenantControlPlane.Spec.DataStoreOverrides {
+		var ds kamajiv1alpha1.DataStore
+		if err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: dso.DataStore}, &ds); err != nil {
+			return nil, errors.Wrap(err, "cannot retrieve *kamajiv1alpha.DataStore object")
+		}
+		if ds.Spec.Driver != kamajiv1alpha1.EtcdDriver {
+			return nil, errors.New("DataStoreOverrides can only use ETCD driver")
+		}
+
+		datastores = append(datastores, controlplanebuilder.DataStoreOverrides{Resource: dso.Resource, DataStore: ds})
+	}
+
+	return datastores, nil
 }

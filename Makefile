@@ -177,7 +177,7 @@ datastore-postgres:
 	$(MAKE) NAME=gold _datastore-postgres
 
 _datastore-etcd:
-	$(HELM) upgrade --install etcd-$(NAME) clastix/kamaji-etcd --create-namespace -n etcd-system --set datastore.enabled=true --set fullnameOverride=etcd-$(NAME)
+	$(HELM) upgrade --install etcd-$(NAME) clastix/kamaji-etcd --create-namespace -n $(NAMESPACE) --set datastore.enabled=true --set fullnameOverride=etcd-$(NAME) $(EXTRA_ARGS)
 
 _datastore-nats:
 	$(MAKE) NAME=$(NAME) NAMESPACE=nats-system -C deploy/kine/nats nats
@@ -186,9 +186,11 @@ _datastore-nats:
 datastore-etcd: helm
 	$(HELM) repo add clastix https://clastix.github.io/charts
 	$(HELM) repo update
-	$(MAKE) NAME=bronze _datastore-etcd
-	$(MAKE) NAME=silver _datastore-etcd
-	$(MAKE) NAME=gold _datastore-etcd
+	$(MAKE) NAME=bronze NAMESPACE=etcd-system _datastore-etcd
+	$(MAKE) NAME=silver NAMESPACE=etcd-system _datastore-etcd
+	$(MAKE) NAME=gold NAMESPACE=etcd-system _datastore-etcd
+	$(MAKE) NAME=primary NAMESPACE=kamaji-system EXTRA_ARGS='--set certManager.enabled=true --set certManager.issuerRef.kind=Issuer --set certManager.issuerRef.name=kamaji-selfsigned-issuer --set selfSignedCertificates.enabled=false' _datastore-etcd
+	$(MAKE) NAME=secondary NAMESPACE=kamaji-system EXTRA_ARGS='--set certManager.enabled=true --set certManager.ca.create=false --set certManager.ca.nameOverride=etcd-primary-ca --set certManager.issuerRef.kind=Issuer --set certManager.issuerRef.name=kamaji-selfsigned-issuer --set selfSignedCertificates.enabled=false' _datastore-etcd
 
 datastore-nats: helm
 	$(HELM) repo add nats https://nats-io.github.io/k8s/helm/charts/
