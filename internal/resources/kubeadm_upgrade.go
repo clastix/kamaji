@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/upgrade"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -77,7 +78,12 @@ func (k *KubernetesUpgrade) CreateOrUpdate(ctx context.Context, tenantControlPla
 		return controllerutil.OperationResultNone, errors.Wrap(err, "cannot create REST client required for Kubernetes upgrade plan")
 	}
 
-	versionGetter := kamajiupgrade.NewKamajiKubeVersionGetter(clientSet, tenantControlPlane.Status.Kubernetes.Version.Version)
+	var coreDNSVersion string
+	if tenantControlPlane.Spec.Addons.CoreDNS != nil {
+		coreDNSVersion = tenantControlPlane.Spec.Addons.CoreDNS.ImageTag
+	}
+
+	versionGetter := kamajiupgrade.NewKamajiKubeVersionGetter(clientSet, tenantControlPlane.Status.Kubernetes.Version.Version, coreDNSVersion, tenantControlPlane.Status.Kubernetes.Version.Status)
 
 	if _, err = upgrade.GetAvailableUpgrades(versionGetter, false, false, &printers.Discard{}); err != nil {
 		return controllerutil.OperationResultNone, errors.Wrap(err, "cannot retrieve available Upgrades for Kubernetes upgrade plan")
@@ -87,7 +93,9 @@ func (k *KubernetesUpgrade) CreateOrUpdate(ctx context.Context, tenantControlPla
 		return controllerutil.OperationResultNone, fmt.Errorf("the required upgrade plan is not available")
 	}
 
-	k.inProgress = true
+	if ptr.Deref(tenantControlPlane.Spec.ControlPlane.Deployment.Replicas, 0) > 0 {
+		k.inProgress = true
+	}
 
 	return controllerutil.OperationResultNone, nil
 }

@@ -103,7 +103,8 @@ func (r *KubernetesDeploymentResource) computeStatus(tenantControlPlane *kamajiv
 
 func (r *KubernetesDeploymentResource) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Kubernetes.Version.Status = r.computeStatus(tenantControlPlane)
-	if *tenantControlPlane.Status.Kubernetes.Version.Status == kamajiv1alpha1.VersionReady {
+	if *tenantControlPlane.Status.Kubernetes.Version.Status == kamajiv1alpha1.VersionReady ||
+		*tenantControlPlane.Status.Kubernetes.Version.Status == kamajiv1alpha1.VersionSleeping {
 		tenantControlPlane.Status.Kubernetes.Version.Version = tenantControlPlane.Spec.Kubernetes.Version
 	}
 
