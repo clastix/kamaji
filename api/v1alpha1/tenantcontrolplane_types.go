@@ -289,7 +289,7 @@ var (
 	KonnectivityAgentModeDeployment KonnectivityAgentMode = "Deployment"
 )
 
-//+kubebuilder:validation:XValidation:rule="!(self.mode == 'DaemonSet' && has(self.replicas) && self.replicas != 0) && !(self.mode == 'Deployment' && self.replicas == 0)",message="replicas must be 0 when mode is DaemonSet, and greater than 0 when mode is Deployment"
+//+kubebuilder:validation:XValidation:rule="!(self.mode == 'DaemonSet' && has(self.replicas) && self.replicas != 0) && !(self.mode == 'Deployment' && has(self.replicas) && self.replicas == 0)",message="replicas must be 0 (or unset) when mode is DaemonSet, and greater than 0 (or unset) when mode is Deployment"
 
 type KonnectivityAgentSpec struct {
 	// AgentImage defines the container image for Konnectivity's agent.
@@ -318,7 +318,7 @@ type KonnectivityAgentSpec struct {
 	// Replicas defines the number of replicas when Mode is Deployment.
 	// Must be 0 if Mode is DaemonSet.
 	//+kubebuilder:validation:Optional
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.

@@ -178,8 +178,8 @@ versions:
                             type: string
                         type: object
                         x-kubernetes-validations:
-                          - message: replicas must be 0 when mode is DaemonSet, and greater than 0 when mode is Deployment
-                            rule: '!(self.mode == ''DaemonSet'' && has(self.replicas) && self.replicas != 0) && !(self.mode == ''Deployment'' && self.replicas == 0)'
+                          - message: replicas must be 0 (or unset) when mode is DaemonSet, and greater than 0 (or unset) when mode is Deployment
+                            rule: '!(self.mode == ''DaemonSet'' && has(self.replicas) && self.replicas != 0) && !(self.mode == ''Deployment'' && has(self.replicas) && self.replicas == 0)'
                       server:
                         default:
                           image: registry.k8s.io/kas-network-proxy/proxy-server
