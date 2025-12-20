@@ -59,7 +59,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 					Port:    31443,
 				},
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
-					Version: "v1.29.0",
+					Version: "v1.35.0",
 					Kubelet: kamajiv1alpha1.KubeletSpec{
 						CGroupFS: "cgroupfs",
 					},
