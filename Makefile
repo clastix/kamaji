@@ -73,7 +73,7 @@ help: ## Display this help.
 .PHONY: ko
 ko: $(KO) ## Download ko locally if necessary.
 $(KO): $(LOCALBIN)
-	test -s $(LOCALBIN)/ko || GOBIN=$(LOCALBIN) CGO_ENABLED=0 go install -ldflags="-s -w" github.com/google/ko@v0.14.1
+	test -s $(LOCALBIN)/ko || GOBIN=$(LOCALBIN) CGO_ENABLED=0 go install -ldflags="-s -w" github.com/google/ko@v0.18.1
 
 .PHONY: yq
 yq: $(YQ) ## Download yq locally if necessary.
