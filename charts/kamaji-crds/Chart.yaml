@@ -33,5 +33,7 @@ annotations:
     - name: support
       url: https://clastix.io/support
   artifacthub.io/changes: |
+    - kind: changed
+      description: Upgrading support to Kubernetes v1.35
     - kind: added
-      description: First commit
+      description: Supporting multiple Datastore via etcd overrides
