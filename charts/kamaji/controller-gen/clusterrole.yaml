@@ -1,6 +1,20 @@
 - apiGroups:
     - ""
   resources:
+    - configmaps
+    - secrets
+    - services
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - ""
+  resources:
     - namespaces
   verbs:
     - get
@@ -27,20 +41,6 @@
     - delete
     - get
     - list
-    - watch
-- apiGroups:
-    - ""
-  resources:
-    - configmaps
-    - secrets
-    - services
-  verbs:
-    - create
-    - delete
-    - get
-    - list
-    - patch
-    - update
     - watch
 - apiGroups:
     - gateway.networking.k8s.io
