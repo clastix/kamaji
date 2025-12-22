@@ -193,7 +193,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			for _, trigger := range v.triggers {
 				var shrunkTCP kamajiv1alpha1.TenantControlPlane
 
-				shrunkTCP.Name = tcp.Namespace
+				shrunkTCP.Name = tcp.Name
 				shrunkTCP.Namespace = tcp.Namespace
 
 				go utils.TriggerChannel(ctx, trigger, shrunkTCP)
