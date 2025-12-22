@@ -281,8 +281,10 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		case kamajiv1alpha1.KonnectivityAgentModeDeployment:
 			//nolint:forcetypeassert
 			r.resource.(*appsv1.Deployment).Spec.Template = *podTemplateSpec
-			//nolint:forcetypeassert
-			r.resource.(*appsv1.Deployment).Spec.Replicas = pointer.To(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Replicas)
+			if tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Replicas != nil {
+				//nolint:forcetypeassert
+				r.resource.(*appsv1.Deployment).Spec.Replicas = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Replicas
+			}
 		}
 
 		return nil
