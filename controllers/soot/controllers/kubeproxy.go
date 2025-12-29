@@ -36,6 +36,7 @@ type KubeProxy struct {
 	AdminClient               client.Client
 	GetTenantControlPlaneFunc utils.TenantControlPlaneRetrievalFn
 	TriggerChannel            chan event.GenericEvent
+	ControllerName            string
 }
 
 func (k *KubeProxy) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
@@ -82,6 +83,7 @@ func (k *KubeProxy) Reconcile(ctx context.Context, _ reconcile.Request) (reconci
 
 func (k *KubeProxy) SetupWithManager(mgr manager.Manager) error {
 	return controllerruntime.NewControllerManagedBy(mgr).
+		Named(k.ControllerName).
 		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
 		For(&rbacv1.ClusterRoleBinding{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == kubeadm.KubeProxyClusterRoleBindingName

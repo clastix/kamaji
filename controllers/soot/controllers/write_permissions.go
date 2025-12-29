@@ -39,6 +39,7 @@ type WritePermissions struct {
 	WebhookServiceName        string
 	WebhookCABundle           []byte
 	TriggerChannel            chan event.GenericEvent
+	ControllerName            string
 }
 
 func (r *WritePermissions) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
@@ -190,6 +191,7 @@ func (r *WritePermissions) SetupWithManager(mgr manager.Manager) error {
 	r.TriggerChannel = make(chan event.GenericEvent)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
+		Named(r.ControllerName).
 		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
 		For(&admissionregistrationv1.ValidatingWebhookConfiguration{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == r.object().GetName()

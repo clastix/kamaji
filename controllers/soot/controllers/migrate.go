@@ -39,6 +39,7 @@ type Migrate struct {
 	WebhookServiceName        string
 	WebhookCABundle           []byte
 	TriggerChannel            chan event.GenericEvent
+	ControllerName            string
 }
 
 func (m *Migrate) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
@@ -189,6 +190,7 @@ func (m *Migrate) SetupWithManager(mgr manager.Manager) error {
 	m.TriggerChannel = make(chan event.GenericEvent)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
+		Named(m.ControllerName).
 		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: pointer.To(true)}).
 		For(&admissionregistrationv1.ValidatingWebhookConfiguration{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			vwc := m.object()

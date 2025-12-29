@@ -37,6 +37,7 @@ type KonnectivityAgent struct {
 	AdminClient               client.Client
 	GetTenantControlPlaneFunc utils.TenantControlPlaneRetrievalFn
 	TriggerChannel            chan event.GenericEvent
+	ControllerName            string
 }
 
 func (k *KonnectivityAgent) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
@@ -87,6 +88,7 @@ func (k *KonnectivityAgent) Reconcile(ctx context.Context, _ reconcile.Request) 
 
 func (k *KonnectivityAgent) SetupWithManager(mgr manager.Manager) error {
 	return controllerruntime.NewControllerManagedBy(mgr).
+		Named(k.ControllerName).
 		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
 		For(&appsv1.DaemonSet{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == konnectivity.AgentName && object.GetNamespace() == konnectivity.AgentNamespace
