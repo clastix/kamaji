@@ -29,7 +29,6 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.5.0
 	k8s.io/api v0.35.0
 	k8s.io/apimachinery v0.35.0
-	k8s.io/apiserver v0.35.0
 	k8s.io/client-go v0.35.0
 	k8s.io/cluster-bootstrap v0.0.0
 	k8s.io/klog/v2 v2.130.1
@@ -184,6 +183,7 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.34.1 // indirect
+	k8s.io/apiserver v0.35.0 // indirect
 	k8s.io/cli-runtime v0.0.0 // indirect
 	k8s.io/cloud-provider v0.0.0 // indirect
 	k8s.io/component-base v0.35.0 // indirect
