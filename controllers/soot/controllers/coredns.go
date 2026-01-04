@@ -36,6 +36,7 @@ type CoreDNS struct {
 	AdminClient               client.Client
 	GetTenantControlPlaneFunc utils.TenantControlPlaneRetrievalFn
 	TriggerChannel            chan event.GenericEvent
+	ControllerName            string
 }
 
 func (c *CoreDNS) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
@@ -80,6 +81,7 @@ func (c *CoreDNS) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile
 
 func (c *CoreDNS) SetupWithManager(mgr manager.Manager) error {
 	return controllerruntime.NewControllerManagedBy(mgr).
+		Named(c.ControllerName).
 		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
 		For(&rbacv1.ClusterRoleBinding{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == kubeadm.CoreDNSClusterRoleBindingName

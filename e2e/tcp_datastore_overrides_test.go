@@ -18,7 +18,7 @@ var _ = Describe("Deploy a TenantControlPlane resource with DataStoreOverrides",
 	// Fill TenantControlPlane object
 	tcp := &kamajiv1alpha1.TenantControlPlane{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "tcp-clusterip",
+			Name:      "tcp-datastore-overrides",
 			Namespace: "default",
 		},
 		Spec: kamajiv1alpha1.TenantControlPlaneSpec{

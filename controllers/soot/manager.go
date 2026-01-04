@@ -253,6 +253,9 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	//
 	// Register all the controllers of the soot here:
 	//
+	// Generate unique controller name prefix from TenantControlPlane to avoid metric conflicts
+	controllerNamePrefix := fmt.Sprintf("%s-%s", tcp.GetNamespace(), tcp.GetName())
+
 	writePermissions := &controllers.WritePermissions{
 		Logger:                    mgr.GetLogger().WithName("writePermissions"),
 		Client:                    mgr.GetClient(),
@@ -261,6 +264,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		WebhookServiceName:        m.MigrateServiceName,
 		WebhookCABundle:           m.MigrateCABundle,
 		TriggerChannel:            nil,
+		ControllerName:            fmt.Sprintf("%s-writepermissions", controllerNamePrefix),
 	}
 	if err = writePermissions.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -273,6 +277,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
 		Client:                    mgr.GetClient(),
 		Logger:                    mgr.GetLogger().WithName("migrate"),
+		ControllerName:            fmt.Sprintf("%s-migrate", controllerNamePrefix),
 	}
 	if err = migrate.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -283,6 +288,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
 		Logger:                    mgr.GetLogger().WithName("konnectivity_agent"),
 		TriggerChannel:            make(chan event.GenericEvent),
+		ControllerName:            fmt.Sprintf("%s-konnectivity", controllerNamePrefix),
 	}
 	if err = konnectivityAgent.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -293,6 +299,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
 		Logger:                    mgr.GetLogger().WithName("kube_proxy"),
 		TriggerChannel:            make(chan event.GenericEvent),
+		ControllerName:            fmt.Sprintf("%s-kubeproxy", controllerNamePrefix),
 	}
 	if err = kubeProxy.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -303,6 +310,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
 		Logger:                    mgr.GetLogger().WithName("coredns"),
 		TriggerChannel:            make(chan event.GenericEvent),
+		ControllerName:            fmt.Sprintf("%s-coredns", controllerNamePrefix),
 	}
 	if err = coreDNS.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -315,6 +323,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			Phase:  resources.PhaseUploadConfigKubeadm,
 		},
 		TriggerChannel: make(chan event.GenericEvent),
+		ControllerName: fmt.Sprintf("%s-kubeadmconfig", controllerNamePrefix),
 	}
 	if err = uploadKubeadmConfig.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -327,6 +336,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			Phase:  resources.PhaseUploadConfigKubelet,
 		},
 		TriggerChannel: make(chan event.GenericEvent),
+		ControllerName: fmt.Sprintf("%s-kubeletconfig", controllerNamePrefix),
 	}
 	if err = uploadKubeletConfig.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -339,6 +349,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			Phase:  resources.PhaseBootstrapToken,
 		},
 		TriggerChannel: make(chan event.GenericEvent),
+		ControllerName: fmt.Sprintf("%s-bootstraptoken", controllerNamePrefix),
 	}
 	if err = bootstrapToken.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
@@ -351,6 +362,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			Phase:  resources.PhaseClusterAdminRBAC,
 		},
 		TriggerChannel: make(chan event.GenericEvent),
+		ControllerName: fmt.Sprintf("%s-kubeadmrbac", controllerNamePrefix),
 	}
 	if err = kubeadmRbac.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err

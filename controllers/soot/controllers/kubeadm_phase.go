@@ -29,6 +29,7 @@ type KubeadmPhase struct {
 	GetTenantControlPlaneFunc utils.TenantControlPlaneRetrievalFn
 	TriggerChannel            chan event.GenericEvent
 	Phase                     resources.KubeadmPhaseResource
+	ControllerName            string
 
 	logger logr.Logger
 }
@@ -75,6 +76,7 @@ func (k *KubeadmPhase) SetupWithManager(mgr manager.Manager) error {
 	k.logger = mgr.GetLogger().WithName(k.Phase.GetName())
 
 	return controllerruntime.NewControllerManagedBy(mgr).
+		Named(k.ControllerName).
 		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
 		For(k.Phase.GetWatchedObject(), builder.WithPredicates(predicate.NewPredicateFuncs(k.Phase.GetPredicateFunc()))).
 		WatchesRawSource(source.Channel(k.TriggerChannel, &handler.EnqueueRequestForObject{})).
