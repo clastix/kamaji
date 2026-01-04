@@ -77,6 +77,8 @@ type KubeletSpec struct {
 	// CGroupFS defines the cgroup driver for Kubelet
 	// https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
 	CGroupFS CGroupDriver `json:"cgroupfs,omitempty"`
+	// FeatureGates defines the kubernetes feature gates used to generate the kubelet configuration
+	FeatureGates map[string]bool `json:"featureGates,omitempty"`
 }
 
 // KubernetesSpec defines the desired state of Kubernetes.

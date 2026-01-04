@@ -49,6 +49,7 @@ type Parameters struct {
 	KubeconfigDir                   string
 	KubeProxyOptions                *AddonOptions
 	CoreDNSOptions                  *AddonOptions
+	KubeletFeatureGates             map[string]bool
 }
 
 type AddonOptions struct {
@@ -60,6 +61,7 @@ type KubeletConfiguration struct {
 	TenantControlPlaneDomain        string
 	TenantControlPlaneDNSServiceIPs []string
 	TenantControlPlaneCgroupDriver  string
+	FeatureGates                    map[string]bool
 }
 
 type CertificatePrivateKeyPair struct {

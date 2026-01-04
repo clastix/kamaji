@@ -201,6 +201,7 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr
 		TenantControlPlaneCertSANs:     tenantControlPlane.Spec.NetworkProfile.CertSANs,
 		TenantControlPlanePort:         tenantControlPlane.Spec.NetworkProfile.Port,
 		TenantControlPlaneCGroupDriver: tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(),
+		KubeletFeatureGates:            tenantControlPlane.Spec.Kubernetes.Kubelet.FeatureGates,
 	}
 
 	var checksum string

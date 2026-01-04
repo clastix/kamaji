@@ -39,6 +39,7 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) ([]
 		TenantControlPlaneDomain:        config.InitConfiguration.Networking.DNSDomain,
 		TenantControlPlaneDNSServiceIPs: config.Parameters.TenantDNSServiceIPs,
 		TenantControlPlaneCgroupDriver:  config.Parameters.TenantControlPlaneCGroupDriver,
+		FeatureGates:                    config.Parameters.KubeletFeatureGates,
 	}
 	content, err := getKubeletConfigmapContent(kubeletConfiguration)
 	if err != nil {
@@ -74,6 +75,7 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) ([]
 func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration) ([]byte, error) {
 	var kc kubelettypes.KubeletConfiguration
 
+	kc.FeatureGates = kubeletConfiguration.FeatureGates
 	kubeletv1beta1.SetDefaults_KubeletConfiguration(&kc)
 
 	kc.APIVersion = kubeletv1beta1.SchemeGroupVersion.String()

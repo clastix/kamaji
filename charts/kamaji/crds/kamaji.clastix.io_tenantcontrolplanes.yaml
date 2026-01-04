@@ -7126,6 +7126,10 @@ spec:
                             - systemd
                             - cgroupfs
                           type: string
+                        featureGates:
+                          additionalProperties:
+                            type: boolean
+                          type: object
                         preferredAddressTypes:
                           default:
                             - InternalIP
