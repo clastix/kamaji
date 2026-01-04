@@ -10,7 +10,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiserverv1alpha1 "k8s.io/apiserver/pkg/apis/apiserver/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -94,18 +93,18 @@ func (r *EgressSelectorConfigurationResource) mutate(_ context.Context, tenantCo
 	return func() error {
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
-		configuration := &apiserverv1alpha1.EgressSelectorConfiguration{
+		configuration := &EgressSelectorConfiguration{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       egressSelectorConfigurationKind,
 				APIVersion: apiServerAPIVersion,
 			},
-			EgressSelections: []apiserverv1alpha1.EgressSelection{
+			EgressSelections: []EgressSelection{
 				{
 					Name: egressSelectorConfigurationName,
-					Connection: apiserverv1alpha1.Connection{
-						ProxyProtocol: apiserverv1alpha1.ProtocolGRPC,
-						Transport: &apiserverv1alpha1.Transport{
-							UDS: &apiserverv1alpha1.UDSTransport{
+					Connection: Connection{
+						ProxyProtocol: ProtocolGRPC,
+						Transport: &Transport{
+							UDS: &UDSTransport{
 								UDSName: defaultUDSName,
 							},
 						},
