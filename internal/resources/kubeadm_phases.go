@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	jsonpatchv5 "github.com/evanphx/json-patch/v5"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -150,7 +152,21 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 	case PhaseUploadConfigKubeadm:
 		return kubeadm.UploadKubeadmConfig, nil
 	case PhaseUploadConfigKubelet:
-		return kubeadm.UploadKubeletConfig, nil
+		return func(c clientset.Interface, configuration *kubeadm.Configuration) ([]byte, error) {
+			var patch jsonpatchv5.Patch
+
+			if len(tcp.Spec.Kubernetes.Kubelet.ConfigurationJSONPatches) > 0 {
+				jsonP, patchErr := tcp.Spec.Kubernetes.Kubelet.ConfigurationJSONPatches.ToJSON()
+				if patchErr != nil {
+					return nil, errors.Wrap(patchErr, "cannot encode JSON Patches to JSON")
+				}
+				if patch, patchErr = jsonpatchv5.DecodePatch(jsonP); patchErr != nil {
+					return nil, errors.Wrap(patchErr, "cannot decode JSON Patches")
+				}
+			}
+
+			return kubeadm.UploadKubeletConfig(c, configuration, patch)
+		}, nil
 	case PhaseBootstrapToken:
 		return func(client clientset.Interface, config *kubeadm.Configuration) ([]byte, error) {
 			config.InitConfiguration.BootstrapTokens = nil
