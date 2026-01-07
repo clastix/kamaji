@@ -41774,9 +41774,22 @@ Full reference available here: https://kubernetes.io/docs/reference/access-authn
         <td>enum</td>
         <td>
           CGroupFS defines the cgroup driver for Kubelet
-https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/<br/>
+https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
+
+Deprecated: use ConfigurationJSONPatches.<br/>
           <br/>
             <i>Enum</i>: systemd, cgroupfs<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeckuberneteskubeletconfigurationjsonpatchesindex">configurationJSONPatches</a></b></td>
+        <td>[]object</td>
+        <td>
+          ConfigurationJSONPatches contains the RFC 6902 JSON patches to customise the kubeadm generate configuration,
+useful to customise and mangling the configuration according to your needs;
+e.g.: configuring the cgroup driver used by Kubelet is possible via the following patch:
+
+[{"op": "replace", "path": "/cgroupDriver", "value": "systemd"}]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -41788,6 +41801,54 @@ Default to InternalIP, ExternalIP, Hostname.<br/>
           <br/>
             <i>Enum</i>: Hostname, InternalIP, ExternalIP, InternalDNS, ExternalDNS<br/>
             <i>Default</i>: [InternalIP ExternalIP Hostname]<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespeckuberneteskubeletconfigurationjsonpatchesindex">`TenantControlPlane.spec.kubernetes.kubelet.configurationJSONPatches[index]`</span>
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>op</b></td>
+        <td>enum</td>
+        <td>
+          Op is the RFC 6902 JSON Patch operation.<br/>
+          <br/>
+            <i>Enum</i>: add, remove, replace, move, copy, test<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path specifies the target location in the JSON document. Use "/" to separate keys; "-" for appending to arrays.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>from</b></td>
+        <td>string</td>
+        <td>
+          From specifies the source location for move or copy operations.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>JSON</td>
+        <td>
+          Value is the operation value to be used when Op is add, replace, test.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
