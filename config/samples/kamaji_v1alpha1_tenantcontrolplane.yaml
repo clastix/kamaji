@@ -13,7 +13,15 @@ spec:
   kubernetes:
     version: "v1.33.0"
     kubelet:
-      cgroupfs: systemd
+      configurationJSONPatches:
+        - op: add
+          path: /featureGates
+          value:
+            KubeletCrashLoopBackOffMax: false
+            KubeletEnsureSecretPulledImages: false
+        - op: replace
+          path: /cgroupDriver
+          value: systemd
   networkProfile:
     port: 6443
   addons:

@@ -68,6 +68,12 @@ const (
 )
 
 type KubeletSpec struct {
+	// ConfigurationJSONPatches contains the RFC 6902 JSON patches to customise the kubeadm generate configuration,
+	// useful to customise and mangling the configuration according to your needs;
+	// e.g.: configuring the cgroup driver used by Kubelet is possible via the following patch:
+	//
+	// [{"op": "replace", "path": "/cgroupDriver", "value": "systemd"}]
+	ConfigurationJSONPatches JSONPatches `json:"configurationJSONPatches,omitempty"`
 	// Ordered list of the preferred NodeAddressTypes to use for kubelet connections.
 	// Default to InternalIP, ExternalIP, Hostname.
 	//+kubebuilder:default={"InternalIP","ExternalIP","Hostname"}
@@ -76,6 +82,8 @@ type KubeletSpec struct {
 	PreferredAddressTypes []KubeletPreferredAddressType `json:"preferredAddressTypes,omitempty"`
 	// CGroupFS defines the cgroup driver for Kubelet
 	// https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
+	//
+	// Deprecated: use ConfigurationJSONPatches.
 	CGroupFS CGroupDriver `json:"cgroupfs,omitempty"`
 }
 

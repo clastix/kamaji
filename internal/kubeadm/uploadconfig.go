@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/blang/semver"
+	jsonpatchv5 "github.com/evanphx/json-patch/v5"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -34,13 +35,14 @@ func UploadKubeadmConfig(client kubernetes.Interface, config *Configuration) ([]
 	return nil, uploadconfig.UploadConfiguration(&config.InitConfiguration, client)
 }
 
-func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) ([]byte, error) {
+func UploadKubeletConfig(client kubernetes.Interface, config *Configuration, patches jsonpatchv5.Patch) ([]byte, error) {
 	kubeletConfiguration := KubeletConfiguration{
 		TenantControlPlaneDomain:        config.InitConfiguration.Networking.DNSDomain,
 		TenantControlPlaneDNSServiceIPs: config.Parameters.TenantDNSServiceIPs,
 		TenantControlPlaneCgroupDriver:  config.Parameters.TenantControlPlaneCGroupDriver,
 	}
-	content, err := getKubeletConfigmapContent(kubeletConfiguration)
+
+	content, err := getKubeletConfigmapContent(kubeletConfiguration, patches)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +73,7 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration) ([]
 	return nil, nil
 }
 
-func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration) ([]byte, error) {
+func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration, patch jsonpatchv5.Patch) ([]byte, error) {
 	var kc kubelettypes.KubeletConfiguration
 
 	kubeletv1beta1.SetDefaults_KubeletConfiguration(&kc)
@@ -92,6 +94,21 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration) ([]by
 	// Restore default behaviour so Kubelet will automatically
 	// determine the resolvConf location, as reported in clastix/kamaji#581.
 	kc.ResolverConfig = nil
+
+	if len(patch) > 0 {
+		kubeletConfig, patchErr := utilities.EncodeToJSON(&kc)
+		if patchErr != nil {
+			return nil, errors.Wrapf(patchErr, "unable to encode KubeletConfiguration to JSON for JSON patching")
+		}
+
+		if kubeletConfig, patchErr = patch.Apply(kubeletConfig); patchErr != nil {
+			return nil, errors.Wrapf(patchErr, "unable to apply JSON patching to KubeletConfiguration")
+		}
+
+		if patchErr = utilities.DecodeFromJSON(string(kubeletConfig), &kc); patchErr != nil {
+			return nil, errors.Wrapf(patchErr, "unable to decode JSON to KubeletConfiguration")
+		}
+	}
 
 	return utilities.EncodeToYaml(&kc)
 }
