@@ -155,6 +155,7 @@ type IngressSpec struct {
 }
 
 // GatewaySpec defines the options for the Gateway which will expose API Server of the Tenant Control Plane.
+// +kubebuilder:validation:XValidation:rule="!has(self.parentRefs) || size(self.parentRefs) == 0 || self.parentRefs.all(ref, !has(ref.port) && !has(ref.sectionName))",message="parentRefs must not specify port or sectionName, these are set automatically by Kamaji"
 type GatewaySpec struct {
 	// AdditionalMetadata to add Labels and Annotations support.
 	AdditionalMetadata AdditionalMetadata `json:"additionalMetadata,omitempty"`

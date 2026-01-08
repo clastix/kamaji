@@ -1,0 +1,81 @@
+# Copyright 2022 Clastix Labs
+# SPDX-License-Identifier: Apache-2.0
+
+# This example demonstrates how to configure Gateway API support for a Tenant Control Plane.
+# 
+# Prerequisites:
+# 1. Gateway API CRDs must be installed (GatewayClass, Gateway, TLSRoute)
+# 2. A Gateway resource must exist with listeners for ports 6443 and 8132
+# 3. DNS(or worker nodes hosts entries) must be configured to resolve the hostname to the Gateway's external address
+#
+# Example GatewayClass and Gateway configuration:
+#
+# apiVersion: gateway.networking.k8s.io/v1
+# kind: GatewayClass
+# metadata:
+#   name: envoy-gw-class
+# spec:
+#   controllerName: gateway.envoyproxy.io/gatewayclass-controller
+# ---
+# apiVersion: gateway.networking.k8s.io/v1
+# kind: Gateway
+# metadata:
+#   name: gateway
+#   namespace: default
+# spec:
+#   gatewayClassName: envoy-gw-class
+#   listeners:
+#   - allowedRoutes:
+#       kinds:
+#       - group: gateway.networking.k8s.io
+#         kind: TLSRoute
+#       namespaces:
+#         from: All
+#     hostname: '*.cluster.dev'
+#     name: kube-apiserver
+#     port: 6443
+#     protocol: TLS
+#     tls:
+#       mode: Passthrough
+#   - allowedRoutes:
+#       kinds:
+#       - group: gateway.networking.k8s.io
+#         kind: TLSRoute
+#       namespaces:
+#         from: All
+#     hostname: '*.cluster.dev'
+#     name: konnectivity-server
+#     port: 8132
+#     protocol: TLS
+#     tls:
+#       mode: Passthrough
+
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: demo-tcp-1
+spec:
+  addons:
+    coreDNS: {}
+    kubeProxy: {}
+    konnectivity: {}
+  dataStore: default
+  controlPlane:
+    gateway:
+      hostname: "c11.cluster.dev"  # worker nodes or kubectl clients must be able to resolve this hostname to the Gateway's external address.
+      parentRefs:
+      - name: gateway
+        namespace: default
+    deployment:
+      replicas: 1
+    service:
+      serviceType: ClusterIP
+  kubernetes:
+    version: v1.32.0
+    kubelet:
+      cgroupfs: systemd
+  networkProfile:
+    port: 6443
+    certSANs:
+    - "c11.cluster.dev"
+
