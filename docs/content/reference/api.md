@@ -42689,6 +42689,13 @@ KonnectivityStatus defines the status of Konnectivity as Addon.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitygateway">gateway</a></b></td>
+        <td>object</td>
+        <td>
+          KubernetesGatewayStatus defines the status for the Tenant Control Plane Gateway in the management cluster.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitykubeconfig">kubeconfig</a></b></td>
         <td>object</td>
         <td>
@@ -42869,6 +42876,505 @@ CertificatePrivateKeyPairStatus defines the status.
         <td>string</td>
         <td>
           <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanestatusaddonskonnectivitygateway">`TenantControlPlane.status.addons.konnectivity.gateway`</span>
+
+
+KubernetesGatewayStatus defines the status for the Tenant Control Plane Gateway in the management cluster.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitygatewayparentsindex">parents</a></b></td>
+        <td>[]object</td>
+        <td>
+          Parents is a list of parent resources (usually Gateways) that are
+associated with the route, and the status of the route with respect to
+each parent. When this route attaches to a parent, the controller that
+manages the parent must add an entry to this list when the controller
+first sees the route and should update the entry as appropriate when the
+route or gateway is modified.
+
+Note that parent references that cannot be resolved by an implementation
+of this API will not be added to this list. Implementations of this API
+can only populate Route status for the Gateways/parent resources they are
+responsible for.
+
+A maximum of 32 Gateways will be represented in this list. An empty list
+means the route has not been attached to any Gateway.
+
+<gateway:util:excludeFromCRD>
+Notes for implementors:
+
+While parents is not a listType `map`, this is due to the fact that the
+list key is not scalar, and Kubernetes is unable to represent this.
+
+Parent status MUST be considered to be namespaced by the combination of
+the parentRef and controllerName fields, and implementations should keep
+the following rules in mind when updating this status:
+
+* Implementations MUST update only entries that have a matching value of
+  `controllerName` for that implementation.
+* Implementations MUST NOT update entries with non-matching `controllerName`
+  fields.
+* Implementations MUST treat each `parentRef`` in the Route separately and
+  update its status based on the relationship with that parent.
+* Implementations MUST perform a read-modify-write cycle on this field
+  before modifying it. That is, when modifying this field, implementations
+  must be confident they have fetched the most recent version of this field,
+  and ensure that changes they make are on that recent version.
+
+</gateway:util:excludeFromCRD><br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitygatewayaccesspointsindex">accessPoints</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of valid access points that the route exposes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitygatewayrouteref">routeRef</a></b></td>
+        <td>object</td>
+        <td>
+          Reference to the route created for this tenant.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanestatusaddonskonnectivitygatewayparentsindex">`TenantControlPlane.status.addons.konnectivity.gateway.parents[index]`</span>
+
+
+RouteParentStatus describes the status of a route with respect to an
+associated Parent.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitygatewayparentsindexconditionsindex">conditions</a></b></td>
+        <td>[]object</td>
+        <td>
+          Conditions describes the status of the route with respect to the Gateway.
+Note that the route's availability is also subject to the Gateway's own
+status conditions and listener status.
+
+If the Route's ParentRef specifies an existing Gateway that supports
+Routes of this kind AND that Gateway's controller has sufficient access,
+then that Gateway's controller MUST set the "Accepted" condition on the
+Route, to indicate whether the route has been accepted or rejected by the
+Gateway, and why.
+
+A Route MUST be considered "Accepted" if at least one of the Route's
+rules is implemented by the Gateway.
+
+There are a number of cases where the "Accepted" condition may not be set
+due to lack of controller visibility, that includes when:
+
+* The Route refers to a nonexistent parent.
+* The Route is of a type that the controller does not support.
+* The Route is in a namespace the controller does not have access to.
+
+<gateway:util:excludeFromCRD>
+
+Notes for implementors:
+
+Conditions are a listType `map`, which means that they function like a
+map with a key of the `type` field _in the k8s apiserver_.
+
+This means that implementations must obey some rules when updating this
+section.
+
+* Implementations MUST perform a read-modify-write cycle on this field
+  before modifying it. That is, when modifying this field, implementations
+  must be confident they have fetched the most recent version of this field,
+  and ensure that changes they make are on that recent version.
+* Implementations MUST NOT remove or reorder Conditions that they are not
+  directly responsible for. For example, if an implementation sees a Condition
+  with type `special.io/SomeField`, it MUST NOT remove, change or update that
+  Condition.
+* Implementations MUST always _merge_ changes into Conditions of the same Type,
+  rather than creating more than one Condition of the same Type.
+* Implementations MUST always update the `observedGeneration` field of the
+  Condition to the `metadata.generation` of the Gateway at the time of update creation.
+* If the `observedGeneration` of a Condition is _greater than_ the value the
+  implementation knows about, then it MUST NOT perform the update on that Condition,
+  but must wait for a future reconciliation and status update. (The assumption is that
+  the implementation's copy of the object is stale and an update will be re-triggered
+  if relevant.)
+
+</gateway:util:excludeFromCRD><br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>controllerName</b></td>
+        <td>string</td>
+        <td>
+          ControllerName is a domain/path string that indicates the name of the
+controller that wrote this status. This corresponds with the
+controllerName field on GatewayClass.
+
+Example: "example.net/gateway-controller".
+
+The format of this field is DOMAIN "/" PATH, where DOMAIN and PATH are
+valid Kubernetes names
+(https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names).
+
+Controllers MUST populate this field when writing status. Controllers should ensure that
+entries to status populated with their ControllerName are cleaned up when they are no
+longer necessary.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitygatewayparentsindexparentref">parentRef</a></b></td>
+        <td>object</td>
+        <td>
+          ParentRef corresponds with a ParentRef in the spec that this
+RouteParentStatus struct describes the status of.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanestatusaddonskonnectivitygatewayparentsindexconditionsindex">`TenantControlPlane.status.addons.konnectivity.gateway.parents[index].conditions[index]`</span>
+
+
+Condition contains details for one aspect of the current state of this API Resource.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>lastTransitionTime</b></td>
+        <td>string</td>
+        <td>
+          lastTransitionTime is the last time the condition transitioned from one status to another.
+This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>message</b></td>
+        <td>string</td>
+        <td>
+          message is a human readable message indicating details about the transition.
+This may be an empty string.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>reason</b></td>
+        <td>string</td>
+        <td>
+          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+Producers of specific condition types may define expected values and meanings for this field,
+and whether the values are considered a guaranteed API.
+The value should be a CamelCase string.
+This field may not be empty.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>status</b></td>
+        <td>enum</td>
+        <td>
+          status of the condition, one of True, False, Unknown.<br/>
+          <br/>
+            <i>Enum</i>: True, False, Unknown<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type of condition in CamelCase or in foo.example.com/CamelCase.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>observedGeneration</b></td>
+        <td>integer</td>
+        <td>
+          observedGeneration represents the .metadata.generation that the condition was set based upon.
+For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+with respect to the current state of the instance.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanestatusaddonskonnectivitygatewayparentsindexparentref">`TenantControlPlane.status.addons.konnectivity.gateway.parents[index].parentRef`</span>
+
+
+ParentRef corresponds with a ParentRef in the spec that this
+RouteParentStatus struct describes the status of.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of the referent.
+
+Support: Core<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>group</b></td>
+        <td>string</td>
+        <td>
+          Group is the group of the referent.
+When unspecified, "gateway.networking.k8s.io" is inferred.
+To set the core API group (such as for a "Service" kind referent),
+Group must be explicitly set to "" (empty string).
+
+Support: Core<br/>
+          <br/>
+            <i>Default</i>: gateway.networking.k8s.io<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is kind of the referent.
+
+There are two kinds of parent resources with "Core" support:
+
+* Gateway (Gateway conformance profile)
+* Service (Mesh conformance profile, ClusterIP Services only)
+
+Support for other resources is Implementation-Specific.<br/>
+          <br/>
+            <i>Default</i>: Gateway<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace is the namespace of the referent. When unspecified, this refers
+to the local namespace of the Route.
+
+Note that there are specific rules for ParentRefs which cross namespace
+boundaries. Cross-namespace references are only valid if they are explicitly
+allowed by something in the namespace they are referring to. For example:
+Gateway has the AllowedRoutes field, and ReferenceGrant provides a
+generic way to enable any other kind of cross-namespace reference.
+
+<gateway:experimental:description>
+ParentRefs from a Route to a Service in the same namespace are "producer"
+routes, which apply default routing rules to inbound connections from
+any namespace to the Service.
+
+ParentRefs from a Route to a Service in a different namespace are
+"consumer" routes, and these routing rules are only applied to outbound
+connections originating from the same namespace as the Route, for which
+the intended destination of the connections are a Service targeted as a
+ParentRef of the Route.
+</gateway:experimental:description>
+
+Support: Core<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port is the network port this Route targets. It can be interpreted
+differently based on the type of parent resource.
+
+When the parent resource is a Gateway, this targets all listeners
+listening on the specified port that also support this kind of Route(and
+select this Route). It's not recommended to set `Port` unless the
+networking behaviors specified in a Route must apply to a specific port
+as opposed to a listener(s) whose port(s) may be changed. When both Port
+and SectionName are specified, the name and port of the selected listener
+must match both specified values.
+
+<gateway:experimental:description>
+When the parent resource is a Service, this targets a specific port in the
+Service spec. When both Port (experimental) and SectionName are specified,
+the name and port of the selected port must match both specified values.
+</gateway:experimental:description>
+
+Implementations MAY choose to support other parent resources.
+Implementations supporting other types of parent resources MUST clearly
+document how/if Port is interpreted.
+
+For the purpose of status, an attachment is considered successful as
+long as the parent resource accepts it partially. For example, Gateway
+listeners can restrict which Routes can attach to them by Route kind,
+namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
+from the referencing Route, the Route MUST be considered successfully
+attached. If no Gateway listeners accept attachment from this Route,
+the Route MUST be considered detached from the Gateway.
+
+Support: Extended<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+            <i>Maximum</i>: 65535<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>sectionName</b></td>
+        <td>string</td>
+        <td>
+          SectionName is the name of a section within the target resource. In the
+following resources, SectionName is interpreted as the following:
+
+* Gateway: Listener name. When both Port (experimental) and SectionName
+are specified, the name and port of the selected listener must match
+both specified values.
+* Service: Port name. When both Port (experimental) and SectionName
+are specified, the name and port of the selected listener must match
+both specified values.
+
+Implementations MAY choose to support attaching Routes to other resources.
+If that is the case, they MUST clearly document how SectionName is
+interpreted.
+
+When unspecified (empty string), this will reference the entire resource.
+For the purpose of status, an attachment is considered successful if at
+least one section in the parent resource accepts it. For example, Gateway
+listeners can restrict which Routes can attach to them by Route kind,
+namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
+the referencing Route, the Route MUST be considered successfully
+attached. If no Gateway listeners accept attachment from this Route, the
+Route MUST be considered detached from the Gateway.
+
+Support: Core<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanestatusaddonskonnectivitygatewayaccesspointsindex">`TenantControlPlane.status.addons.konnectivity.gateway.accessPoints[index]`</span>
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          AddressType defines how a network address is represented as a text string.
+This may take two possible forms:
+
+* A predefined CamelCase string identifier (currently limited to `IPAddress` or `Hostname`)
+* A domain-prefixed string identifier (like `acme.io/CustomAddressType`)
+
+Values `IPAddress` and `Hostname` have Extended support.
+
+The `NamedAddress` value has been deprecated in favor of implementation
+specific domain-prefixed strings.
+
+All other values, including domain-prefixed values have Implementation-specific support,
+which are used in implementation-specific behaviors. Support for additional
+predefined CamelCase identifiers may be added in future releases.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>urls</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanestatusaddonskonnectivitygatewayrouteref">`TenantControlPlane.status.addons.konnectivity.gateway.routeRef`</span>
+
+
+Reference to the route created for this tenant.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>

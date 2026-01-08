@@ -248,6 +248,10 @@ gateway-api:
 	kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
 	kubectl wait --for=condition=Established crd/gateways.gateway.networking.k8s.io --timeout=60s
 
+envoy-gateway: gateway-api helm ## Install Envoy Gateway for Gateway API tests.
+	$(HELM) upgrade --install eg oci://docker.io/envoyproxy/gateway-helm --version v1.6.1 -n envoy-gateway-system --create-namespace
+	kubectl wait --timeout=5m -n envoy-gateway-system deployment/envoy-gateway --for=condition=Available
+
 load: kind
 	$(KIND) load docker-image --name kamaji ${CONTAINER_REPOSITORY}:${VERSION}
 
@@ -261,7 +265,7 @@ cleanup: kind
 	$(KIND) delete cluster --name kamaji
 
 .PHONY: e2e
-e2e: env build load helm ginkgo cert-manager gateway-api ## Create a KinD cluster, install Kamaji on it and run the test suite.
+e2e: env build load helm ginkgo cert-manager gateway-api envoy-gateway ## Create a KinD cluster, install Kamaji on it and run the test suite.
 	$(HELM) upgrade --debug --install kamaji-crds ./charts/kamaji-crds --create-namespace --namespace kamaji-system
 	$(HELM) repo add clastix https://clastix.github.io/charts
 	$(HELM) dependency build ./charts/kamaji

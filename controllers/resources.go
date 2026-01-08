@@ -74,6 +74,7 @@ func GetResources(ctx context.Context, config GroupResourceBuilderConfiguration)
 	// Conditionally add Gateway resources
 	if utilities.AreGatewayResourcesAvailable(ctx, config.client, config.DiscoveryClient) {
 		resources = append(resources, getKubernetesGatewayResources(config.client)...)
+		resources = append(resources, getKonnectivityGatewayResources(config.client)...)
 	}
 
 	return resources
@@ -141,6 +142,14 @@ func getKubernetesServiceResources(c client.Client) []resources.Resource {
 func getKubernetesGatewayResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
 		&resources.KubernetesGatewayResource{
+			Client: c,
+		},
+	}
+}
+
+func getKonnectivityGatewayResources(c client.Client) []resources.Resource {
+	return []resources.Resource{
+		&konnectivity.KubernetesKonnectivityGatewayResource{
 			Client: c,
 		},
 	}

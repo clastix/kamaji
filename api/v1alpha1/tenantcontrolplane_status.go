@@ -139,6 +139,7 @@ type KonnectivityStatus struct {
 	ClusterRoleBinding ExternalKubernetesObjectStatus  `json:"clusterrolebinding,omitempty"`
 	Agent              KonnectivityAgentStatus         `json:"agent,omitempty"`
 	Service            KubernetesServiceStatus         `json:"service,omitempty"`
+	Gateway            *KubernetesGatewayStatus        `json:"gateway,omitempty"`
 }
 
 type KonnectivityConfigMap struct {

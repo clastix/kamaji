@@ -4,10 +4,12 @@
 package e2e
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	pointer "k8s.io/utils/ptr"
@@ -68,9 +70,39 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
+
+	By("creating GatewayClass for Gateway API tests")
+	gatewayClass := &gatewayv1.GatewayClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "envoy-gw-class",
+		},
+		Spec: gatewayv1.GatewayClassSpec{
+			ControllerName: "gateway.envoyproxy.io/gatewayclass-controller",
+		},
+	}
+	Expect(k8sClient.Create(context.Background(), gatewayClass)).NotTo(HaveOccurred())
+
+	By("creating Gateway with kube-apiserver and konnectivity-server listeners")
+	CreateGatewayWithListeners("test-gateway", "default", "envoy-gw-class", "*.example.com")
 })
 
 var _ = AfterSuite(func() {
+	By("deleting Gateway resources")
+	gateway := &gatewayv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-gateway",
+			Namespace: "default",
+		},
+	}
+	_ = k8sClient.Delete(context.Background(), gateway)
+
+	gatewayClass := &gatewayv1.GatewayClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "envoy-gw-class",
+		},
+	}
+	_ = k8sClient.Delete(context.Background(), gatewayClass)
+
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())

@@ -182,6 +182,21 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			return err
 		}
 
+		// Override address with control plane gateway hostname if configured
+		// Konnectivity TLSRoute uses the same hostname as control plane gateway
+		if tenantControlPlane.Spec.ControlPlane.Gateway != nil &&
+			len(tenantControlPlane.Spec.ControlPlane.Gateway.Hostname) > 0 {
+			hostname := tenantControlPlane.Spec.ControlPlane.Gateway.Hostname
+
+			// Extract hostname
+			if len(hostname) > 0 {
+				konnectivityHostname, _ := utilities.GetControlPlaneAddressAndPortFromHostname(
+					string(hostname),
+					tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port)
+				address = konnectivityHostname
+			}
+		}
+
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
 		specSelector := &metav1.LabelSelector{

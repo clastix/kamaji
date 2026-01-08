@@ -13,6 +13,7 @@ var (
 	clusterrolebindingCollector prometheus.Histogram
 	deploymentCollector         prometheus.Histogram
 	egressCollector             prometheus.Histogram
+	gatewayCollector            prometheus.Histogram
 	kubeconfigCollector         prometheus.Histogram
 	serviceaccountCollector     prometheus.Histogram
 	serviceCollector            prometheus.Histogram

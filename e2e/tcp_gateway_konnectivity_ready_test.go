@@ -19,13 +19,13 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
-var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
+var _ = Describe("Deploy a TenantControlPlane with Gateway API and Konnectivity", func() {
 	var tcp *kamajiv1alpha1.TenantControlPlane
 
 	JustBeforeEach(func() {
 		tcp = &kamajiv1alpha1.TenantControlPlane{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "tcp-gateway",
+				Name:      "tcp-konnectivity-gateway",
 				Namespace: "default",
 			},
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
@@ -37,7 +37,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 						ServiceType: "ClusterIP",
 					},
 					Gateway: &kamajiv1alpha1.GatewaySpec{
-						Hostname: gatewayv1.Hostname("tcp-gateway.example.com"),
+						Hostname: gatewayv1.Hostname("tcp-gateway-konnectivity.example.com"),
 						AdditionalMetadata: kamajiv1alpha1.AdditionalMetadata{
 							Labels: map[string]string{
 								"test.kamaji.io/gateway": "true",
@@ -54,10 +54,10 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 					},
 				},
 				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
-					Address: "172.18.0.3",
+					Address: "172.18.0.4",
 				},
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
-					Version: "v1.23.6",
+					Version: "v1.28.0",
 					Kubelet: kamajiv1alpha1.KubeletSpec{
 						CGroupFS: "cgroupfs",
 					},
@@ -66,7 +66,13 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 						"ResourceQuota",
 					},
 				},
-				Addons: kamajiv1alpha1.AddonsSpec{},
+				Addons: kamajiv1alpha1.AddonsSpec{
+					Konnectivity: &kamajiv1alpha1.KonnectivitySpec{
+						KonnectivityServerSpec: kamajiv1alpha1.KonnectivityServerSpec{
+							Port: 8132,
+						},
+					},
+				},
 			},
 		}
 		Expect(k8sClient.Create(context.Background(), tcp)).NotTo(HaveOccurred())
@@ -90,12 +96,11 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
 	})
 
-	It("Should create control plane TLSRoute with correct sectionName", func() {
+	It("Should create Konnectivity TLSRoute with correct sectionName", func() {
 		Eventually(func() error {
 			route := &gatewayv1alpha2.TLSRoute{}
-			// TODO: Check ownership.
 			if err := k8sClient.Get(context.Background(), types.NamespacedName{
-				Name:      tcp.Name,
+				Name:      tcp.Name + "-konnectivity",
 				Namespace: tcp.Namespace,
 			}, route); err != nil {
 				return err
@@ -106,23 +111,41 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 			if route.Spec.ParentRefs[0].SectionName == nil {
 				return fmt.Errorf("sectionName is nil")
 			}
-			if *route.Spec.ParentRefs[0].SectionName != gatewayv1.SectionName("kube-apiserver") {
-				return fmt.Errorf("expected sectionName 'kube-apiserver', got '%s'", *route.Spec.ParentRefs[0].SectionName)
+			if *route.Spec.ParentRefs[0].SectionName != gatewayv1.SectionName("konnectivity-server") {
+				return fmt.Errorf("expected sectionName 'konnectivity-server', got '%s'", *route.Spec.ParentRefs[0].SectionName)
 			}
 
 			return nil
 		}).WithTimeout(time.Minute).Should(Succeed())
 	})
 
-	It("Should not create Konnectivity TLSRoute", func() {
-		// Verify Konnectivity route is not created
-		Consistently(func() error {
-			route := &gatewayv1alpha2.TLSRoute{}
+	It("Should use same hostname for both TLSRoutes", func() {
+		Eventually(func() error {
+			controlPlaneRoute := &gatewayv1alpha2.TLSRoute{}
+			if err := k8sClient.Get(context.Background(), types.NamespacedName{
+				Name:      tcp.Name,
+				Namespace: tcp.Namespace,
+			}, controlPlaneRoute); err != nil {
+				return err
+			}
 
-			return k8sClient.Get(context.Background(), types.NamespacedName{
+			konnectivityRoute := &gatewayv1alpha2.TLSRoute{}
+			if err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name + "-konnectivity",
 				Namespace: tcp.Namespace,
-			}, route)
-		}, 10*time.Second, time.Second).Should(HaveOccurred())
+			}, konnectivityRoute); err != nil {
+				return err
+			}
+
+			if len(controlPlaneRoute.Spec.Hostnames) == 0 || len(konnectivityRoute.Spec.Hostnames) == 0 {
+				return fmt.Errorf("hostnames are empty")
+			}
+			if controlPlaneRoute.Spec.Hostnames[0] != konnectivityRoute.Spec.Hostnames[0] {
+				return fmt.Errorf("hostnames do not match: control plane '%s', konnectivity '%s'",
+					controlPlaneRoute.Spec.Hostnames[0], konnectivityRoute.Spec.Hostnames[0])
+			}
+
+			return nil
+		}).WithTimeout(time.Minute).Should(Succeed())
 	})
 })
