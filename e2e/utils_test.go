@@ -19,7 +19,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
+	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
@@ -208,4 +210,61 @@ func ScaleTenantControlPlane(tcp *kamajiv1alpha1.TenantControlPlane, replicas in
 		return k8sClient.Update(context.Background(), tcp)
 	})
 	Expect(err).To(Succeed())
+}
+
+// CreateGatewayWithListeners creates a Gateway with both kube-apiserver and konnectivity-server listeners.
+func CreateGatewayWithListeners(gatewayName, namespace, gatewayClassName, hostname string) {
+	GinkgoHelper()
+	gateway := &gatewayv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      gatewayName,
+			Namespace: namespace,
+		},
+		Spec: gatewayv1.GatewaySpec{
+			GatewayClassName: gatewayv1.ObjectName(gatewayClassName),
+			Listeners: []gatewayv1.Listener{
+				{
+					Name:     "kube-apiserver",
+					Port:     6443,
+					Protocol: gatewayv1.TLSProtocolType,
+					Hostname: pointer.To(gatewayv1.Hostname(hostname)),
+					TLS: &gatewayv1.ListenerTLSConfig{
+						Mode: pointer.To(gatewayv1.TLSModeType("Passthrough")),
+					},
+					AllowedRoutes: &gatewayv1.AllowedRoutes{
+						Namespaces: &gatewayv1.RouteNamespaces{
+							From: pointer.To(gatewayv1.NamespacesFromAll),
+						},
+						Kinds: []gatewayv1.RouteGroupKind{
+							{
+								Group: pointer.To(gatewayv1.Group("gateway.networking.k8s.io")),
+								Kind:  "TLSRoute",
+							},
+						},
+					},
+				},
+				{
+					Name:     "konnectivity-server",
+					Port:     8132,
+					Protocol: gatewayv1.TLSProtocolType,
+					Hostname: pointer.To(gatewayv1.Hostname(hostname)),
+					TLS: &gatewayv1.ListenerTLSConfig{
+						Mode: pointer.To(gatewayv1.TLSModeType("Passthrough")),
+					},
+					AllowedRoutes: &gatewayv1.AllowedRoutes{
+						Namespaces: &gatewayv1.RouteNamespaces{
+							From: pointer.To(gatewayv1.NamespacesFromAll),
+						},
+						Kinds: []gatewayv1.RouteGroupKind{
+							{
+								Group: pointer.To(gatewayv1.Group("gateway.networking.k8s.io")),
+								Kind:  "TLSRoute",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	Expect(k8sClient.Create(context.Background(), gateway)).NotTo(HaveOccurred())
 }
