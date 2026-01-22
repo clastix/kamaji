@@ -67,7 +67,11 @@ This will install MetalLb onto the cluster with all the necessary resources.
 Extract the Gateway IP of the network Kind is running on.
 
 ```
+# docker
 GW_IP=$(docker network inspect -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}' kind)
+
+# podman
+GW_IP=$(podman network inspect kind --format '{{(index .Subnets 1).Gateway}}')
 ```
 
 Modify the IP Address, and create the resource to be added to the cluster to create the IP Address Pool
