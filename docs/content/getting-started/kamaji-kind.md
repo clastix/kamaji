@@ -57,7 +57,7 @@ kubectl get pods -Aw
 MetalLB is used in order to dynamically assign IP addresses to the components, and also define custom IP Address Pools. Install MetalLb using the `kubectl` command for apply the manifest:
 
 ```
-kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.15.3/config/manifests/metallb-native.yaml
 ```
 
 This will install MetalLb onto the cluster with all the necessary resources.
