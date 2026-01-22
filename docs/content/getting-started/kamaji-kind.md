@@ -32,16 +32,18 @@ Kamaji has a dependency on Cert Manager, as it uses dynamic admission control, v
 Add the Bitnami Repo to the Helm Manager.
 
 ```
-helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
 ```
 
 Install Cert Manager using Helm
 
 ```
-helm upgrade --install cert-manager bitnami/cert-manager \
-  --namespace certmanager-system \
+helm install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
   --create-namespace \
-  --set "installCRDs=true"
+  --set installCRDs=true
 ```
 
 This will install cert-manager to the cluster. You can watch the progress of the installation on the cluster using the command
