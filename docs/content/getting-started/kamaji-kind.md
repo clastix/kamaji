@@ -32,16 +32,18 @@ Kamaji has a dependency on Cert Manager, as it uses dynamic admission control, v
 Add the Bitnami Repo to the Helm Manager.
 
 ```
-helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
 ```
 
 Install Cert Manager using Helm
 
 ```
-helm upgrade --install cert-manager bitnami/cert-manager \
-  --namespace certmanager-system \
+helm install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
   --create-namespace \
-  --set "installCRDs=true"
+  --set installCRDs=true
 ```
 
 This will install cert-manager to the cluster. You can watch the progress of the installation on the cluster using the command
@@ -55,7 +57,7 @@ kubectl get pods -Aw
 MetalLB is used in order to dynamically assign IP addresses to the components, and also define custom IP Address Pools. Install MetalLb using the `kubectl` command for apply the manifest:
 
 ```
-kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.15.3/config/manifests/metallb-native.yaml
 ```
 
 This will install MetalLb onto the cluster with all the necessary resources.
@@ -65,7 +67,11 @@ This will install MetalLb onto the cluster with all the necessary resources.
 Extract the Gateway IP of the network Kind is running on.
 
 ```
+# docker
 GW_IP=$(docker network inspect -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}' kind)
+
+# podman
+GW_IP=$(podman network inspect kind --format '{{(index .Subnets 1).Gateway}}')
 ```
 
 Modify the IP Address, and create the resource to be added to the cluster to create the IP Address Pool
