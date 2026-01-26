@@ -245,6 +245,16 @@ func (c *CoreDNS) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Tenan
 	}
 	addons_utils.SetKamajiManagedLabels(c.deployment)
 
+	envVars := utilities.EnvarsFromSliceToMap(c.deployment.Spec.Template.Spec.Containers[0].Env)
+
+	extraEnvVars := utilities.EnvarsFromSliceToMap(tcp.Spec.Addons.CoreDNS.ExtraEnvs)
+
+	for k, v := range extraEnvVars {
+		envVars[k] = v
+	}
+
+	c.deployment.Spec.Template.Spec.Containers[0].Env = utilities.EnvarsFromMapToSlice(envVars)
+
 	if err = utilities.DecodeFromYAML(string(parts[2]), c.configMap); err != nil {
 		return fmt.Errorf("unable to decode ConfigMap manifest: %w", err)
 	}
