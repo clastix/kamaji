@@ -27982,6 +27982,15 @@ DataStoreStatus defines the observed state of DataStore.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>observedGeneration</b></td>
+        <td>integer</td>
+        <td>
+          ObservedGeneration represents the .metadata.generation that was last reconciled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>usedBy</b></td>
         <td>[]string</td>
         <td>
@@ -28363,6 +28372,15 @@ In case of a different value compared to Resources, check the field errors.<br/>
         <td>[]object</td>
         <td>
           Errors is the list of failed kubeconfig generations.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>observedGeneration</b></td>
+        <td>integer</td>
+        <td>
+          ObservedGeneration represents the .metadata.generation that was last reconciled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -42553,6 +42571,15 @@ that are necessary to run a kubernetes control plane<br/>
         <td>object</td>
         <td>
           Kubernetes contains information about the reconciliation of the required Kubernetes resources deployed in the admin cluster<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>observedGeneration</b></td>
+        <td>integer</td>
+        <td>
+          ObservedGeneration represents the .metadata.generation that was last reconciled.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr><tr>
