@@ -27,8 +27,6 @@ func UpdateStatus(ctx context.Context, client client.Client, tcp *kamajiv1alpha1
 			return fmt.Errorf("error applying TenantcontrolPlane status: %w", err)
 		}
 
-		tcp.Status.ObservedGeneration = tcp.Generation
-
 		if err = client.Status().Update(ctx, tcp); err != nil {
 			return fmt.Errorf("error updating tenantControlPlane status: %w", err)
 		}
