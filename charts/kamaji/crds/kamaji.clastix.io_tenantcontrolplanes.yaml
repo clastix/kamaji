@@ -8796,6 +8796,10 @@ spec:
                           type: string
                       type: object
                   type: object
+                observedGeneration:
+                  description: ObservedGeneration represents the .metadata.generation that was last reconciled.
+                  format: int64
+                  type: integer
                 storage:
                   description: Storage Status contains information about Kubernetes storage system
                   properties:
