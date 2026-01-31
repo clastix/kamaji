@@ -73,6 +73,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 			tcpSets.Insert(getNamespacedName(tcp.GetNamespace(), tcp.GetName()).String())
 		}
 
+		ds.Status.ObservedGeneration = ds.Generation
 		ds.Status.UsedBy = tcpSets.List()
 
 		if sErr := r.Client.Status().Update(ctx, &ds); sErr != nil {

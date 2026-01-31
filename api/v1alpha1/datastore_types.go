@@ -90,6 +90,9 @@ type SecretReference struct {
 
 // DataStoreStatus defines the observed state of DataStore.
 type DataStoreStatus struct {
+	// ObservedGeneration represents the .metadata.generation that was last reconciled.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// List of the Tenant Control Planes, namespaced named, using this data store.
 	UsedBy []string `json:"usedBy,omitempty"`
 }
