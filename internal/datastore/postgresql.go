@@ -18,18 +18,18 @@ import (
 
 const (
 	postgresqlFetchDBStatement            = "SELECT FROM pg_database WHERE datname = ?"
-	postgresqlCreateDBStatement           = "CREATE DATABASE %s"
+	postgresqlCreateDBStatement           = `CREATE DATABASE "%s"`
 	postgresqlUserExists                  = "SELECT 1 FROM pg_roles WHERE rolname = ?"
-	postgresqlCreateUserStatement         = "CREATE ROLE %s LOGIN PASSWORD ?"
+	postgresqlCreateUserStatement         = `CREATE ROLE "%s" LOGIN PASSWORD ?`
 	postgresqlShowGrantsStatement         = "SELECT has_database_privilege(rolname, ?, 'create') from pg_roles where rolcanlogin and rolname = ?"
 	postgresqlShowOwnershipStatement      = "SELECT 't' FROM pg_catalog.pg_database AS d WHERE d.datname = ? AND pg_catalog.pg_get_userbyid(d.datdba) = ?"
 	postgresqlShowTableOwnershipStatement = "SELECT 't' from pg_tables where tableowner = ? AND tablename = ?"
 	postgresqlKineTableExistsStatement    = "SELECT 't' FROM pg_tables WHERE schemaname = ? AND tablename  = ?"
-	postgresqlGrantPrivilegesStatement    = "GRANT CONNECT, CREATE ON DATABASE %s TO %s"
-	postgresqlChangeOwnerStatement        = "ALTER DATABASE %s OWNER TO %s"
-	postgresqlRevokePrivilegesStatement   = "REVOKE ALL PRIVILEGES ON DATABASE %s FROM %s"
-	postgresqlDropRoleStatement           = "DROP ROLE %s"
-	postgresqlDropDBStatement             = "DROP DATABASE %s WITH (FORCE)"
+	postgresqlGrantPrivilegesStatement    = `GRANT CONNECT, CREATE ON DATABASE "%s" TO "%s"`
+	postgresqlChangeOwnerStatement        = `ALTER DATABASE "%s" OWNER TO "%s"`
+	postgresqlRevokePrivilegesStatement   = `REVOKE ALL PRIVILEGES ON DATABASE "%s" FROM "%s"`
+	postgresqlDropRoleStatement           = `DROP ROLE "%s"`
+	postgresqlDropDBStatement             = `DROP DATABASE "%s" WITH (FORCE)`
 )
 
 type PostgreSQLConnection struct {
