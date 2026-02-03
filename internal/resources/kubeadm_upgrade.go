@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/upgrade"
@@ -75,7 +74,7 @@ func (k *KubernetesUpgrade) CreateOrUpdate(ctx context.Context, tenantControlPla
 	// Checking if the upgrade is allowed, or not
 	clientSet, err := utilities.GetTenantClientSet(ctx, k.Client, tenantControlPlane)
 	if err != nil {
-		return controllerutil.OperationResultNone, errors.Wrap(err, "cannot create REST client required for Kubernetes upgrade plan")
+		return controllerutil.OperationResultNone, fmt.Errorf("cannot create REST client required for Kubernetes upgrade plan: %w", err)
 	}
 
 	var coreDNSVersion string
@@ -86,7 +85,7 @@ func (k *KubernetesUpgrade) CreateOrUpdate(ctx context.Context, tenantControlPla
 	versionGetter := kamajiupgrade.NewKamajiKubeVersionGetter(clientSet, tenantControlPlane.Status.Kubernetes.Version.Version, coreDNSVersion, tenantControlPlane.Status.Kubernetes.Version.Status)
 
 	if _, err = upgrade.GetAvailableUpgrades(versionGetter, false, false, &printers.Discard{}); err != nil {
-		return controllerutil.OperationResultNone, errors.Wrap(err, "cannot retrieve available Upgrades for Kubernetes upgrade plan")
+		return controllerutil.OperationResultNone, fmt.Errorf("cannot retrieve available Upgrades for Kubernetes upgrade plan: %w", err)
 	}
 
 	if err = k.isUpgradable(); err != nil {
@@ -123,12 +122,12 @@ func (k *KubernetesUpgrade) UpdateTenantControlPlaneStatus(_ context.Context, te
 func (k *KubernetesUpgrade) isUpgradable() error {
 	newK8sVersion, err := version.ParseSemantic(k.upgrade.After.KubeVersion)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("unable to parse normalized version %q as a semantic version", k.upgrade.After.KubeVersion))
+		return fmt.Errorf("unable to parse normalized version %q as a semantic version: %w", k.upgrade.After.KubeVersion, err)
 	}
 
 	oldK8sVersion, err := version.ParseSemantic(k.upgrade.Before.KubeVersion)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("unable to parse normalized version %q as a semantic version", k.upgrade.After.KubeVersion))
+		return fmt.Errorf("unable to parse normalized version %q as a semantic version: %w", k.upgrade.After.KubeVersion, err)
 	}
 
 	if newK8sVersion.Minor() < oldK8sVersion.Minor() {

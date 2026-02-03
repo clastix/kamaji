@@ -5,9 +5,9 @@ package resources
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,17 +25,17 @@ import (
 func GetKubeadmManifestDeps(ctx context.Context, client client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*clientset.Clientset, *kubeadm.Configuration, error) {
 	config, err := getStoredKubeadmConfiguration(ctx, client, "", tenantControlPlane)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "cannot retrieve kubeadm configuration")
+		return nil, nil, fmt.Errorf("cannot retrieve kubeadm configuration: %w", err)
 	}
 
 	kubeconfig, err := utilities.GetTenantKubeconfig(ctx, client, tenantControlPlane)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "cannot retrieve kubeconfig configuration")
+		return nil, nil, fmt.Errorf("cannot retrieve kubeconfig configuration: %w", err)
 	}
 
 	address, _, err := tenantControlPlane.AssignedControlPlaneAddress()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "cannot retrieve Tenant Control Plane address")
+		return nil, nil, fmt.Errorf("cannot retrieve Tenant Control Plane address: %w", err)
 	}
 
 	config.Kubeconfig = *kubeconfig
@@ -80,7 +80,7 @@ func GetKubeadmManifestDeps(ctx context.Context, client client.Client, tenantCon
 
 	tenantClient, err := utilities.GetTenantClientSet(ctx, client, tenantControlPlane)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "cannot generate tenant client")
+		return nil, nil, fmt.Errorf("cannot generate tenant client: %w", err)
 	}
 
 	return tenantClient, config, nil

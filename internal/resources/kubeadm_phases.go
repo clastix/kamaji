@@ -11,7 +11,6 @@ import (
 	"time"
 
 	jsonpatchv5 "github.com/evanphx/json-patch/v5"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -158,10 +157,10 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 			if len(tcp.Spec.Kubernetes.Kubelet.ConfigurationJSONPatches) > 0 {
 				jsonP, patchErr := tcp.Spec.Kubernetes.Kubelet.ConfigurationJSONPatches.ToJSON()
 				if patchErr != nil {
-					return nil, errors.Wrap(patchErr, "cannot encode JSON Patches to JSON")
+					return nil, fmt.Errorf("cannot encode JSON Patches to JSON: %w", patchErr)
 				}
 				if patch, patchErr = jsonpatchv5.DecodePatch(jsonP); patchErr != nil {
-					return nil, errors.Wrap(patchErr, "cannot decode JSON Patches")
+					return nil, fmt.Errorf("cannot decode JSON Patches: %w", patchErr)
 				}
 			}
 
