@@ -3,7 +3,7 @@
 
 package errors
 
-import "github.com/pkg/errors"
+import "errors"
 
 func ShouldReconcileErrorBeIgnored(err error) bool {
 	switch {
