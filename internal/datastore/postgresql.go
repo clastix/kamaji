@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/go-pg/pg/v10"
-	goerrors "github.com/pkg/errors"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/datastore/errors"
@@ -236,7 +235,7 @@ func (r *PostgreSQLConnection) DeleteUser(ctx context.Context, user string) erro
 
 func (r *PostgreSQLConnection) DeleteDB(ctx context.Context, dbName string) error {
 	if err := r.GrantPrivileges(ctx, r.rootUser, dbName); err != nil {
-		return errors.NewCannotDeleteDatabaseError(goerrors.Wrap(err, "cannot grant privileges to root user"))
+		return errors.NewCannotDeleteDatabaseError(fmt.Errorf("cannot grant privileges to root user: %w", err))
 	}
 
 	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlDropDBStatement, dbName)); err != nil {

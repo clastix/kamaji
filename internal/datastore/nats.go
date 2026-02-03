@@ -5,11 +5,11 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/nats-io/nats.go"
-	"github.com/pkg/errors"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
@@ -73,7 +73,7 @@ func (nc *NATSConnection) CreateUser(_ context.Context, _, _ string) error {
 func (nc *NATSConnection) CreateDB(_ context.Context, dbName string) error {
 	_, err := nc.js.CreateKeyValue(&nats.KeyValueConfig{Bucket: dbName})
 	if err != nil {
-		return errors.Wrap(err, "unable to create the datastore")
+		return fmt.Errorf("unable to create the datastore: %w", err)
 	}
 
 	return nil

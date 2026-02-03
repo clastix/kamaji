@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -16,7 +15,7 @@ import (
 func NewStorageConnection(ctx context.Context, client client.Client, ds kamajiv1alpha1.DataStore) (Connection, error) {
 	cc, err := NewConnectionConfig(ctx, client, ds)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create connection config object")
+		return nil, fmt.Errorf("unable to create connection config object: %w", err)
 	}
 
 	switch ds.Spec.Driver {
