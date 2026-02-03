@@ -17,7 +17,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -93,7 +92,7 @@ func GenerateCertificatePrivateKeyPair(template *x509.Certificate, caCertificate
 
 	caPrivKeyBytes, err := ParsePrivateKeyBytes(caPrivateKey)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "provided CA private key for certificate generation cannot be parsed")
+		return nil, nil, fmt.Errorf("provided CA private key for certificate generation cannot be parsed: %w", err)
 	}
 
 	return generateCertificateKeyPairBytes(template, caCertBytes, caPrivKeyBytes)
@@ -108,7 +107,7 @@ func ParseCertificateBytes(content []byte) (*x509.Certificate, error) {
 
 	crt, err := x509.ParseCertificate(pemContent.Bytes)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot parse x509 Certificate")
+		return nil, fmt.Errorf("cannot parse x509 Certificate: %w", err)
 	}
 
 	return crt, nil
@@ -124,7 +123,7 @@ func ParsePrivateKeyBytes(content []byte) (crypto.Signer, error) {
 	if pemContent.Type == "EC PRIVATE KEY" {
 		privateKey, err := x509.ParseECPrivateKey(pemContent.Bytes)
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot parse EC Private Key")
+			return nil, fmt.Errorf("cannot parse EC Private Key: %w", err)
 		}
 
 		return privateKey, nil
@@ -132,7 +131,7 @@ func ParsePrivateKeyBytes(content []byte) (crypto.Signer, error) {
 
 	privateKey, err := x509.ParsePKCS1PrivateKey(pemContent.Bytes)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot parse PKCS1 Private Key")
+		return nil, fmt.Errorf("cannot parse PKCS1 Private Key: %w", err)
 	}
 
 	return privateKey, nil
@@ -209,12 +208,12 @@ func VerifyCertificate(cert, ca []byte, usages ...x509.ExtKeyUsage) (bool, error
 func generateCertificateKeyPairBytes(template *x509.Certificate, caCert *x509.Certificate, caKey crypto.Signer) (*bytes.Buffer, *bytes.Buffer, error) {
 	certPrivKey, err := rsa.GenerateKey(cryptorand.Reader, 2048)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "cannot generate an RSA key")
+		return nil, nil, fmt.Errorf("cannot generate an RSA key: %w", err)
 	}
 
 	certBytes, err := x509.CreateCertificate(cryptorand.Reader, template, caCert, &certPrivKey.PublicKey, caKey)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "cannot create the certificate")
+		return nil, nil, fmt.Errorf("cannot create the certificate: %w", err)
 	}
 
 	certPEM := &bytes.Buffer{}
@@ -223,7 +222,7 @@ func generateCertificateKeyPairBytes(template *x509.Certificate, caCert *x509.Ce
 		Headers: nil,
 		Bytes:   certBytes,
 	}); err != nil {
-		return nil, nil, errors.Wrap(err, "cannot encode the generate certificate bytes")
+		return nil, nil, fmt.Errorf("cannot encode the generate certificate bytes: %w", err)
 	}
 
 	certPrivKeyPEM := &bytes.Buffer{}
@@ -232,7 +231,7 @@ func generateCertificateKeyPairBytes(template *x509.Certificate, caCert *x509.Ce
 		Headers: nil,
 		Bytes:   x509.MarshalPKCS1PrivateKey(certPrivKey),
 	}); err != nil {
-		return nil, nil, errors.Wrap(err, "cannot encode private key")
+		return nil, nil, fmt.Errorf("cannot encode private key: %w", err)
 	}
 
 	return certPEM, certPrivKeyPEM, nil

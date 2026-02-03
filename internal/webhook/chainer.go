@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pkg/errors"
 	"gomodules.xyz/jsonpatch/v2"
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,11 +33,11 @@ func (h handlersChainer) Handler(object runtime.Object, routeHandlers ...handler
 				// When deleting the OldObject struct field contains the object being deleted:
 				// https://github.com/kubernetes/kubernetes/pull/76346
 				if err := h.decoder.DecodeRaw(req.OldObject, decodedObj); err != nil {
-					return admission.Errored(http.StatusInternalServerError, errors.Wrap(err, fmt.Sprintf("unable to decode deleted object into %T", object)))
+					return admission.Errored(http.StatusInternalServerError, fmt.Errorf("unable to decode deleted object into %T: %w", object, err))
 				}
 			default:
 				if err := h.decoder.Decode(req, decodedObj); err != nil {
-					return admission.Errored(http.StatusInternalServerError, errors.Wrap(err, fmt.Sprintf("unable to decode into %T", object)))
+					return admission.Errored(http.StatusInternalServerError, fmt.Errorf("unable to decode into %T: %w", object, err))
 				}
 			}
 		}
@@ -70,7 +69,7 @@ func (h handlersChainer) Handler(object runtime.Object, routeHandlers ...handler
 			}
 		case admissionv1.Update:
 			if err := h.decoder.DecodeRaw(req.OldObject, oldDecodedObj); err != nil {
-				return admission.Errored(http.StatusInternalServerError, errors.Wrap(err, fmt.Sprintf("unable to decode old object into %T", object)))
+				return admission.Errored(http.StatusInternalServerError, fmt.Errorf("unable to decode old object into %T: %w", object, err))
 			}
 
 			for _, routeHandler := range routeHandlers {

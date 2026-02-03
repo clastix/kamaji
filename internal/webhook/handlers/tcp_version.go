@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/blang/semver"
-	"github.com/pkg/errors"
 	"gomodules.xyz/jsonpatch/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -27,14 +26,14 @@ func (t TenantControlPlaneVersion) OnCreate(object runtime.Object) AdmissionResp
 
 		ver, err := semver.New(t.normalizeKubernetesVersion(tcp.Spec.Kubernetes.Version))
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to parse the desired Kubernetes version")
+			return nil, fmt.Errorf("unable to parse the desired Kubernetes version: %w", err)
 		}
 		// No need to check if the patch version
 		ver.Patch = 0
 
 		supportedVer, supportedErr := semver.Make(t.normalizeKubernetesVersion(upgrade.KubeadmVersion))
 		if supportedErr != nil {
-			return nil, errors.Wrap(supportedErr, "unable to parse the Kamaji supported Kubernetes version")
+			return nil, fmt.Errorf("unable to parse the Kamaji supported Kubernetes version: %w", supportedErr)
 		}
 
 		if ver.GT(supportedVer) {
@@ -67,21 +66,21 @@ func (t TenantControlPlaneVersion) OnUpdate(object runtime.Object, oldObject run
 
 		oldVer, oldErr := semver.Make(t.normalizeKubernetesVersion(oldTCP.Spec.Kubernetes.Version))
 		if oldErr != nil {
-			return nil, errors.Wrap(oldErr, "unable to parse the previous Kubernetes version")
+			return nil, fmt.Errorf("unable to parse the previous Kubernetes version: %w", oldErr)
 		}
 		// No need to check if the patch version
 		oldVer.Patch = 0
 
 		newVer, newErr := semver.New(t.normalizeKubernetesVersion(newTCP.Spec.Kubernetes.Version))
 		if newErr != nil {
-			return nil, errors.Wrap(newErr, "unable to parse the desired Kubernetes version")
+			return nil, fmt.Errorf("unable to parse the desired Kubernetes version: %w", newErr)
 		}
 		// No need to check if the patch version
 		newVer.Patch = 0
 
 		supportedVer, supportedErr := semver.Make(t.normalizeKubernetesVersion(upgrade.KubeadmVersion))
 		if supportedErr != nil {
-			return nil, errors.Wrap(supportedErr, "unable to parse the Kamaji supported Kubernetes version")
+			return nil, fmt.Errorf("unable to parse the Kamaji supported Kubernetes version: %w", supportedErr)
 		}
 
 		switch {

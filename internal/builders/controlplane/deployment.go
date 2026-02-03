@@ -12,8 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1"
+appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -1022,7 +1021,7 @@ func (d Deployment) templateLabels(ctx context.Context, tenantControlPlane *kama
 func (d Deployment) secretHashValue(ctx context.Context, client client.Client, namespace, name string) (string, error) {
 	secret := &corev1.Secret{}
 	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, secret); err != nil {
-		return "", errors.Wrap(err, "cannot retrieve *corev1.Secret for resource version retrieval")
+		return "", fmt.Errorf("cannot retrieve *corev1.Secret for resource version retrieval: %w", err)
 	}
 
 	return d.hashValue(*secret), nil

@@ -5,9 +5,9 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net"
 
-	"github.com/pkg/errors"
 	"gomodules.xyz/jsonpatch/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	pointer "k8s.io/utils/ptr"
@@ -31,7 +31,7 @@ func (t TenantControlPlaneDefaults) OnCreate(object runtime.Object) AdmissionRes
 		if len(defaulted.Spec.NetworkProfile.DNSServiceIPs) == 0 {
 			ip, _, err := net.ParseCIDR(defaulted.Spec.NetworkProfile.ServiceCIDR)
 			if err != nil {
-				return nil, errors.Wrap(err, "cannot define resulting DNS Service IP")
+				return nil, fmt.Errorf("cannot define resulting DNS Service IP: %w", err)
 			}
 			switch {
 			case ip.To4() != nil:
@@ -45,7 +45,7 @@ func (t TenantControlPlaneDefaults) OnCreate(object runtime.Object) AdmissionRes
 
 		operations, err := utils.JSONPatch(original, defaulted)
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot create patch responses upon Tenant Control Plane creation")
+			return nil, fmt.Errorf("cannot create patch responses upon Tenant Control Plane creation: %w", err)
 		}
 
 		return operations, nil

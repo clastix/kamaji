@@ -7,8 +7,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/pkg/errors"
-	versionutil "k8s.io/apimachinery/pkg/util/version"
+versionutil "k8s.io/apimachinery/pkg/util/version"
 	apimachineryversion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/upgrade"
@@ -63,7 +62,7 @@ func (k kamajiKubeVersionGetter) KubeadmVersion() (string, *versionutil.Version,
 
 	kubeadmVersion, err := versionutil.ParseSemantic(kubeadmVersionInfo.String())
 	if err != nil {
-		return "", nil, errors.Wrap(err, "Couldn't parse kubeadm version")
+		return "", nil, fmt.Errorf("couldn't parse kubeadm version: %w", err)
 	}
 
 	return kubeadmVersionInfo.String(), kubeadmVersion, nil

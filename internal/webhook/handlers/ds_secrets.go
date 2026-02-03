@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	"gomodules.xyz/jsonpatch/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -39,7 +38,7 @@ func (d DataStoreSecretValidation) OnUpdate(object runtime.Object, _ runtime.Obj
 		dsList := &kamajiv1alpha1.DataStoreList{}
 
 		if err := d.Client.List(ctx, dsList, client.MatchingFieldsSelector{Selector: fields.OneTermEqualSelector(kamajiv1alpha1.DatastoreUsedSecretNamespacedNameKey, fmt.Sprintf("%s/%s", secret.GetNamespace(), secret.GetName()))}); err != nil {
-			return nil, errors.Wrap(err, "cannot list Tenant Control Plane using the provided Secret")
+			return nil, fmt.Errorf("cannot list Tenant Control Plane using the provided Secret: %w", err)
 		}
 
 		if len(dsList.Items) > 0 {
