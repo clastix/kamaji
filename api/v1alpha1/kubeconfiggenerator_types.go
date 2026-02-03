@@ -66,6 +66,9 @@ type KubeconfigGeneratorStatusError struct {
 
 // KubeconfigGeneratorStatus defines the observed state of KubeconfigGenerator.
 type KubeconfigGeneratorStatus struct {
+	// ObservedGeneration represents the .metadata.generation that was last reconciled.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// Resources is the sum of targeted TenantControlPlane objects.
 	//+kubebuilder:default=0
 	Resources int `json:"resources"`

@@ -18,6 +18,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/utils/clock"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -259,6 +260,23 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	log.Info(fmt.Sprintf("%s has been reconciled", tenantControlPlane.GetName()))
+
+	// Set ObservedGeneration only on successful reconciliation completion.
+	// This follows Cluster API conventions where ObservedGeneration indicates
+	// the controller has fully processed the given generation.
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if getErr := r.Client.Get(ctx, req.NamespacedName, tenantControlPlane); getErr != nil {
+			return getErr
+		}
+
+		tenantControlPlane.Status.ObservedGeneration = tenantControlPlane.Generation
+
+		return r.Client.Status().Update(ctx, tenantControlPlane)
+	}); err != nil {
+		log.Error(err, "failed to update ObservedGeneration")
+
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }

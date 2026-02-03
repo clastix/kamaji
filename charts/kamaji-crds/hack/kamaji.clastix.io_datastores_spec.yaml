@@ -275,6 +275,10 @@ versions:
           status:
             description: DataStoreStatus defines the observed state of DataStore.
             properties:
+              observedGeneration:
+                description: ObservedGeneration represents the .metadata.generation that was last reconciled.
+                format: int64
+                type: integer
               usedBy:
                 description: List of the Tenant Control Planes, namespaced named, using this data store.
                 items:

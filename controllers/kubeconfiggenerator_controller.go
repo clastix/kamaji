@@ -88,6 +88,7 @@ func (r *KubeconfigGeneratorReconciler) Reconcile(ctx context.Context, req ctrl.
 	}
 
 	generator.Status = status
+	generator.Status.ObservedGeneration = generator.Generation
 
 	if statusErr := r.Client.Status().Update(ctx, &generator); statusErr != nil {
 		logger.Error(statusErr, "cannot update resource status")

@@ -162,6 +162,9 @@ type AddonsStatus struct {
 
 // TenantControlPlaneStatus defines the observed state of TenantControlPlane.
 type TenantControlPlaneStatus struct {
+	// ObservedGeneration represents the .metadata.generation that was last reconciled.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// Storage Status contains information about Kubernetes storage system
 	Storage StorageStatus `json:"storage,omitempty"`
 	// Certificates contains information about the different certificates
