@@ -115,11 +115,11 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	releaser, err := mutex.Acquire(r.mutexSpec(tenantControlPlane))
 	if err != nil {
 		switch {
-		case errors.As(err, &mutex.ErrTimeout):
+		case errors.Is(err, mutex.ErrTimeout):
 			log.Info("acquire timed out, current process is blocked by another reconciliation")
 
 			return ctrl.Result{RequeueAfter: time.Second}, nil
-		case errors.As(err, &mutex.ErrCancelled):
+		case errors.Is(err, mutex.ErrCancelled):
 			log.Info("acquire cancelled")
 
 			return ctrl.Result{RequeueAfter: time.Second}, nil

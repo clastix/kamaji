@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"runtime"
 
-versionutil "k8s.io/apimachinery/pkg/util/version"
+	versionutil "k8s.io/apimachinery/pkg/util/version"
 	apimachineryversion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/upgrade"
