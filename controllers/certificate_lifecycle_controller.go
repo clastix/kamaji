@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -168,7 +167,7 @@ func (s *CertificateLifecycle) extractCertificateFromKubeconfig(secret corev1.Se
 
 	crt, err := crypto.ParseCertificateBytes(kc.AuthInfos[0].AuthInfo.ClientCertificateData)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot parse kubeconfig certificate bytes")
+		return nil, fmt.Errorf("cannot parse kubeconfig certificate bytes: %w", err)
 	}
 
 	return crt, nil

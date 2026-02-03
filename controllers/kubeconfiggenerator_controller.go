@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -103,12 +102,12 @@ func (r *KubeconfigGeneratorReconciler) Reconcile(ctx context.Context, req ctrl.
 func (r *KubeconfigGeneratorReconciler) handle(ctx context.Context, generator *kamajiv1alpha1.KubeconfigGenerator) (kamajiv1alpha1.KubeconfigGeneratorStatus, error) {
 	nsSelector, nsErr := metav1.LabelSelectorAsSelector(&generator.Spec.NamespaceSelector)
 	if nsErr != nil {
-		return kamajiv1alpha1.KubeconfigGeneratorStatus{}, errors.Wrap(nsErr, "NamespaceSelector contains an error")
+		return kamajiv1alpha1.KubeconfigGeneratorStatus{}, fmt.Errorf("NamespaceSelector contains an error: %w", nsErr)
 	}
 
 	var namespaceList corev1.NamespaceList
 	if err := r.Client.List(ctx, &namespaceList, &client.ListOptions{LabelSelector: nsSelector}); err != nil {
-		return kamajiv1alpha1.KubeconfigGeneratorStatus{}, errors.Wrap(err, "cannot filter Namespace objects using provided selector")
+		return kamajiv1alpha1.KubeconfigGeneratorStatus{}, fmt.Errorf("cannot filter Namespace objects using provided selector: %w", err)
 	}
 
 	var targets []kamajiv1alpha1.TenantControlPlane
@@ -116,12 +115,12 @@ func (r *KubeconfigGeneratorReconciler) handle(ctx context.Context, generator *k
 	for _, ns := range namespaceList.Items {
 		tcpSelector, tcpErr := metav1.LabelSelectorAsSelector(&generator.Spec.TenantControlPlaneSelector)
 		if tcpErr != nil {
-			return kamajiv1alpha1.KubeconfigGeneratorStatus{}, errors.Wrap(tcpErr, "TenantControlPlaneSelector contains an error")
+			return kamajiv1alpha1.KubeconfigGeneratorStatus{}, fmt.Errorf("TenantControlPlaneSelector contains an error: %w", tcpErr)
 		}
 
 		var tcpList kamajiv1alpha1.TenantControlPlaneList
 		if err := r.Client.List(ctx, &tcpList, &client.ListOptions{Namespace: ns.GetName(), LabelSelector: tcpSelector}); err != nil {
-			return kamajiv1alpha1.KubeconfigGeneratorStatus{}, errors.Wrap(err, "cannot filter TenantControlPlane objects using provided selector")
+			return kamajiv1alpha1.KubeconfigGeneratorStatus{}, fmt.Errorf("cannot filter TenantControlPlane objects using provided selector: %w", err)
 		}
 
 		targets = append(targets, tcpList.Items...)
@@ -290,17 +289,17 @@ func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator 
 
 	var caSecret corev1.Secret
 	if caErr := r.Client.Get(ctx, types.NamespacedName{Namespace: tcp.Namespace, Name: tcp.Status.Certificates.CA.SecretName}, &caSecret); caErr != nil {
-		return errors.Wrap(caErr, "cannot retrieve Certificate Authority")
+		return fmt.Errorf("cannot retrieve Certificate Authority: %w", caErr)
 	}
 
 	caCert, crtErr := crypto.ParseCertificateBytes(caSecret.Data[kubeadmconstants.CACertName])
 	if crtErr != nil {
-		return errors.Wrap(crtErr, "cannot parse Certificate Authority certificate")
+		return fmt.Errorf("cannot parse Certificate Authority certificate: %w", crtErr)
 	}
 
 	caKey, keyErr := crypto.ParsePrivateKeyBytes(caSecret.Data[kubeadmconstants.CAKeyName])
 	if keyErr != nil {
-		return errors.Wrap(keyErr, "cannot parse Certificate Authority key")
+		return fmt.Errorf("cannot parse Certificate Authority key: %w", keyErr)
 	}
 
 	clientCert, clientKey, err := pkiutil.NewCertAndKey(caCert, caKey, &clientCertConfig)
@@ -312,7 +311,7 @@ func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator 
 		tmpl.AuthInfos[name].AuthInfo.ClientCertificateData = pkiutil.EncodeCertPEM(clientCert)
 		tmpl.AuthInfos[name].AuthInfo.ClientKeyData, err = keyutil.MarshalPrivateKeyToPEM(clientKey)
 		if err != nil {
-			return errors.Wrap(err, "cannot marshal private key to PEM")
+			return fmt.Errorf("cannot marshal private key to PEM: %w", err)
 		}
 	}
 
@@ -341,7 +340,7 @@ func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator 
 
 		secret.Data["value"], err = utilities.EncodeToYaml(tmpl)
 		if err != nil {
-			return errors.Wrap(err, "cannot encode generated Kubeconfig to YAML")
+			return fmt.Errorf("cannot encode generated Kubeconfig to YAML: %w", err)
 		}
 
 		if utilities.IsRotationRequested(secret) {
@@ -355,7 +354,7 @@ func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator 
 		return ctrl.SetControllerReference(tcp, secret, r.Client.Scheme())
 	})
 	if err != nil {
-		return errors.Wrap(err, "cannot create or update generated Kubeconfig")
+		return fmt.Errorf("cannot create or update generated Kubeconfig: %w", err)
 	}
 
 	return nil

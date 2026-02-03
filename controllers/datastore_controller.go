@@ -5,8 +5,8 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
 	k8stypes "k8s.io/apimachinery/pkg/types"
@@ -65,7 +65,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 		if lErr := r.Client.List(ctx, &tcpList, client.MatchingFieldsSelector{
 			Selector: fields.OneTermEqualSelector(kamajiv1alpha1.TenantControlPlaneUsedDataStoreKey, ds.GetName()),
 		}); lErr != nil {
-			return errors.Wrap(lErr, "cannot retrieve list of the Tenant Control Plane using the following instance")
+			return fmt.Errorf("cannot retrieve list of the Tenant Control Plane using the following instance: %w", lErr)
 		}
 		// Updating the status with the list of Tenant Control Plane using the following Data Source
 		tcpSets := sets.NewString()
@@ -76,7 +76,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 		ds.Status.UsedBy = tcpSets.List()
 
 		if sErr := r.Client.Status().Update(ctx, &ds); sErr != nil {
-			return errors.Wrap(sErr, "cannot update the status for the given instance")
+			return fmt.Errorf("cannot update the status for the given instance: %w", sErr)
 		}
 
 		return nil

@@ -5,12 +5,12 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/juju/mutex/v2"
-	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -379,7 +379,7 @@ func (r *TenantControlPlaneReconciler) dataStore(ctx context.Context, tenantCont
 
 	var ds kamajiv1alpha1.DataStore
 	if err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: tenantControlPlane.Spec.DataStore}, &ds); err != nil {
-		return nil, errors.Wrap(err, "cannot retrieve *kamajiv1alpha.DataStore object")
+		return nil, fmt.Errorf("cannot retrieve *kamajiv1alpha.DataStore object: %w", err)
 	}
 
 	return &ds, nil
@@ -391,7 +391,7 @@ func (r *TenantControlPlaneReconciler) dataStoreOverride(ctx context.Context, te
 	for _, dso := range tenantControlPlane.Spec.DataStoreOverrides {
 		var ds kamajiv1alpha1.DataStore
 		if err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: dso.DataStore}, &ds); err != nil {
-			return nil, errors.Wrap(err, "cannot retrieve *kamajiv1alpha.DataStore object")
+			return nil, fmt.Errorf("cannot retrieve *kamajiv1alpha.DataStore object: %w", err)
 		}
 		if ds.Spec.Driver != kamajiv1alpha1.EtcdDriver {
 			return nil, errors.New("DataStoreOverrides can only use ETCD driver")
