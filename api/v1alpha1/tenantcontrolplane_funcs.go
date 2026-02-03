@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,12 +26,12 @@ func (in *TenantControlPlane) AssignedControlPlaneAddress() (string, int32, erro
 
 	address, portString, err := net.SplitHostPort(in.Status.ControlPlaneEndpoint)
 	if err != nil {
-		return "", 0, errors.Wrap(err, "cannot split host port from Tenant Control Plane endpoint")
+		return "", 0, fmt.Errorf("cannot split host port from Tenant Control Plane endpoint: %w", err)
 	}
 
 	port, err := strconv.Atoi(portString)
 	if err != nil {
-		return "", 0, errors.Wrap(err, "cannot convert Tenant Control Plane port from endpoint")
+		return "", 0, fmt.Errorf("cannot convert Tenant Control Plane port from endpoint: %w", err)
 	}
 
 	return address, int32(port), nil
@@ -47,7 +46,7 @@ func (in *TenantControlPlane) DeclaredControlPlaneAddress(ctx context.Context, c
 	svc := &corev1.Service{}
 	err := client.Get(ctx, types.NamespacedName{Namespace: in.GetNamespace(), Name: in.GetName()}, svc)
 	if err != nil {
-		return "", errors.Wrap(err, "cannot retrieve Service for the TenantControlPlane")
+		return "", fmt.Errorf("cannot retrieve Service for the TenantControlPlane: %w", err)
 	}
 
 	switch {
