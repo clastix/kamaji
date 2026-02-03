@@ -75,7 +75,7 @@ func (e *EtcdClient) GrantPrivileges(ctx context.Context, user, dbName string) e
 
 func (e *EtcdClient) UserExists(ctx context.Context, user string) (bool, error) {
 	if _, err := e.Client.UserGet(ctx, user); err != nil {
-		if errors.As(err, &rpctypes.ErrGRPCUserNotFound) {
+		if errors.Is(err, rpctypes.ErrGRPCUserNotFound) {
 			return false, nil
 		}
 
@@ -92,7 +92,7 @@ func (e *EtcdClient) DBExists(context.Context, string) (bool, error) {
 func (e *EtcdClient) GrantPrivilegesExists(ctx context.Context, username, dbName string) (bool, error) {
 	_, err := e.Client.RoleGet(ctx, dbName)
 	if err != nil {
-		if errors.As(err, &rpctypes.ErrGRPCRoleNotFound) {
+		if errors.Is(err, rpctypes.ErrGRPCRoleNotFound) {
 			return false, nil
 		}
 
