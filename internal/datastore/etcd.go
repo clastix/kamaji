@@ -5,7 +5,6 @@ package datastore
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"go.etcd.io/etcd/api/v3/authpb"
@@ -75,7 +74,11 @@ func (e *EtcdClient) GrantPrivileges(ctx context.Context, user, dbName string) e
 
 func (e *EtcdClient) UserExists(ctx context.Context, user string) (bool, error) {
 	if _, err := e.Client.UserGet(ctx, user); err != nil {
-		if errors.Is(err, rpctypes.ErrGRPCUserNotFound) {
+		// Convert gRPC error to comparable EtcdError using rpctypes.Error(),
+		// then compare against the client-side error constant.
+		// The == comparison is correct here as rpctypes.Error() normalizes
+		// gRPC status errors to comparable EtcdError struct values.
+		if rpctypes.Error(err) == rpctypes.ErrUserNotFound { //nolint:errorlint
 			return false, nil
 		}
 
@@ -92,7 +95,11 @@ func (e *EtcdClient) DBExists(context.Context, string) (bool, error) {
 func (e *EtcdClient) GrantPrivilegesExists(ctx context.Context, username, dbName string) (bool, error) {
 	_, err := e.Client.RoleGet(ctx, dbName)
 	if err != nil {
-		if errors.Is(err, rpctypes.ErrGRPCRoleNotFound) {
+		// Convert gRPC error to comparable EtcdError using rpctypes.Error(),
+		// then compare against the client-side error constant.
+		// The == comparison is correct here as rpctypes.Error() normalizes
+		// gRPC status errors to comparable EtcdError struct values.
+		if rpctypes.Error(err) == rpctypes.ErrRoleNotFound { //nolint:errorlint
 			return false, nil
 		}
 
