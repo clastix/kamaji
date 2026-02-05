@@ -5,9 +5,9 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -82,7 +82,7 @@ func (r *Config) Delete(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlan
 				return nil
 			}
 
-			return errors.Wrap(err, "cannot retrieve the DataStore Secret for removal")
+			return fmt.Errorf("cannot retrieve the DataStore Secret for removal: %w", err)
 		}
 
 		secret.SetFinalizers(nil)
@@ -92,7 +92,7 @@ func (r *Config) Delete(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlan
 				return nil
 			}
 
-			return errors.Wrap(err, "cannot remove DataStore Secret finalizers")
+			return fmt.Errorf("cannot remove DataStore Secret finalizers: %w", err)
 		}
 
 		return nil
@@ -138,12 +138,12 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 			// set username and password to the basicAuth values of the NATS datastore
 			u, err := r.DataStore.Spec.BasicAuth.Username.GetContent(ctx, r.Client)
 			if err != nil {
-				return errors.Wrap(err, "failed to retrieve the username for the NATS datastore")
+				return fmt.Errorf("failed to retrieve the username for the NATS datastore: %w", err)
 			}
 
 			p, err := r.DataStore.Spec.BasicAuth.Password.GetContent(ctx, r.Client)
 			if err != nil {
-				return errors.Wrap(err, "failed to retrieve the password for the NATS datastore")
+				return fmt.Errorf("failed to retrieve the password for the NATS datastore: %w", err)
 			}
 
 			username = u

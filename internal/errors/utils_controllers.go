@@ -3,15 +3,21 @@
 
 package errors
 
-import "github.com/pkg/errors"
+import "errors"
 
 func ShouldReconcileErrorBeIgnored(err error) bool {
+	var (
+		nonExposedLBErr   NonExposedLoadBalancerError
+		missingValidIPErr MissingValidIPError
+		migrationErr      MigrationInProcessError
+	)
+
 	switch {
-	case errors.As(err, &NonExposedLoadBalancerError{}):
+	case errors.As(err, &nonExposedLBErr):
 		return true
-	case errors.As(err, &MissingValidIPError{}):
+	case errors.As(err, &missingValidIPErr):
 		return true
-	case errors.As(err, &MigrationInProcessError{}):
+	case errors.As(err, &migrationErr):
 		return true
 	default:
 		return false

@@ -3,8 +3,6 @@
 
 package errors
 
-import (
-	"github.com/pkg/errors"
-)
+import "errors"
 
 var ErrPausedReconciliation = errors.New("paused reconciliation, no further actions")

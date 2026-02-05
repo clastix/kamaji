@@ -4,7 +4,8 @@
 package kubeadm
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -20,19 +21,19 @@ func BootstrapToken(client kubernetes.Interface, config *Configuration) error {
 	initConfiguration := config.InitConfiguration
 
 	if err := node.UpdateOrCreateTokens(client, false, initConfiguration.BootstrapTokens); err != nil {
-		return errors.Wrap(err, "error updating or creating token")
+		return fmt.Errorf("error updating or creating token: %w", err)
 	}
 
 	if err := node.AllowBootstrapTokensToGetNodes(client); err != nil {
-		return errors.Wrap(err, "error allowing bootstrap tokens to get Nodes")
+		return fmt.Errorf("error allowing bootstrap tokens to get Nodes: %w", err)
 	}
 
 	if err := node.AllowBootstrapTokensToPostCSRs(client); err != nil {
-		return errors.Wrap(err, "error allowing bootstrap tokens to post CSRs")
+		return fmt.Errorf("error allowing bootstrap tokens to post CSRs: %w", err)
 	}
 
 	if err := node.AutoApproveNodeBootstrapTokens(client); err != nil {
-		return errors.Wrap(err, "error auto-approving node bootstrap tokens")
+		return fmt.Errorf("error auto-approving node bootstrap tokens: %w", err)
 	}
 
 	if err := node.AutoApproveNodeCertificateRotation(client); err != nil {
@@ -66,7 +67,7 @@ func BootstrapToken(client kubernetes.Interface, config *Configuration) error {
 	}
 
 	if err := clusterinfo.CreateClusterInfoRBACRules(client); err != nil {
-		return errors.Wrap(err, "error creating clusterinfo RBAC rules")
+		return fmt.Errorf("error creating clusterinfo RBAC rules: %w", err)
 	}
 
 	return nil

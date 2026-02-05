@@ -11,7 +11,6 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -67,7 +66,7 @@ func NewConnectionConfig(ctx context.Context, client client.Client, ds kamajiv1a
 
 		certificate, err := tls.X509KeyPair(crt, key)
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot retrieve x.509 key pair from the Kine Secret")
+			return nil, fmt.Errorf("cannot retrieve x.509 key pair from the Kine Secret: %w", err)
 		}
 
 		tlsConfig.Certificates = []tls.Certificate{certificate}
@@ -93,12 +92,12 @@ func NewConnectionConfig(ctx context.Context, client client.Client, ds kamajiv1a
 	for _, ep := range ds.Spec.Endpoints {
 		host, stringPort, err := net.SplitHostPort(ep)
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot retrieve host-port pair from DataStore endpoints")
+			return nil, fmt.Errorf("cannot retrieve host-port pair from DataStore endpoints: %w", err)
 		}
 
 		port, err := strconv.Atoi(stringPort)
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot convert port from string for the given DataStore")
+			return nil, fmt.Errorf("cannot convert port from string for the given DataStore: %w", err)
 		}
 
 		eps = append(eps, ConnectionEndpoint{

@@ -5,11 +5,11 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/clastix/kamaji-telemetry/api"
 	telemetry "github.com/clastix/kamaji-telemetry/pkg/client"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
@@ -31,7 +31,7 @@ type TelemetryController struct {
 func (m *TelemetryController) retrieveControllerUID(ctx context.Context) (string, error) {
 	var defaultSvc corev1.Service
 	if err := m.Client.Get(ctx, types.NamespacedName{Name: "kubernetes", Namespace: "default"}, &defaultSvc); err != nil {
-		return "", errors.Wrap(err, "cannot start the telemetry controller")
+		return "", fmt.Errorf("cannot start the telemetry controller: %w", err)
 	}
 
 	return string(defaultSvc.UID), nil

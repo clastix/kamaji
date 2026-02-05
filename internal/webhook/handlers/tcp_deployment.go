@@ -5,9 +5,9 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 	"gomodules.xyz/jsonpatch/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -103,7 +103,7 @@ func (t TenantControlPlaneDeployment) OnUpdate(newObject runtime.Object, oldObje
 		}
 
 		if err != nil {
-			return nil, errors.Wrap(err, "the resulting Deployment will generate a configuration error, cannot proceed")
+			return nil, fmt.Errorf("the resulting Deployment will generate a configuration error, cannot proceed: %w", err)
 		}
 
 		return nil, nil

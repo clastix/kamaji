@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"gomodules.xyz/jsonpatch/v2"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -38,7 +37,7 @@ func (d DataStoreValidation) OnDelete(object runtime.Object) AdmissionResponse {
 
 		tcpList := &kamajiv1alpha1.TenantControlPlaneList{}
 		if err := d.Client.List(ctx, tcpList, client.MatchingFieldsSelector{Selector: fields.OneTermEqualSelector(kamajiv1alpha1.TenantControlPlaneUsedDataStoreKey, ds.GetName())}); err != nil {
-			return nil, errors.Wrap(err, "cannot retrieve TenantControlPlane list used by the DataStore")
+			return nil, fmt.Errorf("cannot retrieve TenantControlPlane list used by the DataStore: %w", err)
 		}
 
 		if len(tcpList.Items) > 0 {

@@ -8,7 +8,6 @@ import (
 
 	"github.com/blang/semver"
 	jsonpatchv5 "github.com/evanphx/json-patch/v5"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,7 +66,7 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration, pat
 	}
 
 	if err = createConfigMapRBACRules(client, configMapName); err != nil {
-		return nil, errors.Wrap(err, "error creating kubelet configuration configmap RBAC rules")
+		return nil, fmt.Errorf("error creating kubelet configuration configmap RBAC rules: %w", err)
 	}
 
 	return nil, nil
@@ -98,15 +97,15 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration, patch
 	if len(patch) > 0 {
 		kubeletConfig, patchErr := utilities.EncodeToJSON(&kc)
 		if patchErr != nil {
-			return nil, errors.Wrapf(patchErr, "unable to encode KubeletConfiguration to JSON for JSON patching")
+			return nil, fmt.Errorf("unable to encode KubeletConfiguration to JSON for JSON patching: %w", patchErr)
 		}
 
 		if kubeletConfig, patchErr = patch.Apply(kubeletConfig); patchErr != nil {
-			return nil, errors.Wrapf(patchErr, "unable to apply JSON patching to KubeletConfiguration")
+			return nil, fmt.Errorf("unable to apply JSON patching to KubeletConfiguration: %w", patchErr)
 		}
 
 		if patchErr = utilities.DecodeFromJSON(string(kubeletConfig), &kc); patchErr != nil {
-			return nil, errors.Wrapf(patchErr, "unable to decode JSON to KubeletConfiguration")
+			return nil, fmt.Errorf("unable to decode JSON to KubeletConfiguration: %w", patchErr)
 		}
 	}
 
@@ -159,7 +158,7 @@ func createConfigMapRBACRules(client kubernetes.Interface, configMapName string)
 func generateKubeletConfigMapName(version string) (string, error) {
 	parsedVersion, err := semver.ParseTolerant(version)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse kubernetes version %q", version)
+		return "", fmt.Errorf("failed to parse kubernetes version %q: %w", version, err)
 	}
 
 	majorMinor := semver.Version{Major: parsedVersion.Major, Minor: parsedVersion.Minor}

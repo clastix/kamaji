@@ -6,8 +6,8 @@ package addons
 import (
 	"bytes"
 	"context"
+	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -321,7 +321,7 @@ func (k *KubeProxy) mutateDaemonSet(ctx context.Context, tenantClient client.Cli
 func (k *KubeProxy) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error {
 	tcpClient, config, err := resources.GetKubeadmManifestDeps(ctx, k.Client, tcp)
 	if err != nil {
-		return errors.Wrap(err, "unable to create manifests dependencies")
+		return fmt.Errorf("unable to create manifests dependencies: %w", err)
 	}
 	// If the kube-proxy addon has overrides, adding it to the kubeadm parameters
 	config.Parameters.KubeProxyOptions = &kubeadm.AddonOptions{}
@@ -340,38 +340,38 @@ func (k *KubeProxy) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Ten
 
 	manifests, err := kubeadm.AddKubeProxy(tcpClient, config)
 	if err != nil {
-		return errors.Wrap(err, "unable to generate manifests")
+		return fmt.Errorf("unable to generate manifests: %w", err)
 	}
 
 	parts := bytes.Split(manifests, []byte("---"))
 
 	if err = utilities.DecodeFromYAML(string(parts[1]), k.serviceAccount); err != nil {
-		return errors.Wrap(err, "unable to decode ServiceAccount manifest")
+		return fmt.Errorf("unable to decode ServiceAccount manifest: %w", err)
 	}
 	addon_utils.SetKamajiManagedLabels(k.serviceAccount)
 
 	if err = utilities.DecodeFromYAML(string(parts[2]), k.clusterRoleBinding); err != nil {
-		return errors.Wrap(err, "unable to decode ClusterRoleBinding manifest")
+		return fmt.Errorf("unable to decode ClusterRoleBinding manifest: %w", err)
 	}
 	addon_utils.SetKamajiManagedLabels(k.clusterRoleBinding)
 
 	if err = utilities.DecodeFromYAML(string(parts[3]), k.role); err != nil {
-		return errors.Wrap(err, "unable to decode Role manifest")
+		return fmt.Errorf("unable to decode Role manifest: %w", err)
 	}
 	addon_utils.SetKamajiManagedLabels(k.role)
 
 	if err = utilities.DecodeFromYAML(string(parts[4]), k.roleBinding); err != nil {
-		return errors.Wrap(err, "unable to decode RoleBinding manifest")
+		return fmt.Errorf("unable to decode RoleBinding manifest: %w", err)
 	}
 	addon_utils.SetKamajiManagedLabels(k.roleBinding)
 
 	if err = utilities.DecodeFromYAML(string(parts[5]), k.configMap); err != nil {
-		return errors.Wrap(err, "unable to decode ConfigMap manifest")
+		return fmt.Errorf("unable to decode ConfigMap manifest: %w", err)
 	}
 	addon_utils.SetKamajiManagedLabels(k.configMap)
 
 	if err = utilities.DecodeFromYAML(string(parts[6]), k.daemonSet); err != nil {
-		return errors.Wrap(err, "unable to decode DaemonSet manifest")
+		return fmt.Errorf("unable to decode DaemonSet manifest: %w", err)
 	}
 	addon_utils.SetKamajiManagedLabels(k.daemonSet)
 
