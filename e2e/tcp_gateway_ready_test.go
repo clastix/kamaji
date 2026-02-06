@@ -48,7 +48,9 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 						},
 						GatewayParentRefs: []gatewayv1.ParentReference{
 							{
-								Name: "test-gateway",
+								Name:        "test-gateway",
+								Port:        pointer.To(gatewayv1.PortNumber(6443)),
+								SectionName: pointer.To(gatewayv1.SectionName("cp-listener")),
 							},
 						},
 					},
@@ -90,7 +92,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
 	})
 
-	It("Should create control plane TLSRoute with correct sectionName", func() {
+	It("Should create control plane TLSRoute preserving user-provided parentRef fields", func() {
 		Eventually(func() error {
 			route := &gatewayv1alpha2.TLSRoute{}
 			// TODO: Check ownership.
@@ -106,8 +108,14 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 			if route.Spec.ParentRefs[0].SectionName == nil {
 				return fmt.Errorf("sectionName is nil")
 			}
-			if *route.Spec.ParentRefs[0].SectionName != gatewayv1.SectionName("kube-apiserver") {
-				return fmt.Errorf("expected sectionName 'kube-apiserver', got '%s'", *route.Spec.ParentRefs[0].SectionName)
+			if *route.Spec.ParentRefs[0].SectionName != gatewayv1.SectionName("cp-listener") {
+				return fmt.Errorf("expected sectionName 'cp-listener', got '%s'", *route.Spec.ParentRefs[0].SectionName)
+			}
+			if route.Spec.ParentRefs[0].Port == nil {
+				return fmt.Errorf("port is nil")
+			}
+			if *route.Spec.ParentRefs[0].Port != gatewayv1.PortNumber(6443) {
+				return fmt.Errorf("expected port 6443, got '%d'", *route.Spec.ParentRefs[0].Port)
 			}
 
 			return nil

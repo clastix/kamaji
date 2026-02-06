@@ -212,7 +212,7 @@ func ScaleTenantControlPlane(tcp *kamajiv1alpha1.TenantControlPlane, replicas in
 	Expect(err).To(Succeed())
 }
 
-// CreateGatewayWithListeners creates a Gateway with both kube-apiserver and konnectivity-server listeners.
+// CreateGatewayWithListeners creates a Gateway with control plane and konnectivity-server listeners.
 func CreateGatewayWithListeners(gatewayName, namespace, gatewayClassName, hostname string) {
 	GinkgoHelper()
 	gateway := &gatewayv1.Gateway{
@@ -224,7 +224,7 @@ func CreateGatewayWithListeners(gatewayName, namespace, gatewayClassName, hostna
 			GatewayClassName: gatewayv1.ObjectName(gatewayClassName),
 			Listeners: []gatewayv1.Listener{
 				{
-					Name:     "kube-apiserver",
+					Name:     "cp-listener",
 					Port:     6443,
 					Protocol: gatewayv1.TLSProtocolType,
 					Hostname: pointer.To(gatewayv1.Hostname(hostname)),
