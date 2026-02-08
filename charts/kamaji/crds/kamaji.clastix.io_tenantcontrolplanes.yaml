@@ -7882,7 +7882,6 @@ spec:
                                                 The supported values are: "TCP", "UDP", "SCTP"
                                               type: string
                                           required:
-                                            - error
                                             - port
                                             - protocol
                                           type: object
@@ -8606,7 +8605,6 @@ spec:
                                             The supported values are: "TCP", "UDP", "SCTP"
                                           type: string
                                       required:
-                                        - error
                                         - port
                                         - protocol
                                       type: object
@@ -8749,7 +8747,6 @@ spec:
                                             The supported values are: "TCP", "UDP", "SCTP"
                                           type: string
                                       required:
-                                        - error
                                         - port
                                         - protocol
                                       type: object

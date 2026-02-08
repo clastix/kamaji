@@ -133,6 +133,10 @@ crds: controller-gen yq
 	$(CONTROLLER_GEN) crd webhook paths="./..." output:stdout | $(YQ) 'select(documentIndex == 0)' > ./charts/kamaji/crds/kamaji.clastix.io_datastores.yaml
 	$(CONTROLLER_GEN) crd webhook paths="./..." output:stdout | $(YQ) 'select(documentIndex == 1)' > ./charts/kamaji/crds/kamaji.clastix.io_kubeconfiggenerators.yaml
 	$(CONTROLLER_GEN) crd webhook paths="./..." output:stdout | $(YQ) 'select(documentIndex == 2)' > ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml
+	# Fix upstream k8s.io/api bug: PortStatus.Error is marked +kubebuilder:validation:Required
+	# but is actually optional (pointer with omitempty). Remove "error" from required arrays
+	# in PortStatus definitions to match actual Kubernetes API behavior.
+	$(YQ) -i '(.. | select(tag == "!!seq") | select(contains(["error","port","protocol"]))) -= ["error"]' ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml
 	$(YQ) -i '. *n load("./charts/kamaji/controller-gen/crd-conversion.yaml")' ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml
 	# kamaji-crds chart
 	cp ./charts/kamaji/controller-gen/crd-conversion.yaml ./charts/kamaji-crds/hack/crd-conversion.yaml
