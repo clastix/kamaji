@@ -236,7 +236,12 @@ metallb:
 	kubectl apply -f "https://raw.githubusercontent.com/metallb/metallb/$$(curl "https://api.github.com/repos/metallb/metallb/releases/latest" | jq -r ".tag_name")/config/manifests/metallb-native.yaml"
 	kubectl wait pods -n metallb-system -l app=metallb,component=controller --for=condition=Ready --timeout=10m
 	kubectl wait pods -n metallb-system -l app=metallb,component=speaker --for=condition=Ready --timeout=2m
-	cat hack/metallb.yaml | sed -E "s|172.19|$$(docker network inspect -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}' kind | sed -E 's|^([0-9]+\.[0-9]+)\..*$$|\1|g')|g" | kubectl apply -f -
+	@IPV4_PREFIX=$$(docker network inspect kind \
+		-f '{{range .IPAM.Config}}{{println .Subnet " " .Gateway}}{{end}}' \
+		| grep -v ':' \
+		| awk '{print $$2}' \
+		| sed -E 's|^([0-9]+\.[0-9]+)\..*$$|\1|'); \
+	sed -E "s|172\.19|$$IPV4_PREFIX|g" hack/metallb.yaml | kubectl apply -f -
 
 cert-manager:
 	$(HELM) repo add jetstack https://charts.jetstack.io
