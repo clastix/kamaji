@@ -113,7 +113,7 @@ func (r *ServiceResource) UpdateTenantControlPlaneStatus(_ context.Context, tena
 		tenantControlPlane.Status.Addons.Konnectivity.Service.Name = r.resource.GetName()
 		tenantControlPlane.Status.Addons.Konnectivity.Service.Namespace = r.resource.GetNamespace()
 		tenantControlPlane.Status.Addons.Konnectivity.Service.Port = r.resource.Spec.Ports[1].Port
-		tenantControlPlane.Status.Addons.Konnectivity.Service.ServiceStatus = r.resource.Status
+		tenantControlPlane.Status.Addons.Konnectivity.Service.ServiceStatus = resources.StripLoadBalancerPortsFromServiceStatus(r.resource.Status)
 	}
 
 	return nil

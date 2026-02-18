@@ -132,3 +132,18 @@ func getStoredKubeadmConfiguration(ctx context.Context, client client.Client, tm
 
 	return config, nil
 }
+
+func StripLoadBalancerPortsFromServiceStatus(s corev1.ServiceStatus) corev1.ServiceStatus {
+	sanitized := s
+
+	if len(s.LoadBalancer.Ingress) > 0 {
+		sanitized.LoadBalancer.Ingress = make([]corev1.LoadBalancerIngress, len(s.LoadBalancer.Ingress))
+		copy(sanitized.LoadBalancer.Ingress, s.LoadBalancer.Ingress)
+	}
+
+	for i := range sanitized.LoadBalancer.Ingress {
+		sanitized.LoadBalancer.Ingress[i].Ports = nil
+	}
+
+	return sanitized
+}
