@@ -150,16 +150,15 @@ func (r *KubernetesGatewayResource) mutate(tcp *kamajiv1alpha1.TenantControlPlan
 			tcp.Spec.ControlPlane.Gateway.AdditionalMetadata.Annotations)
 		r.resource.SetAnnotations(annotations)
 
+		if tcp.Spec.ControlPlane.Gateway.GatewayParentRefs != nil {
+			r.resource.Spec.ParentRefs = tcp.Spec.ControlPlane.Gateway.GatewayParentRefs
+		}
+
 		serviceName := gatewayv1alpha2.ObjectName(tcp.Status.Kubernetes.Service.Name)
 		servicePort := tcp.Status.Kubernetes.Service.Port
 
 		if serviceName == "" || servicePort == 0 {
 			return fmt.Errorf("service not ready, cannot create TLSRoute")
-		}
-
-		if tcp.Spec.ControlPlane.Gateway.GatewayParentRefs != nil {
-			// Copy parentRefs and explicitly set port and sectionName fields
-			r.resource.Spec.ParentRefs = NewParentRefsSpecWithPortAndSection(tcp.Spec.ControlPlane.Gateway.GatewayParentRefs, servicePort, "kube-apiserver")
 		}
 
 		rule := gatewayv1alpha2.TLSRouteRule{

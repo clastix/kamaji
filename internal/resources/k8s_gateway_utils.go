@@ -226,16 +226,3 @@ func BuildGatewayAccessPointsStatus(ctx context.Context, c client.Client, route 
 
 	return accessPoints, nil
 }
-
-// NewParentRefsSpecWithPortAndSection creates a copy of parentRefs with port and sectionName set for each reference.
-func NewParentRefsSpecWithPortAndSection(parentRefs []gatewayv1.ParentReference, port int32, sectionName string) []gatewayv1.ParentReference {
-	result := make([]gatewayv1.ParentReference, len(parentRefs))
-	sectionNamePtr := gatewayv1.SectionName(sectionName)
-	for i, parentRef := range parentRefs {
-		result[i] = *parentRef.DeepCopy()
-		result[i].Port = &port
-		result[i].SectionName = &sectionNamePtr
-	}
-
-	return result
-}

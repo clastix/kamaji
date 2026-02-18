@@ -102,30 +102,6 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			Expect(shouldUpdate).To(BeTrue())
 		})
 
-		It("should set port and sectionName in parentRefs, overriding any user-provided values", func() {
-			customPort := gatewayv1.PortNumber(9999)
-			customSectionName := gatewayv1.SectionName("custom")
-			tcp.Spec.ControlPlane.Gateway.GatewayParentRefs[0].Port = &customPort
-			tcp.Spec.ControlPlane.Gateway.GatewayParentRefs[0].SectionName = &customSectionName
-
-			err := resource.Define(ctx, tcp)
-			Expect(err).NotTo(HaveOccurred())
-
-			_, err = resource.CreateOrUpdate(ctx, tcp)
-			Expect(err).NotTo(HaveOccurred())
-
-			route := &gatewayv1alpha2.TLSRoute{}
-			err = resource.Client.Get(ctx, client.ObjectKey{Name: tcp.Name, Namespace: tcp.Namespace}, route)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(route.Spec.ParentRefs).To(HaveLen(1))
-			Expect(route.Spec.ParentRefs[0].Port).NotTo(BeNil())
-			Expect(*route.Spec.ParentRefs[0].Port).To(Equal(tcp.Status.Kubernetes.Service.Port))
-			Expect(*route.Spec.ParentRefs[0].Port).NotTo(Equal(customPort))
-			Expect(route.Spec.ParentRefs[0].SectionName).NotTo(BeNil())
-			Expect(*route.Spec.ParentRefs[0].SectionName).To(Equal(gatewayv1.SectionName("kube-apiserver")))
-			Expect(*route.Spec.ParentRefs[0].SectionName).NotTo(Equal(customSectionName))
-		})
-
 		It("should handle multiple parentRefs correctly", func() {
 			namespace := gatewayv1.Namespace("default")
 			tcp.Spec.ControlPlane.Gateway.GatewayParentRefs = []gatewayv1alpha2.ParentReference{
@@ -149,13 +125,12 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			err = resource.Client.Get(ctx, client.ObjectKey{Name: tcp.Name, Namespace: tcp.Namespace}, route)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(route.Spec.ParentRefs).To(HaveLen(2))
-
-			for i := range route.Spec.ParentRefs {
-				Expect(route.Spec.ParentRefs[i].Port).NotTo(BeNil())
-				Expect(*route.Spec.ParentRefs[i].Port).To(Equal(tcp.Status.Kubernetes.Service.Port))
-				Expect(route.Spec.ParentRefs[i].SectionName).NotTo(BeNil())
-				Expect(*route.Spec.ParentRefs[i].SectionName).To(Equal(gatewayv1.SectionName("kube-apiserver")))
-			}
+			Expect(route.Spec.ParentRefs[0].Name).To(Equal(gatewayv1alpha2.ObjectName("test-gateway-1")))
+			Expect(route.Spec.ParentRefs[0].Namespace).NotTo(BeNil())
+			Expect(*route.Spec.ParentRefs[0].Namespace).To(Equal(namespace))
+			Expect(route.Spec.ParentRefs[1].Name).To(Equal(gatewayv1alpha2.ObjectName("test-gateway-2")))
+			Expect(route.Spec.ParentRefs[1].Namespace).NotTo(BeNil())
+			Expect(*route.Spec.ParentRefs[1].Namespace).To(Equal(namespace))
 		})
 	})
 
@@ -290,83 +265,6 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			listener, err := resources.FindMatchingListener(listeners, ref)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(listener.Port).To(Equal(gatewayv1.PortNumber(80)))
-		})
-	})
-
-	Describe("NewParentRefsSpecWithPortAndSection", func() {
-		var (
-			parentRefs      []gatewayv1.ParentReference
-			testPort        int32
-			testSectionName string
-		)
-
-		BeforeEach(func() {
-			namespace := gatewayv1.Namespace("default")
-			namespace2 := gatewayv1.Namespace("other")
-			testPort = int32(6443)
-			testSectionName = "kube-apiserver"
-			originalPort := gatewayv1.PortNumber(9999)
-			originalSectionName := gatewayv1.SectionName("original")
-			parentRefs = []gatewayv1.ParentReference{
-				{
-					Name:        "test-gateway-1",
-					Namespace:   &namespace,
-					Port:        &originalPort,
-					SectionName: &originalSectionName,
-				},
-				{
-					Name:      "test-gateway-2",
-					Namespace: &namespace2,
-				},
-			}
-		})
-
-		It("should create copy of parentRefs with port and sectionName set", func() {
-			result := resources.NewParentRefsSpecWithPortAndSection(parentRefs, testPort, testSectionName)
-
-			Expect(result).To(HaveLen(2))
-			for i := range result {
-				Expect(result[i].Name).To(Equal(parentRefs[i].Name))
-				Expect(result[i].Namespace).To(Equal(parentRefs[i].Namespace))
-				Expect(result[i].Port).NotTo(BeNil())
-				Expect(*result[i].Port).To(Equal(testPort))
-				Expect(result[i].SectionName).NotTo(BeNil())
-				Expect(*result[i].SectionName).To(Equal(gatewayv1.SectionName(testSectionName)))
-			}
-		})
-
-		It("should not modify original parentRefs", func() {
-			// Store original values for verification
-			originalFirstPort := parentRefs[0].Port
-			originalFirstSectionName := parentRefs[0].SectionName
-			originalSecondPort := parentRefs[1].Port
-			originalSecondSectionName := parentRefs[1].SectionName
-
-			result := resources.NewParentRefsSpecWithPortAndSection(parentRefs, testPort, testSectionName)
-
-			// Original should remain unchanged
-			Expect(parentRefs[0].Port).To(Equal(originalFirstPort))
-			Expect(parentRefs[0].SectionName).To(Equal(originalFirstSectionName))
-			Expect(parentRefs[1].Port).To(Equal(originalSecondPort))
-			Expect(parentRefs[1].SectionName).To(Equal(originalSecondSectionName))
-
-			// Result should have new values
-			Expect(result[0].Port).NotTo(BeNil())
-			Expect(*result[0].Port).To(Equal(testPort))
-			Expect(result[0].SectionName).NotTo(BeNil())
-			Expect(*result[0].SectionName).To(Equal(gatewayv1.SectionName(testSectionName)))
-			Expect(result[1].Port).NotTo(BeNil())
-			Expect(*result[1].Port).To(Equal(testPort))
-			Expect(result[1].SectionName).NotTo(BeNil())
-			Expect(*result[1].SectionName).To(Equal(gatewayv1.SectionName(testSectionName)))
-		})
-
-		It("should handle empty parentRefs slice", func() {
-			parentRefs = []gatewayv1.ParentReference{}
-
-			result := resources.NewParentRefsSpecWithPortAndSection(parentRefs, testPort, testSectionName)
-
-			Expect(result).To(BeEmpty())
 		})
 	})
 })

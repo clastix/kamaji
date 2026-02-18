@@ -182,7 +182,7 @@ func (r *KubernetesKonnectivityGatewayResource) mutate(tcp *kamajiv1alpha1.Tenan
 		if tcp.Spec.ControlPlane.Gateway.GatewayParentRefs == nil {
 			return fmt.Errorf("control plane gateway parentRefs are not specified")
 		}
-		r.resource.Spec.ParentRefs = resources.NewParentRefsSpecWithPortAndSection(tcp.Spec.ControlPlane.Gateway.GatewayParentRefs, servicePort, "konnectivity-server")
+		r.resource.Spec.ParentRefs = newParentRefsSpecWithPortAndSection(tcp.Spec.ControlPlane.Gateway.GatewayParentRefs, servicePort, "konnectivity-server")
 
 		rule := gatewayv1alpha2.TLSRouteRule{
 			BackendRefs: []gatewayv1alpha2.BackendRef{
@@ -229,4 +229,17 @@ func (r *KubernetesKonnectivityGatewayResource) CreateOrUpdate(ctx context.Conte
 
 func (r *KubernetesKonnectivityGatewayResource) GetName() string {
 	return "konnectivity_gateway_routes"
+}
+
+// newParentRefsSpecWithPortAndSection creates a copy of parentRefs with port and sectionName set for each reference.
+func newParentRefsSpecWithPortAndSection(parentRefs []gatewayv1.ParentReference, port int32, sectionName string) []gatewayv1.ParentReference {
+	result := make([]gatewayv1.ParentReference, len(parentRefs))
+	sectionNamePtr := gatewayv1.SectionName(sectionName)
+	for i, parentRef := range parentRefs {
+		result[i] = *parentRef.DeepCopy()
+		result[i].Port = &port
+		result[i].SectionName = &sectionNamePtr
+	}
+
+	return result
 }

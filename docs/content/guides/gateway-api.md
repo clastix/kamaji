@@ -1,106 +1,34 @@
-# Gateway API Support
+# Gateway API
 
-Kamaji provides built-in support for the [Gateway API](https://gateway-api.sigs.k8s.io/), allowing you to expose Tenant Control Planes using TLSRoute resources with SNI-based routing. This enables hostname-based routing to multiple Tenant Control Planes through a single Gateway resource, reducing the need for dedicated LoadBalancer services.
+Kamaji provides built-in support for the [Gateway API](https://gateway-api.sigs.k8s.io/), allowing Tenant Control Planes to be exposed as SNI-based addresses/urls. This eliminates the need for a dedicated LoadBalancer IP per TCP. A single Gateway resource can be used for multiple Tenant Control Planes and provide access to them with hostname-based routing (like `https://mycluster.xyz.com:6443`).
 
-## Overview
+You can configure Gateway in Tenant Control Plane via `tcp.spec.controlPlane.gateway`, Kamaji will automatically create a `TLSRoute` resource with corresponding spec. To make this configuration work, you need to ensure `gateway` exists (is created by you) and `tcp.spec.controlPlane.gateway` points to your gateway.
 
-Gateway API support in Kamaji automatically creates and manages TLSRoute resources for your Tenant Control Planes. When you configure a Gateway for a Tenant Control Plane, Kamaji automatically creates TLSRoutes for the Control Plane API Server. If konnectivity is enabled, a separate TLSRoute is created for it. Both TLSRoutes use the same hostname and Gateway resource, but route to different ports(listeners) using port-based routing and semantic `sectionName` values.
+We will cover a few examples below on how this is done.
 
-Therefore, the target `Gateway` resource must have right listener configurations (see the Gateway [example section](#gateway-resource-setup) below).
-
-
-## How It Works
-
-When you configure `spec.controlPlane.gateway` in a TenantControlPlane resource, Kamaji automatically:
-
-1. **Creates a TLSRoute for the control plane** that routes for port 6443 (or `spec.networkProfile.port`) with sectionName `"kube-apiserver"`
-2. **Creates a TLSRoute for Konnectivity** (if konnectivity addon is enabled) that routes for port 8132 (or `spec.addons.konnectivity.server.port`) with sectionName `"konnectivity-server"`
-
-Both TLSRoutes:
-
-- Use the same hostname from `spec.controlPlane.gateway.hostname`
-- Reference the same parent Gateway resource via `parentRefs`
-- The `port` and `sectionName` fields are set automatically by Kamaji
-- Route to the appropriate Tenant Control Plane service
-
-The Gateway resource must have listeners configured for both ports (6443 and 8132) to support both routes.
 
 ## Prerequisites
 
-Before using Gateway API support, ensure:
+Before using Gateway API mode, please ensure:
 
 1. **Gateway API CRDs are installed** in your cluster (Required CRDs: `GatewayClass`, `Gateway`, `TLSRoute`)
 
-2. **A Gateway resource exists** with appropriate listeners configured:
-    - At minimum, listeners for ports 6443 (control plane) and 8132 (Konnectivity)
-    - TLS protocol with Passthrough mode
-    - Hostname pattern matching your Tenant Control Plane hostnames
+2. **A Gateway resource exists** with appropriate configuration (see examples in this guide):
+    - Listeners for kube-apiserver.
+    - Use TLS protocol with Passthrough mode
+    - Hostname (or Hostname pattern) matching your Tenant Control Plane hostname
 
-3. **DNS is configured** to resolve your hostnames to the Gateway's external address
+3. (optional) **DNS is configured** to resolve hostnames (or hostname pattern) to the Gateway's LoadBalancer IP address. (This is needed for worker nodes to join, for testing we will use host entries in `/etc/hosts` for this guide)
 
 4. **Gateway controller is running** (e.g., Envoy Gateway, Istio Gateway, etc.)
 
-## Configuration
+To replicate the guide below, please install [Envoy Gateway](https://gateway.envoyproxy.io/docs/tasks/quickstart/).
 
-### TenantControlPlane Gateway Configuration
+Next, create a gateway resource:
 
-Enable Gateway API mode by setting the `spec.controlPlane.gateway` field in your TenantControlPlane resource:
+#### Gateway Resource Setup
 
-```yaml
-apiVersion: kamaji.clastix.io/v1alpha1
-kind: TenantControlPlane
-metadata:
-  name: tcp-1
-spec:
-  controlPlane:
-  # ... gateway configuration:
-    gateway:
-      hostname: "tcp1.cluster.dev"
-      parentRefs:
-      - name: gateway
-        namespace: default
-      additionalMetadata:
-        labels:
-          environment: production
-        annotations:
-          example.com/custom: "value"
-  # ... rest of the spec
-    deployment:
-      replicas: 1
-    service:
-      serviceType: ClusterIP
-  dataStore: default
-  kubernetes:
-    version: v1.29.0
-    kubelet:
-      cgroupfs: systemd
-  networkProfile:
-    port: 6443
-    certSANs:
-    - "c11.cluster.dev"  # make sure to set this.
-  addons:
-    coreDNS: {}
-    kubeProxy: {}
-    konnectivity: {}
-
-```
-
-**Required fields:**
-
-- `hostname`: The hostname that will be used for routing (must match Gateway listener hostname pattern)
-- `parentRefs`: Array of Gateway references (name and namespace)
-
-**Optional fields:**
-
-- `additionalMetadata.labels`: Custom labels to add to TLSRoute resources
-- `additionalMetadata.annotations`: Custom annotations to add to TLSRoute resources
-
-!!! warning "Port and sectionName are set automatically"
-    Do not specify `port` or `sectionName` in `parentRefs`. Kamaji automatically sets these fields in TLSRoutes.
-
-### Gateway Resource Setup
-
-Your Gateway resource must have listeners configured for both the control plane and Konnectivity ports. Here's an example Gateway configuration:
+Your Gateway resource must have listeners configured for the control plane. Here's an example Gateway configuration:
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -130,27 +58,94 @@ spec:
         kind: TLSRoute
       namespaces:
         from: All
+```
+The above gateway is configured with envoy gateway controller. You can achieve the same results with any other gateway controller that supports `TLSRoutes` and TLS passthrough mode.
 
-    # if konnectivity addon is enabled:
-  - name: konnectivity-server
-    port: 8132
-    protocol: TLS
-    hostname: 'tcp1.cluster.dev'
-    tls:
-      mode: Passthrough
-    allowedRoutes:
-      kinds:
-      - group: gateway.networking.k8s.io
-        kind: TLSRoute
-      namespaces:
-        from: All
-    
+The rest of this guide focuses on TCP. 
+
+## TenantControlPlane Gateway Configuration
+
+Enable Gateway API mode by setting the `spec.controlPlane.gateway` field in your TenantControlPlane resource:
+
+```yaml
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: tcp-1
+spec:
+  controlPlane:
+
+    # ... gateway configuration:
+    gateway:
+      hostname: "tcp1.cluster.dev"
+      parentRefs:
+      - name: gateway
+        namespace: default
+        sectionName: kube-apiserver
+        port: 6443
+      additionalMetadata:
+        labels:
+          environment: production
+        annotations:
+          example.com/custom: "value"
+
+    # ... rest of the spec
+    deployment:
+      replicas: 1
+    service:
+      serviceType: ClusterIP
+  dataStore: default
+  kubernetes:
+    version: v1.29.0
+    kubelet:
+      cgroupfs: systemd
+  networkProfile:
+    port: 6443
+    certSANs:
+    - "tcp1.cluster.dev"  # make sure to set this.
+  addons:
+    coreDNS: {}
+    kubeProxy: {}
+
 ```
 
+**Required fields:**
 
-## Multiple Tenant Control Planes
+- `hostname`: The hostname that will be used for routing (must match Gateway listener hostname pattern)
+- `parentRefs`: Array of Gateway references
 
-You can use the same Gateway resource for multiple Tenant Control Planes by using different hostnames:
+**Optional fields:**
+
+- `additionalMetadata.labels`: Custom labels to add to TLSRoute resources
+- `additionalMetadata.annotations`: Custom annotations to add to TLSRoute resources
+
+!!! info
+    ### Verify
+
+    From our kubectl client machine / remote machines we can access the cluster above with the hostname.
+    
+    **Step 1:** Fetch load balancer IP of the gateway.
+
+    `kubectl get gateway gateway -n default -o jsonpath='{.status.addresses[0].value}'`
+
+    **Step 2:** Add host entries in `/etc/hosts` with the above hostname and gateway LB IP.
+
+    `echo "<LB_IP> tcp1.cluster.dev" | sudo tee -a /etc/hosts`
+
+    **Step 3:** Fetch kubeconfig of tcp cluster.
+
+    `kubectl get secrets  tcp-1-admin-kubeconfig -o jsonpath='{.data.admin\.conf}' | base64 -d > kubeconfig`
+
+    **Step 4:** Test connectivity:
+    
+    `kubectl --kubeconfig kubeconfig cluster-info`
+
+
+
+### Multiple Tenant Control Planes
+
+We can use the same Gateway resource for multiple Tenant Control Planes by using different hostnames per tenant cluster.
+Let us extend the above example for multiple tenant control planes behind single gateway (and LB IP).
 
 ```yaml
 # Gateway with wildcard hostname
@@ -160,10 +155,13 @@ metadata:
   name: gateway
 spec:
   listeners:
-  - hostname: '*.cluster.dev'
-    name: kube-apiserver
+  - name: kube-apiserver
     port: 6443
-    # ...
+    # note: we changed to wildcard hostname pattern matching
+    # for cluster.dev
+    hostname: '*.cluster.dev'
+  
+  # ...
 ---
 # Tenant Control Plane 1
 apiVersion: kamaji.clastix.io/v1alpha1
@@ -194,16 +192,36 @@ spec:
   # ...
 ```
 
-Each Tenant Control Plane will get its own TLSRoutes with the respective hostnames, all routing through the same Gateway resource.
+Each Tenant Control Plane needs to use a different hostname. For each TCP, Kamaji creates a `TLSRoutes` resource with the respective hostnames, all `TLSRoutes` routing through the same Gateway resource.
 
-You can check the Gateway status in the TenantControlPlane:
 
-```bash
-kubectl get tenantcontrolplane tcp-1 -o yaml
+### Konnectivity
+
+If konnectivity addon is enabled, Kamaji creates a separate TLSRoute for it. But this is hardcoded with the listener name `konnectivity-server` and port `8132`. All gateways mentioned in `spec.controlPlane.gateway.parentRefs` must contain a listener with the same configuration for the given hostname. Below is example configuration:
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: gateway
+  namespace: default
+spec:
+  gatewayClassName: envoy-gw-class
+  listeners:
+  - ...
+  - ...
+  - name: konnectivity-server
+    port: 8132
+    protocol: TLS
+    hostname: 'tcp1.cluster.dev'
+    tls:
+      mode: Passthrough
+    allowedRoutes:
+      kinds:
+      - group: gateway.networking.k8s.io
+        kind: TLSRoute
+      namespaces:
+        from: All
 ```
-
-Look for the `status.kubernetesResources.gateway` and `status.addons.konnectivity.gateway` fields.
-
 
 ## Additional Resources
 
