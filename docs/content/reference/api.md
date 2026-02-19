@@ -41930,6 +41930,13 @@ The registry and the tag are configurable, the image is hard-coded to `coredns`.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonscorednsextraenvsindex">extraEnvs</a></b></td>
+        <td>[]object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>imageRepository</b></td>
         <td>string</td>
         <td>
@@ -41943,6 +41950,331 @@ if not set, the default ImageRepository will be used instead.<br/>
         <td>
           ImageTag allows to specify a tag for the image.
 In case this value is set, kubeadm does not change automatically the version of the above components during upgrades.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonscorednsextraenvsindex">`TenantControlPlane.spec.addons.coreDNS.extraEnvs[index]`</span>
+
+
+EnvVar represents an environment variable present in a Container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the environment variable.
+May consist of any printable ASCII characters except '='.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Variable references $(VAR_NAME) are expanded
+using the previously defined environment variables in the container and
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonscorednsextraenvsindexvaluefrom">valueFrom</a></b></td>
+        <td>object</td>
+        <td>
+          Source for the environment variable's value. Cannot be used if value is not empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonscorednsextraenvsindexvaluefrom">`TenantControlPlane.spec.addons.coreDNS.extraEnvs[index].valueFrom`</span>
+
+
+Source for the environment variable's value. Cannot be used if value is not empty.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonscorednsextraenvsindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonscorednsextraenvsindexvaluefromfieldref">fieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonscorednsextraenvsindexvaluefromfilekeyref">fileKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonscorednsextraenvsindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a resource of the container: only resources limits and requests
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonscorednsextraenvsindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a secret in the pod's namespace<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonscorednsextraenvsindexvaluefromconfigmapkeyref">`TenantControlPlane.spec.addons.coreDNS.extraEnvs[index].valueFrom.configMapKeyRef`</span>
+
+
+Selects a key of a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonscorednsextraenvsindexvaluefromfieldref">`TenantControlPlane.spec.addons.coreDNS.extraEnvs[index].valueFrom.fieldRef`</span>
+
+
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fieldPath</b></td>
+        <td>string</td>
+        <td>
+          Path of the field to select in the specified API version.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonscorednsextraenvsindexvaluefromfilekeyref">`TenantControlPlane.spec.addons.coreDNS.extraEnvs[index].valueFrom.fileKeyRef`</span>
+
+
+FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key within the env file. An invalid key will prevent the pod from starting.
+The keys defined within a source may consist of any printable ASCII characters except '='.
+During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          The path within the volume from which to select the file.
+Must be relative and may not contain the '..' path or start with '..'.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          The name of the volume mount containing the env file.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the file or its key must be defined. If the file or key
+does not exist, then the env var is not published.
+If optional is set to true and the specified key does not exist,
+the environment variable will not be set in the Pod's containers.
+
+If optional is set to false and the specified key does not exist,
+an error will be returned during Pod creation.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonscorednsextraenvsindexvaluefromresourcefieldref">`TenantControlPlane.spec.addons.coreDNS.extraEnvs[index].valueFrom.resourceFieldRef`</span>
+
+
+Selects a resource of the container: only resources limits and requests
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Required: resource to select<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>containerName</b></td>
+        <td>string</td>
+        <td>
+          Container name: required for volumes, optional for env vars<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>divisor</b></td>
+        <td>int or string</td>
+        <td>
+          Specifies the output format of the exposed resources, defaults to "1"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonscorednsextraenvsindexvaluefromsecretkeyref">`TenantControlPlane.spec.addons.coreDNS.extraEnvs[index].valueFrom.secretKeyRef`</span>
+
+
+Selects a key of a secret in the pod's namespace
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -42010,6 +42342,13 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityagentextraenvsindex">extraEnvs</a></b></td>
+        <td>[]object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>hostNetwork</b></td>
         <td>boolean</td>
         <td>
@@ -42068,6 +42407,331 @@ Can be customized to start the konnectivity-agent even if the nodes are not read
 If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
 
 WARNING: for last cut-off releases, the container image could be not available.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityagentextraenvsindex">`TenantControlPlane.spec.addons.konnectivity.agent.extraEnvs[index]`</span>
+
+
+EnvVar represents an environment variable present in a Container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the environment variable.
+May consist of any printable ASCII characters except '='.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Variable references $(VAR_NAME) are expanded
+using the previously defined environment variables in the container and
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityagentextraenvsindexvaluefrom">valueFrom</a></b></td>
+        <td>object</td>
+        <td>
+          Source for the environment variable's value. Cannot be used if value is not empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityagentextraenvsindexvaluefrom">`TenantControlPlane.spec.addons.konnectivity.agent.extraEnvs[index].valueFrom`</span>
+
+
+Source for the environment variable's value. Cannot be used if value is not empty.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityagentextraenvsindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityagentextraenvsindexvaluefromfieldref">fieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityagentextraenvsindexvaluefromfilekeyref">fileKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityagentextraenvsindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a resource of the container: only resources limits and requests
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityagentextraenvsindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a secret in the pod's namespace<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityagentextraenvsindexvaluefromconfigmapkeyref">`TenantControlPlane.spec.addons.konnectivity.agent.extraEnvs[index].valueFrom.configMapKeyRef`</span>
+
+
+Selects a key of a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityagentextraenvsindexvaluefromfieldref">`TenantControlPlane.spec.addons.konnectivity.agent.extraEnvs[index].valueFrom.fieldRef`</span>
+
+
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fieldPath</b></td>
+        <td>string</td>
+        <td>
+          Path of the field to select in the specified API version.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityagentextraenvsindexvaluefromfilekeyref">`TenantControlPlane.spec.addons.konnectivity.agent.extraEnvs[index].valueFrom.fileKeyRef`</span>
+
+
+FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key within the env file. An invalid key will prevent the pod from starting.
+The keys defined within a source may consist of any printable ASCII characters except '='.
+During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          The path within the volume from which to select the file.
+Must be relative and may not contain the '..' path or start with '..'.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          The name of the volume mount containing the env file.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the file or its key must be defined. If the file or key
+does not exist, then the env var is not published.
+If optional is set to true and the specified key does not exist,
+the environment variable will not be set in the Pod's containers.
+
+If optional is set to false and the specified key does not exist,
+an error will be returned during Pod creation.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityagentextraenvsindexvaluefromresourcefieldref">`TenantControlPlane.spec.addons.konnectivity.agent.extraEnvs[index].valueFrom.resourceFieldRef`</span>
+
+
+Selects a resource of the container: only resources limits and requests
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Required: resource to select<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>containerName</b></td>
+        <td>string</td>
+        <td>
+          Container name: required for volumes, optional for env vars<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>divisor</b></td>
+        <td>int or string</td>
+        <td>
+          Specifies the output format of the exposed resources, defaults to "1"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityagentextraenvsindexvaluefromsecretkeyref">`TenantControlPlane.spec.addons.konnectivity.agent.extraEnvs[index].valueFrom.secretKeyRef`</span>
+
+
+Selects a key of a secret in the pod's namespace
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -42174,6 +42838,13 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityserverextraenvsindex">extraEnvs</a></b></td>
+        <td>[]object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
@@ -42197,6 +42868,331 @@ unxpected ways. Only modify if you know what you are doing.<br/>
 If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
 
 WARNING: for last cut-off releases, the container image could be not available.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityserverextraenvsindex">`TenantControlPlane.spec.addons.konnectivity.server.extraEnvs[index]`</span>
+
+
+EnvVar represents an environment variable present in a Container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the environment variable.
+May consist of any printable ASCII characters except '='.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Variable references $(VAR_NAME) are expanded
+using the previously defined environment variables in the container and
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityserverextraenvsindexvaluefrom">valueFrom</a></b></td>
+        <td>object</td>
+        <td>
+          Source for the environment variable's value. Cannot be used if value is not empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityserverextraenvsindexvaluefrom">`TenantControlPlane.spec.addons.konnectivity.server.extraEnvs[index].valueFrom`</span>
+
+
+Source for the environment variable's value. Cannot be used if value is not empty.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityserverextraenvsindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityserverextraenvsindexvaluefromfieldref">fieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityserverextraenvsindexvaluefromfilekeyref">fileKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityserverextraenvsindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a resource of the container: only resources limits and requests
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityserverextraenvsindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a secret in the pod's namespace<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityserverextraenvsindexvaluefromconfigmapkeyref">`TenantControlPlane.spec.addons.konnectivity.server.extraEnvs[index].valueFrom.configMapKeyRef`</span>
+
+
+Selects a key of a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityserverextraenvsindexvaluefromfieldref">`TenantControlPlane.spec.addons.konnectivity.server.extraEnvs[index].valueFrom.fieldRef`</span>
+
+
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fieldPath</b></td>
+        <td>string</td>
+        <td>
+          Path of the field to select in the specified API version.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityserverextraenvsindexvaluefromfilekeyref">`TenantControlPlane.spec.addons.konnectivity.server.extraEnvs[index].valueFrom.fileKeyRef`</span>
+
+
+FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key within the env file. An invalid key will prevent the pod from starting.
+The keys defined within a source may consist of any printable ASCII characters except '='.
+During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          The path within the volume from which to select the file.
+Must be relative and may not contain the '..' path or start with '..'.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          The name of the volume mount containing the env file.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the file or its key must be defined. If the file or key
+does not exist, then the env var is not published.
+If optional is set to true and the specified key does not exist,
+the environment variable will not be set in the Pod's containers.
+
+If optional is set to false and the specified key does not exist,
+an error will be returned during Pod creation.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityserverextraenvsindexvaluefromresourcefieldref">`TenantControlPlane.spec.addons.konnectivity.server.extraEnvs[index].valueFrom.resourceFieldRef`</span>
+
+
+Selects a resource of the container: only resources limits and requests
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Required: resource to select<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>containerName</b></td>
+        <td>string</td>
+        <td>
+          Container name: required for volumes, optional for env vars<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>divisor</b></td>
+        <td>int or string</td>
+        <td>
+          Specifies the output format of the exposed resources, defaults to "1"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityserverextraenvsindexvaluefromsecretkeyref">`TenantControlPlane.spec.addons.konnectivity.server.extraEnvs[index].valueFrom.secretKeyRef`</span>
+
+
+Selects a key of a secret in the pod's namespace
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -42304,6 +43300,13 @@ The registry and the tag are configurable, the image is hard-coded to `kube-prox
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskubeproxyextraenvsindex">extraEnvs</a></b></td>
+        <td>[]object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>imageRepository</b></td>
         <td>string</td>
         <td>
@@ -42317,6 +43320,331 @@ if not set, the default ImageRepository will be used instead.<br/>
         <td>
           ImageTag allows to specify a tag for the image.
 In case this value is set, kubeadm does not change automatically the version of the above components during upgrades.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskubeproxyextraenvsindex">`TenantControlPlane.spec.addons.kubeProxy.extraEnvs[index]`</span>
+
+
+EnvVar represents an environment variable present in a Container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the environment variable.
+May consist of any printable ASCII characters except '='.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Variable references $(VAR_NAME) are expanded
+using the previously defined environment variables in the container and
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskubeproxyextraenvsindexvaluefrom">valueFrom</a></b></td>
+        <td>object</td>
+        <td>
+          Source for the environment variable's value. Cannot be used if value is not empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskubeproxyextraenvsindexvaluefrom">`TenantControlPlane.spec.addons.kubeProxy.extraEnvs[index].valueFrom`</span>
+
+
+Source for the environment variable's value. Cannot be used if value is not empty.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskubeproxyextraenvsindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskubeproxyextraenvsindexvaluefromfieldref">fieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskubeproxyextraenvsindexvaluefromfilekeyref">fileKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskubeproxyextraenvsindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a resource of the container: only resources limits and requests
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskubeproxyextraenvsindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a secret in the pod's namespace<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskubeproxyextraenvsindexvaluefromconfigmapkeyref">`TenantControlPlane.spec.addons.kubeProxy.extraEnvs[index].valueFrom.configMapKeyRef`</span>
+
+
+Selects a key of a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskubeproxyextraenvsindexvaluefromfieldref">`TenantControlPlane.spec.addons.kubeProxy.extraEnvs[index].valueFrom.fieldRef`</span>
+
+
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fieldPath</b></td>
+        <td>string</td>
+        <td>
+          Path of the field to select in the specified API version.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskubeproxyextraenvsindexvaluefromfilekeyref">`TenantControlPlane.spec.addons.kubeProxy.extraEnvs[index].valueFrom.fileKeyRef`</span>
+
+
+FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key within the env file. An invalid key will prevent the pod from starting.
+The keys defined within a source may consist of any printable ASCII characters except '='.
+During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          The path within the volume from which to select the file.
+Must be relative and may not contain the '..' path or start with '..'.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          The name of the volume mount containing the env file.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the file or its key must be defined. If the file or key
+does not exist, then the env var is not published.
+If optional is set to true and the specified key does not exist,
+the environment variable will not be set in the Pod's containers.
+
+If optional is set to false and the specified key does not exist,
+an error will be returned during Pod creation.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskubeproxyextraenvsindexvaluefromresourcefieldref">`TenantControlPlane.spec.addons.kubeProxy.extraEnvs[index].valueFrom.resourceFieldRef`</span>
+
+
+Selects a resource of the container: only resources limits and requests
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Required: resource to select<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>containerName</b></td>
+        <td>string</td>
+        <td>
+          Container name: required for volumes, optional for env vars<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>divisor</b></td>
+        <td>int or string</td>
+        <td>
+          Specifies the output format of the exposed resources, defaults to "1"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskubeproxyextraenvsindexvaluefromsecretkeyref">`TenantControlPlane.spec.addons.kubeProxy.extraEnvs[index].valueFrom.secretKeyRef`</span>
+
+
+Selects a key of a secret in the pod's namespace
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
       </tr></tbody>
