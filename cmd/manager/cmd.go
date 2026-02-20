@@ -61,6 +61,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		maxConcurrentReconciles       int
 		disableTelemetry              bool
 		certificateExpirationDeadline time.Duration
+		skipDatastoreCheck            bool
 
 		webhookCAPath string
 	)
@@ -87,8 +88,10 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return fmt.Errorf("unable to read webhook CA: %w", err)
 			}
 
-			if err = datastoreutils.CheckExists(context.Background(), scheme, datastore); err != nil {
-				return err
+			if !skipDatastoreCheck {
+				if err = datastoreutils.CheckExists(context.Background(), scheme, datastore); err != nil {
+					return err
+				}
 			}
 
 			if controllerReconcileTimeout.Seconds() == 0 {
@@ -347,6 +350,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	cmd.Flags().DurationVar(&cacheResyncPeriod, "cache-resync-period", 10*time.Hour, "The controller-runtime.Manager cache resync period.")
 	cmd.Flags().BoolVar(&disableTelemetry, "disable-telemetry", false, "Disable the analytics traces collection.")
 	cmd.Flags().DurationVar(&certificateExpirationDeadline, "certificate-expiration-deadline", 24*time.Hour, "Define the deadline upon certificate expiration to start the renewal process, cannot be less than a 24 hours.")
+	cmd.Flags().BoolVar(&skipDatastoreCheck, "skip-datastore-check", false, "Skip the default DataStore existence check during startup. Useful when the DataStore is provisioned concurrently with the operator.")
 
 	cobra.OnInitialize(func() {
 		viper.AutomaticEnv()
