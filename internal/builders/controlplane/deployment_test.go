@@ -4,11 +4,19 @@
 package controlplane
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	pointer "k8s.io/utils/ptr"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
+
+func TestControlplaneDeployment(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Controlplane Deployment Suite")
+}
 
 var _ = Describe("Controlplane Deployment", func() {
 	var d Deployment
@@ -41,6 +49,26 @@ var _ = Describe("Controlplane Deployment", func() {
 			})
 			etcdSerVersOverrides := d.etcdServersOverrides()
 			Expect(etcdSerVersOverrides).To(Equal("/events#https://etcd-0;https://etcd-1;https://etcd-2,/pods#https://etcd-3;https://etcd-4;https://etcd-5"))
+		})
+	})
+
+	Describe("startupProbeFailureThreshold", func() {
+		It("should return default value when StartupProbeFailureThreshold is nil", func() {
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			Expect(startupProbeFailureThreshold(tcp)).To(Equal(int32(3)))
+		})
+
+		It("should return the configured value when StartupProbeFailureThreshold is set", func() {
+			tcp := kamajiv1alpha1.TenantControlPlane{
+				Spec: kamajiv1alpha1.TenantControlPlaneSpec{
+					ControlPlane: kamajiv1alpha1.ControlPlane{
+						Deployment: kamajiv1alpha1.DeploymentSpec{
+							StartupProbeFailureThreshold: pointer.To(int32(30)),
+						},
+					},
+				},
+			}
+			Expect(startupProbeFailureThreshold(tcp)).To(Equal(int32(30)))
 		})
 	})
 })

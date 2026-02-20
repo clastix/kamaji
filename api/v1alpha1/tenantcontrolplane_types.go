@@ -224,6 +224,13 @@ type DeploymentSpec struct {
 	// AdditionalVolumeMounts allows to mount an additional volume into each component of the Control Plane
 	// (kube-apiserver, controller-manager, and scheduler).
 	AdditionalVolumeMounts *AdditionalVolumeMounts `json:"additionalVolumeMounts,omitempty"`
+	// StartupProbeFailureThreshold defines the number of consecutive failures required for the startup probe
+	// to be considered failed for the Control Plane components (kube-apiserver, controller-manager, and scheduler).
+	// With the default PeriodSeconds of 10, the total startup timeout equals FailureThreshold * 10 seconds.
+	// Increase this value for resource-constrained environments where control plane components need more time to start.
+	//+kubebuilder:default=3
+	//+kubebuilder:validation:Minimum=1
+	StartupProbeFailureThreshold *int32 `json:"startupProbeFailureThreshold,omitempty"`
 	//+kubebuilder:default="default"
 	// ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`

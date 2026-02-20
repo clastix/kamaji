@@ -51,6 +51,16 @@ const (
 	kineInitContainerName     = "chmod"
 )
 
+const defaultStartupProbeFailureThreshold = int32(3)
+
+func startupProbeFailureThreshold(tcp kamajiv1alpha1.TenantControlPlane) int32 {
+	if tcp.Spec.ControlPlane.Deployment.StartupProbeFailureThreshold != nil {
+		return *tcp.Spec.ControlPlane.Deployment.StartupProbeFailureThreshold
+	}
+
+	return defaultStartupProbeFailureThreshold
+}
+
 type DataStoreOverrides struct {
 	Resource  string
 	DataStore kamajiv1alpha1.DataStore
@@ -381,7 +391,7 @@ func (d Deployment) buildScheduler(podSpec *corev1.PodSpec, tenantControlPlane k
 		TimeoutSeconds:      1,
 		PeriodSeconds:       10,
 		SuccessThreshold:    1,
-		FailureThreshold:    3,
+		FailureThreshold:    startupProbeFailureThreshold(tenantControlPlane),
 	}
 
 	switch {
@@ -473,7 +483,7 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		TimeoutSeconds:      1,
 		PeriodSeconds:       10,
 		SuccessThreshold:    1,
-		FailureThreshold:    3,
+		FailureThreshold:    startupProbeFailureThreshold(tenantControlPlane),
 	}
 	switch {
 	case tenantControlPlane.Spec.ControlPlane.Deployment.Resources == nil:
@@ -604,7 +614,7 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 		TimeoutSeconds:      1,
 		PeriodSeconds:       10,
 		SuccessThreshold:    1,
-		FailureThreshold:    3,
+		FailureThreshold:    startupProbeFailureThreshold(tenantControlPlane),
 	}
 	podSpec.Containers[index].ImagePullPolicy = corev1.PullAlways
 	// Volume mounts
