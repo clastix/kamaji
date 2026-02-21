@@ -51,6 +51,16 @@ const (
 	kineInitContainerName     = "chmod"
 )
 
+func applyProbeOverrides(probe *corev1.Probe, spec *kamajiv1alpha1.ProbeSpec) {
+	if spec == nil {
+		return
+	}
+
+	probe.TimeoutSeconds = pointer.Deref(spec.TimeoutSeconds, probe.TimeoutSeconds)
+	probe.PeriodSeconds = pointer.Deref(spec.PeriodSeconds, probe.PeriodSeconds)
+	probe.FailureThreshold = pointer.Deref(spec.FailureThreshold, probe.FailureThreshold)
+}
+
 type DataStoreOverrides struct {
 	Resource  string
 	DataStore kamajiv1alpha1.DataStore
@@ -384,6 +394,11 @@ func (d Deployment) buildScheduler(podSpec *corev1.PodSpec, tenantControlPlane k
 		FailureThreshold:    3,
 	}
 
+	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
+		applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Liveness)
+		applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Startup)
+	}
+
 	switch {
 	case tenantControlPlane.Spec.ControlPlane.Deployment.Resources == nil:
 		podSpec.Containers[index].Resources = corev1.ResourceRequirements{}
@@ -475,6 +490,12 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	}
+
+	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
+		applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Liveness)
+		applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Startup)
+	}
+
 	switch {
 	case tenantControlPlane.Spec.ControlPlane.Deployment.Resources == nil:
 		podSpec.Containers[index].Resources = corev1.ResourceRequirements{}
@@ -606,6 +627,13 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	}
+
+	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
+		applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Liveness)
+		applyProbeOverrides(podSpec.Containers[index].ReadinessProbe, probes.Readiness)
+		applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Startup)
+	}
+
 	podSpec.Containers[index].ImagePullPolicy = corev1.PullAlways
 	// Volume mounts
 	var extraVolumeMounts []corev1.VolumeMount
