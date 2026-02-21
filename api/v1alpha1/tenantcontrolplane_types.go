@@ -173,6 +173,29 @@ type ControlPlaneComponentsResources struct {
 	Kine *corev1.ResourceRequirements `json:"kine,omitempty"`
 }
 
+// ProbeSpec defines configurable parameters for a Kubernetes probe.
+type ProbeSpec struct {
+	// TimeoutSeconds is the number of seconds after which the probe times out.
+	//+kubebuilder:validation:Minimum=1
+	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
+	// PeriodSeconds is how often (in seconds) to perform the probe.
+	//+kubebuilder:validation:Minimum=1
+	PeriodSeconds *int32 `json:"periodSeconds,omitempty"`
+	// FailureThreshold is the consecutive failure count required to consider the probe failed.
+	//+kubebuilder:validation:Minimum=1
+	FailureThreshold *int32 `json:"failureThreshold,omitempty"`
+}
+
+// ControlPlaneProbes defines probe configuration for Control Plane components.
+type ControlPlaneProbes struct {
+	// Liveness defines parameters for liveness probes of Control Plane components.
+	Liveness *ProbeSpec `json:"liveness,omitempty"`
+	// Readiness defines parameters for the readiness probe of kube-apiserver.
+	Readiness *ProbeSpec `json:"readiness,omitempty"`
+	// Startup defines parameters for startup probes of Control Plane components.
+	Startup *ProbeSpec `json:"startup,omitempty"`
+}
+
 type DeploymentSpec struct {
 	// RegistrySettings allows to override the default images for the given Tenant Control Plane instance.
 	// It could be used to point to a different container registry rather than the public one.
@@ -224,13 +247,10 @@ type DeploymentSpec struct {
 	// AdditionalVolumeMounts allows to mount an additional volume into each component of the Control Plane
 	// (kube-apiserver, controller-manager, and scheduler).
 	AdditionalVolumeMounts *AdditionalVolumeMounts `json:"additionalVolumeMounts,omitempty"`
-	// StartupProbeFailureThreshold defines the number of consecutive failures required for the startup probe
-	// to be considered failed for the Control Plane components (kube-apiserver, controller-manager, and scheduler).
-	// With the default PeriodSeconds of 10, the total startup timeout equals FailureThreshold * 10 seconds.
-	// Increase this value for resource-constrained environments where control plane components need more time to start.
-	//+kubebuilder:default=3
-	//+kubebuilder:validation:Minimum=1
-	StartupProbeFailureThreshold *int32 `json:"startupProbeFailureThreshold,omitempty"`
+	// Probes defines the probe configuration for the Control Plane components
+	// (kube-apiserver, controller-manager, and scheduler).
+	// Override TimeoutSeconds, PeriodSeconds, and FailureThreshold for resource-constrained environments.
+	Probes *ControlPlaneProbes `json:"probes,omitempty"`
 	//+kubebuilder:default="default"
 	// ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`

@@ -8,6 +8,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	pointer "k8s.io/utils/ptr"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -52,23 +53,44 @@ var _ = Describe("Controlplane Deployment", func() {
 		})
 	})
 
-	Describe("startupProbeFailureThreshold", func() {
-		It("should return default value when StartupProbeFailureThreshold is nil", func() {
-			tcp := kamajiv1alpha1.TenantControlPlane{}
-			Expect(startupProbeFailureThreshold(tcp)).To(Equal(int32(3)))
+	Describe("applyProbeOverrides", func() {
+		var probe *corev1.Probe
+
+		BeforeEach(func() {
+			probe = &corev1.Probe{
+				TimeoutSeconds:   1,
+				PeriodSeconds:    10,
+				FailureThreshold: 3,
+			}
 		})
 
-		It("should return the configured value when StartupProbeFailureThreshold is set", func() {
-			tcp := kamajiv1alpha1.TenantControlPlane{
-				Spec: kamajiv1alpha1.TenantControlPlaneSpec{
-					ControlPlane: kamajiv1alpha1.ControlPlane{
-						Deployment: kamajiv1alpha1.DeploymentSpec{
-							StartupProbeFailureThreshold: pointer.To(int32(30)),
-						},
-					},
-				},
+		It("should not modify probe when spec is nil", func() {
+			applyProbeOverrides(probe, nil)
+			Expect(probe.TimeoutSeconds).To(Equal(int32(1)))
+			Expect(probe.PeriodSeconds).To(Equal(int32(10)))
+			Expect(probe.FailureThreshold).To(Equal(int32(3)))
+		})
+
+		It("should override only FailureThreshold when only it is set", func() {
+			spec := &kamajiv1alpha1.ProbeSpec{
+				FailureThreshold: pointer.To(int32(30)),
 			}
-			Expect(startupProbeFailureThreshold(tcp)).To(Equal(int32(30)))
+			applyProbeOverrides(probe, spec)
+			Expect(probe.FailureThreshold).To(Equal(int32(30)))
+			Expect(probe.TimeoutSeconds).To(Equal(int32(1)))
+			Expect(probe.PeriodSeconds).To(Equal(int32(10)))
+		})
+
+		It("should override all fields when all are set", func() {
+			spec := &kamajiv1alpha1.ProbeSpec{
+				TimeoutSeconds:   pointer.To(int32(5)),
+				PeriodSeconds:    pointer.To(int32(30)),
+				FailureThreshold: pointer.To(int32(10)),
+			}
+			applyProbeOverrides(probe, spec)
+			Expect(probe.TimeoutSeconds).To(Equal(int32(5)))
+			Expect(probe.PeriodSeconds).To(Equal(int32(30)))
+			Expect(probe.FailureThreshold).To(Equal(int32(10)))
 		})
 	})
 })

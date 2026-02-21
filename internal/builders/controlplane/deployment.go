@@ -51,14 +51,14 @@ const (
 	kineInitContainerName     = "chmod"
 )
 
-const defaultStartupProbeFailureThreshold = int32(3)
-
-func startupProbeFailureThreshold(tcp kamajiv1alpha1.TenantControlPlane) int32 {
-	if tcp.Spec.ControlPlane.Deployment.StartupProbeFailureThreshold != nil {
-		return *tcp.Spec.ControlPlane.Deployment.StartupProbeFailureThreshold
+func applyProbeOverrides(probe *corev1.Probe, spec *kamajiv1alpha1.ProbeSpec) {
+	if spec == nil {
+		return
 	}
 
-	return defaultStartupProbeFailureThreshold
+	probe.TimeoutSeconds = pointer.Deref(spec.TimeoutSeconds, probe.TimeoutSeconds)
+	probe.PeriodSeconds = pointer.Deref(spec.PeriodSeconds, probe.PeriodSeconds)
+	probe.FailureThreshold = pointer.Deref(spec.FailureThreshold, probe.FailureThreshold)
 }
 
 type DataStoreOverrides struct {
@@ -391,7 +391,12 @@ func (d Deployment) buildScheduler(podSpec *corev1.PodSpec, tenantControlPlane k
 		TimeoutSeconds:      1,
 		PeriodSeconds:       10,
 		SuccessThreshold:    1,
-		FailureThreshold:    startupProbeFailureThreshold(tenantControlPlane),
+		FailureThreshold:    3,
+	}
+
+	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
+		applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Liveness)
+		applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Startup)
 	}
 
 	switch {
@@ -483,8 +488,14 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		TimeoutSeconds:      1,
 		PeriodSeconds:       10,
 		SuccessThreshold:    1,
-		FailureThreshold:    startupProbeFailureThreshold(tenantControlPlane),
+		FailureThreshold:    3,
 	}
+
+	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
+		applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Liveness)
+		applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Startup)
+	}
+
 	switch {
 	case tenantControlPlane.Spec.ControlPlane.Deployment.Resources == nil:
 		podSpec.Containers[index].Resources = corev1.ResourceRequirements{}
@@ -614,8 +625,15 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 		TimeoutSeconds:      1,
 		PeriodSeconds:       10,
 		SuccessThreshold:    1,
-		FailureThreshold:    startupProbeFailureThreshold(tenantControlPlane),
+		FailureThreshold:    3,
 	}
+
+	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
+		applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Liveness)
+		applyProbeOverrides(podSpec.Containers[index].ReadinessProbe, probes.Readiness)
+		applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Startup)
+	}
+
 	podSpec.Containers[index].ImagePullPolicy = corev1.PullAlways
 	// Volume mounts
 	var extraVolumeMounts []corev1.VolumeMount
