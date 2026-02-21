@@ -32,6 +32,7 @@ type Endpoints []string
 // +kubebuilder:validation:XValidation:rule="(self.driver != \"etcd\" && has(self.basicAuth)) ? ((has(self.basicAuth.username.secretReference) || has(self.basicAuth.username.content))) : true", message="When driver is not etcd and basicAuth exists, username must have secretReference or content"
 // +kubebuilder:validation:XValidation:rule="(self.driver != \"etcd\" && has(self.basicAuth)) ? ((has(self.basicAuth.password.secretReference) || has(self.basicAuth.password.content))) : true", message="When driver is not etcd and basicAuth exists, password must have secretReference or content"
 // +kubebuilder:validation:XValidation:rule="(self.driver != \"etcd\") ? (has(self.tlsConfig) || has(self.basicAuth)) : true", message="When driver is not etcd, either tlsConfig or basicAuth must be provided"
+// +kubebuilder:validation:XValidation:rule="oldSelf == null || self.driver == oldSelf.driver", message="driver is immutable and cannot be changed after creation"
 type DataStoreSpec struct {
 	// The driver to use to connect to the shared datastore.
 	Driver Driver `json:"driver"`
@@ -88,6 +89,13 @@ type SecretReference struct {
 	KeyPath secretReferKeyPath `json:"keyPath"`
 }
 
+const (
+	DataStoreTCPFinalizer = "kamaji.clastix.io/TenantControlPlane"
+
+	DataStoreConditionValidType           = "kamaji.clastix.io/DataStoreValidation"
+	DataStoreConditionAllowedDeletionType = "kamaji.clastix.io/DataStoreAllowedDeletion"
+)
+
 // DataStoreStatus defines the observed state of DataStore.
 type DataStoreStatus struct {
 	// ObservedGeneration represents the .metadata.generation that was last reconciled.
@@ -95,12 +103,18 @@ type DataStoreStatus struct {
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// List of the Tenant Control Planes, namespaced named, using this data store.
 	UsedBy []string `json:"usedBy,omitempty"`
+	// Conditions contains the validation conditions for the given Datastore.
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	// Ready returns if the DataStore is accepted and ready to get used:
+	// Kamaji will ensure certificates are available, or correctly referenced.
+	Ready bool `json:"ready"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:scope=Cluster
 //+kubebuilder:printcolumn:name="Driver",type="string",JSONPath=".spec.driver",description="Kamaji data store driver"
+//+kubebuilder:printcolumn:name="Ready",type="boolean",JSONPath=".status.ready",description="DataStore validated and ready for use"
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Age"
 //+kubebuilder:metadata:annotations={"cert-manager.io/inject-ca-from=kamaji-system/kamaji-serving-cert"}
 
