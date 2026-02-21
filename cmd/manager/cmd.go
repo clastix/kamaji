@@ -276,12 +276,6 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 						KubernetesVersion: k8sVersion,
 					},
 				},
-				routes.DataStoreValidate{}: {
-					handlers.DataStoreValidation{Client: mgr.GetClient()},
-				},
-				routes.DataStoreSecrets{}: {
-					handlers.DataStoreSecretValidation{Client: mgr.GetClient()},
-				},
 			})
 			if err != nil {
 				setupLog.Error(err, "unable to create webhook")
