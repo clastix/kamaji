@@ -138,11 +138,13 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if markedToBeDeleted && !controllerutil.ContainsFinalizer(tenantControlPlane, finalizers.DatastoreFinalizer) {
 		return ctrl.Result{}, nil
 	}
-	// Retrieving the DataStore to use for the current reconciliation
-	ds, err := r.dataStore(ctx, tenantControlPlane)
-	if err != nil {
-		if errors.Is(err, ErrMissingDataStore) {
-			log.Info(err.Error())
+	// DataStore preflight checks:
+	// 1. DataStore must exist
+	// 2. it must be ready
+	ds, dsErr := r.dataStore(ctx, tenantControlPlane)
+	if dsErr != nil {
+		if errors.Is(dsErr, ErrMissingDataStore) {
+			log.Info(dsErr.Error())
 
 			return ctrl.Result{RequeueAfter: time.Second}, nil
 		}
@@ -150,6 +152,12 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		log.Error(err, "cannot retrieve the DataStore for the given instance")
 
 		return ctrl.Result{}, err
+	}
+
+	if !ds.Status.Ready {
+		log.Info("cannot reconcile since DataStore is not ready")
+
+		return ctrl.Result{RequeueAfter: time.Second}, nil
 	}
 
 	dsConnection, err := datastore.NewStorageConnection(ctx, r.Client, *ds)
