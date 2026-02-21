@@ -5,7 +5,7 @@ NAMESPACE:=nats-system
 .PHONY: helm
 HELM = $(shell pwd)/../../../bin/helm
 helm: ## Download helm locally if necessary.
-	$(call go-install-tool,$(HELM),helm.sh/helm/v3/cmd/helm@v3.9.0)
+	$(call go-install-tool,$(HELM),helm.sh/helm/v3/cmd/helm@v4.1.1)
 
 nats: nats-certificates nats-secret nats-deployment
 

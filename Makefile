@@ -83,7 +83,7 @@ $(YQ): $(LOCALBIN)
 .PHONY: helm
 helm: $(HELM) ## Download helm locally if necessary.
 $(HELM): $(LOCALBIN)
-	test -s $(LOCALBIN)/helm || GOBIN=$(LOCALBIN) CGO_ENABLED=0 go install -ldflags="-s -w" helm.sh/helm/v3/cmd/helm@v3.9.0
+	test -s $(LOCALBIN)/helm || GOBIN=$(LOCALBIN) CGO_ENABLED=0 go install -ldflags="-s -w" helm.sh/helm/v4/cmd/helm@v4.1.1
 
 .PHONY: ginkgo
 ginkgo: $(GINKGO) ## Download ginkgo locally if necessary.
@@ -248,9 +248,17 @@ cert-manager:
 	$(HELM) upgrade --install cert-manager jetstack/cert-manager --namespace certmanager-system --create-namespace --set "installCRDs=true"
 
 gateway-api:
-	kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
-# 	Required for the TLSRoutes. Experimentals.
-	kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
+	kubectl apply \
+		--server-side \
+		--force-conflicts \
+		--field-manager=helm \
+		-f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+	# Required for the TLSRoutes. Experimentals.
+	kubectl apply \
+		--server-side \
+		--force-conflicts \
+		--field-manager=helm \
+		-f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
 	kubectl wait --for=condition=Established crd/gateways.gateway.networking.k8s.io --timeout=60s
 
 envoy-gateway: gateway-api helm ## Install Envoy Gateway for Gateway API tests.
