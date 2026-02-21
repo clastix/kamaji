@@ -28843,6 +28843,15 @@ More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/<br
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobes">probes</a></b></td>
+        <td>object</td>
+        <td>
+          Probes defines the probe configuration for the Control Plane components
+(kube-apiserver, controller-manager, and scheduler).
+Override TimeoutSeconds, PeriodSeconds, and FailureThreshold for resource-constrained environments.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentregistrysettings">registrySettings</a></b></td>
         <td>object</td>
         <td>
@@ -40571,6 +40580,191 @@ AdditionalMetadata defines which additional metadata, such as labels and annotat
         <td>map[string]string</td>
         <td>
           <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespeccontrolplanedeploymentprobes">`TenantControlPlane.spec.controlPlane.deployment.probes`</span>
+
+
+Probes defines the probe configuration for the Control Plane components
+(kube-apiserver, controller-manager, and scheduler).
+Override TimeoutSeconds, PeriodSeconds, and FailureThreshold for resource-constrained environments.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesliveness">liveness</a></b></td>
+        <td>object</td>
+        <td>
+          Liveness defines parameters for liveness probes of Control Plane components.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesreadiness">readiness</a></b></td>
+        <td>object</td>
+        <td>
+          Readiness defines parameters for the readiness probe of kube-apiserver.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesstartup">startup</a></b></td>
+        <td>object</td>
+        <td>
+          Startup defines parameters for startup probes of Control Plane components.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespeccontrolplanedeploymentprobesliveness">`TenantControlPlane.spec.controlPlane.deployment.probes.liveness`</span>
+
+
+Liveness defines parameters for liveness probes of Control Plane components.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespeccontrolplanedeploymentprobesreadiness">`TenantControlPlane.spec.controlPlane.deployment.probes.readiness`</span>
+
+
+Readiness defines parameters for the readiness probe of kube-apiserver.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespeccontrolplanedeploymentprobesstartup">`TenantControlPlane.spec.controlPlane.deployment.probes.startup`</span>
+
+
+Startup defines parameters for startup probes of Control Plane components.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>

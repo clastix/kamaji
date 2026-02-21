@@ -6165,6 +6165,70 @@ versions:
                               type: string
                             type: object
                         type: object
+                      probes:
+                        description: |-
+                          Probes defines the probe configuration for the Control Plane components
+                          (kube-apiserver, controller-manager, and scheduler).
+                          Override TimeoutSeconds, PeriodSeconds, and FailureThreshold for resource-constrained environments.
+                        properties:
+                          liveness:
+                            description: Liveness defines parameters for liveness probes of Control Plane components.
+                            properties:
+                              failureThreshold:
+                                description: FailureThreshold is the consecutive failure count required to consider the probe failed.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                              periodSeconds:
+                                description: PeriodSeconds is how often (in seconds) to perform the probe.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                              timeoutSeconds:
+                                description: TimeoutSeconds is the number of seconds after which the probe times out.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                            type: object
+                          readiness:
+                            description: Readiness defines parameters for the readiness probe of kube-apiserver.
+                            properties:
+                              failureThreshold:
+                                description: FailureThreshold is the consecutive failure count required to consider the probe failed.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                              periodSeconds:
+                                description: PeriodSeconds is how often (in seconds) to perform the probe.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                              timeoutSeconds:
+                                description: TimeoutSeconds is the number of seconds after which the probe times out.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                            type: object
+                          startup:
+                            description: Startup defines parameters for startup probes of Control Plane components.
+                            properties:
+                              failureThreshold:
+                                description: FailureThreshold is the consecutive failure count required to consider the probe failed.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                              periodSeconds:
+                                description: PeriodSeconds is how often (in seconds) to perform the probe.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                              timeoutSeconds:
+                                description: TimeoutSeconds is the number of seconds after which the probe times out.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                            type: object
+                        type: object
                       registrySettings:
                         default:
                           apiServerImage: kube-apiserver
@@ -6453,16 +6517,6 @@ versions:
                         default: default
                         description: ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment
                         type: string
-                      startupProbeFailureThreshold:
-                        default: 3
-                        description: |-
-                          StartupProbeFailureThreshold defines the number of consecutive failures required for the startup probe
-                          to be considered failed for the Control Plane components (kube-apiserver, controller-manager, and scheduler).
-                          With the default PeriodSeconds of 10, the total startup timeout equals FailureThreshold * 10 seconds.
-                          Increase this value for resource-constrained environments where control plane components need more time to start.
-                        format: int32
-                        minimum: 1
-                        type: integer
                       strategy:
                         default:
                           rollingUpdate:
