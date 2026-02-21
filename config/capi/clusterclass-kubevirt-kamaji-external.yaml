@@ -1,0 +1,154 @@
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+kind: KubeadmConfigTemplate
+metadata:
+  name: worker-external
+  namespace: default
+spec:
+  template:
+    spec:
+      users:
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+          - name: feature-gates
+            value: "KubeletCrashLoopBackOffMax=true,KubeletEnsureSecretPulledImages=true"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: KubevirtMachineTemplate
+metadata:
+  name: worker-external
+  namespace: default
+spec:
+  template:
+    spec:
+      virtualMachineBootstrapCheck:
+        checkStrategy: ssh
+      virtualMachineTemplate:
+        metadata:
+          namespace: default
+        spec:
+          runStrategy: Always
+          template:
+            spec:
+              dnsPolicy: None
+              dnsConfig:
+                nameservers:
+                  - 1.1.1.1
+                  - 8.8.8.8
+                searches: []
+                options:
+                  - name: ndots
+                    value: "1"
+              domain:
+                cpu:
+                  cores: 2
+                devices:
+                  interfaces:
+                  - name: default
+                    masquerade: {}
+                  disks:
+                  - disk:
+                      bus: virtio
+                    name: containervolume
+                  networkInterfaceMultiqueue: true
+                memory:
+                  guest: 4Gi
+              evictionStrategy: External
+              networks:
+              - name: default
+                pod: {}
+              volumes:
+              - containerDisk:
+                  image: quay.io/capk/ubuntu-2404-container-disk:v1.34.1
+                name: containervolume
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: KubevirtClusterTemplate
+metadata:
+  name: kubevirt-external
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations:
+        cluster.x-k8s.io/managed-by: kamaji
+    spec:
+      controlPlaneServiceTemplate:
+        spec:
+          type: LoadBalancer
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
+kind: KamajiControlPlaneTemplate
+metadata:
+  name: kamaji-controlplane-external
+  namespace: default
+spec:
+  template:
+    spec:
+      addons:
+        coreDNS: {}
+        konnectivity: {}
+        kubeProxy: {}
+      dataStoreName: "default" # reference to DataStore present on external cluster
+      deployment:
+        externalClusterReference:
+          deploymentNamespace: kamaji-tenants
+          kubeconfigSecretName: kind-external-kubeconfig
+          kubeconfigSecretKey: kubeconfig
+      network:
+        serviceType: LoadBalancer
+      kubelet:
+        cgroupfs: systemd
+        preferredAddressTypes:
+        - InternalIP
+      registry: "registry.k8s.io"
+---
+apiVersion: cluster.x-k8s.io/v1beta2
+kind: ClusterClass
+metadata:
+  name: kubevirt-kamaji-kubeadm-external
+  namespace: default
+spec:
+  controlPlane:
+    templateRef:
+      apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
+      kind: KamajiControlPlaneTemplate
+      name: kamaji-controlplane-external
+  infrastructure:
+    templateRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+      kind: KubevirtClusterTemplate
+      name: kubevirt-external
+  workers:
+    machineDeployments:
+      - class: small
+        bootstrap:
+          templateRef:
+            apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+            kind: KubeadmConfigTemplate
+            name: worker-external
+        infrastructure:
+          templateRef:
+            apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+            kind: KubevirtMachineTemplate
+            name: worker-external
+---
+apiVersion: cluster.x-k8s.io/v1beta2
+kind: Cluster
+metadata:
+  name: demo-external
+  namespace: default
+spec:
+  topology:
+    classRef:
+      name: kubevirt-kamaji-kubeadm-external
+      namespace: default
+    version: v1.34.0
+    controlPlane:
+      replicas: 1
+    workers:
+      machineDeployments:
+      - class: small
+        name: md-small
+        replicas: 1
