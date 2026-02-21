@@ -48,7 +48,7 @@ func (r *KubernetesServiceResource) CleanUp(context.Context, *kamajiv1alpha1.Ten
 }
 
 func (r *KubernetesServiceResource) UpdateTenantControlPlaneStatus(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	tenantControlPlane.Status.Kubernetes.Service.ServiceStatus = r.resource.Status
+	tenantControlPlane.Status.Kubernetes.Service.ServiceStatus = StripLoadBalancerPortsFromServiceStatus(r.resource.Status)
 	tenantControlPlane.Status.Kubernetes.Service.Name = r.resource.GetName()
 	tenantControlPlane.Status.Kubernetes.Service.Namespace = r.resource.GetNamespace()
 	tenantControlPlane.Status.Kubernetes.Service.Port = r.resource.Spec.Ports[0].Port
