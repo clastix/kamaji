@@ -68,6 +68,7 @@ nav:
   - cluster-api/other-providers.md
   - cluster-api/cluster-autoscaler.md
   - cluster-api/cluster-class.md
+  - cluster-api/external-cluster.md
 - 'Guides':
   - guides/index.md
   - guides/alternative-datastore.md
