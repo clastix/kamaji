@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: kamaji-system/kamaji-serving-cert
-    controller-gen.kubebuilder.io/version: v0.20.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: tenantcontrolplanes.kamaji.clastix.io
 spec:
   group: kamaji.clastix.io
@@ -6992,6 +6992,12 @@ spec:
                               - targetPort
                             type: object
                           type: array
+                        publicAPIServerAddress:
+                          description: |-
+                            PublicAPIServerAddress allows specifying a custom hostname for the API server.
+                            If set, this address will be used in cluster-info ConfigMaps and kubeconfigs
+                            instead of the LoadBalancer IP, enabling the use of DNS names that match certificate SANs.
+                          type: string
                         serviceType:
                           description: ServiceType allows specifying how to expose the Tenant Control Plane.
                           enum:
