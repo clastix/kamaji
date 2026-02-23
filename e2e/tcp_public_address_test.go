@@ -4,17 +4,20 @@
 package e2e
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/clientcmd"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
 var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
+	ctx := context.Background()
 	var tcp *kamajiv1alpha1.TenantControlPlane
 
 	BeforeEach(func() {
@@ -90,12 +93,28 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 					Name:      tcp.Name + "-scheduler-kubeconfig",
 					Namespace: tcp.Namespace,
 				}, schedSecret)
+
 				return err == nil
 			}, 300, 5).Should(BeTrue())
 
-			// Note: Full validation of kubeconfig contents would require parsing YAML
-			// and checking the server URL, but this test ensures the feature is exercised
-			// during TCP creation.
+			// Validate that the kubeconfigs contain the public address in the server URL
+			cmSecret := &corev1.Secret{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      tcp.Name + "-controller-manager-kubeconfig",
+				Namespace: tcp.Namespace,
+			}, cmSecret)).To(Succeed())
+			cmConfig, err := clientcmd.Load(cmSecret.Data["controller-manager.conf"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmConfig.Clusters[cmConfig.CurrentContext].Server).To(Equal("https://k8s-api.example.com:6443"))
+
+			schedSecret := &corev1.Secret{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      tcp.Name + "-scheduler-kubeconfig",
+				Namespace: tcp.Namespace,
+			}, schedSecret)).To(Succeed())
+			schedConfig, err := clientcmd.Load(schedSecret.Data["scheduler.conf"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(schedConfig.Clusters[schedConfig.CurrentContext].Server).To(Equal("https://k8s-api.example.com:6443"))
 		})
 	})
 })

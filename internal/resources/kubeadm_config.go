@@ -6,6 +6,7 @@ package resources
 import (
 	"context"
 	"net"
+	"slices"
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -88,21 +89,31 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 			return err
 		}
 
+		publicAddr, _, err := tenantControlPlane.PublicControlPlaneAddress()
+		if err != nil {
+			logger.Error(err, "cannot retrieve Tenant Control Plane public address")
+
+			return err
+		}
+
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
 		endpoint := net.JoinHostPort(address, strconv.FormatInt(int64(port), 10))
 		spec := tenantControlPlane.Spec.ControlPlane
-		if spec.Gateway != nil {
-			if len(spec.Gateway.Hostname) > 0 {
-				gaddr, gport := utilities.GetControlPlaneAddressAndPortFromHostname(string(spec.Gateway.Hostname), port)
-				endpoint = net.JoinHostPort(gaddr, strconv.FormatInt(int64(gport), 10))
-			}
+		switch {
+		case spec.Gateway != nil && len(spec.Gateway.Hostname) > 0:
+			gaddr, gport := utilities.GetControlPlaneAddressAndPortFromHostname(string(spec.Gateway.Hostname), port)
+			endpoint = net.JoinHostPort(gaddr, strconv.FormatInt(int64(gport), 10))
+		case spec.Ingress != nil && len(spec.Ingress.Hostname) > 0:
+			iaddr, iport := utilities.GetControlPlaneAddressAndPortFromHostname(spec.Ingress.Hostname, port)
+			endpoint = net.JoinHostPort(iaddr, strconv.FormatInt(int64(iport), 10))
+		case publicAddr != address:
+			endpoint = net.JoinHostPort(publicAddr, strconv.FormatInt(int64(port), 10))
 		}
-		if spec.Ingress != nil {
-			if len(spec.Ingress.Hostname) > 0 {
-				iaddr, iport := utilities.GetControlPlaneAddressAndPortFromHostname(spec.Ingress.Hostname, port)
-				endpoint = net.JoinHostPort(iaddr, strconv.FormatInt(int64(iport), 10))
-			}
+
+		certSANs := tenantControlPlane.Spec.NetworkProfile.CertSANs
+		if publicAddr != address && !slices.Contains(certSANs, publicAddr) {
+			certSANs = append(certSANs, publicAddr)
 		}
 
 		params := kubeadm.Parameters{
@@ -111,7 +122,7 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 			TenantControlPlaneName:          tenantControlPlane.GetName(),
 			TenantControlPlaneNamespace:     tenantControlPlane.GetNamespace(),
 			TenantControlPlaneEndpoint:      endpoint,
-			TenantControlPlaneCertSANs:      tenantControlPlane.Spec.NetworkProfile.CertSANs,
+			TenantControlPlaneCertSANs:      certSANs,
 			TenantControlPlaneClusterDomain: tenantControlPlane.Spec.NetworkProfile.ClusterDomain,
 			TenantControlPlanePodCIDR:       tenantControlPlane.Spec.NetworkProfile.PodCIDR,
 			TenantControlPlaneServiceCIDR:   tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
