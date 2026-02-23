@@ -6,6 +6,7 @@ package resources
 import (
 	"context"
 	"net"
+	"slices"
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -88,33 +89,43 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 			return err
 		}
 
+<<<<<<< HEAD
 		// Resolve the advertised address for tenant-side consumers
 		advAddress, _, advErr := tenantControlPlane.AdvertisedControlPlaneAddress()
 		if advErr != nil {
 			return advErr
+=======
+		publicAddr, _, err := tenantControlPlane.PublicControlPlaneAddress()
+		if err != nil {
+			logger.Error(err, "cannot retrieve Tenant Control Plane public address")
+
+			return err
+>>>>>>> 2dc9ad8 (feat: integrate PublicAPIServerAddress into kubeadm config and kubeconfigs)
 		}
 
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
 		endpoint := net.JoinHostPort(advAddress, strconv.FormatInt(int64(port), 10))
 		spec := tenantControlPlane.Spec.ControlPlane
-		if spec.Gateway != nil {
-			if len(spec.Gateway.Hostname) > 0 {
-				gaddr, gport := utilities.GetControlPlaneAddressAndPortFromHostname(string(spec.Gateway.Hostname), port)
-				endpoint = net.JoinHostPort(gaddr, strconv.FormatInt(int64(gport), 10))
-			}
+		switch {
+		case spec.Gateway != nil && len(spec.Gateway.Hostname) > 0:
+			gaddr, gport := utilities.GetControlPlaneAddressAndPortFromHostname(string(spec.Gateway.Hostname), port)
+			endpoint = net.JoinHostPort(gaddr, strconv.FormatInt(int64(gport), 10))
+		case spec.Ingress != nil && len(spec.Ingress.Hostname) > 0:
+			iaddr, iport := utilities.GetControlPlaneAddressAndPortFromHostname(spec.Ingress.Hostname, port)
+			endpoint = net.JoinHostPort(iaddr, strconv.FormatInt(int64(iport), 10))
+		case publicAddr != address:
+			endpoint = net.JoinHostPort(publicAddr, strconv.FormatInt(int64(port), 10))
 		}
-		if spec.Ingress != nil {
-			if len(spec.Ingress.Hostname) > 0 {
-				iaddr, iport := utilities.GetControlPlaneAddressAndPortFromHostname(spec.Ingress.Hostname, port)
-				endpoint = net.JoinHostPort(iaddr, strconv.FormatInt(int64(iport), 10))
-			}
+
+		certSANs := tenantControlPlane.Spec.NetworkProfile.CertSANs
+		if publicAddr != address && !slices.Contains(certSANs, publicAddr) {
+			certSANs = append(certSANs, publicAddr)
 		}
 
 		// Add advertise address to cert SANs if different from management address
-		certSANs := tenantControlPlane.Spec.NetworkProfile.CertSANs
-		if advAddress != address {
-			certSANs = append(append([]string{}, certSANs...), advAddress)
+		if advAddress != address && !slices.Contains(certSANs, advAddress) {
+			certSANs = append(certSANs, advAddress)
 		}
 
 		params := kubeadm.Parameters{
