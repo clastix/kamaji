@@ -108,10 +108,11 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 			if cmData, ok := cmSecret.Data["controller-manager.conf"]; ok {
 				cmConfig, err := clientcmd.Load(cmData)
 				Expect(err).NotTo(HaveOccurred())
-				if cmConfig != nil && cmConfig.Clusters != nil {
-					const clusterName = "kubernetes"
-					Expect(cmConfig.Clusters).To(HaveKey(clusterName))
-					Expect(cmConfig.Clusters[clusterName].Server).To(Equal("https://k8s-api.example.com:6443"))
+				if cmConfig != nil && cmConfig.Clusters != nil && cmConfig.CurrentContext != "" && cmConfig.Contexts != nil {
+					context, ok := cmConfig.Contexts[cmConfig.CurrentContext]
+					Expect(ok).To(BeTrue())
+					Expect(cmConfig.Clusters).To(HaveKey(context.Cluster))
+					Expect(cmConfig.Clusters[context.Cluster].Server).To(Equal("https://k8s-api.example.com:6443"))
 				}
 			}
 
@@ -123,10 +124,11 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 			if schedData, ok := schedSecret.Data["scheduler.conf"]; ok {
 				schedConfig, err := clientcmd.Load(schedData)
 				Expect(err).NotTo(HaveOccurred())
-				if schedConfig != nil && schedConfig.Clusters != nil {
-					const clusterName = "kubernetes"
-					Expect(schedConfig.Clusters).To(HaveKey(clusterName))
-					Expect(schedConfig.Clusters[clusterName].Server).To(Equal("https://k8s-api.example.com:6443"))
+				if schedConfig != nil && schedConfig.Clusters != nil && schedConfig.CurrentContext != "" && schedConfig.Contexts != nil {
+					context, ok := schedConfig.Contexts[schedConfig.CurrentContext]
+					Expect(ok).To(BeTrue())
+					Expect(schedConfig.Clusters).To(HaveKey(context.Cluster))
+					Expect(schedConfig.Clusters[context.Cluster].Server).To(Equal("https://k8s-api.example.com:6443"))
 				}
 			}
 		})
