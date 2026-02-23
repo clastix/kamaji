@@ -160,9 +160,11 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 		By("disabling swap", func() {
 			exitCode, stdout, err := workerContainer.Exec(ctx, []string{"swapoff", "-a"})
 
-			out, _ := io.ReadAll(stdout)
-			if len(out) > 0 {
-				_, _ = fmt.Fprintln(GinkgoWriter, "swapoff failed: "+string(out))
+			if stdout != nil {
+				out, _ := io.ReadAll(stdout)
+				if len(out) > 0 {
+					_, _ = fmt.Fprintln(GinkgoWriter, "swapoff failed: "+string(out))
+				}
 			}
 
 			if exitCode != 0 {
