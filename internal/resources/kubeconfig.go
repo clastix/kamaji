@@ -249,10 +249,12 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 }
 
 func (r *KubeconfigResource) customizeConfig(config *kubeadm.Configuration, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	// Scheduler and Controller Manager should use local cluster addresses
+	// Scheduler and Controller Manager should use local cluster addresses unless PublicAPIServerAddress is set
 	if r.KubeConfigFileName == kubeadmconstants.ControllerManagerKubeConfigFileName || r.KubeConfigFileName == kubeadmconstants.SchedulerKubeConfigFileName {
-		port := cmp.Or(tenantControlPlane.Spec.NetworkProfile.Port, 6443)
-		config.InitConfiguration.ControlPlaneEndpoint = fmt.Sprintf("%s.%s.svc:%d", tenantControlPlane.Name, tenantControlPlane.Namespace, port)
+		if len(tenantControlPlane.Spec.ControlPlane.Service.PublicAPIServerAddress) == 0 {
+			port := cmp.Or(tenantControlPlane.Spec.NetworkProfile.Port, 6443)
+			config.InitConfiguration.ControlPlaneEndpoint = fmt.Sprintf("%s.%s.svc:%d", tenantControlPlane.Name, tenantControlPlane.Namespace, port)
+		}
 	}
 
 	return nil
