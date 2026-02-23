@@ -181,9 +181,11 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 
 			exitCode, stdout, err := workerContainer.Exec(ctx, cmds)
 
-			out, _ := io.ReadAll(stdout)
-			if len(out) > 0 {
-				_, _ = fmt.Fprintln(GinkgoWriter, "executing failed: "+string(out))
+			if stdout != nil {
+				out, _ := io.ReadAll(stdout)
+				if len(out) > 0 {
+					_, _ = fmt.Fprintln(GinkgoWriter, "executing failed: "+string(out))
+				}
 			}
 
 			Expect(exitCode).To(Equal(0))
