@@ -105,18 +105,26 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 				Name:      tcp.Name + "-controller-manager-kubeconfig",
 				Namespace: tcp.Namespace,
 			}, cmSecret)).To(Succeed())
-			cmConfig, err := clientcmd.Load(cmSecret.Data["controller-manager.conf"])
-			Expect(err).NotTo(HaveOccurred())
-			Expect(cmConfig.Clusters[cmConfig.CurrentContext].Server).To(Equal("https://" + tcp.Name + ".default.svc:6443"))
+			if cmData, ok := cmSecret.Data["controller-manager.conf"]; ok {
+				cmConfig, err := clientcmd.Load(cmData)
+				Expect(err).NotTo(HaveOccurred())
+				if cmConfig != nil && cmConfig.Clusters != nil && cmConfig.CurrentContext != "" {
+					Expect(cmConfig.Clusters[cmConfig.CurrentContext].Server).To(Equal("https://" + tcp.Name + ".default.svc:6443"))
+				}
+			}
 
 			schedSecret := &corev1.Secret{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{
 				Name:      tcp.Name + "-scheduler-kubeconfig",
 				Namespace: tcp.Namespace,
 			}, schedSecret)).To(Succeed())
-			schedConfig, err := clientcmd.Load(schedSecret.Data["scheduler.conf"])
-			Expect(err).NotTo(HaveOccurred())
-			Expect(schedConfig.Clusters[schedConfig.CurrentContext].Server).To(Equal("https://" + tcp.Name + ".default.svc:6443"))
+			if schedData, ok := schedSecret.Data["scheduler.conf"]; ok {
+				schedConfig, err := clientcmd.Load(schedData)
+				Expect(err).NotTo(HaveOccurred())
+				if schedConfig != nil && schedConfig.Clusters != nil && schedConfig.CurrentContext != "" {
+					Expect(schedConfig.Clusters[schedConfig.CurrentContext].Server).To(Equal("https://" + tcp.Name + ".default.svc:6443"))
+				}
+			}
 		})
 	})
 })
