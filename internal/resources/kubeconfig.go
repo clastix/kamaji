@@ -4,6 +4,7 @@
 package resources
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"strings"
@@ -248,6 +249,11 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 }
 
 func (r *KubeconfigResource) customizeConfig(config *kubeadm.Configuration, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	// Scheduler and Controller Manager should use loopback addresses
+	// Scheduler and Controller Manager should use local cluster addresses
+	if r.KubeConfigFileName == kubeadmconstants.ControllerManagerKubeConfigFileName || r.KubeConfigFileName == kubeadmconstants.SchedulerKubeConfigFileName {
+		port := cmp.Or(tenantControlPlane.Spec.NetworkProfile.Port, 6443)
+		config.InitConfiguration.ControlPlaneEndpoint = fmt.Sprintf("%s.%s.svc:%d", tenantControlPlane.Name, tenantControlPlane.Namespace, port)
+	}
+
 	return nil
 }
