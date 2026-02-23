@@ -112,7 +112,7 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 					context, ok := cmConfig.Contexts[cmConfig.CurrentContext]
 					Expect(ok).To(BeTrue())
 					Expect(cmConfig.Clusters).To(HaveKey(context.Cluster))
-					Expect(cmConfig.Clusters[context.Cluster].Server).To(Equal("https://" + tcp.Name + ".default.svc.cluster.local:6443"))
+					Expect(cmConfig.Clusters[context.Cluster].Server).To(Equal("https://" + tcp.Name + ".default.svc:6443"))
 				}
 			}
 
@@ -128,7 +128,7 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 					context, ok := schedConfig.Contexts[schedConfig.CurrentContext]
 					Expect(ok).To(BeTrue())
 					Expect(schedConfig.Clusters).To(HaveKey(context.Cluster))
-					Expect(schedConfig.Clusters[context.Cluster].Server).To(Equal("https://" + tcp.Name + ".default.svc.cluster.local:6443"))
+					Expect(schedConfig.Clusters[context.Cluster].Server).To(Equal("https://" + tcp.Name + ".default.svc:6443"))
 				}
 			}
 		})
