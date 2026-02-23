@@ -252,8 +252,7 @@ func (r *KubeconfigResource) customizeConfig(config *kubeadm.Configuration, tena
 	// Scheduler and Controller Manager should use local cluster addresses
 	if r.KubeConfigFileName == kubeadmconstants.ControllerManagerKubeConfigFileName || r.KubeConfigFileName == kubeadmconstants.SchedulerKubeConfigFileName {
 		port := cmp.Or(tenantControlPlane.Spec.NetworkProfile.Port, 6443)
-		clusterDomain := cmp.Or(tenantControlPlane.Spec.NetworkProfile.ClusterDomain, "cluster.local")
-		config.InitConfiguration.ControlPlaneEndpoint = fmt.Sprintf("%s.%s.svc.%s:%d", tenantControlPlane.Name, tenantControlPlane.Namespace, clusterDomain, port)
+		config.InitConfiguration.ControlPlaneEndpoint = fmt.Sprintf("%s.%s.svc:%d", tenantControlPlane.Name, tenantControlPlane.Namespace, port)
 	}
 
 	return nil
