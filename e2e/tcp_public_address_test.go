@@ -5,6 +5,8 @@ package e2e
 
 import (
 	"context"
+	"strconv"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -23,7 +25,7 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 	BeforeEach(func() {
 		tcp = &kamajiv1alpha1.TenantControlPlane{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "tcp-public-address-test",
+				Name:      "tcp-public-address-test-" + strconv.Itoa(int(time.Now().UnixNano())),
 				Namespace: "default",
 			},
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
@@ -105,7 +107,7 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 			}, cmSecret)).To(Succeed())
 			cmConfig, err := clientcmd.Load(cmSecret.Data["controller-manager.conf"])
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cmConfig.Clusters[cmConfig.CurrentContext].Server).To(Equal("https://tcp-public-address-test.default.svc:6443"))
+			Expect(cmConfig.Clusters[cmConfig.CurrentContext].Server).To(Equal("https://" + tcp.Name + ".default.svc:6443"))
 
 			schedSecret := &corev1.Secret{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{
@@ -114,7 +116,7 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 			}, schedSecret)).To(Succeed())
 			schedConfig, err := clientcmd.Load(schedSecret.Data["scheduler.conf"])
 			Expect(err).NotTo(HaveOccurred())
-			Expect(schedConfig.Clusters[schedConfig.CurrentContext].Server).To(Equal("https://tcp-public-address-test.default.svc:6443"))
+			Expect(schedConfig.Clusters[schedConfig.CurrentContext].Server).To(Equal("https://" + tcp.Name + ".default.svc:6443"))
 		})
 	})
 })
