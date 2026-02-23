@@ -141,9 +141,11 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 		By("enabling br_netfilter", func() {
 			exitCode, stdout, err := workerContainer.Exec(ctx, []string{"modprobe", "br_netfilter"})
 
-			out, _ := io.ReadAll(stdout)
-			if len(out) > 0 {
-				_, _ = fmt.Fprintln(GinkgoWriter, "modprobe failed: "+string(out))
+			if stdout != nil {
+				out, _ := io.ReadAll(stdout)
+				if len(out) > 0 {
+					_, _ = fmt.Fprintln(GinkgoWriter, "modprobe failed: "+string(out))
+				}
 			}
 
 			if exitCode != 0 {
