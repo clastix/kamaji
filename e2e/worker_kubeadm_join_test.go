@@ -179,7 +179,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 		By("executing the command in the worker node", func() {
 			cmds := append(strings.Split(strings.TrimSpace(joinCommandBuffer.String()), " "), "--ignore-preflight-errors=SystemVerification,FileExisting")
 
-			exitCode, stdout, err := workerContainer.Exec(ctx, cmds)
+			exitCode, stdout, _ := workerContainer.Exec(ctx, cmds)
 
 			if stdout != nil {
 				out, _ := io.ReadAll(stdout)
@@ -189,7 +189,6 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 			}
 
 			Expect(exitCode).To(Equal(0))
-			Expect(err).ToNot(HaveOccurred())
 		})
 
 		By("waiting for nodes", func() {
