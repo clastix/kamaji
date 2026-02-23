@@ -56,8 +56,10 @@ func applyProbeOverrides(probe *corev1.Probe, spec *kamajiv1alpha1.ProbeSpec) {
 		return
 	}
 
+	probe.InitialDelaySeconds = pointer.Deref(spec.InitialDelaySeconds, probe.InitialDelaySeconds)
 	probe.TimeoutSeconds = pointer.Deref(spec.TimeoutSeconds, probe.TimeoutSeconds)
 	probe.PeriodSeconds = pointer.Deref(spec.PeriodSeconds, probe.PeriodSeconds)
+	probe.SuccessThreshold = pointer.Deref(spec.SuccessThreshold, probe.SuccessThreshold)
 	probe.FailureThreshold = pointer.Deref(spec.FailureThreshold, probe.FailureThreshold)
 }
 
@@ -397,6 +399,11 @@ func (d Deployment) buildScheduler(podSpec *corev1.PodSpec, tenantControlPlane k
 	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
 		applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Liveness)
 		applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Startup)
+
+		if probes.Scheduler != nil {
+			applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Scheduler.Liveness)
+			applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Scheduler.Startup)
+		}
 	}
 
 	switch {
@@ -494,6 +501,11 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
 		applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Liveness)
 		applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Startup)
+
+		if probes.ControllerManager != nil {
+			applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.ControllerManager.Liveness)
+			applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.ControllerManager.Startup)
+		}
 	}
 
 	switch {
@@ -632,6 +644,12 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 		applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Liveness)
 		applyProbeOverrides(podSpec.Containers[index].ReadinessProbe, probes.Readiness)
 		applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Startup)
+
+		if probes.APIServer != nil {
+			applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.APIServer.Liveness)
+			applyProbeOverrides(podSpec.Containers[index].ReadinessProbe, probes.APIServer.Readiness)
+			applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.APIServer.Startup)
+		}
 	}
 
 	podSpec.Containers[index].ImagePullPolicy = corev1.PullAlways
