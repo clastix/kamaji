@@ -52,13 +52,16 @@ func (in *TenantControlPlane) AdvertisedControlPlaneAddress() (string, int32, er
 }
 
 // DeclaredControlPlaneAddress returns the desired Tenant Control Plane address.
-// For services, it returns the clusterIP if available, otherwise the DNS name.
+// For services, it returns the PublicAPIServerAddress if set, otherwise clusterIP if available, otherwise the DNS name.
 // When the address cannot be determined, an error is returned.
 func (in *TenantControlPlane) DeclaredControlPlaneAddress(ctx context.Context, client client.Client) (string, error) {
 	switch {
 	case len(in.Spec.NetworkProfile.Address) > 0:
 		// Returning the hard-coded value in the specification in case of non LoadBalanced resources
 		return in.Spec.NetworkProfile.Address, nil
+	case len(in.Spec.ControlPlane.Service.PublicAPIServerAddress) > 0:
+		// Use the public API server address if specified
+		return in.Spec.ControlPlane.Service.PublicAPIServerAddress, nil
 	default:
 		// Try to get the service clusterIP, otherwise use DNS name
 		svc := &corev1.Service{}
