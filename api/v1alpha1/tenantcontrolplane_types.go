@@ -173,6 +173,54 @@ type ControlPlaneComponentsResources struct {
 	Kine *corev1.ResourceRequirements `json:"kine,omitempty"`
 }
 
+// ProbeSpec defines configurable parameters for a Kubernetes probe.
+type ProbeSpec struct {
+	// InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.
+	//+kubebuilder:validation:Minimum=0
+	InitialDelaySeconds *int32 `json:"initialDelaySeconds,omitempty"`
+	// TimeoutSeconds is the number of seconds after which the probe times out.
+	//+kubebuilder:validation:Minimum=1
+	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
+	// PeriodSeconds is how often (in seconds) to perform the probe.
+	//+kubebuilder:validation:Minimum=1
+	PeriodSeconds *int32 `json:"periodSeconds,omitempty"`
+	// SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+	// Must be 1 for liveness and startup probes.
+	//+kubebuilder:validation:Minimum=1
+	SuccessThreshold *int32 `json:"successThreshold,omitempty"`
+	// FailureThreshold is the consecutive failure count required to consider the probe failed.
+	//+kubebuilder:validation:Minimum=1
+	FailureThreshold *int32 `json:"failureThreshold,omitempty"`
+}
+
+// ProbeSet defines per-probe-type configuration.
+type ProbeSet struct {
+	// Liveness defines parameters for the liveness probe.
+	Liveness *ProbeSpec `json:"liveness,omitempty"`
+	// Readiness defines parameters for the readiness probe.
+	Readiness *ProbeSpec `json:"readiness,omitempty"`
+	// Startup defines parameters for the startup probe.
+	Startup *ProbeSpec `json:"startup,omitempty"`
+}
+
+// ControlPlaneProbes defines probe configuration for Control Plane components.
+// Global probe settings (Liveness, Readiness, Startup) apply to all components.
+// Per-component settings (APIServer, ControllerManager, Scheduler) override global settings.
+type ControlPlaneProbes struct {
+	// Liveness defines default parameters for liveness probes of all Control Plane components.
+	Liveness *ProbeSpec `json:"liveness,omitempty"`
+	// Readiness defines default parameters for the readiness probe of kube-apiserver.
+	Readiness *ProbeSpec `json:"readiness,omitempty"`
+	// Startup defines default parameters for startup probes of all Control Plane components.
+	Startup *ProbeSpec `json:"startup,omitempty"`
+	// APIServer defines probe overrides for kube-apiserver, taking precedence over global probe settings.
+	APIServer *ProbeSet `json:"apiServer,omitempty"`
+	// ControllerManager defines probe overrides for kube-controller-manager, taking precedence over global probe settings.
+	ControllerManager *ProbeSet `json:"controllerManager,omitempty"`
+	// Scheduler defines probe overrides for kube-scheduler, taking precedence over global probe settings.
+	Scheduler *ProbeSet `json:"scheduler,omitempty"`
+}
+
 type DeploymentSpec struct {
 	// RegistrySettings allows to override the default images for the given Tenant Control Plane instance.
 	// It could be used to point to a different container registry rather than the public one.
@@ -224,6 +272,10 @@ type DeploymentSpec struct {
 	// AdditionalVolumeMounts allows to mount an additional volume into each component of the Control Plane
 	// (kube-apiserver, controller-manager, and scheduler).
 	AdditionalVolumeMounts *AdditionalVolumeMounts `json:"additionalVolumeMounts,omitempty"`
+	// Probes defines the probe configuration for the Control Plane components
+	// (kube-apiserver, controller-manager, and scheduler).
+	// Override TimeoutSeconds, PeriodSeconds, and FailureThreshold for resource-constrained environments.
+	Probes *ControlPlaneProbes `json:"probes,omitempty"`
 	//+kubebuilder:default="default"
 	// ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
