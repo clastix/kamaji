@@ -109,7 +109,7 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 				cmConfig, err := clientcmd.Load(cmData)
 				Expect(err).NotTo(HaveOccurred())
 				if cmConfig != nil && cmConfig.Clusters != nil {
-					clusterName := tcp.Name
+					const clusterName = "kubernetes"
 					Expect(cmConfig.Clusters).To(HaveKey(clusterName))
 					Expect(cmConfig.Clusters[clusterName].Server).To(Equal("https://k8s-api.example.com:6443"))
 				}
@@ -124,7 +124,7 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 				schedConfig, err := clientcmd.Load(schedData)
 				Expect(err).NotTo(HaveOccurred())
 				if schedConfig != nil && schedConfig.Clusters != nil {
-					clusterName := tcp.Name
+					const clusterName = "kubernetes"
 					Expect(schedConfig.Clusters).To(HaveKey(clusterName))
 					Expect(schedConfig.Clusters[clusterName].Server).To(Equal("https://k8s-api.example.com:6443"))
 				}
