@@ -4,6 +4,7 @@
 package resources
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"strings"
@@ -148,7 +149,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
-		if err = r.customizeConfig(config); err != nil {
+		if err = r.customizeConfig(config, tenantControlPlane); err != nil {
 			logger.Error(err, "cannot customize the configuration")
 
 			return err
@@ -247,19 +248,14 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 	}
 }
 
-func (r *KubeconfigResource) customizeConfig(config *kubeadm.Configuration) error {
-	switch r.KubeConfigFileName {
-	case kubeadmconstants.ControllerManagerKubeConfigFileName:
-		return r.localhostAsAdvertiseAddress(config)
-	case kubeadmconstants.SchedulerKubeConfigFileName:
-		return r.localhostAsAdvertiseAddress(config)
-	default:
-		return nil
+func (r *KubeconfigResource) customizeConfig(config *kubeadm.Configuration, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	// Scheduler and Controller Manager should use local cluster addresses unless PublicAPIServerAddress is set
+	if r.KubeConfigFileName == kubeadmconstants.ControllerManagerKubeConfigFileName || r.KubeConfigFileName == kubeadmconstants.SchedulerKubeConfigFileName {
+		if len(tenantControlPlane.Spec.ControlPlane.Service.PublicAPIServerAddress) == 0 {
+			port := cmp.Or(tenantControlPlane.Spec.NetworkProfile.Port, 6443)
+			config.InitConfiguration.ControlPlaneEndpoint = fmt.Sprintf("%s.%s.svc:%d", tenantControlPlane.Name, tenantControlPlane.Namespace, port)
+		}
 	}
-}
-
-func (r *KubeconfigResource) localhostAsAdvertiseAddress(config *kubeadm.Configuration) error {
-	config.InitConfiguration.LocalAPIEndpoint.AdvertiseAddress = localhost
 
 	return nil
 }
