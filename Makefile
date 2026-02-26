@@ -289,15 +289,25 @@ cleanup: kind
 	$(KIND) delete cluster --name kamaji
 
 .PHONY: e2e
-e2e: env build load helm ginkgo cert-manager gateway-api envoy-gateway ## Create a KinD cluster, install Kamaji on it and run the test suite.
+e2e: env e2e-setup e2e-test
+
+.PHONY: e2e-setup
+e2e-setup: build load helm ginkgo cert-manager gateway-api envoy-gateway ## Create a KinD cluster, install Kamaji on it and run the test suite.
 	$(HELM) upgrade --debug --install kamaji-crds ./charts/kamaji-crds --create-namespace --namespace kamaji-system
 	$(HELM) repo add clastix https://clastix.github.io/charts
 	$(HELM) dependency build ./charts/kamaji
 	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true"
 	$(MAKE) datastores
-	$(GINKGO) -v ./e2e
 
 ##@ Document
+
+.PHONY: e2e-redeploy
+e2e-redeploy: build load
+	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true"
+
+.PHONY: e2e-test
+e2e-test: build load
+	$(GINKGO) -v ./e2e
 
 CAPI_URL = https://github.com/clastix/cluster-api-control-plane-provider-kamaji.git
 CAPI_DIR := $(shell mktemp -d)

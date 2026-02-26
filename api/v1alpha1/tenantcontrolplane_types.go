@@ -309,6 +309,7 @@ type ServiceSpec struct {
 // AddonSpec defines the spec for every addon.
 type AddonSpec struct {
 	ImageOverrideTrait `json:",inline"`
+	ExtraEnvs          []corev1.EnvVar `json:"extraEnvs,omitempty"`
 }
 
 type ImageOverrideTrait struct {
@@ -340,6 +341,7 @@ type KonnectivityServerSpec struct {
 	// Resources define the amount of CPU and memory to allocate to the Konnectivity server.
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	ExtraArgs ExtraArgs                    `json:"extraArgs,omitempty"`
+	ExtraEnvs []corev1.EnvVar              `json:"extraEnvs,omitempty"`
 }
 
 type KonnectivityAgentMode string
@@ -365,6 +367,7 @@ type KonnectivityAgentSpec struct {
 	//+kubebuilder:default={{key: "CriticalAddonsOnly", operator: "Exists"}}
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 	ExtraArgs   ExtraArgs           `json:"extraArgs,omitempty"`
+	ExtraEnvs   []corev1.EnvVar     `json:"extraEnvs,omitempty"`
 	// HostNetwork enables the konnectivity agent to use the Host network namespace.
 	// By enabling this mode, the Agent doesn't need to wait for the CNI initialisation,
 	// enabling a sort of out-of-band access to nodes for troubleshooting scenarios,
