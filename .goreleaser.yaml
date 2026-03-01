@@ -1,0 +1,92 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+project_name: kamaji
+
+builds:
+  - id: kamaji
+    main: .
+    binary: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    ldflags:
+      - "-X github.com/clastix/kamaji/internal.GitCommit={{.Commit}}"
+      - "-X github.com/clastix/kamaji/internal.GitTag={{.Tag}}"
+      - "-X github.com/clastix/kamaji/internal.GitDirty={{ if eq .GitTreeState \"dirty\" }}.dev{{ end }}"
+      - "-X github.com/clastix/kamaji/internal.BuildTime={{.Date}}"
+      - "-X github.com/clastix/kamaji/internal.GitRepo={{ .GitURL }}"
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm
+      - arm64
+
+kos:
+  - repositories:
+      - docker.io/clastix/kamaji
+      - quay.io/clastix/kamaji
+    tags:
+      - "{{ .Tag }}"
+    bare: true
+    preserve_import_paths: false
+    platforms:
+      - linux/amd64
+      - linux/arm64
+      - linux/arm
+
+release:
+  prerelease: auto
+  footer: |
+    **Container Images**
+    ```
+    docker pull clastix/{{ .ProjectName }}:{{ .Tag }}
+    ```
+    
+    > This is an **edge release** and is intended for testing and evaluation purposes only.
+    > It may include experimental features and does not provide the stability guarantees of a production-ready build.
+    >
+    > **Stable release artefacts** are available on a subscription basis from CLASTIX,
+    > the primary contributor to the Kamaji project.
+    >
+    > For production-grade releases and enterprise support,
+    > please refer to CLASTIX's [Support](https://clastix.io/support/) offerings.
+
+    **Full Changelog**: https://github.com/clastix/{{ .ProjectName }}/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - 'merge conflict'
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+  groups:
+    - title: '🛠 Dependency updates'
+      regexp: '^.*?(feat|fix)\(deps\)!?:.+$'
+      order: 300
+    - title: '✨ New Features'
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 100
+    - title: '🐛 Bug fixes'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 200
+    - title: '📖 Documentation updates'
+      regexp: ^.*?docs(\([[:word:]]+\))??!?:.+$
+      order: 400
+    - title: '🛡️ Security updates'
+      regexp: ^.*?(sec)(\([[:word:]]+\))??!?:.+$
+      order: 500
+    - title: '🚀 Build process updates'
+      regexp: ^.*?(build|ci)(\([[:word:]]+\))??!?:.+$
+      order: 600
+    - title: '📦 Other work'
+      order: 9999
+
+checksum:
+  name_template: "checksums.txt"

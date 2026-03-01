@@ -15,8 +15,9 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: generating date metadata
-        id: date
+
+      - name: "tag: compute"
+        id: git
         run: |
           CURRENT_DATE=$(date -u +'%Y-%m-%d')
           YY=$(date -u +'%y')
@@ -24,52 +25,36 @@ jobs:
           FIRST_OF_MONTH=$(date -u -d "$CURRENT_DATE" +%Y-%m-01)
           WEEK_NUM=$(( (($(date -u +%s) - $(date -u -d "$FIRST_OF_MONTH" +%s)) / 86400 + $(date -u -d "$FIRST_OF_MONTH" +%u) - 1) / 7 + 1 ))
 
-          echo "yy=$YY" >> $GITHUB_OUTPUT
-          echo "month=$M" >> $GITHUB_OUTPUT
-          echo "week=$WEEK_NUM" >> $GITHUB_OUTPUT
-          echo "date=$CURRENT_DATE" >> $GITHUB_OUTPUT
-      - name: generating tag metadata
-        id: tag
-        run: |
-          TAG="edge-${{ steps.date.outputs.yy }}.${{ steps.date.outputs.month }}.${{ steps.date.outputs.week }}"
+          TAG="$YY.$M.$WEEK_NUM-edge"
+
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-      - name: generate release notes from template
+
+      - name: "tag: push"
         run: |
-          export TAG="${{ steps.tag.outputs.tag }}"
-          envsubst < .github/release-template.md > release-notes.md
-      - name: generate release notes from template
-        run: |
-          export TAG="${{ steps.tag.outputs.tag }}"
-          envsubst < .github/release-template.md > release-notes-header.md
-      - name: generate GitHub release notes
+          git tag ${{ steps.git.outputs.tag }}
+          git push origin ${{ steps.git.outputs.tag }}
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: "deps: installing ko"
+        run: make ko
+
+      - name: "ko: login to quay.io container registry"
+        run: ./bin/ko login quay.io -u ${{ secrets.QUAY_IO_USERNAME }} -p ${{ secrets.QUAY_IO_TOKEN }}
+
+      - name: "ko: login to docker.io container registry"
+        run: ./bin/ko login docker.io -u ${{ secrets.DOCKER_IO_USERNAME }} -p ${{ secrets.DOCKER_IO_TOKEN }}
+
+      - name: "path: expanding with local binaries"
+        run: echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+
+      - name: "goreleaser: release"
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release --repo "$GITHUB_REPOSITORY" \
-            create "${{ steps.tag.outputs.tag }}" \
-            --generate-notes \
-            --draft \
-            --title "temp" \
-            --notes "temp" > /dev/null || true
-          
-          gh release view "${{ steps.tag.outputs.tag }}" \
-            --json body --jq .body > auto-notes.md
-          
-          gh release delete "${{ steps.tag.outputs.tag }}" --yes || true
-      - name: combine notes
-        run: |
-          cat release-notes-header.md auto-notes.md > release-notes.md
-      - name: create GitHub release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "${{ steps.tag.outputs.tag }}" \
-            --title "${{ steps.tag.outputs.tag }}" \
-            --notes-file release-notes.md
-      - name: trigger container build workflow
-        env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
-        run: |
-          gh workflow run "Container image build" \
-            --ref master \
-            -f tag="${{ steps.tag.outputs.tag }}"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

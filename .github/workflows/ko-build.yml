@@ -2,17 +2,8 @@ name: Container image build
 
 on:
   push:
-    tags:
-      - edge-*
-      - v*
     branches:
       - master
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Tag to build"
-        required: true
-        type: string
 
 jobs:
   ko:
@@ -21,17 +12,19 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+
       - name: "ko: install"
         run: make ko
+
       - name: "ko: login to quay.io container registry"
         run: ./bin/ko login quay.io -u ${{ secrets.QUAY_IO_USERNAME }} -p ${{ secrets.QUAY_IO_TOKEN }}
+
       - name: "ko: login to docker.io container registry"
         run: ./bin/ko login docker.io -u ${{ secrets.DOCKER_IO_USERNAME }} -p ${{ secrets.DOCKER_IO_TOKEN }}
-      - name: "ko: build and push tag"
-        run: make VERSION=${{ github.event.inputs.tag }} KO_LOCAL=false KO_PUSH=true build
-        if: github.event_name == 'workflow_dispatch'
+
       - name: "ko: build and push latest"
         run: make VERSION=latest KO_LOCAL=false KO_PUSH=true build
