@@ -18,9 +18,12 @@ Usage of the said artefacts is not suggested for production use-case due to miss
 ### Edge Releases
 
 Edge Release artifacts are published on a monthly basis as part of the open source project.
-Versioning follows the form `edge-{year}.{month}.{incremental}` where incremental refers to the monthly release.
-For example, `edge-24.7.1` is the first edge release shipped in July 2024.
+Versioning follows the form `{year}.{month}.{incremental}-edge` where incremental refers to the monthly release.
+For example, `26.3.1-edge` is the first edge release shipped in March 2027.
 The full list of edge release artifacts can be found on the Kamaji's GitHub [releases page](https://github.com/clastix/kamaji/releases).
+
+> _Nota Bene_: all edge releases prior to March 2026 used a different pattern (`edge-{year}.{month}.{incremental}`):
+> this change has been required to take advantage of GoReleaser to start our support for CRA compliance.
 
 Edge Release artifacts contain the code in from the main branch at the point in time when they were cut.
 This means they always have the latest features and fixes, and have undergone automated testing as well as maintainer code review.

@@ -47,6 +47,9 @@ GOLANGCI_LINT  ?= $(LOCALBIN)/golangci-lint
 HELM           ?= $(LOCALBIN)/helm
 KIND           ?= $(LOCALBIN)/kind
 KO             ?= $(LOCALBIN)/ko
+GORELEASER     ?= $(LOCALBIN)/goreleaser
+COSIGN         ?= $(LOCALBIN)/cosign
+SYFT           ?= $(LOCALBIN)/syft
 YQ             ?= $(LOCALBIN)/yq
 ENVTEST        ?= $(LOCALBIN)/setup-envtest
 
@@ -80,6 +83,21 @@ docs: ## Serve documentation locally with Docker.
 		serve -a 0.0.0.0:8000
 
 ##@ Binary
+
+.PHONY: cosign
+cosign: $(COSIGN) ## Download cosign locally if necessary.
+$(COSIGN): $(LOCALBIN)
+	test -s $(LOCALBIN)/cosign || GOBIN=$(LOCALBIN) go install github.com/sigstore/cosign/v3/cmd/cosign@v3.0.5
+
+.PHONY: syft
+syft: $(SYFT) ## Download syft locally if necessary.
+$(SYFT): $(LOCALBIN)
+	test -s $(LOCALBIN)/syft || GOBIN=$(LOCALBIN) go install github.com/anchore/syft/cmd/syft@v1.42.1
+
+.PHONY: goreleaser
+goreleaser: $(GORELEASER) ## Download goreleaser locally if necessary.
+$(GORELEASER): $(LOCALBIN)
+	test -s $(LOCALBIN)/goreleaser || GOBIN=$(LOCALBIN) go install github.com/goreleaser/goreleaser/v2@v2.14.1
 
 .PHONY: ko
 ko: $(KO) ## Download ko locally if necessary.
