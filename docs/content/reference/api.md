@@ -467,9 +467,10 @@ If the key is empty, operator must be Exists; this combination means to match al
         <td>string</td>
         <td>
           Operator represents a key's relationship to the value.
-Valid operators are Exists and Equal. Defaults to Equal.
+Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
 Exists is equivalent to wildcard for value, so that a pod can
-tolerate all taints of a particular category.<br/>
+tolerate all taints of a particular category.
+Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -716,6 +717,13 @@ With no value, the default images will be used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecapiserverprobes">probes</a></b></td>
+        <td>object</td>
+        <td>
+          Probes defines per-probe-type configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#kamajicontrolplanespecapiserverresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -813,6 +821,252 @@ Defaults to "" (volume's root).<br/>
 Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
 Defaults to "" (volume's root).
 SubPathExpr and SubPath are mutually exclusive.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecapiserverprobes">`KamajiControlPlane.spec.apiServer.probes`</span>
+
+
+Probes defines per-probe-type configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kamajicontrolplanespecapiserverprobesliveness">liveness</a></b></td>
+        <td>object</td>
+        <td>
+          Liveness defines parameters for the liveness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecapiserverprobesreadiness">readiness</a></b></td>
+        <td>object</td>
+        <td>
+          Readiness defines parameters for the readiness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecapiserverprobesstartup">startup</a></b></td>
+        <td>object</td>
+        <td>
+          Startup defines parameters for the startup probe.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecapiserverprobesliveness">`KamajiControlPlane.spec.apiServer.probes.liveness`</span>
+
+
+Liveness defines parameters for the liveness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecapiserverprobesreadiness">`KamajiControlPlane.spec.apiServer.probes.readiness`</span>
+
+
+Readiness defines parameters for the readiness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecapiserverprobesstartup">`KamajiControlPlane.spec.apiServer.probes.startup`</span>
+
+
+Startup defines parameters for the startup probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -975,6 +1229,13 @@ With no value, the default images will be used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#kamajicontrolplanespeccontrollermanagerprobes">probes</a></b></td>
+        <td>object</td>
+        <td>
+          Probes defines per-probe-type configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#kamajicontrolplanespeccontrollermanagerresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -1072,6 +1333,252 @@ Defaults to "" (volume's root).<br/>
 Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
 Defaults to "" (volume's root).
 SubPathExpr and SubPath are mutually exclusive.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespeccontrollermanagerprobes">`KamajiControlPlane.spec.controllerManager.probes`</span>
+
+
+Probes defines per-probe-type configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kamajicontrolplanespeccontrollermanagerprobesliveness">liveness</a></b></td>
+        <td>object</td>
+        <td>
+          Liveness defines parameters for the liveness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespeccontrollermanagerprobesreadiness">readiness</a></b></td>
+        <td>object</td>
+        <td>
+          Readiness defines parameters for the readiness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespeccontrollermanagerprobesstartup">startup</a></b></td>
+        <td>object</td>
+        <td>
+          Startup defines parameters for the startup probe.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespeccontrollermanagerprobesliveness">`KamajiControlPlane.spec.controllerManager.probes.liveness`</span>
+
+
+Liveness defines parameters for the liveness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespeccontrollermanagerprobesreadiness">`KamajiControlPlane.spec.controllerManager.probes.readiness`</span>
+
+
+Readiness defines parameters for the readiness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespeccontrollermanagerprobesstartup">`KamajiControlPlane.spec.controllerManager.probes.startup`</span>
+
+
+Startup defines parameters for the startup probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1235,6 +1742,15 @@ The ExternalClusterReference feature gate must be enabled with one of the availa
         <td>
           PodAdditionalMetadata defines the additional labels and annotations that must be attached
 to the resulting Pods managed by the Deployment.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecdeploymentprobes">probes</a></b></td>
+        <td>object</td>
+        <td>
+          Probes defines probe configuration for Control Plane components.
+Global probe settings (Liveness, Readiness, Startup) apply to all components.
+Control Plane Component customisation has priority over these.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3049,7 +3565,8 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#kamajicontrolplanespecdeploymentextracontainersindexresizepolicyindex">resizePolicy</a></b></td>
         <td>[]object</td>
         <td>
-          Resources resize policy for the container.<br/>
+          Resources resize policy for the container.
+This field cannot be set on ephemeral containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6000,7 +6517,8 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#kamajicontrolplanespecdeploymentextrainitcontainersindexresizepolicyindex">resizePolicy</a></b></td>
         <td>[]object</td>
         <td>
-          Resources resize policy for the container.<br/>
+          Resources resize policy for the container.
+This field cannot be set on ephemeral containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10107,7 +10625,7 @@ There are three important differences between dataSource and dataSourceRef:
         <td>object</td>
         <td>
           resources represents the minimum resources the volume should have.
-If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+Users are allowed to specify resource requirements
 that are lower than previous value but must still be higher than capacity recorded in the
 status field of the claim.
 More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
@@ -10287,7 +10805,7 @@ Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGr
 
 
 resources represents the minimum resources the volume should have.
-If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+Users are allowed to specify resource requirements
 that are lower than previous value but must still be higher than capacity recorded in the
 status field of the claim.
 More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -11819,6 +12337,25 @@ longer than 24 hours.<br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>userAnnotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          userAnnotations allow pod authors to pass additional information to
+the signer implementation.  Kubernetes does not restrict or validate this
+metadata in any way.
+
+These values are copied verbatim into the `spec.unverifiedUserAnnotations` field of
+the PodCertificateRequest objects that Kubelet creates.
+
+Entries are subject to the same validation as object metadata annotations,
+with the addition that all keys must be domain-prefixed. No restrictions
+are placed on values, except an overall size limitation on the entire field.
+
+Signers should document the keys and values they support. Signers should
+deny requests that contain keys they do not recognize.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -12593,6 +13130,254 @@ to the resulting Pods managed by the Deployment.
 </table>
 
 
+<span id="kamajicontrolplanespecdeploymentprobes">`KamajiControlPlane.spec.deployment.probes`</span>
+
+
+Probes defines probe configuration for Control Plane components.
+Global probe settings (Liveness, Readiness, Startup) apply to all components.
+Control Plane Component customisation has priority over these.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kamajicontrolplanespecdeploymentprobesliveness">liveness</a></b></td>
+        <td>object</td>
+        <td>
+          Liveness defines parameters for the liveness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecdeploymentprobesreadiness">readiness</a></b></td>
+        <td>object</td>
+        <td>
+          Readiness defines parameters for the readiness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecdeploymentprobesstartup">startup</a></b></td>
+        <td>object</td>
+        <td>
+          Startup defines parameters for the startup probe.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecdeploymentprobesliveness">`KamajiControlPlane.spec.deployment.probes.liveness`</span>
+
+
+Liveness defines parameters for the liveness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecdeploymentprobesreadiness">`KamajiControlPlane.spec.deployment.probes.readiness`</span>
+
+
+Readiness defines parameters for the readiness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecdeploymentprobesstartup">`KamajiControlPlane.spec.deployment.probes.startup`</span>
+
+
+Startup defines parameters for the startup probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 <span id="kamajicontrolplanespecdeploymentstrategy">`KamajiControlPlane.spec.deployment.strategy`</span>
 
 
@@ -12714,9 +13499,10 @@ If the key is empty, operator must be Exists; this combination means to match al
         <td>string</td>
         <td>
           Operator represents a key's relationship to the value.
-Valid operators are Exists and Equal. Defaults to Equal.
+Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
 Exists is equivalent to wildcard for value, so that a pod can
-tolerate all taints of a particular category.<br/>
+tolerate all taints of a particular category.
+Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13120,9 +13906,22 @@ Configure the Kubelet options, such as the preferred address types, or the expec
         <td>enum</td>
         <td>
           CGroupFS defines the cgroup driver for Kubelet
-https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/<br/>
+https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
+
+Deprecated: use ConfigurationJSONPatches.<br/>
           <br/>
             <i>Enum</i>: systemd, cgroupfs<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespeckubeletconfigurationjsonpatchesindex">configurationJSONPatches</a></b></td>
+        <td>[]object</td>
+        <td>
+          ConfigurationJSONPatches contains the RFC 6902 JSON patches to customise the kubeadm generate configuration,
+useful to customise and mangling the configuration according to your needs;
+e.g.: configuring the cgroup driver used by Kubelet is possible via the following patch:
+
+[{"op": "replace", "path": "/cgroupDriver", "value": "systemd"}]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13134,6 +13933,54 @@ Default to InternalIP, ExternalIP, Hostname.<br/>
           <br/>
             <i>Enum</i>: Hostname, InternalIP, ExternalIP, InternalDNS, ExternalDNS<br/>
             <i>Default</i>: [InternalIP ExternalIP Hostname]<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespeckubeletconfigurationjsonpatchesindex">`KamajiControlPlane.spec.kubelet.configurationJSONPatches[index]`</span>
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>op</b></td>
+        <td>enum</td>
+        <td>
+          Op is the RFC 6902 JSON Patch operation.<br/>
+          <br/>
+            <i>Enum</i>: add, remove, replace, move, copy, test<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path specifies the target location in the JSON document. Use "/" to separate keys; "-" for appending to arrays.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>from</b></td>
+        <td>string</td>
+        <td>
+          From specifies the source location for move or copy operations.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>JSON</td>
+        <td>
+          Value is the operation value to be used when Op is add, replace, test.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13169,6 +14016,14 @@ useful if the TenantControlPlane is going to be exposed behind a FQDN with NAT.<
           DNSServiceIPs contains the DNS Service IPs.
 If the CoreDNS addon is specified, its DNSServiceIPs will be used instead.
 When set to an empty slice, Kamaji will automatically inflect it from the Service CIDR.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecnetworkgateway">gateway</a></b></td>
+        <td>object</td>
+        <td>
+          When specified, the KamajiControlPlane will be reachable using a Gateway API object
+deployed in the management cluster.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13216,6 +14071,62 @@ helping when serviceType is NodePort.<br/>
           <br/>
             <i>Enum</i>: ClusterIP, NodePort, LoadBalancer<br/>
             <i>Default</i>: LoadBalancer<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecnetworkgateway">`KamajiControlPlane.spec.network.gateway`</span>
+
+
+When specified, the KamajiControlPlane will be reachable using a Gateway API object
+deployed in the management cluster.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>hostname</b></td>
+        <td>string</td>
+        <td>
+          Defines the hostname for the Gateway object.
+When using a Gateway object the FQDN is automatically added to the Certificate SANs.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Defines the Gateway API name for the Gateway object.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Defines the Gateway API namespace for the Gateway object.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>extraAnnotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          Defines the extra annotations for the Gateway object.
+Useful if you need Gateway or vendor-specific options.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>extraLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          Defines the extra labels for the Gateway object.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13347,6 +14258,13 @@ With no value, the default images will be used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecschedulerprobes">probes</a></b></td>
+        <td>object</td>
+        <td>
+          Probes defines per-probe-type configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#kamajicontrolplanespecschedulerresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -13444,6 +14362,252 @@ Defaults to "" (volume's root).<br/>
 Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
 Defaults to "" (volume's root).
 SubPathExpr and SubPath are mutually exclusive.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecschedulerprobes">`KamajiControlPlane.spec.scheduler.probes`</span>
+
+
+Probes defines per-probe-type configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kamajicontrolplanespecschedulerprobesliveness">liveness</a></b></td>
+        <td>object</td>
+        <td>
+          Liveness defines parameters for the liveness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecschedulerprobesreadiness">readiness</a></b></td>
+        <td>object</td>
+        <td>
+          Readiness defines parameters for the readiness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecschedulerprobesstartup">startup</a></b></td>
+        <td>object</td>
+        <td>
+          Startup defines parameters for the startup probe.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecschedulerprobesliveness">`KamajiControlPlane.spec.scheduler.probes.liveness`</span>
+
+
+Liveness defines parameters for the liveness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecschedulerprobesreadiness">`KamajiControlPlane.spec.scheduler.probes.readiness`</span>
+
+
+Readiness defines parameters for the readiness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecschedulerprobesstartup">`KamajiControlPlane.spec.scheduler.probes.startup`</span>
+
+
+Startup defines parameters for the startup probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14197,9 +15361,10 @@ If the key is empty, operator must be Exists; this combination means to match al
         <td>string</td>
         <td>
           Operator represents a key's relationship to the value.
-Valid operators are Exists and Equal. Defaults to Equal.
+Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
 Exists is equivalent to wildcard for value, so that a pod can
-tolerate all taints of a particular category.<br/>
+tolerate all taints of a particular category.
+Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14446,6 +15611,13 @@ With no value, the default images will be used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecapiserverprobes">probes</a></b></td>
+        <td>object</td>
+        <td>
+          Probes defines per-probe-type configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#kamajicontrolplanetemplatespectemplatespecapiserverresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -14543,6 +15715,252 @@ Defaults to "" (volume's root).<br/>
 Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
 Defaults to "" (volume's root).
 SubPathExpr and SubPath are mutually exclusive.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecapiserverprobes">`KamajiControlPlaneTemplate.spec.template.spec.apiServer.probes`</span>
+
+
+Probes defines per-probe-type configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecapiserverprobesliveness">liveness</a></b></td>
+        <td>object</td>
+        <td>
+          Liveness defines parameters for the liveness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecapiserverprobesreadiness">readiness</a></b></td>
+        <td>object</td>
+        <td>
+          Readiness defines parameters for the readiness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecapiserverprobesstartup">startup</a></b></td>
+        <td>object</td>
+        <td>
+          Startup defines parameters for the startup probe.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecapiserverprobesliveness">`KamajiControlPlaneTemplate.spec.template.spec.apiServer.probes.liveness`</span>
+
+
+Liveness defines parameters for the liveness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecapiserverprobesreadiness">`KamajiControlPlaneTemplate.spec.template.spec.apiServer.probes.readiness`</span>
+
+
+Readiness defines parameters for the readiness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecapiserverprobesstartup">`KamajiControlPlaneTemplate.spec.template.spec.apiServer.probes.startup`</span>
+
+
+Startup defines parameters for the startup probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14671,6 +16089,13 @@ With no value, the default images will be used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobes">probes</a></b></td>
+        <td>object</td>
+        <td>
+          Probes defines per-probe-type configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#kamajicontrolplanetemplatespectemplatespeccontrollermanagerresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -14768,6 +16193,252 @@ Defaults to "" (volume's root).<br/>
 Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
 Defaults to "" (volume's root).
 SubPathExpr and SubPath are mutually exclusive.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobes">`KamajiControlPlaneTemplate.spec.template.spec.controllerManager.probes`</span>
+
+
+Probes defines per-probe-type configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobesliveness">liveness</a></b></td>
+        <td>object</td>
+        <td>
+          Liveness defines parameters for the liveness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobesreadiness">readiness</a></b></td>
+        <td>object</td>
+        <td>
+          Readiness defines parameters for the readiness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobesstartup">startup</a></b></td>
+        <td>object</td>
+        <td>
+          Startup defines parameters for the startup probe.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobesliveness">`KamajiControlPlaneTemplate.spec.template.spec.controllerManager.probes.liveness`</span>
+
+
+Liveness defines parameters for the liveness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobesreadiness">`KamajiControlPlaneTemplate.spec.template.spec.controllerManager.probes.readiness`</span>
+
+
+Readiness defines parameters for the readiness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobesstartup">`KamajiControlPlaneTemplate.spec.template.spec.controllerManager.probes.startup`</span>
+
+
+Startup defines parameters for the startup probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14931,6 +16602,15 @@ The ExternalClusterReference feature gate must be enabled with one of the availa
         <td>
           PodAdditionalMetadata defines the additional labels and annotations that must be attached
 to the resulting Pods managed by the Deployment.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentprobes">probes</a></b></td>
+        <td>object</td>
+        <td>
+          Probes defines probe configuration for Control Plane components.
+Global probe settings (Liveness, Readiness, Startup) apply to all components.
+Control Plane Component customisation has priority over these.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16745,7 +18425,8 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentextracontainersindexresizepolicyindex">resizePolicy</a></b></td>
         <td>[]object</td>
         <td>
-          Resources resize policy for the container.<br/>
+          Resources resize policy for the container.
+This field cannot be set on ephemeral containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19696,7 +21377,8 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentextrainitcontainersindexresizepolicyindex">resizePolicy</a></b></td>
         <td>[]object</td>
         <td>
-          Resources resize policy for the container.<br/>
+          Resources resize policy for the container.
+This field cannot be set on ephemeral containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23803,7 +25485,7 @@ There are three important differences between dataSource and dataSourceRef:
         <td>object</td>
         <td>
           resources represents the minimum resources the volume should have.
-If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+Users are allowed to specify resource requirements
 that are lower than previous value but must still be higher than capacity recorded in the
 status field of the claim.
 More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
@@ -23983,7 +25665,7 @@ Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGr
 
 
 resources represents the minimum resources the volume should have.
-If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+Users are allowed to specify resource requirements
 that are lower than previous value but must still be higher than capacity recorded in the
 status field of the claim.
 More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -25515,6 +27197,25 @@ longer than 24 hours.<br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>userAnnotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          userAnnotations allow pod authors to pass additional information to
+the signer implementation.  Kubernetes does not restrict or validate this
+metadata in any way.
+
+These values are copied verbatim into the `spec.unverifiedUserAnnotations` field of
+the PodCertificateRequest objects that Kubelet creates.
+
+Entries are subject to the same validation as object metadata annotations,
+with the addition that all keys must be domain-prefixed. No restrictions
+are placed on values, except an overall size limitation on the entire field.
+
+Signers should document the keys and values they support. Signers should
+deny requests that contain keys they do not recognize.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -26289,6 +27990,254 @@ to the resulting Pods managed by the Deployment.
 </table>
 
 
+<span id="kamajicontrolplanetemplatespectemplatespecdeploymentprobes">`KamajiControlPlaneTemplate.spec.template.spec.deployment.probes`</span>
+
+
+Probes defines probe configuration for Control Plane components.
+Global probe settings (Liveness, Readiness, Startup) apply to all components.
+Control Plane Component customisation has priority over these.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentprobesliveness">liveness</a></b></td>
+        <td>object</td>
+        <td>
+          Liveness defines parameters for the liveness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentprobesreadiness">readiness</a></b></td>
+        <td>object</td>
+        <td>
+          Readiness defines parameters for the readiness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentprobesstartup">startup</a></b></td>
+        <td>object</td>
+        <td>
+          Startup defines parameters for the startup probe.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecdeploymentprobesliveness">`KamajiControlPlaneTemplate.spec.template.spec.deployment.probes.liveness`</span>
+
+
+Liveness defines parameters for the liveness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecdeploymentprobesreadiness">`KamajiControlPlaneTemplate.spec.template.spec.deployment.probes.readiness`</span>
+
+
+Readiness defines parameters for the readiness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecdeploymentprobesstartup">`KamajiControlPlaneTemplate.spec.template.spec.deployment.probes.startup`</span>
+
+
+Startup defines parameters for the startup probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 <span id="kamajicontrolplanetemplatespectemplatespecdeploymentstrategy">`KamajiControlPlaneTemplate.spec.template.spec.deployment.strategy`</span>
 
 
@@ -26410,9 +28359,10 @@ If the key is empty, operator must be Exists; this combination means to match al
         <td>string</td>
         <td>
           Operator represents a key's relationship to the value.
-Valid operators are Exists and Equal. Defaults to Equal.
+Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
 Exists is equivalent to wildcard for value, so that a pod can
-tolerate all taints of a particular category.<br/>
+tolerate all taints of a particular category.
+Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26816,9 +28766,22 @@ Configure the Kubelet options, such as the preferred address types, or the expec
         <td>enum</td>
         <td>
           CGroupFS defines the cgroup driver for Kubelet
-https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/<br/>
+https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
+
+Deprecated: use ConfigurationJSONPatches.<br/>
           <br/>
             <i>Enum</i>: systemd, cgroupfs<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespeckubeletconfigurationjsonpatchesindex">configurationJSONPatches</a></b></td>
+        <td>[]object</td>
+        <td>
+          ConfigurationJSONPatches contains the RFC 6902 JSON patches to customise the kubeadm generate configuration,
+useful to customise and mangling the configuration according to your needs;
+e.g.: configuring the cgroup driver used by Kubelet is possible via the following patch:
+
+[{"op": "replace", "path": "/cgroupDriver", "value": "systemd"}]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26830,6 +28793,54 @@ Default to InternalIP, ExternalIP, Hostname.<br/>
           <br/>
             <i>Enum</i>: Hostname, InternalIP, ExternalIP, InternalDNS, ExternalDNS<br/>
             <i>Default</i>: [InternalIP ExternalIP Hostname]<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespeckubeletconfigurationjsonpatchesindex">`KamajiControlPlaneTemplate.spec.template.spec.kubelet.configurationJSONPatches[index]`</span>
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>op</b></td>
+        <td>enum</td>
+        <td>
+          Op is the RFC 6902 JSON Patch operation.<br/>
+          <br/>
+            <i>Enum</i>: add, remove, replace, move, copy, test<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path specifies the target location in the JSON document. Use "/" to separate keys; "-" for appending to arrays.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>from</b></td>
+        <td>string</td>
+        <td>
+          From specifies the source location for move or copy operations.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>JSON</td>
+        <td>
+          Value is the operation value to be used when Op is add, replace, test.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -26865,6 +28876,14 @@ useful if the TenantControlPlane is going to be exposed behind a FQDN with NAT.<
           DNSServiceIPs contains the DNS Service IPs.
 If the CoreDNS addon is specified, its DNSServiceIPs will be used instead.
 When set to an empty slice, Kamaji will automatically inflect it from the Service CIDR.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecnetworkgateway">gateway</a></b></td>
+        <td>object</td>
+        <td>
+          When specified, the KamajiControlPlane will be reachable using a Gateway API object
+deployed in the management cluster.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26912,6 +28931,62 @@ helping when serviceType is NodePort.<br/>
           <br/>
             <i>Enum</i>: ClusterIP, NodePort, LoadBalancer<br/>
             <i>Default</i>: LoadBalancer<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecnetworkgateway">`KamajiControlPlaneTemplate.spec.template.spec.network.gateway`</span>
+
+
+When specified, the KamajiControlPlane will be reachable using a Gateway API object
+deployed in the management cluster.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>hostname</b></td>
+        <td>string</td>
+        <td>
+          Defines the hostname for the Gateway object.
+When using a Gateway object the FQDN is automatically added to the Certificate SANs.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Defines the Gateway API name for the Gateway object.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Defines the Gateway API namespace for the Gateway object.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>extraAnnotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          Defines the extra annotations for the Gateway object.
+Useful if you need Gateway or vendor-specific options.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>extraLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          Defines the extra labels for the Gateway object.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -27043,6 +29118,13 @@ With no value, the default images will be used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecschedulerprobes">probes</a></b></td>
+        <td>object</td>
+        <td>
+          Probes defines per-probe-type configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#kamajicontrolplanetemplatespectemplatespecschedulerresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -27140,6 +29222,252 @@ Defaults to "" (volume's root).<br/>
 Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
 Defaults to "" (volume's root).
 SubPathExpr and SubPath are mutually exclusive.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecschedulerprobes">`KamajiControlPlaneTemplate.spec.template.spec.scheduler.probes`</span>
+
+
+Probes defines per-probe-type configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecschedulerprobesliveness">liveness</a></b></td>
+        <td>object</td>
+        <td>
+          Liveness defines parameters for the liveness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecschedulerprobesreadiness">readiness</a></b></td>
+        <td>object</td>
+        <td>
+          Readiness defines parameters for the readiness probe.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecschedulerprobesstartup">startup</a></b></td>
+        <td>object</td>
+        <td>
+          Startup defines parameters for the startup probe.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecschedulerprobesliveness">`KamajiControlPlaneTemplate.spec.template.spec.scheduler.probes.liveness`</span>
+
+
+Liveness defines parameters for the liveness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecschedulerprobesreadiness">`KamajiControlPlaneTemplate.spec.template.spec.scheduler.probes.readiness`</span>
+
+
+Readiness defines parameters for the readiness probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecschedulerprobesstartup">`KamajiControlPlaneTemplate.spec.template.spec.scheduler.probes.startup`</span>
+
+
+Startup defines parameters for the startup probe.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
+Must be 1 for liveness and startup probes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -43479,8 +45807,8 @@ NetworkProfile specifies how the network is
         <td><b>address</b></td>
         <td>string</td>
         <td>
-          Address where API server of will be exposed.
-In case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.<br/>
+          Address where API server will be exposed.
+In the case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -43552,7 +45880,7 @@ Example: {"192.168.1.0/24", "10.0.0.0/8"}<br/>
         <td><b>port</b></td>
         <td>integer</td>
         <td>
-          Port where API server of will be exposed<br/>
+          Port where API server will be exposed<br/>
           <br/>
             <i>Format</i>: int32<br/>
             <i>Default</i>: 6443<br/>
