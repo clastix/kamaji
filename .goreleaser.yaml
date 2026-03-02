@@ -39,7 +39,6 @@ kos:
       - linux/arm
 
 release:
-  prerelease: auto
   footer: |
     **Container Images**
     ```
