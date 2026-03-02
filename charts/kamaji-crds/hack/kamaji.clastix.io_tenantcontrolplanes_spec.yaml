@@ -7638,6 +7638,9 @@ versions:
                     default: 10.244.0.0/16
                     description: 'CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.'
                     type: string
+                    x-kubernetes-validations:
+                      - message: podCidr must be empty or a valid CIDR
+                        rule: self == '' || isCIDR(self)
                   port:
                     default: 6443
                     description: Port where API server will be exposed
