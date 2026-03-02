@@ -12,6 +12,7 @@ import (
 )
 
 // NetworkProfileSpec defines the desired state of NetworkProfile.
+// +kubebuilder:validation:XValidation:rule="!has(self.dnsServiceIPs) || self.dnsServiceIPs.all(r, cidr(self.serviceCidr).containsIP(r))",message="all DNS service IPs must be part of the Service CIDR"
 type NetworkProfileSpec struct {
 	// LoadBalancerSourceRanges restricts the IP ranges that can access
 	// the LoadBalancer type Service. This field defines a list of IP
@@ -20,14 +21,16 @@ type NetworkProfileSpec struct {
 	// This feature is useful for restricting access to API servers or services
 	// to specific networks for security purposes.
 	// Example: {"192.168.1.0/24", "10.0.0.0/8"}
+	//+kubebuilder:validation:MaxItems=16
+	//+kubebuilder:validation:XValidation:rule="self.all(r, isCIDR(r))",message="all LoadBalancer source range entries must be valid CIDR"
 	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty"`
 	// Specify the LoadBalancer class in case of multiple load balancer implementations.
 	// Field supported only for Tenant Control Plane instances exposed using a LoadBalancer Service.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="LoadBalancerClass is immutable"
 	LoadBalancerClass *string `json:"loadBalancerClass,omitempty"`
-	// Address where API server of will be exposed.
-	// In case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.
+	// Address where API server will be exposed.
+	// In the case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.
 	Address string `json:"address,omitempty"`
 	// The default domain name used for DNS resolution within the cluster.
 	//+kubebuilder:default="cluster.local"
@@ -37,7 +40,7 @@ type NetworkProfileSpec struct {
 	// AllowAddressAsExternalIP will include tenantControlPlane.Spec.NetworkProfile.Address in the section of
 	// ExternalIPs of the Kubernetes Service (only ClusterIP or NodePort)
 	AllowAddressAsExternalIP bool `json:"allowAddressAsExternalIP,omitempty"`
-	// Port where API server of will be exposed
+	// Port where API server will be exposed
 	//+kubebuilder:default=6443
 	Port int32 `json:"port,omitempty"`
 	// CertSANs sets extra Subject Alternative Names (SANs) for the API Server signing certificate.
@@ -45,6 +48,8 @@ type NetworkProfileSpec struct {
 	CertSANs []string `json:"certSANs,omitempty"`
 	// CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.
 	//+kubebuilder:default="10.96.0.0/16"
+	//+kubebuilder:validation:Optional
+	//+kubebuilder:validation:XValidation:rule="self == '' || isCIDR(self)",message="serviceCidr must be empty or a valid CIDR"
 	ServiceCIDR string `json:"serviceCidr,omitempty"`
 	// CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.
 	//+kubebuilder:default="10.244.0.0/16"
@@ -53,6 +58,8 @@ type NetworkProfileSpec struct {
 	// In case of an empty value, it is automatically computed according to the Service CIDR, e.g.:
 	// Service CIDR 10.96.0.0/16, the resulting DNS Service IP will be 10.96.0.10 for IPv4,
 	// for IPv6 from the CIDR 2001:db8:abcd::/64 the resulting DNS Service IP will be 2001:db8:abcd::10.
+	//+kubebuilder:validation:MaxItems=8
+	//+kubebuilder:validation:Optional
 	DNSServiceIPs []string `json:"dnsServiceIPs,omitempty"`
 }
 
