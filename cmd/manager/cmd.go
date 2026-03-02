@@ -255,8 +255,6 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 							Scheme: *mgr.GetScheme(),
 						},
 					},
-					handlers.TenantControlPlaneServiceCIDR{},
-					handlers.TenantControlPlaneLoadBalancerSourceRanges{},
 					handlers.TenantControlPlaneGatewayValidation{
 						Client:          mgr.GetClient(),
 						DiscoveryClient: discoveryClient,

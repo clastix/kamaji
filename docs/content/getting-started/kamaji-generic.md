@@ -40,7 +40,7 @@ Throughout the following instructions, shell variables are used to indicate valu
 source kamaji.env
 ```
 
-Any regular and conformant Kubernetes v1.22+ cluster can be turned into a Kamaji setup. To work properly, the Management Cluster should provide:
+Any regular and conformant Kubernetes v1.33+ cluster can be turned into a Kamaji setup. To work properly, the Management Cluster should provide:
 
 - CNI module installed, eg. [Calico](https://github.com/projectcalico/calico), [Cilium](https://github.com/cilium/cilium).
 - CSI module installed with a Storage Class for the Tenant datastores. The [Local Path Provisioner](https://github.com/rancher/local-path-provisioner) is a suggested choice, even for production environments.
