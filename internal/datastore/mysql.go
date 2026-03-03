@@ -29,6 +29,7 @@ const (
 	mysqlShowGrantsStatement       = "SHOW GRANTS FOR `%s`@`%%`"
 	mysqlCreateDBStatement         = "CREATE DATABASE IF NOT EXISTS %s"
 	mysqlCreateUserStatement       = "CREATE USER `%s`@`%%` IDENTIFIED BY '%s'"
+	mysqlUpdateUserStatement       = "ALTER USER `%s`@`%%` IDENTIFIED BY '%s'"
 	mysqlGrantPrivilegesStatement  = "GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON `%s`.* TO `%s`@`%%`"
 	mysqlDropDBStatement           = "DROP DATABASE IF EXISTS `%s`"
 	mysqlDropUserStatement         = "DROP USER IF EXISTS `%s`"
@@ -153,6 +154,14 @@ func (c *MySQLConnection) Check(ctx context.Context) error {
 func (c *MySQLConnection) CreateUser(ctx context.Context, user, password string) error {
 	if err := c.mutate(ctx, mysqlCreateUserStatement, user, password); err != nil {
 		return errors.NewCreateUserError(err)
+	}
+
+	return nil
+}
+
+func (c *MySQLConnection) UpdateUser(ctx context.Context, user, password string) error {
+	if err := c.mutate(ctx, mysqlUpdateUserStatement, user, password); err != nil {
+		return errors.NewUpdateUserError(err)
 	}
 
 	return nil

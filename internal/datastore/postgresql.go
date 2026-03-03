@@ -20,6 +20,7 @@ const (
 	postgresqlCreateDBStatement           = `CREATE DATABASE "%s"`
 	postgresqlUserExists                  = "SELECT 1 FROM pg_roles WHERE rolname = ?"
 	postgresqlCreateUserStatement         = `CREATE ROLE "%s" LOGIN PASSWORD ?`
+	postgresqlUpdateUserStatement         = `ALTER ROLE "%s" WITH PASSWORD ?`
 	postgresqlShowGrantsStatement         = "SELECT has_database_privilege(rolname, ?, 'create') from pg_roles where rolcanlogin and rolname = ?"
 	postgresqlShowOwnershipStatement      = "SELECT 't' FROM pg_catalog.pg_database AS d WHERE d.datname = ? AND pg_catalog.pg_get_userbyid(d.datdba) = ?"
 	postgresqlShowTableOwnershipStatement = "SELECT 't' from pg_tables where tableowner = ? AND tablename = ?"
@@ -137,6 +138,15 @@ func (r *PostgreSQLConnection) CreateUser(ctx context.Context, user, password st
 	_, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlCreateUserStatement, user), password)
 	if err != nil {
 		return errors.NewCreateUserError(err)
+	}
+
+	return nil
+}
+
+func (r *PostgreSQLConnection) UpdateUser(ctx context.Context, user, password string) error {
+	_, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlUpdateUserStatement, user), password)
+	if err != nil {
+		return errors.NewUpdateUserError(err)
 	}
 
 	return nil

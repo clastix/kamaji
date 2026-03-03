@@ -267,25 +267,24 @@ func getKubernetesStorageResources(c client.Client, dbConnection datastore.Conne
 func getKubernetesAdditionalStorageResources(c client.Client, dbConnections map[string]datastore.Connection, dataStoreOverrides []builder.DataStoreOverrides, threshold time.Duration) []resources.Resource {
 	res := make([]resources.Resource, 0, len(dataStoreOverrides))
 	for _, dso := range dataStoreOverrides {
-		datastore := dso.DataStore
 		res = append(res,
 			&ds.MultiTenancy{
-				DataStore: datastore,
+				DataStore: dso.DataStore,
 			},
 			&ds.Config{
 				Client:     c,
 				ConnString: dbConnections[dso.Resource].GetConnectionString(),
-				DataStore:  datastore,
+				DataStore:  dso.DataStore,
 				IsOverride: true,
 			},
 			&ds.Setup{
 				Client:     c,
 				Connection: dbConnections[dso.Resource],
-				DataStore:  datastore,
+				DataStore:  dso.DataStore,
 			},
 			&ds.Certificate{
 				Client:                  c,
-				DataStore:               datastore,
+				DataStore:               dso.DataStore,
 				CertExpirationThreshold: threshold,
 			})
 	}

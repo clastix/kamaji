@@ -47,6 +47,7 @@ func NewStorageConnection(ctx context.Context, client client.Client, ds kamajiv1
 
 type Connection interface {
 	CreateUser(ctx context.Context, user, password string) error
+	UpdateUser(ctx context.Context, user, password string) error
 	CreateDB(ctx context.Context, dbName string) error
 	GrantPrivileges(ctx context.Context, user, dbName string) error
 	UserExists(ctx context.Context, user string) (bool, error)

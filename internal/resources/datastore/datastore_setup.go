@@ -230,6 +230,10 @@ func (r *Setup) createUser(ctx context.Context, _ *kamajiv1alpha1.TenantControlP
 	}
 
 	if exists {
+		if updateErr := r.Connection.UpdateUser(ctx, r.resource.user, r.resource.password); updateErr != nil {
+			return controllerutil.OperationResultNone, fmt.Errorf("unable to update the user to : %w", updateErr)
+		}
+
 		return controllerutil.OperationResultNone, nil
 	}
 
