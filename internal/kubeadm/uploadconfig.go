@@ -104,6 +104,7 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration, patch
 			return nil, fmt.Errorf("unable to apply JSON patching to KubeletConfiguration: %w", patchErr)
 		}
 
+		kc = kubelettypes.KubeletConfiguration{}
 		if patchErr = utilities.DecodeFromJSON(string(kubeletConfig), &kc); patchErr != nil {
 			return nil, fmt.Errorf("unable to decode JSON to KubeletConfiguration: %w", patchErr)
 		}
