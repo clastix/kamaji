@@ -141,6 +141,13 @@ Retrieve the list of the allowed ones by issuing "kubectl get datastores.kamaji.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#kamajicontrolplanespecdatastoreoverridesindex">dataStoreOverrides</a></b></td>
+        <td>[]object</td>
+        <td>
+          DataStoreOverrides defines which Kubernetes resources will be stored in dedicated datastores.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>dataStoreSchema</b></td>
         <td>string</td>
         <td>
@@ -1664,6 +1671,38 @@ inside a container.<br/>
           Request is the name chosen for a request in the referenced claim.
 If empty, everything from the claim is made available, otherwise
 only the result of this request.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanespecdatastoreoverridesindex">`KamajiControlPlane.spec.dataStoreOverrides[index]`</span>
+
+
+DataStoreOverride defines which kubernetes resource will be stored in a dedicated datastore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>dataStore</b></td>
+        <td>string</td>
+        <td>
+          DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Resource specifies which kubernetes resource to target.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -15046,6 +15085,13 @@ Retrieve the list of the allowed ones by issuing "kubectl get datastores.kamaji.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdatastoreoverridesindex">dataStoreOverrides</a></b></td>
+        <td>[]object</td>
+        <td>
+          DataStoreOverrides defines which Kubernetes resources will be stored in dedicated datastores.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>dataStoreSchema</b></td>
         <td>string</td>
         <td>
@@ -16524,6 +16570,38 @@ inside a container.<br/>
           Request is the name chosen for a request in the referenced claim.
 If empty, everything from the claim is made available, otherwise
 only the result of this request.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="kamajicontrolplanetemplatespectemplatespecdatastoreoverridesindex">`KamajiControlPlaneTemplate.spec.template.spec.dataStoreOverrides[index]`</span>
+
+
+DataStoreOverride defines which kubernetes resource will be stored in a dedicated datastore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>dataStore</b></td>
+        <td>string</td>
+        <td>
+          DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Resource specifies which kubernetes resource to target.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
