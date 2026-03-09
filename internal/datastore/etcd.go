@@ -49,6 +49,10 @@ func (e *EtcdClient) CreateUser(ctx context.Context, user, password string) erro
 	return nil
 }
 
+func (e *EtcdClient) UpdateUser(ctx context.Context, user, password string) error {
+	return nil
+}
+
 func (e *EtcdClient) CreateDB(context.Context, string) error {
 	return nil
 }

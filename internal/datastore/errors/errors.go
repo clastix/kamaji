@@ -5,6 +5,10 @@ package errors
 
 import "fmt"
 
+func NewUpdateUserError(err error) error {
+	return fmt.Errorf("cannot update user: %w", err)
+}
+
 func NewCreateUserError(err error) error {
 	return fmt.Errorf("cannot create user: %w", err)
 }

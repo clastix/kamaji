@@ -70,6 +70,10 @@ func (nc *NATSConnection) CreateUser(_ context.Context, _, _ string) error {
 	return nil
 }
 
+func (nc *NATSConnection) UpdateUser(_ context.Context, _, _ string) error {
+	return nil
+}
+
 func (nc *NATSConnection) CreateDB(_ context.Context, dbName string) error {
 	_, err := nc.js.CreateKeyValue(&nats.KeyValueConfig{Bucket: dbName})
 	if err != nil {
