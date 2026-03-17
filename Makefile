@@ -122,7 +122,7 @@ $(GINKGO): $(LOCALBIN)
 .PHONY: kind
 kind: $(KIND) ## Download kind locally if necessary.
 $(KIND): $(LOCALBIN)
-	test -s $(LOCALBIN)/kind || GOBIN=$(LOCALBIN) CGO_ENABLED=0 go install -ldflags="-s -w" sigs.k8s.io/kind/cmd/kind@v0.14.0
+	test -s $(LOCALBIN)/kind || GOBIN=$(LOCALBIN) CGO_ENABLED=0 go install -ldflags="-s -w" sigs.k8s.io/kind/cmd/kind@v0.31.0
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
