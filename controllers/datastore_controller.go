@@ -21,14 +21,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers/utils"
+	"github.com/clastix/kamaji/internal/metrics"
 )
 
 type DataStore struct {
-	Client client.Client
+	Client  client.Client
+	Metrics *metrics.Recorder
 	// TenantControlPlaneTrigger is the channel used to communicate across the controllers:
 	// if a Data Source is updated, we have to be sure that the reconciliation of the certificates content
 	// for each Tenant Control Plane is put in place properly.
@@ -42,6 +45,15 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	var err error
 
 	logger := log.FromContext(ctx)
+
+	defer func(c context.Context) {
+		metricCtx, cancelMetricCtx := metrics.NewRefreshContextFrom(c)
+		defer cancelMetricCtx()
+
+		if gaugeErr := r.refreshDatastoreMetrics(metricCtx); gaugeErr != nil {
+			logger.WithName("metrics").Error(gaugeErr, "cannot refresh DataStore metrics")
+		}
+	}(ctx)
 
 	var ds kamajiv1alpha1.DataStore
 	if dsErr := r.Client.Get(ctx, request.NamespacedName, &ds); dsErr != nil {
@@ -238,6 +250,19 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 }
 
 func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
+	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+		metricCtx, cancelMetricCtx := metrics.NewRefreshContextFrom(ctx)
+		defer cancelMetricCtx()
+
+		if err := r.refreshDatastoreMetrics(metricCtx); err != nil {
+			controllerruntime.Log.WithName("metrics").Error(err, "cannot initialize DataStore metrics")
+		}
+
+		return nil
+	})); err != nil {
+		return err
+	}
+
 	enqueueFn := func(tcp *kamajiv1alpha1.TenantControlPlane, limitingInterface workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 		if dataStoreName := tcp.Status.Storage.DataStoreName; len(dataStoreName) > 0 {
 			limitingInterface.AddRateLimited(reconcile.Request{
@@ -263,6 +288,65 @@ func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
 			},
 		}).
 		Complete(r)
+}
+
+func (r *DataStore) refreshDatastoreMetrics(ctx context.Context) error {
+	var dataStoreList kamajiv1alpha1.DataStoreList
+
+	if err := r.Client.List(ctx, &dataStoreList); err != nil {
+		return err
+	}
+
+	metricsRecorder := r.metricsRecorder()
+	metricsRecorder.ResetDataStoreInfo()
+	metricsRecorder.ResetDataStoreStatus()
+	metricsRecorder.ResetDatastoresReadyAndDriverCounts()
+
+	for i := range dataStoreList.Items {
+		ds := &dataStoreList.Items[i]
+		driver := metrics.NormalizeDataStoreDriverLabel(ds.Spec.Driver)
+		ready := metrics.ReadyLabelFalse
+		if ds.Status.Ready {
+			ready = metrics.ReadyLabelTrue
+		}
+
+		status := classifyDataStoreStatusLabel(ds)
+
+		metricsRecorder.SetDataStoreStatus(ds.GetName(), status, ready)
+		metricsRecorder.SetDataStoreInfo(
+			ds.GetName(),
+			driver,
+		)
+
+		counts := metrics.NewSingleDriverReadyCounts(driver)
+
+		if ds.Status.Ready {
+			counts[metrics.ReadyLabelTrue][driver] = 1
+		} else {
+			counts[metrics.ReadyLabelFalse][driver] = 1
+		}
+
+		metricsRecorder.SetDatastoresReadyAndDriverCounts(ds.GetName(), counts)
+	}
+
+	return nil
+}
+
+func (r *DataStore) metricsRecorder() *metrics.Recorder {
+	if r.Metrics == nil {
+		r.Metrics = metrics.DefaultRecorder()
+	}
+
+	return r.Metrics
+}
+
+func classifyDataStoreStatusLabel(ds *kamajiv1alpha1.DataStore) string {
+	condition := meta.FindStatusCondition(ds.Status.Conditions, kamajiv1alpha1.DataStoreConditionValidType)
+	if condition == nil {
+		return metrics.DataStoreStatusUnknown
+	}
+
+	return metrics.NormalizeDataStoreConditionStatusLabel(condition.Status)
 }
 
 func (r *DataStore) validateBasicAuth(ctx context.Context, ds kamajiv1alpha1.DataStore) error {
