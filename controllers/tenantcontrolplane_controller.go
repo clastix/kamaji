@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -41,6 +44,7 @@ import (
 	controlplanebuilder "github.com/clastix/kamaji/internal/builders/controlplane"
 	"github.com/clastix/kamaji/internal/datastore"
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
+	"github.com/clastix/kamaji/internal/metrics"
 	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -49,6 +53,7 @@ import (
 type TenantControlPlaneReconciler struct {
 	Client                  client.Client
 	APIReader               client.Reader
+	Metrics                 *metrics.Recorder
 	Config                  TenantControlPlaneReconcilerConfig
 	TriggerChan             chan event.GenericEvent
 	KamajiNamespace         string
@@ -91,6 +96,15 @@ type TenantControlPlaneReconcilerConfig struct {
 //nolint:maintidx
 func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
+
+	defer func(c context.Context) {
+		metricCtx, cancelMetricCtx := metrics.NewRefreshContextFrom(c)
+		defer cancelMetricCtx()
+
+		if err := r.refreshTenantControlPlaneMetrics(metricCtx); err != nil {
+			log.WithName("metrics").Error(err, "cannot refresh TenantControlPlane metrics")
+		}
+	}(ctx)
 
 	var cancelFn context.CancelFunc
 	ctx, cancelFn = context.WithTimeout(ctx, r.ReconcileTimeout)
@@ -304,6 +318,19 @@ func (r *TenantControlPlaneReconciler) mutexSpec(obj client.Object) mutex.Spec {
 func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	r.clock = clock.RealClock{}
 
+	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+		metricCtx, cancelMetricCtx := metrics.NewRefreshContextFrom(ctx)
+		defer cancelMetricCtx()
+
+		if err := r.refreshTenantControlPlaneMetrics(metricCtx); err != nil {
+			ctrl.Log.WithName("metrics").Error(err, "cannot initialize TenantControlPlane metrics")
+		}
+
+		return nil
+	})); err != nil {
+		return err
+	}
+
 	controllerBuilder := ctrl.NewControllerManagedBy(mgr).
 		WatchesRawSource(source.Channel(r.CertificateChan, handler.Funcs{GenericFunc: func(_ context.Context, genericEvent event.TypedGenericEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 			w.AddRateLimited(ctrl.Request{
@@ -372,6 +399,93 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr
 			MaxConcurrentReconciles: r.MaxConcurrentReconciles,
 		}).
 		Complete(r)
+}
+
+func (r *TenantControlPlaneReconciler) refreshTenantControlPlaneMetrics(ctx context.Context) error {
+	var tcpList kamajiv1alpha1.TenantControlPlaneList
+
+	if err := r.Client.List(ctx, &tcpList); err != nil {
+		return err
+	}
+
+	metricsRecorder := r.metricsRecorder()
+	metricsRecorder.ResetTenantControlPlaneInfo()
+	metricsRecorder.ResetTenantControlPlaneStatus()
+
+	counts := metrics.NewReadyCounts()
+
+	for i := range tcpList.Items {
+		tcp := &tcpList.Items[i]
+		status := classifyTenantControlPlaneStatusLabel(tcp)
+		ready := classifyTenantControlPlaneReadyLabel(status)
+		counts[ready]++
+
+		metricsRecorder.SetTenantControlPlaneStatus(
+			tcp.GetNamespace(),
+			tcp.GetName(),
+			status,
+			ready,
+		)
+
+		metricsRecorder.SetTenantControlPlaneInfo(
+			tcp.GetNamespace(),
+			tcp.GetName(),
+			metrics.NormalizeTenantControlPlaneKubernetesVersionLabel(tcp.Spec.Kubernetes.Version),
+			metrics.NormalizeDataStoreDriverStringLabel(tcp.Status.Storage.Driver),
+			resolveTenantControlPlaneAddress(tcp),
+			classifyTenantControlPlaneExposureStrategyLabel(tcp),
+		)
+	}
+
+	metricsRecorder.SetTenantControlPlanesReadyCounts(counts)
+
+	return nil
+}
+
+func (r *TenantControlPlaneReconciler) metricsRecorder() *metrics.Recorder {
+	if r.Metrics == nil {
+		r.Metrics = metrics.DefaultRecorder()
+	}
+
+	return r.Metrics
+}
+
+func classifyTenantControlPlaneStatusLabel(tcp *kamajiv1alpha1.TenantControlPlane) string {
+	return metrics.NormalizeTenantControlPlaneStatusLabel(tcp.Status.Kubernetes.Version.Status)
+}
+
+func classifyTenantControlPlaneReadyLabel(status string) string {
+	if status == string(kamajiv1alpha1.VersionReady) {
+		return metrics.ReadyLabelTrue
+	}
+
+	return metrics.ReadyLabelFalse
+}
+
+func classifyTenantControlPlaneExposureStrategyLabel(tcp *kamajiv1alpha1.TenantControlPlane) string {
+	if tcp.Spec.ControlPlane.Gateway != nil {
+		return metrics.TenantControlPlaneExposureGateway
+	}
+
+	if tcp.Spec.ControlPlane.Service.ServiceType != "" {
+		return metrics.TenantControlPlaneExposureService
+	}
+
+	return metrics.TenantControlPlaneExposureUnknown
+}
+
+func resolveTenantControlPlaneAddress(tcp *kamajiv1alpha1.TenantControlPlane) string {
+	address, port, err := tcp.AssignedControlPlaneAddress()
+	if err != nil || strings.TrimSpace(address) == "" || port <= 0 {
+		// Empty string is used as safe fallback when no externally reachable address can be resolved.
+		return ""
+	}
+
+	return formatHTTPSAddress(address, port)
+}
+
+func formatHTTPSAddress(host string, port int32) string {
+	return "https://" + net.JoinHostPort(host, strconv.FormatInt(int64(port), 10))
 }
 
 func (r *TenantControlPlaneReconciler) getTenantControlPlane(ctx context.Context, namespacedName k8stypes.NamespacedName) utils.TenantControlPlaneRetrievalFn {

@@ -25,6 +25,7 @@ import (
 
 	"github.com/clastix/kamaji/controllers"
 	"github.com/clastix/kamaji/internal"
+	"github.com/clastix/kamaji/internal/metrics"
 )
 
 func NewCmd(scheme *runtime.Scheme) *cobra.Command {
@@ -83,6 +84,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			}
 
 			triggerChan := make(chan event.GenericEvent)
+			metricsRecorder := metrics.DefaultRecorder()
 
 			mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrlOpts)
 			if err != nil {
@@ -105,7 +107,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				}
 			}
 
-			certController := &controllers.CertificateLifecycle{Channel: triggerChan, Deadline: certificateExpirationDeadline}
+			certController := &controllers.CertificateLifecycle{Channel: triggerChan, Deadline: certificateExpirationDeadline, Metrics: metricsRecorder}
 			certController.EnqueueFn = certController.EnqueueForKubeconfigGenerator
 			if err = certController.SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "CertificateLifecycle")
