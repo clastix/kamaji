@@ -32,6 +32,11 @@ type NetworkProfileSpec struct {
 	// Address where API server will be exposed.
 	// In the case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.
 	Address string `json:"address,omitempty"`
+	// AdvertiseAddress is the address advertised to tenant-side consumers (workers, konnectivity).
+	// When set, the management address is used for CAPI and status reporting, while this address
+	// is used for kubeadm ControlPlaneEndpoint, cluster-info, and admin.conf.
+	// Both addresses are included in the API server certificate SANs.
+	AdvertiseAddress string `json:"advertiseAddress,omitempty"`
 	// The default domain name used for DNS resolution within the cluster.
 	//+kubebuilder:default="cluster.local"
 	//+kubebuilder:validation:XValidation:rule="self == oldSelf",message="changing the cluster domain is not supported"

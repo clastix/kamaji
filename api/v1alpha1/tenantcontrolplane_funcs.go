@@ -37,6 +37,22 @@ func (in *TenantControlPlane) AssignedControlPlaneAddress() (string, int32, erro
 	return address, int32(port), nil
 }
 
+// AdvertisedControlPlaneAddress returns the address and port to advertise to tenant-side consumers.
+// If AdvertiseAddress is set, it is returned with the same port as the management address.
+// Otherwise, it falls back to AssignedControlPlaneAddress.
+func (in *TenantControlPlane) AdvertisedControlPlaneAddress() (string, int32, error) {
+	if in.Spec.NetworkProfile.AdvertiseAddress != "" {
+		_, port, err := in.AssignedControlPlaneAddress()
+		if err != nil {
+			return "", 0, err
+		}
+
+		return in.Spec.NetworkProfile.AdvertiseAddress, port, nil
+	}
+
+	return in.AssignedControlPlaneAddress()
+}
+
 // DeclaredControlPlaneAddress returns the desired Tenant Control Plane address.
 // In case of dynamic allocation, e.g. using a Load Balancer, it queries the API Server looking for the allocated IP.
 // When an IP has not been yet assigned, or it is expected, an error is returned.
