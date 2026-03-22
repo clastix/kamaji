@@ -45890,6 +45890,16 @@ In the case of LoadBalancer Service, this can be empty in order to use the expos
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>advertiseAddress</b></td>
+        <td>string</td>
+        <td>
+          AdvertiseAddress is the address advertised to tenant-side consumers (workers, konnectivity).
+When set, the management address is used for CAPI and status reporting, while this address
+is used for kubeadm ControlPlaneEndpoint, cluster-info, and admin.conf.
+Both addresses are included in the API server certificate SANs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>allowAddressAsExternalIP</b></td>
         <td>boolean</td>
         <td>
