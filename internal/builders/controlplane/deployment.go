@@ -718,10 +718,18 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 		kubeletPreferredAddressTypes = append(kubeletPreferredAddressTypes, string(addressType))
 	}
 
+	// Use the advertiseAddress (tenant-facing VIP) for --advertise-address when set.
+	// This ensures the kubernetes endpoint in the tenant cluster points to the VIP,
+	// allowing pods to reach the API server via the OVN localport path.
+	apiAdvertiseAddress := address
+	if adv := tenantControlPlane.Spec.NetworkProfile.AdvertiseAddress; adv != "" {
+		apiAdvertiseAddress = adv
+	}
+
 	desiredArgs := map[string]string{
 		"--allow-privileged":                   "true",
 		"--authorization-mode":                 "Node,RBAC",
-		"--advertise-address":                  address,
+		"--advertise-address":                  apiAdvertiseAddress,
 		"--client-ca-file":                     path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
 		"--enable-admission-plugins":           strings.Join(tenantControlPlane.Spec.Kubernetes.AdmissionControllers.ToSlice(), ","),
 		"--enable-bootstrap-token-auth":        "true",

@@ -88,9 +88,15 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 			return err
 		}
 
+		// Resolve the advertised address for tenant-side consumers
+		advAddress, _, advErr := tenantControlPlane.AdvertisedControlPlaneAddress()
+		if advErr != nil {
+			return advErr
+		}
+
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
-		endpoint := net.JoinHostPort(address, strconv.FormatInt(int64(port), 10))
+		endpoint := net.JoinHostPort(advAddress, strconv.FormatInt(int64(port), 10))
 		spec := tenantControlPlane.Spec.ControlPlane
 		if spec.Gateway != nil {
 			if len(spec.Gateway.Hostname) > 0 {
@@ -105,13 +111,19 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 			}
 		}
 
+		// Add advertise address to cert SANs if different from management address
+		certSANs := tenantControlPlane.Spec.NetworkProfile.CertSANs
+		if advAddress != address {
+			certSANs = append(append([]string{}, certSANs...), advAddress)
+		}
+
 		params := kubeadm.Parameters{
 			TenantControlPlaneAddress:       address,
 			TenantControlPlanePort:          port,
 			TenantControlPlaneName:          tenantControlPlane.GetName(),
 			TenantControlPlaneNamespace:     tenantControlPlane.GetNamespace(),
 			TenantControlPlaneEndpoint:      endpoint,
-			TenantControlPlaneCertSANs:      tenantControlPlane.Spec.NetworkProfile.CertSANs,
+			TenantControlPlaneCertSANs:      certSANs,
 			TenantControlPlaneClusterDomain: tenantControlPlane.Spec.NetworkProfile.ClusterDomain,
 			TenantControlPlanePodCIDR:       tenantControlPlane.Spec.NetworkProfile.PodCIDR,
 			TenantControlPlaneServiceCIDR:   tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
