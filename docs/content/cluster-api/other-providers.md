@@ -9,6 +9,7 @@ Kamaji offers seamless integration with the most popular [Cluster API Infrastruc
 - Hetzner
 - KubeVirt
 - Metal³
+- metal-stack
 - Nutanix
 - OpenStack
 - Tinkerbell
