@@ -33,6 +33,7 @@ import (
 	"github.com/clastix/kamaji/controllers/soot"
 	"github.com/clastix/kamaji/internal"
 	"github.com/clastix/kamaji/internal/builders/controlplane"
+	"github.com/clastix/kamaji/internal/metrics"
 	"github.com/clastix/kamaji/internal/utilities"
 	"github.com/clastix/kamaji/internal/webhook"
 	"github.com/clastix/kamaji/internal/webhook/handlers"
@@ -135,8 +136,9 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			}
 
 			tcpChannel, certChannel := make(chan event.GenericEvent), make(chan event.GenericEvent)
+			metricsRecorder := metrics.DefaultRecorder()
 
-			if err = (&controllers.DataStore{Client: mgr.GetClient(), TenantControlPlaneTrigger: tcpChannel}).SetupWithManager(mgr); err != nil {
+			if err = (&controllers.DataStore{Client: mgr.GetClient(), Metrics: metricsRecorder, TenantControlPlaneTrigger: tcpChannel}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "DataStore")
 
 				return err
@@ -152,6 +154,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			reconciler := &controllers.TenantControlPlaneReconciler{
 				Client:    mgr.GetClient(),
 				APIReader: mgr.GetAPIReader(),
+				Metrics:   metricsRecorder,
 				Config: controllers.TenantControlPlaneReconcilerConfig{
 					DefaultDataStoreName:    datastore,
 					KineContainerImage:      kineImage,
@@ -198,7 +201,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				}
 			}
 
-			certController := &controllers.CertificateLifecycle{Channel: certChannel, Deadline: certificateExpirationDeadline}
+			certController := &controllers.CertificateLifecycle{Channel: certChannel, Deadline: certificateExpirationDeadline, Metrics: metricsRecorder}
 			certController.EnqueueFn = certController.EnqueueForTenantControlPlane
 
 			if err = certController.SetupWithManager(mgr); err != nil {
