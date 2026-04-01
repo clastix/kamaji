@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
@@ -74,7 +73,7 @@ func FindMatchingListener(listeners []gatewayv1.Listener, ref gatewayv1.ParentRe
 
 // IsGatewayRouteStatusChanged checks if the gateway route status has changed compared to the stored status.
 // Returns true if the status has changed (update needed), false if it's the same.
-func IsGatewayRouteStatusChanged(currentStatus *kamajiv1alpha1.KubernetesGatewayStatus, resourceStatus gatewayv1alpha2.RouteStatus) bool {
+func IsGatewayRouteStatusChanged(currentStatus *kamajiv1alpha1.KubernetesGatewayStatus, resourceStatus gatewayv1.RouteStatus) bool {
 	if currentStatus == nil {
 		return true
 	}
@@ -139,7 +138,7 @@ func IsGatewayRouteStatusChanged(currentStatus *kamajiv1alpha1.KubernetesGateway
 
 // CleanupTLSRoute cleans up a TLSRoute resource if it's managed by the given TenantControlPlane.
 func CleanupTLSRoute(ctx context.Context, c client.Client, routeName, routeNamespace string, tcp metav1.Object) (bool, error) {
-	route := gatewayv1alpha2.TLSRoute{}
+	route := gatewayv1.TLSRoute{}
 	if err := c.Get(ctx, client.ObjectKey{
 		Namespace: routeNamespace,
 		Name:      routeName,
@@ -167,7 +166,7 @@ func CleanupTLSRoute(ctx context.Context, c client.Client, routeName, routeNames
 }
 
 // BuildGatewayAccessPointsStatus builds access points from route statuses.
-func BuildGatewayAccessPointsStatus(ctx context.Context, c client.Client, route *gatewayv1alpha2.TLSRoute, routeStatuses gatewayv1alpha2.RouteStatus) ([]kamajiv1alpha1.GatewayAccessPoint, error) {
+func BuildGatewayAccessPointsStatus(ctx context.Context, c client.Client, route *gatewayv1.TLSRoute, routeStatuses gatewayv1.RouteStatus) ([]kamajiv1alpha1.GatewayAccessPoint, error) {
 	accessPoints := []kamajiv1alpha1.GatewayAccessPoint{}
 	routeNamespace := gatewayv1.Namespace(route.Namespace)
 

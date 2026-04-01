@@ -33,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers/finalizers"
@@ -361,7 +360,7 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr
 		controllerBuilder = controllerBuilder.
 			Owns(&gatewayv1.HTTPRoute{}).
 			Owns(&gatewayv1.GRPCRoute{}).
-			Owns(&gatewayv1alpha2.TLSRoute{}).
+			Owns(&gatewayv1.TLSRoute{}).
 			Watches(&gatewayv1.Gateway{}, handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
 				return nil
 			}))

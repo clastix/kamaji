@@ -15,7 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/resources"
@@ -32,7 +31,7 @@ var _ = BeforeSuite(func() {
 	runtimeScheme = runtime.NewScheme()
 	Expect(scheme.AddToScheme(runtimeScheme)).To(Succeed())
 	Expect(kamajiv1alpha1.AddToScheme(runtimeScheme)).To(Succeed())
-	Expect(gatewayv1alpha2.Install(runtimeScheme)).To(Succeed())
+	Expect(gatewayv1.Install(runtimeScheme)).To(Succeed())
 })
 
 var _ = Describe("KubernetesGatewayResource", func() {
@@ -61,13 +60,13 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					Gateway: &kamajiv1alpha1.GatewaySpec{
-						Hostname: gatewayv1alpha2.Hostname("test.example.com"),
+						Hostname: gatewayv1.Hostname("test.example.com"),
 						AdditionalMetadata: kamajiv1alpha1.AdditionalMetadata{
 							Labels: map[string]string{
 								"test-label": "test-value",
 							},
 						},
-						GatewayParentRefs: []gatewayv1alpha2.ParentReference{
+						GatewayParentRefs: []gatewayv1.ParentReference{
 							{
 								Name: "test-gateway",
 							},
@@ -104,7 +103,7 @@ var _ = Describe("KubernetesGatewayResource", func() {
 
 		It("should handle multiple parentRefs correctly", func() {
 			namespace := gatewayv1.Namespace("default")
-			tcp.Spec.ControlPlane.Gateway.GatewayParentRefs = []gatewayv1alpha2.ParentReference{
+			tcp.Spec.ControlPlane.Gateway.GatewayParentRefs = []gatewayv1.ParentReference{
 				{
 					Name:      "test-gateway-1",
 					Namespace: &namespace,
@@ -121,14 +120,14 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			_, err = resource.CreateOrUpdate(ctx, tcp)
 			Expect(err).NotTo(HaveOccurred())
 
-			route := &gatewayv1alpha2.TLSRoute{}
+			route := &gatewayv1.TLSRoute{}
 			err = resource.Client.Get(ctx, client.ObjectKey{Name: tcp.Name, Namespace: tcp.Namespace}, route)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(route.Spec.ParentRefs).To(HaveLen(2))
-			Expect(route.Spec.ParentRefs[0].Name).To(Equal(gatewayv1alpha2.ObjectName("test-gateway-1")))
+			Expect(route.Spec.ParentRefs[0].Name).To(Equal(gatewayv1.ObjectName("test-gateway-1")))
 			Expect(route.Spec.ParentRefs[0].Namespace).NotTo(BeNil())
 			Expect(*route.Spec.ParentRefs[0].Namespace).To(Equal(namespace))
-			Expect(route.Spec.ParentRefs[1].Name).To(Equal(gatewayv1alpha2.ObjectName("test-gateway-2")))
+			Expect(route.Spec.ParentRefs[1].Name).To(Equal(gatewayv1.ObjectName("test-gateway-2")))
 			Expect(route.Spec.ParentRefs[1].Namespace).NotTo(BeNil())
 			Expect(*route.Spec.ParentRefs[1].Namespace).To(Equal(namespace))
 		})
