@@ -16,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/resources/konnectivity"
@@ -33,7 +32,6 @@ var _ = BeforeSuite(func() {
 	runtimeScheme = runtime.NewScheme()
 	Expect(scheme.AddToScheme(runtimeScheme)).To(Succeed())
 	Expect(kamajiv1alpha1.AddToScheme(runtimeScheme)).To(Succeed())
-	Expect(gatewayv1alpha2.Install(runtimeScheme)).To(Succeed())
 })
 
 var _ = Describe("KubernetesKonnectivityGatewayResource", func() {
@@ -63,8 +61,8 @@ var _ = Describe("KubernetesKonnectivityGatewayResource", func() {
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					Gateway: &kamajiv1alpha1.GatewaySpec{
-						Hostname: gatewayv1alpha2.Hostname("test.example.com"),
-						GatewayParentRefs: []gatewayv1alpha2.ParentReference{
+						Hostname: gatewayv1.Hostname("test.example.com"),
+						GatewayParentRefs: []gatewayv1.ParentReference{
 							{
 								Name:      "test-gateway",
 								Namespace: &namespace,
@@ -123,7 +121,7 @@ var _ = Describe("KubernetesKonnectivityGatewayResource", func() {
 			_, err = resource.CreateOrUpdate(ctx, tcp)
 			Expect(err).NotTo(HaveOccurred())
 
-			route := &gatewayv1alpha2.TLSRoute{}
+			route := &gatewayv1.TLSRoute{}
 			err = resource.Client.Get(ctx, client.ObjectKey{Name: "test-tcp-konnectivity", Namespace: tcp.Namespace}, route)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(route.Name).To(Equal("test-tcp-konnectivity"))
@@ -136,7 +134,7 @@ var _ = Describe("KubernetesKonnectivityGatewayResource", func() {
 			_, err = resource.CreateOrUpdate(ctx, tcp)
 			Expect(err).NotTo(HaveOccurred())
 
-			route := &gatewayv1alpha2.TLSRoute{}
+			route := &gatewayv1.TLSRoute{}
 			err = resource.Client.Get(ctx, client.ObjectKey{Name: "test-tcp-konnectivity", Namespace: tcp.Namespace}, route)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(route.Spec.ParentRefs).To(HaveLen(1))
@@ -153,7 +151,7 @@ var _ = Describe("KubernetesKonnectivityGatewayResource", func() {
 			_, err = resource.CreateOrUpdate(ctx, tcp)
 			Expect(err).NotTo(HaveOccurred())
 
-			route := &gatewayv1alpha2.TLSRoute{}
+			route := &gatewayv1.TLSRoute{}
 			err = resource.Client.Get(ctx, client.ObjectKey{Name: "test-tcp-konnectivity", Namespace: tcp.Namespace}, route)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(route.Spec.Hostnames).To(HaveLen(1))

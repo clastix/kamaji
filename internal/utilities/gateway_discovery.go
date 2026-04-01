@@ -11,7 +11,6 @@ import (
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 // AreGatewayResourcesAvailable checks if Gateway API is available in the cluster through a discovery Client
@@ -51,7 +50,7 @@ func GatewayAPIResourcesAvailable(ctx context.Context, discoveryClient discovery
 
 // TLSRouteAPIAvailable checks specifically for TLSRoute resource availability.
 func TLSRouteAPIAvailable(ctx context.Context, discoveryClient discovery.DiscoveryInterface) (bool, error) {
-	gv := gatewayv1alpha2.SchemeGroupVersion
+	gv := gatewayv1.SchemeGroupVersion
 
 	resourceList, err := discoveryClient.ServerResourcesForGroupVersion(gv.String())
 	if err != nil {
@@ -85,8 +84,8 @@ func IsTLSRouteAvailable(ctx context.Context, c client.Client, discoveryClient d
 func IsTLSRouteAvailableViaClient(ctx context.Context, c client.Client) bool {
 	// Try to check if TLSRoute GVK can be resolved
 	gvk := schema.GroupVersionKind{
-		Group:   gatewayv1alpha2.GroupName,
-		Version: "v1alpha2",
+		Group:   gatewayv1.GroupName,
+		Version: "v1",
 		Kind:    "TLSRoute",
 	}
 

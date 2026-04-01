@@ -277,21 +277,16 @@ cert-manager:
 	$(HELM) upgrade --install cert-manager jetstack/cert-manager --namespace certmanager-system --create-namespace --set "installCRDs=true"
 
 gateway-api:
+	# Required for the Envoy Dependent Experimentals. Experimentals contains Standard channel CRDs
 	kubectl apply \
 		--server-side \
 		--force-conflicts \
 		--field-manager=helm \
-		-f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
-	# Required for the TLSRoutes. Experimentals.
-	kubectl apply \
-		--server-side \
-		--force-conflicts \
-		--field-manager=helm \
-		-f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
+		-f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.1/experimental-install.yaml
 	kubectl wait --for=condition=Established crd/gateways.gateway.networking.k8s.io --timeout=60s
 
 envoy-gateway: gateway-api helm ## Install Envoy Gateway for Gateway API tests.
-	$(HELM) upgrade --install eg oci://docker.io/envoyproxy/gateway-helm --version v1.6.1 -n envoy-gateway-system --create-namespace
+	$(HELM) upgrade --install eg oci://docker.io/envoyproxy/gateway-helm --version v1.7.1 -n envoy-gateway-system --create-namespace --skip-crds
 	kubectl wait --timeout=5m -n envoy-gateway-system deployment/envoy-gateway --for=condition=Available
 
 load: kind
