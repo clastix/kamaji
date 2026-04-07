@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	clientcmdapiv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -19,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -26,6 +28,7 @@ import (
 	"github.com/clastix/kamaji/controllers/utils"
 	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/crypto"
+	"github.com/clastix/kamaji/internal/metrics"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -33,12 +36,21 @@ type CertificateLifecycle struct {
 	Channel   chan event.GenericEvent
 	Deadline  time.Duration
 	EnqueueFn func(secret *corev1.Secret)
+	Metrics   *metrics.Recorder
 
 	client client.Client
 }
 
 func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := log.FromContext(ctx)
+	defer func(c context.Context) {
+		metricCtx, cancelMetricCtx := metrics.NewRefreshContextFrom(c)
+		defer cancelMetricCtx()
+
+		if err := s.refreshCertificatesMetrics(metricCtx); err != nil {
+			logger.WithName("metrics").Error(err, "cannot refresh certificate status gauges")
+		}
+	}(ctx)
 
 	logger.Info("starting CertificateLifecycle handling")
 
@@ -176,6 +188,19 @@ func (s *CertificateLifecycle) extractCertificateFromKubeconfig(secret corev1.Se
 func (s *CertificateLifecycle) SetupWithManager(mgr controllerruntime.Manager) error {
 	s.client = mgr.GetClient()
 
+	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+		metricCtx, cancelMetricCtx := metrics.NewRefreshContextFrom(ctx)
+		defer cancelMetricCtx()
+
+		if err := s.refreshCertificatesMetrics(metricCtx); err != nil {
+			controllerruntime.Log.WithName("metrics").Error(err, "cannot initialize certificate status gauges")
+		}
+
+		return nil
+	})); err != nil {
+		return err
+	}
+
 	supportedStrategies := sets.New[string](utilities.CertificateX509Label, utilities.CertificateKubeconfigLabel)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
@@ -194,4 +219,105 @@ func (s *CertificateLifecycle) SetupWithManager(mgr controllerruntime.Manager) e
 			return supportedStrategies.Has(value)
 		}))).
 		Complete(s)
+}
+
+func (s *CertificateLifecycle) refreshCertificatesMetrics(ctx context.Context) error {
+	metricsRecorder := s.metricsRecorder()
+	metricsRecorder.ResetCertificatesStatusCounts()
+
+	countsByTenantControlPlane := map[k8stypes.NamespacedName]map[string]map[string]int{}
+
+	var tenantControlPlaneList kamajiv1alpha1.TenantControlPlaneList
+	if err := s.client.List(ctx, &tenantControlPlaneList); err != nil {
+		return err
+	}
+
+	for i := range tenantControlPlaneList.Items {
+		tcp := tenantControlPlaneList.Items[i]
+		namespacedName := k8stypes.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.GetName()}
+		countsByTenantControlPlane[namespacedName] = metrics.NewCertificateStatusCounts()
+	}
+
+	var secretList corev1.SecretList
+	if err := s.client.List(ctx, &secretList); err != nil {
+		return err
+	}
+
+	deadline := time.Now().Add(s.Deadline)
+
+	for i := range secretList.Items {
+		secret := secretList.Items[i]
+		labels := secret.GetLabels()
+		if labels == nil {
+			continue
+		}
+
+		tenantControlPlaneName, ok := labels[constants.ControlPlaneLabelKey]
+		if !ok || tenantControlPlaneName == "" {
+			continue
+		}
+
+		strategy, ok := certificateStrategyFromLabel(labels[constants.ControllerLabelResource])
+		if !ok {
+			continue
+		}
+
+		namespacedName := k8stypes.NamespacedName{Namespace: secret.GetNamespace(), Name: tenantControlPlaneName}
+		if _, exists := countsByTenantControlPlane[namespacedName]; !exists {
+			countsByTenantControlPlane[namespacedName] = metrics.NewCertificateStatusCounts()
+		}
+
+		var (
+			crt *x509.Certificate
+			err error
+		)
+
+		switch strategy {
+		case metrics.CertificateStrategyX509:
+			crt, err = s.extractCertificateFromBareSecret(secret)
+		case metrics.CertificateStrategyKubeconfig:
+			crt, err = s.extractCertificateFromKubeconfig(secret)
+		default:
+			continue
+		}
+
+		if err != nil {
+			countsByTenantControlPlane[namespacedName][metrics.CertificateStatusInvalid][strategy]++
+
+			continue
+		}
+
+		if deadline.After(crt.NotAfter) {
+			countsByTenantControlPlane[namespacedName][metrics.CertificateStatusExpiring][strategy]++
+
+			continue
+		}
+
+		countsByTenantControlPlane[namespacedName][metrics.CertificateStatusValid][strategy]++
+	}
+
+	for namespacedName, counts := range countsByTenantControlPlane {
+		metricsRecorder.SetCertificatesStatusCounts(namespacedName.Namespace, namespacedName.Name, counts)
+	}
+
+	return nil
+}
+
+func certificateStrategyFromLabel(label string) (string, bool) {
+	switch label {
+	case utilities.CertificateX509Label:
+		return metrics.CertificateStrategyX509, true
+	case utilities.CertificateKubeconfigLabel:
+		return metrics.CertificateStrategyKubeconfig, true
+	default:
+		return "", false
+	}
+}
+
+func (s *CertificateLifecycle) metricsRecorder() *metrics.Recorder {
+	if s.Metrics == nil {
+		s.Metrics = metrics.DefaultRecorder()
+	}
+
+	return s.Metrics
 }

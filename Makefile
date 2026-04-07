@@ -274,7 +274,7 @@ metallb:
 
 cert-manager:
 	$(HELM) repo add jetstack https://charts.jetstack.io
-	$(HELM) upgrade --install cert-manager jetstack/cert-manager --namespace certmanager-system --create-namespace --set "installCRDs=true"
+	$(HELM) upgrade --install cert-manager jetstack/cert-manager --namespace certmanager-system --create-namespace --set "crds.enabled=true" --version v1.18.3
 
 gateway-api:
 	kubectl apply \
@@ -296,6 +296,28 @@ envoy-gateway: gateway-api helm ## Install Envoy Gateway for Gateway API tests.
 
 load: kind
 	$(KIND) load docker-image --name kamaji ${CONTAINER_REPOSITORY}:${VERSION}
+
+.PHONY: install
+install: helm cert-manager metallb ## Install Kamaji chart from repository using current commit SHA as image tag.
+	$(MAKE) VERSION=$$(git rev-parse --short HEAD) build load
+	$(HELM) repo add clastix https://clastix.github.io/charts
+	$(HELM) repo update
+	$(HELM) upgrade --install kamaji clastix/kamaji \
+		--namespace kamaji-system \
+		--create-namespace \
+		--set 'resources=null' \
+		--set "image.repository=$(CONTAINER_REPOSITORY)" \
+		--set 'image.pullPolicy=Never' \
+		--set "image.tag=$(GIT_HEAD_COMMIT)" \
+		--version 0.0.0+latest
+
+.PHONY: prometheus-install
+prometheus-install: ## Install Prometheus Operator bundle and Kamaji observability manifests.
+	kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+	kubectl -n monitoring create configmap grafana-dashboards --from-file=kamaji-dashboard.json=./config/observability/dashboard/grafana-dashboard-kamaji.json --dry-run=client -o yaml | kubectl apply -f -
+	curl -fsSL https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.89.0/bundle.yaml | sed 's/namespace: default/namespace: monitoring/g' | kubectl apply --server-side --force-conflicts --field-manager=make-prometheus-install -f -
+	kubectl -n monitoring rollout status deploy/prometheus-operator --timeout=3m
+	kubectl apply --server-side --force-conflicts --field-manager=make-prometheus-install -f ./config/observability/
 
 ##@ e2e
 
