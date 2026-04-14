@@ -6,7 +6,6 @@ require (
 	github.com/JamesStewy/go-mysqldump v0.2.2
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/clastix/kamaji-telemetry v1.0.0
-	github.com/docker/docker v28.5.2+incompatible
 	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/go-logr/logr v1.4.3
 	github.com/go-pg/pg/v10 v10.15.0
@@ -15,6 +14,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/json-iterator/go v1.1.12
 	github.com/juju/mutex/v2 v2.0.0
+	github.com/moby/moby/api v1.54.1
 	github.com/nats-io/nats.go v1.50.0
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
@@ -28,16 +28,16 @@ require (
 	go.etcd.io/etcd/client/v3 v3.6.10
 	go.uber.org/automaxprocs v1.6.0
 	gomodules.xyz/jsonpatch/v2 v2.5.0
-	k8s.io/api v0.35.0
-	k8s.io/apiextensions-apiserver v0.34.1
-	k8s.io/apimachinery v0.35.0
-	k8s.io/client-go v0.35.0
+	k8s.io/api v0.35.3
+	k8s.io/apiextensions-apiserver v0.35.3
+	k8s.io/apimachinery v0.35.3
+	k8s.io/client-go v0.35.3
 	k8s.io/cluster-bootstrap v0.0.0
 	k8s.io/klog/v2 v2.140.0
 	k8s.io/kubelet v0.0.0
 	k8s.io/kubernetes v1.35.3
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
-	sigs.k8s.io/controller-runtime v0.22.4
+	sigs.k8s.io/controller-runtime v0.23.3
 	sigs.k8s.io/gateway-api v1.4.1
 )
 
@@ -107,7 +107,6 @@ require (
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/go-archive v0.2.0 // indirect
-	github.com/moby/moby/api v1.54.1 // indirect
 	github.com/moby/moby/client v0.4.0 // indirect
 	github.com/moby/patternmatcher v0.6.1 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
@@ -183,15 +182,15 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiserver v0.35.0 // indirect
+	k8s.io/apiserver v0.35.3 // indirect
 	k8s.io/cli-runtime v0.0.0 // indirect
 	k8s.io/cloud-provider v0.0.0 // indirect
-	k8s.io/component-base v0.35.0 // indirect
-	k8s.io/component-helpers v0.35.0 // indirect
-	k8s.io/controller-manager v0.35.0 // indirect
-	k8s.io/cri-api v0.35.0 // indirect
+	k8s.io/component-base v0.35.3 // indirect
+	k8s.io/component-helpers v0.35.3 // indirect
+	k8s.io/controller-manager v0.35.3 // indirect
+	k8s.io/cri-api v0.35.3 // indirect
 	k8s.io/cri-client v0.0.0 // indirect
-	k8s.io/kms v0.35.0 // indirect
+	k8s.io/kms v0.35.3 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
 	k8s.io/kube-proxy v0.0.0 // indirect
 	k8s.io/system-validators v1.12.1 // indirect
@@ -201,40 +200,40 @@ require (
 	sigs.k8s.io/kustomize/api v0.20.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
-	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v6 v6.3.2-0.20260122202528-d9cc6641c482 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
 replace (
-	k8s.io/api => k8s.io/api v0.35.0
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.35.0
-	k8s.io/apimachinery => k8s.io/apimachinery v0.35.0
-	k8s.io/apiserver => k8s.io/apiserver v0.35.0
-	k8s.io/cli-runtime => k8s.io/cli-runtime v0.35.0
-	k8s.io/client-go => k8s.io/client-go v0.35.0
-	k8s.io/cloud-provider => k8s.io/cloud-provider v0.35.0
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.35.0
-	k8s.io/code-generator => k8s.io/code-generator v0.35.0
-	k8s.io/component-base => k8s.io/component-base v0.35.0
-	k8s.io/component-helpers => k8s.io/component-helpers v0.35.0
-	k8s.io/controller-manager => k8s.io/controller-manager v0.35.0
-	k8s.io/cri-api => k8s.io/cri-api v0.35.0
-	k8s.io/cri-client => k8s.io/cri-client v0.35.0
-	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.35.0
-	k8s.io/dynamic-resource-allocation => k8s.io/dynamic-resource-allocation v0.35.0
-	k8s.io/endpointslice => k8s.io/endpointslice v0.35.0
-	k8s.io/externaljwt => k8s.io/externaljwt v0.35.0
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.35.0
-	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.35.0
-	k8s.io/kube-proxy => k8s.io/kube-proxy v0.35.0
-	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.35.0
-	k8s.io/kubectl => k8s.io/kubectl v0.35.0
-	k8s.io/kubelet => k8s.io/kubelet v0.35.0
-	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.35.0
-	k8s.io/metrics => k8s.io/metrics v0.35.0
-	k8s.io/mount-utils => k8s.io/mount-utils v0.35.0
-	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.35.0
-	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.35.0
+	k8s.io/api => k8s.io/api v0.35.3
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.35.3
+	k8s.io/apimachinery => k8s.io/apimachinery v0.35.3
+	k8s.io/apiserver => k8s.io/apiserver v0.35.3
+	k8s.io/cli-runtime => k8s.io/cli-runtime v0.35.3
+	k8s.io/client-go => k8s.io/client-go v0.35.3
+	k8s.io/cloud-provider => k8s.io/cloud-provider v0.35.3
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.35.3
+	k8s.io/code-generator => k8s.io/code-generator v0.35.3
+	k8s.io/component-base => k8s.io/component-base v0.35.3
+	k8s.io/component-helpers => k8s.io/component-helpers v0.35.3
+	k8s.io/controller-manager => k8s.io/controller-manager v0.35.3
+	k8s.io/cri-api => k8s.io/cri-api v0.35.3
+	k8s.io/cri-client => k8s.io/cri-client v0.35.3
+	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.35.3
+	k8s.io/dynamic-resource-allocation => k8s.io/dynamic-resource-allocation v0.35.3
+	k8s.io/endpointslice => k8s.io/endpointslice v0.35.3
+	k8s.io/externaljwt => k8s.io/externaljwt v0.35.3
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.35.3
+	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.35.3
+	k8s.io/kube-proxy => k8s.io/kube-proxy v0.35.3
+	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.35.3
+	k8s.io/kubectl => k8s.io/kubectl v0.35.3
+	k8s.io/kubelet => k8s.io/kubelet v0.35.3
+	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.35.3
+	k8s.io/metrics => k8s.io/metrics v0.35.3
+	k8s.io/mount-utils => k8s.io/mount-utils v0.35.3
+	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.35.3
+	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.35.3
 )
 
 replace github.com/JamesStewy/go-mysqldump => github.com/vtoma/go-mysqldump v1.0.0
