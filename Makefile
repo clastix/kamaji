@@ -342,11 +342,13 @@ e2e: env build load helm ginkgo cert-manager gateway-api envoy-gateway ## Create
 CAPI_URL = https://github.com/clastix/cluster-api-control-plane-provider-kamaji.git
 CAPI_DIR := $(shell mktemp -d)
 CRDS_DIR := $(shell mktemp -d)
+CAPI_VERSION := v0.19.0
 
 .PHONY: apidoc
 apidoc: apidocs-gen
 	@cp charts/kamaji/crds/*.yaml $(CRDS_DIR)
 	@git clone $(CAPI_URL) $(CAPI_DIR)
+	@git -C $(CAPI_DIR) checkout v0.19.0
 	@cp $(CAPI_DIR)/config/crd/bases/*.yaml $(CRDS_DIR)
 	@rm -rf $(CAPI_DIR)
 	$(APIDOCS_GEN) crdoc --resources $(CRDS_DIR) --output docs/content/reference/api.md --template docs/templates/reference-cr.tmpl

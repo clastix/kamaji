@@ -14041,6 +14041,16 @@ Configure how the TenantControlPlane should be exposed.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>advertiseAddress</b></td>
+        <td>string</td>
+        <td>
+          AdvertiseAddress is the address advertised to tenant-side consumers (workers, konnectivity).
+When set, the management address (serviceAddress or LoadBalancer IP) is used for CAPI
+cluster-cache, while this address is used for kubeadm ControlPlaneEndpoint and cluster-info.
+Both addresses are included in the API server certificate SANs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>certSANs</b></td>
         <td>[]string</td>
         <td>
@@ -28940,6 +28950,16 @@ Configure how the TenantControlPlane should be exposed.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>advertiseAddress</b></td>
+        <td>string</td>
+        <td>
+          AdvertiseAddress is the address advertised to tenant-side consumers (workers, konnectivity).
+When set, the management address (serviceAddress or LoadBalancer IP) is used for CAPI
+cluster-cache, while this address is used for kubeadm ControlPlaneEndpoint and cluster-info.
+Both addresses are included in the API server certificate SANs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>certSANs</b></td>
         <td>[]string</td>
         <td>
