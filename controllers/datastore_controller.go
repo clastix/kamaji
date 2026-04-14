@@ -163,7 +163,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 			return reconcile.Result{}, nil
 		}
 
-		if meta.IsStatusConditionFalse(ds.Status.Conditions, kamajiv1alpha1.DataStoreConditionAllowedDeletionType) {
+		if meta.IsStatusConditionFalse(ds.Status.Conditions, kamajiv1alpha1.DataStoreConditionAllowedDeletionType) || len(tcpList.Items) == 0 {
 			logger.Info("DataStore is not used by any TenantControlPlane object")
 
 			meta.SetStatusCondition(&ds.Status.Conditions, metav1.Condition{
