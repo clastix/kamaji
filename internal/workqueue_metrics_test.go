@@ -9,13 +9,19 @@ import (
 	"time"
 
 	dto "github.com/prometheus/client_model/go"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // dummyReconciler is a minimal reconciler for testing.
@@ -31,7 +37,7 @@ func (r *dummyReconciler) Reconcile(ctx context.Context, req reconcile.Request) 
 func TestWorkqueueMetricsRegistration(t *testing.T) {
 	// Create a minimal scheme and manager
 	scheme := runtime.NewScheme()
-
+	require.NoError(t, clientgoscheme.AddToScheme(scheme), "registering schema")
 	// Create a manager with a fake config - this will trigger controller-runtime initialization
 	mgr, err := manager.New(&rest.Config{
 		Host: "https://localhost:6443",
@@ -50,15 +56,14 @@ func TestWorkqueueMetricsRegistration(t *testing.T) {
 
 		return
 	}
-
 	// Create a controller with the manager - this triggers workqueue creation
-	_, err = controller.New("test-controller", mgr, controller.Options{
-		Reconciler: &dummyReconciler{},
-	})
-	if err != nil {
-		t.Fatalf("Failed to create controller: %v", err)
-	}
+	ch := make(chan event.GenericEvent)
 
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&corev1.Pod{}).
+		WatchesRawSource(source.Channel(ch, &handler.EnqueueRequestForObject{})).
+		Complete(&dummyReconciler{})
+	require.NoError(t, err, "failed to create controller")
 	// Start the manager in background
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 	defer cancel()
@@ -67,15 +72,13 @@ func TestWorkqueueMetricsRegistration(t *testing.T) {
 		_ = mgr.Start(ctx)
 	}()
 
+	ch <- event.GenericEvent{Object: &corev1.Pod{}}
 	// Give it a moment to initialize
 	time.Sleep(100 * time.Millisecond)
 
 	// Gather all registered metrics from controller-runtime's registry
 	metricFamilies, err := metrics.Registry.Gather()
-	if err != nil {
-		t.Fatalf("Failed to gather metrics: %v", err)
-	}
-
+	require.NoError(t, err, "gathering metrics")
 	// Collect all workqueue metrics
 	workqueueMetrics := make(map[string]*dto.MetricFamily)
 	for _, mf := range metricFamilies {
@@ -89,10 +92,7 @@ func TestWorkqueueMetricsRegistration(t *testing.T) {
 	t.Logf("Workqueue metrics found: %d", len(workqueueMetrics))
 
 	// Verify we have workqueue metrics
-	if len(workqueueMetrics) == 0 {
-		t.Fatal("FAILED: No workqueue metrics found! The initialization conflict is still present.")
-	}
-
+	require.NotEmpty(t, workqueueMetrics, "workqueueMetrics should not be empty")
 	// List all found workqueue metrics
 	t.Log("Found workqueue metrics:")
 	for name := range workqueueMetrics {
@@ -110,19 +110,16 @@ func TestWorkqueueMetricsRegistration(t *testing.T) {
 		"workqueue_longest_running_processor_seconds",
 	}
 
-	missingMetrics := []string{}
+	var missingMetrics []string
 	for _, expected := range expectedMetrics {
 		if _, found := workqueueMetrics[expected]; !found {
 			missingMetrics = append(missingMetrics, expected)
 		}
 	}
+	require.Empty(t, missingMetrics, "missing expected workqueue metrics", "values", missingMetrics)
 
-	if len(missingMetrics) > 0 {
-		t.Errorf("Missing expected workqueue metrics: %v", missingMetrics)
-	} else {
-		t.Log("✅ SUCCESS: All expected workqueue metrics are present!")
-		t.Log("The fix successfully resolved issue #1026 - workqueue metrics are now registered.")
-	}
+	t.Log("✅ SUCCESS: All expected workqueue metrics are present!")
+	t.Log("The fix successfully resolved issue #1026 - workqueue metrics are now registered.")
 }
 
 // checkBasicMetrics is a fallback check when we can't create a full manager.
