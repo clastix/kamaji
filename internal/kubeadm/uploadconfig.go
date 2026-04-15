@@ -85,11 +85,6 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration, patch
 	kc.ClusterDomain = kubeletConfiguration.TenantControlPlaneDomain
 	kc.RotateCertificates = true
 	kc.StaticPodPath = "/etc/kubernetes/manifests"
-	// TODO(prometherion): drop support of <= v1.27 TCP versions
-	// a numeric value is required due to strict marshaling
-	// kubeadm <= v1.27 has a different type for FlushFrequency
-	// https://github.com/kubernetes/component-base/blob/55b3ab0db0081303695d641b9b43d560bf3f7a65/logs/api/v1/types.go#L42-L45
-	kc.Logging.FlushFrequency.SerializeAsString = false
 	// Restore default behaviour so Kubelet will automatically
 	// determine the resolvConf location, as reported in clastix/kamaji#581.
 	kc.ResolverConfig = nil
