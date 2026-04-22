@@ -122,4 +122,53 @@ var _ = Describe("Controlplane Deployment", func() {
 			Expect(probe.SuccessThreshold).To(Equal(int32(1)))
 		})
 	})
+
+	Describe("mergeAPIServerArgs", func() {
+		var (
+			safeDefaults map[string]string
+			managed      map[string]string
+		)
+
+		BeforeEach(func() {
+			safeDefaults = map[string]string{
+				"--authorization-mode":     "Node,RBAC",
+				"--service-account-issuer": "https://kubernetes.default.svc.cluster.local",
+			}
+			managed = map[string]string{
+				"--secure-port":              "6443",
+				"--service-cluster-ip-range": "10.96.0.0/12",
+			}
+		})
+
+		It("applies safe defaults when the user did not provide them", func() {
+			got := mergeAPIServerArgs(nil, nil, safeDefaults, managed)
+			Expect(got).To(ContainElement("--authorization-mode=Node,RBAC"))
+			Expect(got).To(ContainElement("--service-account-issuer=https://kubernetes.default.svc.cluster.local"))
+		})
+
+		It("lets the user override a safe default", func() {
+			user := []string{"--authorization-mode=AlwaysAllow"}
+			got := mergeAPIServerArgs(nil, user, safeDefaults, managed)
+			Expect(got).To(ContainElement("--authorization-mode=AlwaysAllow"))
+			Expect(got).NotTo(ContainElement("--authorization-mode=Node,RBAC"))
+		})
+
+		It("ignores user attempts to override a managed flag", func() {
+			user := []string{"--secure-port=9443"}
+			got := mergeAPIServerArgs(nil, user, safeDefaults, managed)
+			Expect(got).To(ContainElement("--secure-port=6443"))
+			Expect(got).NotTo(ContainElement("--secure-port=9443"))
+		})
+
+		It("preserves multiple user values for a repeatable flag", func() {
+			user := []string{
+				"--service-account-issuer=https://issuer-one.example.com",
+				"--service-account-issuer=https://issuer-two.example.com",
+			}
+			got := mergeAPIServerArgs(nil, user, safeDefaults, managed)
+			Expect(got).To(ContainElement("--service-account-issuer=https://issuer-one.example.com"))
+			Expect(got).To(ContainElement("--service-account-issuer=https://issuer-two.example.com"))
+			Expect(got).NotTo(ContainElement("--service-account-issuer=https://kubernetes.default.svc.cluster.local"))
+		})
+	})
 })
