@@ -170,5 +170,34 @@ var _ = Describe("Controlplane Deployment", func() {
 			Expect(got).To(ContainElement("--service-account-issuer=https://issuer-two.example.com"))
 			Expect(got).NotTo(ContainElement("--service-account-issuer=https://kubernetes.default.svc.cluster.local"))
 		})
+
+		It("sorts Kamaji-owned flags and appends user extras verbatim at the end", func() {
+			user := []string{
+				"--service-account-issuer=https://issuer-one.example.com",
+				"--service-account-issuer=https://issuer-two.example.com",
+				"--audit-log-path=/var/log/audit.log",
+			}
+			got := mergeAPIServerArgs(nil, user, safeDefaults, managed)
+			Expect(got).To(Equal([]string{
+				"--authorization-mode=Node,RBAC",
+				"--secure-port=6443",
+				"--service-cluster-ip-range=10.96.0.0/12",
+				"--service-account-issuer=https://issuer-one.example.com",
+				"--service-account-issuer=https://issuer-two.example.com",
+				"--audit-log-path=/var/log/audit.log",
+			}))
+		})
+
+		It("preserves foreign flags from current, sorted within the Kamaji-owned segment", func() {
+			current := []string{"--egress-selector-config-file=/etc/kubernetes/konnectivity/egress.yaml"}
+			got := mergeAPIServerArgs(current, nil, safeDefaults, managed)
+			Expect(got).To(Equal([]string{
+				"--authorization-mode=Node,RBAC",
+				"--egress-selector-config-file=/etc/kubernetes/konnectivity/egress.yaml",
+				"--secure-port=6443",
+				"--service-account-issuer=https://kubernetes.default.svc.cluster.local",
+				"--service-cluster-ip-range=10.96.0.0/12",
+			}))
+		})
 	})
 })

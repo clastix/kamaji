@@ -789,6 +789,8 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 // (e.g. --egress-selector-config-file injected by the Konnectivity addon).
 func mergeAPIServerArgs(current, userExtras []string, safeDefaults, managed map[string]string) []string {
 	userFlags := sets.New[string]()
+	// sanitizedExtras will contain the userExtras arguments,
+	// only if not trying to overwrite the managed ones.
 	sanitizedExtras := make([]string, 0, len(userExtras))
 
 	for _, arg := range userExtras {
@@ -809,8 +811,11 @@ func mergeAPIServerArgs(current, userExtras []string, safeDefaults, managed map[
 
 		return fmt.Sprintf("%s=%s", flag, value)
 	}
+	// Kamaji-owned segment: preserved foreign flags from current
+	// safe defaults the user didn't set, and managed flags.
+	// Sorted for idempotency.
 	//nolint:prealloc
-	var out []string
+	var kamajiOwned []string
 
 	for _, arg := range current {
 		flag, _, _ := strings.Cut(arg, "=")
@@ -827,26 +832,25 @@ func mergeAPIServerArgs(current, userExtras []string, safeDefaults, managed map[
 			continue
 		}
 
-		out = append(out, arg)
+		kamajiOwned = append(kamajiOwned, arg)
 	}
-
-	out = append(out, sanitizedExtras...)
 
 	for flag, value := range safeDefaults {
 		if userFlags.Has(flag) {
 			continue
 		}
 
-		out = append(out, formatArg(flag, value))
+		kamajiOwned = append(kamajiOwned, formatArg(flag, value))
 	}
 
 	for flag, value := range managed {
-		out = append(out, formatArg(flag, value))
+		kamajiOwned = append(kamajiOwned, formatArg(flag, value))
 	}
 
-	sort.Strings(out)
-
-	return out
+	sort.Strings(kamajiOwned)
+	// sanitizedExtras must not be sorted due to some kube-apiserver ordering issues.
+	// Taking for granted user is aware of it given the high level of customisation.
+	return append(kamajiOwned, sanitizedExtras...)
 }
 
 func (d Deployment) etcdServersOverrides() string {
