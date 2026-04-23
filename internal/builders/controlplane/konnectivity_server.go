@@ -75,6 +75,17 @@ func (k Konnectivity) buildKonnectivityContainer(tcpVersion string, addon *kamaj
 	args["--server-count"] = fmt.Sprintf("%d", replicas)
 
 	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
+
+	envVars := utilities.EnvarsFromSliceToMap(podSpec.Containers[index].Env)
+
+	extraEnvVars := utilities.EnvarsFromSliceToMap(addon.KonnectivityServerSpec.ExtraEnvs)
+
+	for k, v := range extraEnvVars {
+		envVars[k] = v
+	}
+
+	podSpec.Containers[index].Env = utilities.EnvarsFromMapToSlice(envVars)
+
 	podSpec.Containers[index].LivenessProbe = &corev1.Probe{
 		InitialDelaySeconds: 30,
 		TimeoutSeconds:      60,
