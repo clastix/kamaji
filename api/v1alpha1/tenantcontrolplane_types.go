@@ -513,7 +513,3 @@ type TenantControlPlaneList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []TenantControlPlane `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&TenantControlPlane{}, &TenantControlPlaneList{})
-}

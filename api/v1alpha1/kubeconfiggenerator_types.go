@@ -88,7 +88,3 @@ type KubeconfigGeneratorList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []KubeconfigGenerator `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&KubeconfigGenerator{}, &KubeconfigGeneratorList{})
-}
