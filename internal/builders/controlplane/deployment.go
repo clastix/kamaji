@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	pointer "k8s.io/utils/ptr"
@@ -591,10 +592,10 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
 	}
 
-	args := d.buildKubeAPIServerCommand(tenantControlPlane, address, utilities.ArgsFromSliceToMap(podSpec.Containers[index].Args))
+	args := d.buildKubeAPIServerCommand(tenantControlPlane, address, podSpec.Containers[index].Args)
 
 	podSpec.Containers[index].Name = apiServerContainerName
-	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
+	podSpec.Containers[index].Args = args
 	podSpec.Containers[index].Image = tenantControlPlane.Spec.ControlPlane.Deployment.RegistrySettings.KubeAPIServerImage(tenantControlPlane.Spec.Kubernetes.Version)
 	podSpec.Containers[index].Command = []string{"kube-apiserver"}
 	podSpec.Containers[index].LivenessProbe = &corev1.Probe{
@@ -705,11 +706,11 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 	}
 }
 
-func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.TenantControlPlane, address string, current map[string]string) map[string]string {
-	var extraArgs map[string]string
+func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.TenantControlPlane, address string, current []string) []string {
+	var userExtras []string
 
 	if tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs != nil {
-		extraArgs = utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs.APIServer)
+		userExtras = tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs.APIServer
 	}
 
 	kubeletPreferredAddressTypes := make([]string, 0, len(tenantControlPlane.Spec.Kubernetes.Kubelet.PreferredAddressTypes))
@@ -717,7 +718,6 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 	for _, addressType := range tenantControlPlane.Spec.Kubernetes.Kubelet.PreferredAddressTypes {
 		kubeletPreferredAddressTypes = append(kubeletPreferredAddressTypes, string(addressType))
 	}
-
 	// Use the advertiseAddress (tenant-facing VIP) for --advertise-address when set.
 	// This ensures the kubernetes endpoint in the tenant cluster points to the VIP,
 	// allowing pods to reach the API server via the OVN localport path.
@@ -725,36 +725,39 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 	if adv := tenantControlPlane.Spec.NetworkProfile.AdvertiseAddress; adv != "" {
 		apiAdvertiseAddress = adv
 	}
-
-	desiredArgs := map[string]string{
+	// Opinionated defaults: applied only when the user didn't provide the same flag in ExtraArgs.
+	safeDefaults := map[string]string{
 		"--allow-privileged":                   "true",
 		"--authorization-mode":                 "Node,RBAC",
-		"--advertise-address":                  apiAdvertiseAddress,
-		"--client-ca-file":                     path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
-		"--enable-admission-plugins":           strings.Join(tenantControlPlane.Spec.Kubernetes.AdmissionControllers.ToSlice(), ","),
 		"--enable-bootstrap-token-auth":        "true",
-		"--service-cluster-ip-range":           tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
-		"--kubelet-client-certificate":         path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientCertName),
-		"--kubelet-client-key":                 path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientKeyName),
-		"--kubelet-preferred-address-types":    strings.Join(kubeletPreferredAddressTypes, ","),
-		"--proxy-client-cert-file":             path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientCertName),
-		"--proxy-client-key-file":              path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientKeyName),
-		"--requestheader-allowed-names":        constants.FrontProxyClientCertCommonName,
-		"--requestheader-client-ca-file":       path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyCACertName),
 		"--requestheader-extra-headers-prefix": "X-Remote-Extra-",
 		"--requestheader-group-headers":        "X-Remote-Group",
 		"--requestheader-username-headers":     "X-Remote-User",
-		"--secure-port":                        fmt.Sprintf("%d", tenantControlPlane.Spec.NetworkProfile.Port),
 		"--service-account-issuer":             "https://kubernetes.default.svc.cluster.local",
-		"--service-account-key-file":           path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPublicKeyName),
-		"--service-account-signing-key-file":   path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName),
-		"--tls-cert-file":                      path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerCertName),
-		"--tls-private-key-file":               path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKeyName),
+	}
+	// Managed flags: derived from the TCP spec, always applied, override any user duplicate.
+	managed := map[string]string{
+		"--advertise-address":                apiAdvertiseAddress,
+		"--client-ca-file":                   path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
+		"--enable-admission-plugins":         strings.Join(tenantControlPlane.Spec.Kubernetes.AdmissionControllers.ToSlice(), ","),
+		"--service-cluster-ip-range":         tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
+		"--kubelet-client-certificate":       path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientCertName),
+		"--kubelet-client-key":               path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientKeyName),
+		"--kubelet-preferred-address-types":  strings.Join(kubeletPreferredAddressTypes, ","),
+		"--proxy-client-cert-file":           path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientCertName),
+		"--proxy-client-key-file":            path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientKeyName),
+		"--requestheader-allowed-names":      constants.FrontProxyClientCertCommonName,
+		"--requestheader-client-ca-file":     path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyCACertName),
+		"--secure-port":                      fmt.Sprintf("%d", tenantControlPlane.Spec.NetworkProfile.Port),
+		"--service-account-key-file":         path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPublicKeyName),
+		"--service-account-signing-key-file": path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName),
+		"--tls-cert-file":                    path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerCertName),
+		"--tls-private-key-file":             path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKeyName),
 	}
 
 	switch d.DataStore.Spec.Driver {
 	case kamajiv1alpha1.KineMySQLDriver, kamajiv1alpha1.KinePostgreSQLDriver, kamajiv1alpha1.KineNatsDriver:
-		desiredArgs["--etcd-servers"] = "unix://" + kineUDSPath
+		managed["--etcd-servers"] = "unix://" + kineUDSPath
 	case kamajiv1alpha1.EtcdDriver:
 		httpsEndpoints := make([]string, 0, len(d.DataStore.Spec.Endpoints))
 
@@ -762,21 +765,92 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 			httpsEndpoints = append(httpsEndpoints, fmt.Sprintf("https://%s", ep))
 		}
 
-		desiredArgs["--etcd-compaction-interval"] = "0"
-		desiredArgs["--etcd-prefix"] = fmt.Sprintf("/%s", tenantControlPlane.Status.Storage.Setup.Schema)
-		desiredArgs["--etcd-servers"] = strings.Join(httpsEndpoints, ",")
-		desiredArgs["--etcd-cafile"] = "/etc/kubernetes/pki/etcd/ca.crt"
-		desiredArgs["--etcd-certfile"] = "/etc/kubernetes/pki/etcd/server.crt"
-		desiredArgs["--etcd-keyfile"] = "/etc/kubernetes/pki/etcd/server.key"
+		managed["--etcd-compaction-interval"] = "0"
+		managed["--etcd-prefix"] = fmt.Sprintf("/%s", tenantControlPlane.Status.Storage.Setup.Schema)
+		managed["--etcd-servers"] = strings.Join(httpsEndpoints, ",")
+		managed["--etcd-cafile"] = "/etc/kubernetes/pki/etcd/ca.crt"
+		managed["--etcd-certfile"] = "/etc/kubernetes/pki/etcd/server.crt"
+		managed["--etcd-keyfile"] = "/etc/kubernetes/pki/etcd/server.key"
 	}
 
 	if len(d.DataStoreOverrides) != 0 {
-		desiredArgs["--etcd-servers-overrides"] = d.etcdServersOverrides()
+		managed["--etcd-servers-overrides"] = d.etcdServersOverrides()
 	}
 
-	// Order matters, here: extraArgs could try to overwrite some arguments managed by Kamaji and that would be crucial.
-	// Adding as first element of the array of maps, we're sure that these overrides will be sanitized by our configuration.
-	return utilities.MergeMaps(current, desiredArgs, extraArgs)
+	return mergeAPIServerArgs(current, userExtras, safeDefaults, managed)
+}
+
+// mergeAPIServerArgs composes the final kube-apiserver argument slice from three layers:
+// - Kamaji-managed flags always win and drop any user duplicate sharing the same name;
+// - user ExtraArgs are preserved verbatim, duplicates included for repeatable flags;
+// - safe defaults fill in only for flag names the user didn't provide.
+//
+// Flags already on the container that Kamaji doesn't own and the user didn't set are kept
+// (e.g. --egress-selector-config-file injected by the Konnectivity addon).
+func mergeAPIServerArgs(current, userExtras []string, safeDefaults, managed map[string]string) []string {
+	userFlags := sets.New[string]()
+	// sanitizedExtras will contain the userExtras arguments,
+	// only if not trying to overwrite the managed ones.
+	sanitizedExtras := make([]string, 0, len(userExtras))
+
+	for _, arg := range userExtras {
+		flag, _, _ := strings.Cut(arg, "=")
+		// Managed flags always win: user duplicates are dropped silently.
+		if _, ok := managed[flag]; ok {
+			continue
+		}
+
+		userFlags.Insert(flag)
+		sanitizedExtras = append(sanitizedExtras, arg)
+	}
+
+	formatArg := func(flag, value string) string {
+		if value == "" {
+			return flag
+		}
+
+		return fmt.Sprintf("%s=%s", flag, value)
+	}
+	// Kamaji-owned segment: preserved foreign flags from current
+	// safe defaults the user didn't set, and managed flags.
+	// Sorted for idempotency.
+	//nolint:prealloc
+	var kamajiOwned []string
+
+	for _, arg := range current {
+		flag, _, _ := strings.Cut(arg, "=")
+
+		if _, ok := managed[flag]; ok {
+			continue
+		}
+
+		if _, ok := safeDefaults[flag]; ok {
+			continue
+		}
+
+		if userFlags.Has(flag) {
+			continue
+		}
+
+		kamajiOwned = append(kamajiOwned, arg)
+	}
+
+	for flag, value := range safeDefaults {
+		if userFlags.Has(flag) {
+			continue
+		}
+
+		kamajiOwned = append(kamajiOwned, formatArg(flag, value))
+	}
+
+	for flag, value := range managed {
+		kamajiOwned = append(kamajiOwned, formatArg(flag, value))
+	}
+
+	sort.Strings(kamajiOwned)
+	// sanitizedExtras must not be sorted due to some kube-apiserver ordering issues.
+	// Taking for granted user is aware of it given the high level of customisation.
+	return append(kamajiOwned, sanitizedExtras...)
 }
 
 func (d Deployment) etcdServersOverrides() string {
