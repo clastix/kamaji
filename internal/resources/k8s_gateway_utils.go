@@ -5,6 +5,7 @@ package resources
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 
@@ -12,12 +13,17 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
+
+// errGatewayListenerNotFound is returned when the indexer yields no Gateway
+// for the requested (namespace/name/listener) tuple.
+var errGatewayListenerNotFound = errors.New("no gateway found for listener")
 
 // fetchGatewayByListener uses the indexer to efficiently find a gateway with a specific listener.
 // This avoids the need to iterate through all listeners in a gateway.
@@ -38,7 +44,7 @@ func fetchGatewayByListener(ctx context.Context, c client.Client, ref gatewayv1.
 	}
 
 	if len(gatewayList.Items) == 0 {
-		return nil, fmt.Errorf("no gateway found with listener '%s'", *ref.SectionName)
+		return nil, fmt.Errorf("%w: %s", errGatewayListenerNotFound, *ref.SectionName)
 	}
 
 	// Since we're using a composite key with namespace/name/listener, we should get exactly one result
@@ -167,6 +173,20 @@ func CleanupTLSRoute(ctx context.Context, c client.Client, routeName, routeNames
 }
 
 // BuildGatewayAccessPointsStatus builds access points from route statuses.
+//
+// Per the Gateway API specification, ParentReference.SectionName is optional:
+// when unset (or empty), the Route attaches to every listener of the referenced
+// Gateway that accepts it (typically via port/protocol matching). We support
+// both cases:
+//
+//   - SectionName is set: resolve the Gateway via the listener-name indexer and
+//     build a single access point for that listener.
+//   - SectionName is nil/empty: resolve the Gateway by namespace/name and build
+//     an access point for each listener, optionally filtered by ParentRef.Port.
+//
+// Unresolvable or unprogrammed Gateways are skipped rather than returned as
+// errors, so that a single mis-attached parentRef does not block the whole
+// status update for the Route.
 func BuildGatewayAccessPointsStatus(ctx context.Context, c client.Client, route *gatewayv1alpha2.TLSRoute, routeStatuses gatewayv1alpha2.RouteStatus) ([]kamajiv1alpha1.GatewayAccessPoint, error) {
 	accessPoints := []kamajiv1alpha1.GatewayAccessPoint{}
 	routeNamespace := gatewayv1.Namespace(route.Namespace)
@@ -185,44 +205,119 @@ func BuildGatewayAccessPointsStatus(ctx context.Context, c client.Client, route 
 			routeStatus.ParentRef.Namespace = &routeNamespace
 		}
 
-		// Use the indexer to efficiently find the gateway with the specific listener
-		gateway, err := fetchGatewayByListener(ctx, c, routeStatus.ParentRef)
+		listeners, err := resolveMatchingListeners(ctx, c, routeStatus.ParentRef)
 		if err != nil {
-			return nil, fmt.Errorf("could not fetch gateway with listener '%v': %w",
-				routeStatus.ParentRef.SectionName, err)
-		}
-		gatewayProgrammed := meta.IsStatusConditionTrue(
-			gateway.Status.Conditions,
-			string(gatewayv1.GatewayConditionProgrammed),
-		)
-		if !gatewayProgrammed {
-			continue
+			return nil, fmt.Errorf("could not resolve gateway listeners for parentRef '%s/%s': %w",
+				*routeStatus.ParentRef.Namespace, routeStatus.ParentRef.Name, err)
 		}
 
-		// Since we fetched the gateway using the indexer, we know the listener exists
-		// but we still need to get its details from the gateway spec
-		listener, err := FindMatchingListener(
-			gateway.Spec.Listeners, routeStatus.ParentRef,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to match listener: %w", err)
-		}
+		for _, listener := range listeners {
+			for _, hostname := range route.Spec.Hostnames {
+				rawURL := fmt.Sprintf("https://%s:%d", hostname, listener.Port)
+				parsedURL, err := url.Parse(rawURL)
+				if err != nil {
+					return nil, fmt.Errorf("invalid url: %w", err)
+				}
 
-		for _, hostname := range route.Spec.Hostnames {
-			rawURL := fmt.Sprintf("https://%s:%d", hostname, listener.Port)
-			parsedURL, err := url.Parse(rawURL)
-			if err != nil {
-				return nil, fmt.Errorf("invalid url: %w", err)
+				hostnameAddressType := gatewayv1.HostnameAddressType
+				accessPoints = append(accessPoints, kamajiv1alpha1.GatewayAccessPoint{
+					Type:  &hostnameAddressType,
+					Value: parsedURL.String(),
+					Port:  listener.Port,
+				})
 			}
-
-			hostnameAddressType := gatewayv1.HostnameAddressType
-			accessPoints = append(accessPoints, kamajiv1alpha1.GatewayAccessPoint{
-				Type:  &hostnameAddressType,
-				Value: parsedURL.String(),
-				Port:  listener.Port,
-			})
 		}
 	}
 
 	return accessPoints, nil
+}
+
+// resolveMatchingListeners returns the listeners of the Gateway referenced by
+// ref that should contribute access points for the enclosing Route.
+//
+// When ref.SectionName is set, exactly one listener is returned (looked up via
+// the name indexer for efficiency). When SectionName is nil or empty, every
+// listener of the Gateway is considered and, if ref.Port is set, further
+// filtered to listeners exposing that port.
+//
+// If the referenced Gateway is not found, is not Programmed, or has no
+// matching listener, an empty slice is returned with a nil error: a single
+// unresolvable parentRef must not fail the whole status update.
+func resolveMatchingListeners(ctx context.Context, c client.Client, ref gatewayv1.ParentReference) ([]gatewayv1.Listener, error) {
+	hasSectionName := ref.SectionName != nil && *ref.SectionName != ""
+
+	// Fast path: look the Gateway up by its specific listener name.
+	if hasSectionName {
+		gateway, err := fetchGatewayByListener(ctx, c, ref)
+		if err != nil {
+			// Only the "no gateway with that listener" case is benign and
+			// must not block the status update. Failures are propagated.
+			if errors.Is(err, errGatewayListenerNotFound) {
+				return nil, nil
+			}
+
+			return nil, fmt.Errorf("failed to fetch gateway for listener: %w", err)
+		}
+
+		if !isGatewayProgrammed(gateway) {
+			return nil, nil
+		}
+
+		listener, err := FindMatchingListener(gateway.Spec.Listeners, ref)
+		if err != nil {
+			return nil, fmt.Errorf("failed to match listener: %w", err)
+		}
+
+		return []gatewayv1.Listener{listener}, nil
+	}
+
+	// SectionName unset: resolve the Gateway by namespace/name.
+	gateway := &gatewayv1.Gateway{}
+	key := k8stypes.NamespacedName{Namespace: string(*ref.Namespace), Name: string(ref.Name)}
+	if err := c.Get(ctx, key, gateway); err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("failed to fetch gateway %s: %w", key, err)
+	}
+
+	if !isGatewayProgrammed(gateway) {
+		return nil, nil
+	}
+
+	matching := make([]gatewayv1.Listener, 0, len(gateway.Spec.Listeners))
+	for _, listener := range gateway.Spec.Listeners {
+		if !isEligibleListener(listener, ref) {
+			continue
+		}
+
+		matching = append(matching, listener)
+	}
+
+	return matching, nil
+}
+
+func isGatewayProgrammed(gateway *gatewayv1.Gateway) bool {
+	return meta.IsStatusConditionTrue(
+		gateway.Status.Conditions,
+		string(gatewayv1.GatewayConditionProgrammed),
+	)
+}
+
+// isEligibleListener reports whether a Gateway listener can contribute an
+// access point for the TLSRoute attachment, ie.:
+//   - its protocol is TLS (BuildGatewayAccessPointsStatus is invoked for
+//     TLSRoutes only, so non-TLS listeners can never legally attach);
+//   - and, if ref.Port is set, its port matches ref.Port.
+func isEligibleListener(listener gatewayv1.Listener, ref gatewayv1.ParentReference) bool {
+	if listener.Protocol != gatewayv1.TLSProtocolType {
+		return false
+	}
+
+	if ref.Port != nil && listener.Port != *ref.Port {
+		return false
+	}
+
+	return true
 }
