@@ -301,6 +301,9 @@ var _ = Describe("KubernetesGatewayResource", func() {
 					Listeners: []gatewayv1.Listener{
 						{Name: "kube-apiserver", Port: 31443, Protocol: gatewayv1.TLSProtocolType},
 						{Name: "konnectivity-server", Port: 32132, Protocol: gatewayv1.TLSProtocolType},
+						// Non-TLS listener on the same Gateway: it must not be turned
+						// into a TLSRoute access point.
+						{Name: "http-noise", Port: 8080, Protocol: gatewayv1.HTTPProtocolType},
 					},
 				},
 				Status: gatewayv1.GatewayStatus{
@@ -428,6 +431,47 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			aps, err := resources.BuildGatewayAccessPointsStatus(ctx, c, route, statuses)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(aps).To(BeEmpty())
+		})
+
+		It("ignores non-TLS listeners when sectionName is unset", func() {
+			ns := gatewayv1.Namespace(gwNamespace)
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name:      gatewayv1.ObjectName(gwName),
+				Namespace: &ns,
+			})
+
+			aps, err := resources.BuildGatewayAccessPointsStatus(ctx, fakeClient, route, statuses)
+			Expect(err).NotTo(HaveOccurred())
+			// Only the two TLS listeners may produce https:// access points.
+			Expect(aps).To(HaveLen(2))
+			ports := []gatewayv1.PortNumber{aps[0].Port, aps[1].Port}
+			Expect(ports).To(ConsistOf(gatewayv1.PortNumber(31443), gatewayv1.PortNumber(32132)))
+			Expect(ports).NotTo(ContainElement(gatewayv1.PortNumber(8080)))
+		})
+
+		It("propagates indexer failures from the sectionName fast path", func() {
+			// Fault-injection; build a client *without* the listener-name, i.e.
+			// WithIndex(&gatewayv1.Gateway{}, GatewayListenerNameKey, …).
+			// An error is expected to be propagated
+			c := fake.NewClientBuilder().
+				WithScheme(runtimeScheme).
+				WithObjects(gateway).
+				Build()
+
+			section := gatewayv1.SectionName("konnectivity-server")
+			ns := gatewayv1.Namespace(gwNamespace)
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name:        gatewayv1.ObjectName(gwName),
+				Namespace:   &ns,
+				SectionName: &section,
+			})
+
+			_, err := resources.BuildGatewayAccessPointsStatus(ctx, c, route, statuses)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("could not resolve gateway listeners for parentRef"))
+			Expect(err.Error()).To(ContainSubstring("failed to fetch gateway for listener"))
 		})
 	})
 })

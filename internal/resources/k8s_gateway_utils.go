@@ -5,6 +5,7 @@ package resources
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 
@@ -19,6 +20,10 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
+
+// errGatewayListenerNotFound is returned when the indexer yields no Gateway
+// for the requested (namespace/name/listener) tuple.
+var errGatewayListenerNotFound = errors.New("no gateway found for listener")
 
 // fetchGatewayByListener uses the indexer to efficiently find a gateway with a specific listener.
 // This avoids the need to iterate through all listeners in a gateway.
@@ -39,7 +44,7 @@ func fetchGatewayByListener(ctx context.Context, c client.Client, ref gatewayv1.
 	}
 
 	if len(gatewayList.Items) == 0 {
-		return nil, fmt.Errorf("no gateway found with listener '%s'", *ref.SectionName)
+		return nil, fmt.Errorf("%w: %s", errGatewayListenerNotFound, *ref.SectionName)
 	}
 
 	// Since we're using a composite key with namespace/name/listener, we should get exactly one result
@@ -245,8 +250,13 @@ func resolveMatchingListeners(ctx context.Context, c client.Client, ref gatewayv
 	if hasSectionName {
 		gateway, err := fetchGatewayByListener(ctx, c, ref)
 		if err != nil {
-			// No gateway with that listener: skip this parentRef silently.
-			return nil, nil //nolint:nilerr
+			// Only the "no gateway with that listener" case is benign and
+			// must not block the status update. Failures are propagated.
+			if errors.Is(err, errGatewayListenerNotFound) {
+				return nil, nil
+			}
+
+			return nil, fmt.Errorf("failed to fetch gateway for listener: %w", err)
 		}
 
 		if !isGatewayProgrammed(gateway) {
@@ -278,7 +288,7 @@ func resolveMatchingListeners(ctx context.Context, c client.Client, ref gatewayv
 
 	matching := make([]gatewayv1.Listener, 0, len(gateway.Spec.Listeners))
 	for _, listener := range gateway.Spec.Listeners {
-		if ref.Port != nil && listener.Port != *ref.Port {
+		if !isEligibleListener(listener, ref) {
 			continue
 		}
 
@@ -293,4 +303,21 @@ func isGatewayProgrammed(gateway *gatewayv1.Gateway) bool {
 		gateway.Status.Conditions,
 		string(gatewayv1.GatewayConditionProgrammed),
 	)
+}
+
+// isEligibleListener reports whether a Gateway listener can contribute an
+// access point for the TLSRoute attachment, ie.:
+//   - its protocol is TLS (BuildGatewayAccessPointsStatus is invoked for
+//     TLSRoutes only, so non-TLS listeners can never legally attach);
+//   - and, if ref.Port is set, its port matches ref.Port.
+func isEligibleListener(listener gatewayv1.Listener, ref gatewayv1.ParentReference) bool {
+	if listener.Protocol != gatewayv1.TLSProtocolType {
+		return false
+	}
+
+	if ref.Port != nil && listener.Port != *ref.Port {
+		return false
+	}
+
+	return true
 }
