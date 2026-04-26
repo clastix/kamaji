@@ -262,8 +262,6 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 						Client:          mgr.GetClient(),
 						DiscoveryClient: discoveryClient,
 					},
-					handlers.TenantControlPlaneServiceCIDR{},
-					handlers.TenantControlPlaneLoadBalancerSourceRanges{},
 					handlers.TenantControlPlanePreGeneratedCerts{Client: mgr.GetClient()},
 				},
 				routes.TenantControlPlaneTelemetry{}: {
