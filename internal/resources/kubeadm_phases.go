@@ -244,6 +244,12 @@ func (r *KubeadmPhase) createBootstrapRBAC(ctx context.Context, clientSet client
 		adminUsers = []string{"kubernetes-admin"}
 	}
 
+	// Apply default groups if none specified
+	adminGroups := rbacConfig.AdminGroups
+	if len(adminGroups) == 0 {
+		adminGroups = []string{"system:masters"}
+	}
+
 	// Create ClusterRoleBinding for additional admin users (excluding kubernetes-admin which is handled by kubeadm)
 	var additionalUsers []string
 	for _, user := range adminUsers {
@@ -290,9 +296,9 @@ func (r *KubeadmPhase) createBootstrapRBAC(ctx context.Context, clientSet client
 	}
 
 	// Create ClusterRoleBinding for admin groups if specified
-	if len(rbacConfig.AdminGroups) > 0 {
-		groupSubjects := make([]rbacv1.Subject, len(rbacConfig.AdminGroups))
-		for i, group := range rbacConfig.AdminGroups {
+	if len(adminGroups) > 0 {
+		groupSubjects := make([]rbacv1.Subject, len(adminGroups))
+		for i, group := range adminGroups {
 			groupSubjects[i] = rbacv1.Subject{
 				Kind:     "Group",
 				APIGroup: "rbac.authorization.k8s.io",
