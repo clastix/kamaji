@@ -75,7 +75,7 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 			Expect(port).To(Equal(int32(6443)))
 		})
 
-		It("should generate kubeconfigs with the public address for controller-manager and scheduler", func() {
+		It("should generate kubeconfigs with cluster-local addresses for controller-manager and scheduler", func() {
 			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = "k8s-api.example.com"
 			Expect(k8sClient.Create(ctx, tcp)).To(Succeed())
 
@@ -99,7 +99,8 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 				return err == nil
 			}, 300, 5).Should(BeTrue())
 
-			// Validate that the kubeconfigs contain the public address in the server URL
+			// Validate that controller-manager and scheduler kubeconfigs use local SVC addresses
+			// (not the public address, to avoid unnecessary network hops)
 			cmSecret := &corev1.Secret{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{
 				Name:      tcp.Name + "-controller-manager-kubeconfig",
@@ -112,7 +113,9 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 					context, ok := cmConfig.Contexts[cmConfig.CurrentContext]
 					Expect(ok).To(BeTrue())
 					Expect(cmConfig.Clusters).To(HaveKey(context.Cluster))
-					Expect(cmConfig.Clusters[context.Cluster].Server).To(Equal("https://k8s-api.example.com:6443"))
+					// Should use cluster-local SVC address, not public address
+					Expect(cmConfig.Clusters[context.Cluster].Server).To(HaveSuffix("svc:6443"))
+					Expect(cmConfig.Clusters[context.Cluster].Server).NotTo(ContainSubstring("k8s-api.example.com"))
 				}
 			}
 
@@ -128,7 +131,9 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 					context, ok := schedConfig.Contexts[schedConfig.CurrentContext]
 					Expect(ok).To(BeTrue())
 					Expect(schedConfig.Clusters).To(HaveKey(context.Cluster))
-					Expect(schedConfig.Clusters[context.Cluster].Server).To(Equal("https://k8s-api.example.com:6443"))
+					// Should use cluster-local SVC address, not public address
+					Expect(schedConfig.Clusters[context.Cluster].Server).To(HaveSuffix("svc:6443"))
+					Expect(schedConfig.Clusters[context.Cluster].Server).NotTo(ContainSubstring("k8s-api.example.com"))
 				}
 			}
 		})
