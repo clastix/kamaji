@@ -8,19 +8,17 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	jsonpatchv5 "github.com/evanphx/json-patch/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	clientset "k8s.io/client-go/kubernetes"
 	bootstrapapi "k8s.io/cluster-bootstrap/token/api"
+	clientset "k8s.io/client-go/kubernetes"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
-	"k8s.io/kubernetes/cmd/kubeadm/app/phases/kubeconfig"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -175,12 +173,12 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 		}, nil
 	case PhaseClusterAdminRBAC:
 		return func(c clientset.Interface, configuration *kubeadm.Configuration) ([]byte, error) {
-			// If bootstrap RBAC is configured, use that instead of default kubeadm behavior
-			if tcp.Spec.Bootstrap != nil && tcp.Spec.Bootstrap.RBAC != nil && tcp.Spec.Bootstrap.RBAC.Enabled {
+			// RBAC bootstrap is enabled by default
+			if tcp.Spec.Bootstrap == nil || tcp.Spec.Bootstrap.RBAC == nil || tcp.Spec.Bootstrap.RBAC.Enabled {
 				return r.createBootstrapRBAC(ctx, c, tcp)
 			}
 
-			// Fallback to original kubeadm behavior for backward compatibility
+			// Fallback to original kubeadm behavior if explicitly disabled
 			tmp, err := os.MkdirTemp("", string(tcp.UID))
 			if err != nil {
 				return nil, err
@@ -201,18 +199,26 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 			for _, i := range []string{AdminKubeConfigFileName, SuperAdminKubeConfigFileName} {
 				configuration.InitConfiguration.CertificatesDir, _ = os.MkdirTemp(tmp, "")
 
-				kubeconfigValue, err := kubeadm.CreateKubeconfig(SuperAdminKubeConfigFileName, crtKeyPair, configuration)
+				kubeconfig, err := kubeadm.CreateKubeconfig(i, crtKeyPair, configuration)
 				if err != nil {
 					return nil, err
 				}
 
-				_ = os.WriteFile(fmt.Sprintf("%s/%s", tmp, i), kubeconfigValue, os.ModePerm)
-			}
-
-			if _, err = kubeconfig.EnsureAdminClusterRoleBinding(tmp, func(_ context.Context, _ clientset.Interface, _ clientset.Interface, duration time.Duration, duration2 time.Duration) (clientset.Interface, error) {
-				return kubeconfig.EnsureAdminClusterRoleBindingImpl(ctx, c, c, duration, duration2)
-			}); err != nil {
-				return nil, err
+				if err = r.Client.Create(ctx, &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      fmt.Sprintf("%s-%s", tcp.Name, i),
+						Namespace: tcp.Namespace,
+						Labels: map[string]string{
+							"kamaji.clastix.io/component": "kubeconfig",
+						},
+					},
+					Data: map[string][]byte{
+						"config": kubeconfig,
+					},
+					Type: corev1.SecretTypeOpaque,
+				}); err != nil && !kerrors.IsAlreadyExists(err) {
+					return nil, err
+				}
 			}
 
 			return nil, nil
@@ -228,6 +234,9 @@ func (r *KubeadmPhase) GetClient() client.Client {
 
 func (r *KubeadmPhase) createBootstrapRBAC(ctx context.Context, clientSet clientset.Interface, tcp *kamajiv1alpha1.TenantControlPlane) ([]byte, error) {
 	rbacConfig := tcp.Spec.Bootstrap.RBAC
+	if rbacConfig == nil {
+		rbacConfig = &kamajiv1alpha1.RBACBootstrapSpec{}
+	}
 
 	// Apply default users if none specified
 	adminUsers := rbacConfig.AdminUsers
@@ -235,10 +244,16 @@ func (r *KubeadmPhase) createBootstrapRBAC(ctx context.Context, clientSet client
 		adminUsers = []string{"kubernetes-admin"}
 	}
 
-	// Create ClusterRoleBinding for admin users
-	if len(adminUsers) > 0 {
-		userSubjects := make([]rbacv1.Subject, len(adminUsers))
-		for i, user := range adminUsers {
+	// Create ClusterRoleBinding for additional admin users (excluding kubernetes-admin which is handled by kubeadm)
+	var additionalUsers []string
+	for _, user := range adminUsers {
+		if user != "kubernetes-admin" {
+			additionalUsers = append(additionalUsers, user)
+		}
+	}
+	if len(additionalUsers) > 0 {
+		userSubjects := make([]rbacv1.Subject, len(additionalUsers))
+		for i, user := range additionalUsers {
 			userSubjects[i] = rbacv1.Subject{
 				Kind:     "User",
 				APIGroup: "rbac.authorization.k8s.io",
@@ -264,7 +279,7 @@ func (r *KubeadmPhase) createBootstrapRBAC(ctx context.Context, clientSet client
 
 		if _, err := clientSet.RbacV1().ClusterRoleBindings().Create(ctx, userBinding, metav1.CreateOptions{}); err != nil {
 			// If it already exists, try to update it
-			if errors.IsAlreadyExists(err) {
+			if kerrors.IsAlreadyExists(err) {
 				if _, updateErr := clientSet.RbacV1().ClusterRoleBindings().Update(ctx, userBinding, metav1.UpdateOptions{}); updateErr != nil {
 					return nil, fmt.Errorf("failed to update user ClusterRoleBinding: %w", updateErr)
 				}
@@ -303,7 +318,7 @@ func (r *KubeadmPhase) createBootstrapRBAC(ctx context.Context, clientSet client
 
 		if _, err := clientSet.RbacV1().ClusterRoleBindings().Create(ctx, groupBinding, metav1.CreateOptions{}); err != nil {
 			// If it already exists, try to update it
-			if errors.IsAlreadyExists(err) {
+			if kerrors.IsAlreadyExists(err) {
 				if _, updateErr := clientSet.RbacV1().ClusterRoleBindings().Update(ctx, groupBinding, metav1.UpdateOptions{}); updateErr != nil {
 					return nil, fmt.Errorf("failed to update group ClusterRoleBinding: %w", updateErr)
 				}
