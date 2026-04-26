@@ -41,7 +41,7 @@ func GetKubeadmManifestDeps(ctx context.Context, client client.Client, tenantCon
 	// Get public address for cluster-info ConfigMap
 	publicAddress, _, err := tenantControlPlane.PublicControlPlaneAddress()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "cannot retrieve Tenant Control Plane public address")
+		return nil, nil, fmt.Errorf("cannot retrieve Tenant Control Plane public address: %w", err)
 	}
 
 	config.Kubeconfig = *kubeconfig

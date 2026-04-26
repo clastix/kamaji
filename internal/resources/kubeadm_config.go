@@ -96,21 +96,6 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
-		endpoint := net.JoinHostPort(advAddress, strconv.FormatInt(int64(port), 10))
-		spec := tenantControlPlane.Spec.ControlPlane
-		if spec.Gateway != nil {
-			if len(spec.Gateway.Hostname) > 0 {
-				gaddr, gport := utilities.GetControlPlaneAddressAndPortFromHostname(string(spec.Gateway.Hostname), port)
-				endpoint = net.JoinHostPort(gaddr, strconv.FormatInt(int64(gport), 10))
-			}
-		}
-		if spec.Ingress != nil {
-			if len(spec.Ingress.Hostname) > 0 {
-				iaddr, iport := utilities.GetControlPlaneAddressAndPortFromHostname(spec.Ingress.Hostname, port)
-				endpoint = net.JoinHostPort(iaddr, strconv.FormatInt(int64(iport), 10))
-			}
-		}
-
 		// Add advertise address to cert SANs if different from management address
 		certSANs := tenantControlPlane.Spec.NetworkProfile.CertSANs
 		if advAddress != address {
