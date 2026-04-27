@@ -40,10 +40,21 @@ func BootstrapToken(client kubernetes.Interface, config *Configuration) error {
 		return err
 	}
 
+	// Use public address for cluster-info if specified, otherwise fall back to kubeconfig server
+	serverAddress := config.Kubeconfig.Clusters[0].Cluster.Server
+	if len(config.Parameters.TenantControlPlanePublicAddress) > 0 {
+		// Construct the public server URL using the public address and port
+		port := config.Parameters.TenantControlPlanePort
+		if port == 0 {
+			port = 6443 // Default Kubernetes API port
+		}
+		serverAddress = fmt.Sprintf("https://%s:%d", config.Parameters.TenantControlPlanePublicAddress, port)
+	}
+
 	bootstrapConfig := &clientcmdapi.Config{
 		Clusters: map[string]*clientcmdapi.Cluster{
 			"": {
-				Server:                   config.Kubeconfig.Clusters[0].Cluster.Server,
+				Server:                   serverAddress,
 				CertificateAuthorityData: config.Kubeconfig.Clusters[0].Cluster.CertificateAuthorityData,
 			},
 		},

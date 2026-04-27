@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -107,23 +108,38 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 			}
 		}
 
-		config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
-		if err != nil {
-			logger.Error(err, "cannot retrieve kubeadm configuration")
+		// Check if pregenerated Front Proxy CA certificate is specified
+		if tenantControlPlane.Spec.PreGeneratedCertificates != nil && tenantControlPlane.Spec.PreGeneratedCertificates.FrontProxyCA != nil {
+			logger.Info("Using pregenerated Front Proxy CA certificate")
+			if err := r.usePreGeneratedFrontProxyCACertificate(ctx, tenantControlPlane); err != nil {
+				logger.Error(err, "cannot use pregenerated Front Proxy CA certificate")
 
-			return err
-		}
+				return err
+			}
+		} else {
+			logger.Info("Generating new Front Proxy CA certificate")
 
-		ca, err := kubeadm.GenerateCACertificatePrivateKeyPair(kubeadmconstants.FrontProxyCACertAndKeyBaseName, config)
-		if err != nil {
-			logger.Error(err, "cannot generate certificate and private key")
+			config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
+			if err != nil {
+				logger.Error(err, "cannot retrieve kubeadm configuration")
 
-			return err
-		}
+				return err
+			}
 
-		r.resource.Data = map[string][]byte{
-			kubeadmconstants.FrontProxyCACertName: ca.Certificate,
-			kubeadmconstants.FrontProxyCAKeyName:  ca.PrivateKey,
+			ca, err := kubeadm.GenerateCACertificatePrivateKeyPair(kubeadmconstants.FrontProxyCACertAndKeyBaseName, config)
+			if err != nil {
+				logger.Error(err, "cannot generate certificate and private key")
+
+				return err
+			}
+
+			r.resource.Data = map[string][]byte{
+				kubeadmconstants.FrontProxyCACertName: ca.Certificate,
+				kubeadmconstants.FrontProxyCAKeyName:  ca.PrivateKey,
+				// Add TLS keys for compatibility with external certificate management
+				corev1.TLSCertKey:       ca.Certificate,
+				corev1.TLSPrivateKeyKey: ca.PrivateKey,
+			}
 		}
 
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
@@ -136,4 +152,69 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
+}
+
+func (r *FrontProxyCACertificate) usePreGeneratedFrontProxyCACertificate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	certRef := tenantControlPlane.Spec.PreGeneratedCertificates.FrontProxyCA
+
+	// Determine the namespace for the secret
+	secretNamespace := certRef.SecretNamespace
+	if secretNamespace == "" {
+		secretNamespace = tenantControlPlane.GetNamespace()
+	}
+
+	// Get the referenced secret
+	secret := &corev1.Secret{}
+	secretKey := k8stypes.NamespacedName{
+		Name:      certRef.SecretName,
+		Namespace: secretNamespace,
+	}
+
+	if err := r.Client.Get(ctx, secretKey, secret); err != nil {
+		return fmt.Errorf("failed to get secret %s: %w", secretKey, err)
+	}
+
+	// Determine certificate and private key keys
+	certKey := certRef.CertificateKey
+	if certKey == "" {
+		certKey = corev1.TLSCertKey
+	}
+
+	privKeyKey := certRef.PrivateKeyKey
+	if privKeyKey == "" {
+		privKeyKey = corev1.TLSPrivateKeyKey
+	}
+
+	// Get certificate data with fallback logic - try kubeadm format first, then TLS format
+	certData, exists := secret.Data[kubeadmconstants.FrontProxyCACertName]
+	if !exists {
+		// Fallback to configured certificate key (usually tls.crt)
+		if fallbackCertData, fallbackExists := secret.Data[certKey]; fallbackExists {
+			certData = fallbackCertData
+		} else {
+			return fmt.Errorf("certificate key %s not found in secret %s, and fallback key %s also not found", kubeadmconstants.FrontProxyCACertName, secretKey, certKey)
+		}
+	}
+
+	// Get private key data with fallback logic - try kubeadm format first, then TLS format
+	privKeyData, exists := secret.Data[kubeadmconstants.FrontProxyCAKeyName]
+	if !exists {
+		// Fallback to configured private key (usually tls.key)
+		if fallbackPrivData, fallbackExists := secret.Data[privKeyKey]; fallbackExists {
+			privKeyData = fallbackPrivData
+		} else {
+			return fmt.Errorf("private key %s not found in secret %s, and fallback key %s also not found", kubeadmconstants.FrontProxyCAKeyName, secretKey, privKeyKey)
+		}
+	}
+
+	// Set the resource data using kubeadm constants and TLS keys for compatibility
+	r.resource.Data = map[string][]byte{
+		kubeadmconstants.FrontProxyCACertName: certData,
+		kubeadmconstants.FrontProxyCAKeyName:  privKeyData,
+		// Add TLS keys for compatibility with external certificate management
+		corev1.TLSCertKey:       certData,
+		corev1.TLSPrivateKeyKey: privKeyData,
+	}
+
+	return nil
 }

@@ -72,4 +72,16 @@ var _ = Describe("Deploy a TenantControlPlane resource", func() {
 		}, 30*time.Second, time.Second).Should(Equal(tcp.Generation),
 			"ObservedGeneration should equal Generation after successful reconciliation")
 	})
+
+	// Check if tenant cluster has standard Kubernetes resources
+	It("Should have standard Kubernetes resources in tenant cluster", func() {
+		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
+
+		validator, err := NewTenantClusterValidator(tcp)
+		Expect(err).NotTo(HaveOccurred(), "should be able to create tenant cluster validator")
+
+		validator.ValidateClusterHealth()
+		validator.ValidateStandardKubernetesResources()
+		validator.ValidateClusterAdminRBAC() // RBAC should be enabled by default
+	})
 })

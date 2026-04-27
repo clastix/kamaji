@@ -75,4 +75,46 @@ var _ = Describe("Cluster controller", func() {
 			Expect(err.Error()).To(ContainSubstring("LoadBalancer source ranges are supported only with LoadBalancer service type"))
 		})
 	})
+
+	Context("PublicAPIServerAddress", func() {
+		It("allows creation with valid hostname", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeLoadBalancer
+			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = "k8s-api.example.com"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("allows creation with IP address", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeLoadBalancer
+			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = "192.168.1.100"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("allows creation with empty PublicAPIServerAddress", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeLoadBalancer
+			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = ""
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("allows creation without PublicAPIServerAddress field", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeLoadBalancer
+			// Don't set PublicAPIServerAddress at all
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("works with different service types", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
+			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = "k8s-api.example.com"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
 })

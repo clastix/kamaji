@@ -141,13 +141,6 @@ Retrieve the list of the allowed ones by issuing "kubectl get datastores.kamaji.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#kamajicontrolplanespecdatastoreoverridesindex">dataStoreOverrides</a></b></td>
-        <td>[]object</td>
-        <td>
-          DataStoreOverrides defines which Kubernetes resources will be stored in dedicated datastores.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>dataStoreSchema</b></td>
         <td>string</td>
         <td>
@@ -333,7 +326,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet version:v0.28.6]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -342,7 +335,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-server port:8132]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-server port:8132 version:v0.28.6]<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -428,10 +421,9 @@ Can be customized to start the konnectivity-agent even if the nodes are not read
         <td><b>version</b></td>
         <td>string</td>
         <td>
-          Version for Konnectivity agent.
-If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
-
-WARNING: for last cut-off releases, the container image could be not available.<br/>
+          Version for Konnectivity agent.<br/>
+          <br/>
+            <i>Default</i>: v0.28.6<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -474,10 +466,9 @@ If the key is empty, operator must be Exists; this combination means to match al
         <td>string</td>
         <td>
           Operator represents a key's relationship to the value.
-Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
+Valid operators are Exists and Equal. Defaults to Equal.
 Exists is equivalent to wildcard for value, so that a pod can
-tolerate all taints of a particular category.
-Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).<br/>
+tolerate all taints of a particular category.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -557,10 +548,9 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         <td><b>version</b></td>
         <td>string</td>
         <td>
-          Container image version of the Konnectivity server.
-If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
-
-WARNING: for last cut-off releases, the container image could be not available.<br/>
+          Container image version of the Konnectivity server.<br/>
+          <br/>
+            <i>Default</i>: v0.28.6<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -724,13 +714,6 @@ With no value, the default images will be used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#kamajicontrolplanespecapiserverprobes">probes</a></b></td>
-        <td>object</td>
-        <td>
-          Probes defines per-probe-type configuration.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#kamajicontrolplanespecapiserverresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -828,252 +811,6 @@ Defaults to "" (volume's root).<br/>
 Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
 Defaults to "" (volume's root).
 SubPathExpr and SubPath are mutually exclusive.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespecapiserverprobes">`KamajiControlPlane.spec.apiServer.probes`</span>
-
-
-Probes defines per-probe-type configuration.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#kamajicontrolplanespecapiserverprobesliveness">liveness</a></b></td>
-        <td>object</td>
-        <td>
-          Liveness defines parameters for the liveness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanespecapiserverprobesreadiness">readiness</a></b></td>
-        <td>object</td>
-        <td>
-          Readiness defines parameters for the readiness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanespecapiserverprobesstartup">startup</a></b></td>
-        <td>object</td>
-        <td>
-          Startup defines parameters for the startup probe.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespecapiserverprobesliveness">`KamajiControlPlane.spec.apiServer.probes.liveness`</span>
-
-
-Liveness defines parameters for the liveness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespecapiserverprobesreadiness">`KamajiControlPlane.spec.apiServer.probes.readiness`</span>
-
-
-Readiness defines parameters for the readiness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespecapiserverprobesstartup">`KamajiControlPlane.spec.apiServer.probes.startup`</span>
-
-
-Startup defines parameters for the startup probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1236,13 +973,6 @@ With no value, the default images will be used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#kamajicontrolplanespeccontrollermanagerprobes">probes</a></b></td>
-        <td>object</td>
-        <td>
-          Probes defines per-probe-type configuration.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#kamajicontrolplanespeccontrollermanagerresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -1346,252 +1076,6 @@ SubPathExpr and SubPath are mutually exclusive.<br/>
 </table>
 
 
-<span id="kamajicontrolplanespeccontrollermanagerprobes">`KamajiControlPlane.spec.controllerManager.probes`</span>
-
-
-Probes defines per-probe-type configuration.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#kamajicontrolplanespeccontrollermanagerprobesliveness">liveness</a></b></td>
-        <td>object</td>
-        <td>
-          Liveness defines parameters for the liveness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanespeccontrollermanagerprobesreadiness">readiness</a></b></td>
-        <td>object</td>
-        <td>
-          Readiness defines parameters for the readiness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanespeccontrollermanagerprobesstartup">startup</a></b></td>
-        <td>object</td>
-        <td>
-          Startup defines parameters for the startup probe.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespeccontrollermanagerprobesliveness">`KamajiControlPlane.spec.controllerManager.probes.liveness`</span>
-
-
-Liveness defines parameters for the liveness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespeccontrollermanagerprobesreadiness">`KamajiControlPlane.spec.controllerManager.probes.readiness`</span>
-
-
-Readiness defines parameters for the readiness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespeccontrollermanagerprobesstartup">`KamajiControlPlane.spec.controllerManager.probes.startup`</span>
-
-
-Startup defines parameters for the startup probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
 <span id="kamajicontrolplanespeccontrollermanagerresources">`KamajiControlPlane.spec.controllerManager.resources`</span>
 
 
@@ -1677,38 +1161,6 @@ only the result of this request.<br/>
 </table>
 
 
-<span id="kamajicontrolplanespecdatastoreoverridesindex">`KamajiControlPlane.spec.dataStoreOverrides[index]`</span>
-
-
-DataStoreOverride defines which kubernetes resource will be stored in a dedicated datastore.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>dataStore</b></td>
-        <td>string</td>
-        <td>
-          DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Resource.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>resource</b></td>
-        <td>string</td>
-        <td>
-          Resource specifies which kubernetes resource to target.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
 <span id="kamajicontrolplanespecdeployment">`KamajiControlPlane.spec.deployment`</span>
 
 
@@ -1781,15 +1233,6 @@ The ExternalClusterReference feature gate must be enabled with one of the availa
         <td>
           PodAdditionalMetadata defines the additional labels and annotations that must be attached
 to the resulting Pods managed by the Deployment.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanespecdeploymentprobes">probes</a></b></td>
-        <td>object</td>
-        <td>
-          Probes defines probe configuration for Control Plane components.
-Global probe settings (Liveness, Readiness, Startup) apply to all components.
-Control Plane Component customisation has priority over these.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3604,8 +3047,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#kamajicontrolplanespecdeploymentextracontainersindexresizepolicyindex">resizePolicy</a></b></td>
         <td>[]object</td>
         <td>
-          Resources resize policy for the container.
-This field cannot be set on ephemeral containers.<br/>
+          Resources resize policy for the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6556,8 +5998,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#kamajicontrolplanespecdeploymentextrainitcontainersindexresizepolicyindex">resizePolicy</a></b></td>
         <td>[]object</td>
         <td>
-          Resources resize policy for the container.
-This field cannot be set on ephemeral containers.<br/>
+          Resources resize policy for the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10664,7 +10105,7 @@ There are three important differences between dataSource and dataSourceRef:
         <td>object</td>
         <td>
           resources represents the minimum resources the volume should have.
-Users are allowed to specify resource requirements
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
 that are lower than previous value but must still be higher than capacity recorded in the
 status field of the claim.
 More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
@@ -10844,7 +10285,7 @@ Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGr
 
 
 resources represents the minimum resources the volume should have.
-Users are allowed to specify resource requirements
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
 that are lower than previous value but must still be higher than capacity recorded in the
 status field of the claim.
 More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -12376,25 +11817,6 @@ longer than 24 hours.<br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b>userAnnotations</b></td>
-        <td>map[string]string</td>
-        <td>
-          userAnnotations allow pod authors to pass additional information to
-the signer implementation.  Kubernetes does not restrict or validate this
-metadata in any way.
-
-These values are copied verbatim into the `spec.unverifiedUserAnnotations` field of
-the PodCertificateRequest objects that Kubelet creates.
-
-Entries are subject to the same validation as object metadata annotations,
-with the addition that all keys must be domain-prefixed. No restrictions
-are placed on values, except an overall size limitation on the entire field.
-
-Signers should document the keys and values they support. Signers should
-deny requests that contain keys they do not recognize.<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -13169,254 +12591,6 @@ to the resulting Pods managed by the Deployment.
 </table>
 
 
-<span id="kamajicontrolplanespecdeploymentprobes">`KamajiControlPlane.spec.deployment.probes`</span>
-
-
-Probes defines probe configuration for Control Plane components.
-Global probe settings (Liveness, Readiness, Startup) apply to all components.
-Control Plane Component customisation has priority over these.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#kamajicontrolplanespecdeploymentprobesliveness">liveness</a></b></td>
-        <td>object</td>
-        <td>
-          Liveness defines parameters for the liveness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanespecdeploymentprobesreadiness">readiness</a></b></td>
-        <td>object</td>
-        <td>
-          Readiness defines parameters for the readiness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanespecdeploymentprobesstartup">startup</a></b></td>
-        <td>object</td>
-        <td>
-          Startup defines parameters for the startup probe.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespecdeploymentprobesliveness">`KamajiControlPlane.spec.deployment.probes.liveness`</span>
-
-
-Liveness defines parameters for the liveness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespecdeploymentprobesreadiness">`KamajiControlPlane.spec.deployment.probes.readiness`</span>
-
-
-Readiness defines parameters for the readiness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespecdeploymentprobesstartup">`KamajiControlPlane.spec.deployment.probes.startup`</span>
-
-
-Startup defines parameters for the startup probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
 <span id="kamajicontrolplanespecdeploymentstrategy">`KamajiControlPlane.spec.deployment.strategy`</span>
 
 
@@ -13538,10 +12712,9 @@ If the key is empty, operator must be Exists; this combination means to match al
         <td>string</td>
         <td>
           Operator represents a key's relationship to the value.
-Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
+Valid operators are Exists and Equal. Defaults to Equal.
 Exists is equivalent to wildcard for value, so that a pod can
-tolerate all taints of a particular category.
-Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).<br/>
+tolerate all taints of a particular category.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13945,22 +13118,9 @@ Configure the Kubelet options, such as the preferred address types, or the expec
         <td>enum</td>
         <td>
           CGroupFS defines the cgroup driver for Kubelet
-https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
-
-Deprecated: use ConfigurationJSONPatches.<br/>
+https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/<br/>
           <br/>
             <i>Enum</i>: systemd, cgroupfs<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanespeckubeletconfigurationjsonpatchesindex">configurationJSONPatches</a></b></td>
-        <td>[]object</td>
-        <td>
-          ConfigurationJSONPatches contains the RFC 6902 JSON patches to customise the kubeadm generate configuration,
-useful to customise and mangling the configuration according to your needs;
-e.g.: configuring the cgroup driver used by Kubelet is possible via the following patch:
-
-[{"op": "replace", "path": "/cgroupDriver", "value": "systemd"}]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13972,54 +13132,6 @@ Default to InternalIP, ExternalIP, Hostname.<br/>
           <br/>
             <i>Enum</i>: Hostname, InternalIP, ExternalIP, InternalDNS, ExternalDNS<br/>
             <i>Default</i>: [InternalIP ExternalIP Hostname]<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespeckubeletconfigurationjsonpatchesindex">`KamajiControlPlane.spec.kubelet.configurationJSONPatches[index]`</span>
-
-
-
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>op</b></td>
-        <td>enum</td>
-        <td>
-          Op is the RFC 6902 JSON Patch operation.<br/>
-          <br/>
-            <i>Enum</i>: add, remove, replace, move, copy, test<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>path</b></td>
-        <td>string</td>
-        <td>
-          Path specifies the target location in the JSON document. Use "/" to separate keys; "-" for appending to arrays.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>from</b></td>
-        <td>string</td>
-        <td>
-          From specifies the source location for move or copy operations.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>value</b></td>
-        <td>JSON</td>
-        <td>
-          Value is the operation value to be used when Op is add, replace, test.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14041,16 +13153,6 @@ Configure how the TenantControlPlane should be exposed.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>advertiseAddress</b></td>
-        <td>string</td>
-        <td>
-          AdvertiseAddress is the address advertised to tenant-side consumers (workers, konnectivity).
-When set, the management address (serviceAddress or LoadBalancer IP) is used for CAPI
-cluster-cache, while this address is used for kubeadm ControlPlaneEndpoint and cluster-info.
-Both addresses are included in the API server certificate SANs.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>certSANs</b></td>
         <td>[]string</td>
         <td>
@@ -14065,14 +13167,6 @@ useful if the TenantControlPlane is going to be exposed behind a FQDN with NAT.<
           DNSServiceIPs contains the DNS Service IPs.
 If the CoreDNS addon is specified, its DNSServiceIPs will be used instead.
 When set to an empty slice, Kamaji will automatically inflect it from the Service CIDR.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanespecnetworkgateway">gateway</a></b></td>
-        <td>object</td>
-        <td>
-          When specified, the KamajiControlPlane will be reachable using a Gateway API object
-deployed in the management cluster.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14120,62 +13214,6 @@ helping when serviceType is NodePort.<br/>
           <br/>
             <i>Enum</i>: ClusterIP, NodePort, LoadBalancer<br/>
             <i>Default</i>: LoadBalancer<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespecnetworkgateway">`KamajiControlPlane.spec.network.gateway`</span>
-
-
-When specified, the KamajiControlPlane will be reachable using a Gateway API object
-deployed in the management cluster.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>hostname</b></td>
-        <td>string</td>
-        <td>
-          Defines the hostname for the Gateway object.
-When using a Gateway object the FQDN is automatically added to the Certificate SANs.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Defines the Gateway API name for the Gateway object.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>namespace</b></td>
-        <td>string</td>
-        <td>
-          Defines the Gateway API namespace for the Gateway object.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>extraAnnotations</b></td>
-        <td>map[string]string</td>
-        <td>
-          Defines the extra annotations for the Gateway object.
-Useful if you need Gateway or vendor-specific options.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>extraLabels</b></td>
-        <td>map[string]string</td>
-        <td>
-          Defines the extra labels for the Gateway object.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14307,13 +13345,6 @@ With no value, the default images will be used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#kamajicontrolplanespecschedulerprobes">probes</a></b></td>
-        <td>object</td>
-        <td>
-          Probes defines per-probe-type configuration.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#kamajicontrolplanespecschedulerresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -14411,252 +13442,6 @@ Defaults to "" (volume's root).<br/>
 Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
 Defaults to "" (volume's root).
 SubPathExpr and SubPath are mutually exclusive.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespecschedulerprobes">`KamajiControlPlane.spec.scheduler.probes`</span>
-
-
-Probes defines per-probe-type configuration.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#kamajicontrolplanespecschedulerprobesliveness">liveness</a></b></td>
-        <td>object</td>
-        <td>
-          Liveness defines parameters for the liveness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanespecschedulerprobesreadiness">readiness</a></b></td>
-        <td>object</td>
-        <td>
-          Readiness defines parameters for the readiness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanespecschedulerprobesstartup">startup</a></b></td>
-        <td>object</td>
-        <td>
-          Startup defines parameters for the startup probe.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespecschedulerprobesliveness">`KamajiControlPlane.spec.scheduler.probes.liveness`</span>
-
-
-Liveness defines parameters for the liveness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespecschedulerprobesreadiness">`KamajiControlPlane.spec.scheduler.probes.readiness`</span>
-
-
-Readiness defines parameters for the readiness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanespecschedulerprobesstartup">`KamajiControlPlane.spec.scheduler.probes.startup`</span>
-
-
-Startup defines parameters for the startup probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -15095,13 +13880,6 @@ Retrieve the list of the allowed ones by issuing "kubectl get datastores.kamaji.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdatastoreoverridesindex">dataStoreOverrides</a></b></td>
-        <td>[]object</td>
-        <td>
-          DataStoreOverrides defines which Kubernetes resources will be stored in dedicated datastores.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>dataStoreSchema</b></td>
         <td>string</td>
         <td>
@@ -15276,7 +14054,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-agent mode:DaemonSet version:v0.28.6]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -15285,7 +14063,7 @@ Enables the Konnectivity addon in the Tenant Cluster, required if the worker nod
         <td>
           <br/>
           <br/>
-            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-server port:8132]<br/>
+            <i>Default</i>: map[image:registry.k8s.io/kas-network-proxy/proxy-server port:8132 version:v0.28.6]<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -15371,10 +14149,9 @@ Can be customized to start the konnectivity-agent even if the nodes are not read
         <td><b>version</b></td>
         <td>string</td>
         <td>
-          Version for Konnectivity agent.
-If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
-
-WARNING: for last cut-off releases, the container image could be not available.<br/>
+          Version for Konnectivity agent.<br/>
+          <br/>
+            <i>Default</i>: v0.28.6<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -15417,10 +14194,9 @@ If the key is empty, operator must be Exists; this combination means to match al
         <td>string</td>
         <td>
           Operator represents a key's relationship to the value.
-Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
+Valid operators are Exists and Equal. Defaults to Equal.
 Exists is equivalent to wildcard for value, so that a pod can
-tolerate all taints of a particular category.
-Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).<br/>
+tolerate all taints of a particular category.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -15500,10 +14276,9 @@ unxpected ways. Only modify if you know what you are doing.<br/>
         <td><b>version</b></td>
         <td>string</td>
         <td>
-          Container image version of the Konnectivity server.
-If left empty, Kamaji will automatically inflect the version from the deployed Tenant Control Plane.
-
-WARNING: for last cut-off releases, the container image could be not available.<br/>
+          Container image version of the Konnectivity server.<br/>
+          <br/>
+            <i>Default</i>: v0.28.6<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -15667,13 +14442,6 @@ With no value, the default images will be used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecapiserverprobes">probes</a></b></td>
-        <td>object</td>
-        <td>
-          Probes defines per-probe-type configuration.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#kamajicontrolplanetemplatespectemplatespecapiserverresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -15771,252 +14539,6 @@ Defaults to "" (volume's root).<br/>
 Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
 Defaults to "" (volume's root).
 SubPathExpr and SubPath are mutually exclusive.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespecapiserverprobes">`KamajiControlPlaneTemplate.spec.template.spec.apiServer.probes`</span>
-
-
-Probes defines per-probe-type configuration.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecapiserverprobesliveness">liveness</a></b></td>
-        <td>object</td>
-        <td>
-          Liveness defines parameters for the liveness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecapiserverprobesreadiness">readiness</a></b></td>
-        <td>object</td>
-        <td>
-          Readiness defines parameters for the readiness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecapiserverprobesstartup">startup</a></b></td>
-        <td>object</td>
-        <td>
-          Startup defines parameters for the startup probe.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespecapiserverprobesliveness">`KamajiControlPlaneTemplate.spec.template.spec.apiServer.probes.liveness`</span>
-
-
-Liveness defines parameters for the liveness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespecapiserverprobesreadiness">`KamajiControlPlaneTemplate.spec.template.spec.apiServer.probes.readiness`</span>
-
-
-Readiness defines parameters for the readiness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespecapiserverprobesstartup">`KamajiControlPlaneTemplate.spec.template.spec.apiServer.probes.startup`</span>
-
-
-Startup defines parameters for the startup probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -16145,13 +14667,6 @@ With no value, the default images will be used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobes">probes</a></b></td>
-        <td>object</td>
-        <td>
-          Probes defines per-probe-type configuration.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#kamajicontrolplanetemplatespectemplatespeccontrollermanagerresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -16255,252 +14770,6 @@ SubPathExpr and SubPath are mutually exclusive.<br/>
 </table>
 
 
-<span id="kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobes">`KamajiControlPlaneTemplate.spec.template.spec.controllerManager.probes`</span>
-
-
-Probes defines per-probe-type configuration.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobesliveness">liveness</a></b></td>
-        <td>object</td>
-        <td>
-          Liveness defines parameters for the liveness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobesreadiness">readiness</a></b></td>
-        <td>object</td>
-        <td>
-          Readiness defines parameters for the readiness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobesstartup">startup</a></b></td>
-        <td>object</td>
-        <td>
-          Startup defines parameters for the startup probe.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobesliveness">`KamajiControlPlaneTemplate.spec.template.spec.controllerManager.probes.liveness`</span>
-
-
-Liveness defines parameters for the liveness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobesreadiness">`KamajiControlPlaneTemplate.spec.template.spec.controllerManager.probes.readiness`</span>
-
-
-Readiness defines parameters for the readiness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespeccontrollermanagerprobesstartup">`KamajiControlPlaneTemplate.spec.template.spec.controllerManager.probes.startup`</span>
-
-
-Startup defines parameters for the startup probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
 <span id="kamajicontrolplanetemplatespectemplatespeccontrollermanagerresources">`KamajiControlPlaneTemplate.spec.template.spec.controllerManager.resources`</span>
 
 
@@ -16586,38 +14855,6 @@ only the result of this request.<br/>
 </table>
 
 
-<span id="kamajicontrolplanetemplatespectemplatespecdatastoreoverridesindex">`KamajiControlPlaneTemplate.spec.template.spec.dataStoreOverrides[index]`</span>
-
-
-DataStoreOverride defines which kubernetes resource will be stored in a dedicated datastore.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>dataStore</b></td>
-        <td>string</td>
-        <td>
-          DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Resource.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>resource</b></td>
-        <td>string</td>
-        <td>
-          Resource specifies which kubernetes resource to target.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
 <span id="kamajicontrolplanetemplatespectemplatespecdeployment">`KamajiControlPlaneTemplate.spec.template.spec.deployment`</span>
 
 
@@ -16690,15 +14927,6 @@ The ExternalClusterReference feature gate must be enabled with one of the availa
         <td>
           PodAdditionalMetadata defines the additional labels and annotations that must be attached
 to the resulting Pods managed by the Deployment.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentprobes">probes</a></b></td>
-        <td>object</td>
-        <td>
-          Probes defines probe configuration for Control Plane components.
-Global probe settings (Liveness, Readiness, Startup) apply to all components.
-Control Plane Component customisation has priority over these.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -18513,8 +16741,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentextracontainersindexresizepolicyindex">resizePolicy</a></b></td>
         <td>[]object</td>
         <td>
-          Resources resize policy for the container.
-This field cannot be set on ephemeral containers.<br/>
+          Resources resize policy for the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21465,8 +19692,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentextrainitcontainersindexresizepolicyindex">resizePolicy</a></b></td>
         <td>[]object</td>
         <td>
-          Resources resize policy for the container.
-This field cannot be set on ephemeral containers.<br/>
+          Resources resize policy for the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -25573,7 +23799,7 @@ There are three important differences between dataSource and dataSourceRef:
         <td>object</td>
         <td>
           resources represents the minimum resources the volume should have.
-Users are allowed to specify resource requirements
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
 that are lower than previous value but must still be higher than capacity recorded in the
 status field of the claim.
 More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
@@ -25753,7 +23979,7 @@ Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGr
 
 
 resources represents the minimum resources the volume should have.
-Users are allowed to specify resource requirements
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
 that are lower than previous value but must still be higher than capacity recorded in the
 status field of the claim.
 More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -27285,25 +25511,6 @@ longer than 24 hours.<br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b>userAnnotations</b></td>
-        <td>map[string]string</td>
-        <td>
-          userAnnotations allow pod authors to pass additional information to
-the signer implementation.  Kubernetes does not restrict or validate this
-metadata in any way.
-
-These values are copied verbatim into the `spec.unverifiedUserAnnotations` field of
-the PodCertificateRequest objects that Kubelet creates.
-
-Entries are subject to the same validation as object metadata annotations,
-with the addition that all keys must be domain-prefixed. No restrictions
-are placed on values, except an overall size limitation on the entire field.
-
-Signers should document the keys and values they support. Signers should
-deny requests that contain keys they do not recognize.<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -28078,254 +26285,6 @@ to the resulting Pods managed by the Deployment.
 </table>
 
 
-<span id="kamajicontrolplanetemplatespectemplatespecdeploymentprobes">`KamajiControlPlaneTemplate.spec.template.spec.deployment.probes`</span>
-
-
-Probes defines probe configuration for Control Plane components.
-Global probe settings (Liveness, Readiness, Startup) apply to all components.
-Control Plane Component customisation has priority over these.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentprobesliveness">liveness</a></b></td>
-        <td>object</td>
-        <td>
-          Liveness defines parameters for the liveness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentprobesreadiness">readiness</a></b></td>
-        <td>object</td>
-        <td>
-          Readiness defines parameters for the readiness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecdeploymentprobesstartup">startup</a></b></td>
-        <td>object</td>
-        <td>
-          Startup defines parameters for the startup probe.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespecdeploymentprobesliveness">`KamajiControlPlaneTemplate.spec.template.spec.deployment.probes.liveness`</span>
-
-
-Liveness defines parameters for the liveness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespecdeploymentprobesreadiness">`KamajiControlPlaneTemplate.spec.template.spec.deployment.probes.readiness`</span>
-
-
-Readiness defines parameters for the readiness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespecdeploymentprobesstartup">`KamajiControlPlaneTemplate.spec.template.spec.deployment.probes.startup`</span>
-
-
-Startup defines parameters for the startup probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
 <span id="kamajicontrolplanetemplatespectemplatespecdeploymentstrategy">`KamajiControlPlaneTemplate.spec.template.spec.deployment.strategy`</span>
 
 
@@ -28447,10 +26406,9 @@ If the key is empty, operator must be Exists; this combination means to match al
         <td>string</td>
         <td>
           Operator represents a key's relationship to the value.
-Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
+Valid operators are Exists and Equal. Defaults to Equal.
 Exists is equivalent to wildcard for value, so that a pod can
-tolerate all taints of a particular category.
-Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).<br/>
+tolerate all taints of a particular category.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -28854,22 +26812,9 @@ Configure the Kubelet options, such as the preferred address types, or the expec
         <td>enum</td>
         <td>
           CGroupFS defines the cgroup driver for Kubelet
-https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
-
-Deprecated: use ConfigurationJSONPatches.<br/>
+https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/<br/>
           <br/>
             <i>Enum</i>: systemd, cgroupfs<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespeckubeletconfigurationjsonpatchesindex">configurationJSONPatches</a></b></td>
-        <td>[]object</td>
-        <td>
-          ConfigurationJSONPatches contains the RFC 6902 JSON patches to customise the kubeadm generate configuration,
-useful to customise and mangling the configuration according to your needs;
-e.g.: configuring the cgroup driver used by Kubelet is possible via the following patch:
-
-[{"op": "replace", "path": "/cgroupDriver", "value": "systemd"}]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -28881,54 +26826,6 @@ Default to InternalIP, ExternalIP, Hostname.<br/>
           <br/>
             <i>Enum</i>: Hostname, InternalIP, ExternalIP, InternalDNS, ExternalDNS<br/>
             <i>Default</i>: [InternalIP ExternalIP Hostname]<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespeckubeletconfigurationjsonpatchesindex">`KamajiControlPlaneTemplate.spec.template.spec.kubelet.configurationJSONPatches[index]`</span>
-
-
-
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>op</b></td>
-        <td>enum</td>
-        <td>
-          Op is the RFC 6902 JSON Patch operation.<br/>
-          <br/>
-            <i>Enum</i>: add, remove, replace, move, copy, test<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>path</b></td>
-        <td>string</td>
-        <td>
-          Path specifies the target location in the JSON document. Use "/" to separate keys; "-" for appending to arrays.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>from</b></td>
-        <td>string</td>
-        <td>
-          From specifies the source location for move or copy operations.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>value</b></td>
-        <td>JSON</td>
-        <td>
-          Value is the operation value to be used when Op is add, replace, test.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -28950,16 +26847,6 @@ Configure how the TenantControlPlane should be exposed.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>advertiseAddress</b></td>
-        <td>string</td>
-        <td>
-          AdvertiseAddress is the address advertised to tenant-side consumers (workers, konnectivity).
-When set, the management address (serviceAddress or LoadBalancer IP) is used for CAPI
-cluster-cache, while this address is used for kubeadm ControlPlaneEndpoint and cluster-info.
-Both addresses are included in the API server certificate SANs.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>certSANs</b></td>
         <td>[]string</td>
         <td>
@@ -28974,14 +26861,6 @@ useful if the TenantControlPlane is going to be exposed behind a FQDN with NAT.<
           DNSServiceIPs contains the DNS Service IPs.
 If the CoreDNS addon is specified, its DNSServiceIPs will be used instead.
 When set to an empty slice, Kamaji will automatically inflect it from the Service CIDR.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecnetworkgateway">gateway</a></b></td>
-        <td>object</td>
-        <td>
-          When specified, the KamajiControlPlane will be reachable using a Gateway API object
-deployed in the management cluster.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -29029,62 +26908,6 @@ helping when serviceType is NodePort.<br/>
           <br/>
             <i>Enum</i>: ClusterIP, NodePort, LoadBalancer<br/>
             <i>Default</i>: LoadBalancer<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespecnetworkgateway">`KamajiControlPlaneTemplate.spec.template.spec.network.gateway`</span>
-
-
-When specified, the KamajiControlPlane will be reachable using a Gateway API object
-deployed in the management cluster.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>hostname</b></td>
-        <td>string</td>
-        <td>
-          Defines the hostname for the Gateway object.
-When using a Gateway object the FQDN is automatically added to the Certificate SANs.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Defines the Gateway API name for the Gateway object.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>namespace</b></td>
-        <td>string</td>
-        <td>
-          Defines the Gateway API namespace for the Gateway object.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>extraAnnotations</b></td>
-        <td>map[string]string</td>
-        <td>
-          Defines the extra annotations for the Gateway object.
-Useful if you need Gateway or vendor-specific options.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>extraLabels</b></td>
-        <td>map[string]string</td>
-        <td>
-          Defines the extra labels for the Gateway object.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -29216,13 +27039,6 @@ With no value, the default images will be used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecschedulerprobes">probes</a></b></td>
-        <td>object</td>
-        <td>
-          Probes defines per-probe-type configuration.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#kamajicontrolplanetemplatespectemplatespecschedulerresources">resources</a></b></td>
         <td>object</td>
         <td>
@@ -29320,252 +27136,6 @@ Defaults to "" (volume's root).<br/>
 Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
 Defaults to "" (volume's root).
 SubPathExpr and SubPath are mutually exclusive.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespecschedulerprobes">`KamajiControlPlaneTemplate.spec.template.spec.scheduler.probes`</span>
-
-
-Probes defines per-probe-type configuration.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecschedulerprobesliveness">liveness</a></b></td>
-        <td>object</td>
-        <td>
-          Liveness defines parameters for the liveness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecschedulerprobesreadiness">readiness</a></b></td>
-        <td>object</td>
-        <td>
-          Readiness defines parameters for the readiness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#kamajicontrolplanetemplatespectemplatespecschedulerprobesstartup">startup</a></b></td>
-        <td>object</td>
-        <td>
-          Startup defines parameters for the startup probe.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespecschedulerprobesliveness">`KamajiControlPlaneTemplate.spec.template.spec.scheduler.probes.liveness`</span>
-
-
-Liveness defines parameters for the liveness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespecschedulerprobesreadiness">`KamajiControlPlaneTemplate.spec.template.spec.scheduler.probes.readiness`</span>
-
-
-Readiness defines parameters for the readiness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="kamajicontrolplanetemplatespectemplatespecschedulerprobesstartup">`KamajiControlPlaneTemplate.spec.template.spec.scheduler.probes.startup`</span>
-
-
-Startup defines parameters for the startup probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -30408,109 +27978,10 @@ DataStoreStatus defines the observed state of DataStore.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>ready</b></td>
-        <td>boolean</td>
-        <td>
-          Ready returns if the DataStore is accepted and ready to get used:
-Kamaji will ensure certificates are available, or correctly referenced.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b><a href="#datastorestatusconditionsindex">conditions</a></b></td>
-        <td>[]object</td>
-        <td>
-          Conditions contains the validation conditions for the given Datastore.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>observedGeneration</b></td>
-        <td>integer</td>
-        <td>
-          ObservedGeneration represents the .metadata.generation that was last reconciled.<br/>
-          <br/>
-            <i>Format</i>: int64<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>usedBy</b></td>
         <td>[]string</td>
         <td>
           List of the Tenant Control Planes, namespaced named, using this data store.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="datastorestatusconditionsindex">`DataStore.status.conditions[index]`</span>
-
-
-Condition contains details for one aspect of the current state of this API Resource.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>lastTransitionTime</b></td>
-        <td>string</td>
-        <td>
-          lastTransitionTime is the last time the condition transitioned from one status to another.
-This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
-          <br/>
-            <i>Format</i>: date-time<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>message</b></td>
-        <td>string</td>
-        <td>
-          message is a human readable message indicating details about the transition.
-This may be an empty string.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>reason</b></td>
-        <td>string</td>
-        <td>
-          reason contains a programmatic identifier indicating the reason for the condition's last transition.
-Producers of specific condition types may define expected values and meanings for this field,
-and whether the values are considered a guaranteed API.
-The value should be a CamelCase string.
-This field may not be empty.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>status</b></td>
-        <td>enum</td>
-        <td>
-          status of the condition, one of True, False, Unknown.<br/>
-          <br/>
-            <i>Enum</i>: True, False, Unknown<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>type</b></td>
-        <td>string</td>
-        <td>
-          type of condition in CamelCase or in foo.example.com/CamelCase.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>observedGeneration</b></td>
-        <td>integer</td>
-        <td>
-          observedGeneration represents the .metadata.generation that the condition was set based upon.
-For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-with respect to the current state of the instance.<br/>
-          <br/>
-            <i>Format</i>: int64<br/>
-            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -30890,15 +28361,6 @@ In case of a different value compared to Resources, check the field errors.<br/>
           Errors is the list of failed kubeconfig generations.<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b>observedGeneration</b></td>
-        <td>integer</td>
-        <td>
-          ObservedGeneration represents the .metadata.generation that was last reconciled.<br/>
-          <br/>
-            <i>Format</i>: int64<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -30972,7 +28434,7 @@ TenantControlPlane is the Schema for the tenantcontrolplanes API.
         <td><b><a href="#tenantcontrolplanespec">spec</a></b></td>
         <td>object</td>
         <td>
-          <br/>
+          TenantControlPlaneSpec defines the desired state of TenantControlPlane.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30989,7 +28451,7 @@ TenantControlPlane is the Schema for the tenantcontrolplanes API.
 <span id="tenantcontrolplanespec">`TenantControlPlane.spec`</span>
 
 
-
+TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 
 <table>
     <thead>
@@ -31023,6 +28485,14 @@ such as the number of Pod replicas, the Service resource, or the Ingress.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecbootstrap">bootstrap</a></b></td>
+        <td>object</td>
+        <td>
+          Bootstrap configures initial cluster setup including RBAC and essential components.
+This is applied once during cluster creation to solve common bootstrap problems.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>dataStore</b></td>
         <td>string</td>
         <td>
@@ -31032,13 +28502,6 @@ By leaving it empty and running Kamaji with no default DataStore flag, it is pos
 
 Migration from one DataStore to another backed by the same Driver is possible. See: https://kamaji.clastix.io/guides/datastore-migration/
 Migration from one DataStore to another backed by a different Driver is not supported.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespecdatastoreoverridesindex">dataStoreOverrides</a></b></td>
-        <td>[]object</td>
-        <td>
-          DataStoreOverride defines which kubernetes resources will be stored in dedicated datastores.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -31062,10 +28525,31 @@ DataStoreUsername by concatenating the namespace and name of the TenantControlPl
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>internalCACertificatesConfigMap</b></td>
+        <td>string</td>
+        <td>
+          InternalCACertificatesConfigMap specifies a ConfigMap containing internal CA certificates
+that should be mounted to the standard CA certificate paths in control plane containers.
+If specified, the ConfigMap data will be mounted to:
+- /etc/ca-certificates
+- /usr/share/ca-certificates
+- /usr/local/share/ca-certificates
+This enables the control plane to trust internal Certificate Authorities.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespecnetworkprofile">networkProfile</a></b></td>
         <td>object</td>
         <td>
           NetworkProfile specifies how the network is<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificates">preGeneratedCertificates</a></b></td>
+        <td>object</td>
+        <td>
+          PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
+This field is immutable after creation.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -31114,13 +28598,6 @@ such as the number of Pod replicas, the Service resource, or the Ingress.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanegateway">gateway</a></b></td>
-        <td>object</td>
-        <td>
-          Defining the options for an Optional Gateway which will expose API Server of the Tenant Control Plane<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplaneingress">ingress</a></b></td>
         <td>object</td>
         <td>
@@ -31162,11 +28639,12 @@ Defining the options for the Tenant Control Plane Service resource.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplaneserviceadditionalportsindex">additionalPorts</a></b></td>
-        <td>[]object</td>
+        <td><b>publicAPIServerAddress</b></td>
+        <td>string</td>
         <td>
-          AdditionalPorts allows adding additional ports to the Service generated Kamaji
-which targets the Tenant Control Plane pods.<br/>
+          PublicAPIServerAddress allows specifying the hostname used in the cluster-info ConfigMap
+instead of the LoadBalancer IP. This enables proper DNS-based access to the API server.
+When specified, this address will be used in kubeadm join commands and cluster-info ConfigMap.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -31199,75 +28677,6 @@ AdditionalMetadata defines which additional metadata, such as labels and annotat
         <td>map[string]string</td>
         <td>
           <br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplaneserviceadditionalportsindex">`TenantControlPlane.spec.controlPlane.service.additionalPorts[index]`</span>
-
-
-
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          The name of this port within the Service created by Kamaji.
-This must be a DNS_LABEL, must have unique names, and cannot be `kube-apiserver`, or `konnectivity-server`.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>port</b></td>
-        <td>integer</td>
-        <td>
-          The port that will be exposed by this service.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>targetPort</b></td>
-        <td>int or string</td>
-        <td>
-          Number or name of the port to access on the pods of the Tenant Control Plane.
-Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
-If this is a string, it will be looked up as a named port in the
-target Pod's container ports. If this is not specified, the value
-of the 'port' field is used (an identity map).<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>appProtocol</b></td>
-        <td>string</td>
-        <td>
-          The application protocol for this port.
-This is used as a hint for implementations to offer richer behavior for protocols that they understand.
-This field follows standard Kubernetes label syntax.
-Valid values are either:
-
-* Un-prefixed protocol names - reserved for IANA standard service names (as per
-RFC-6335 and https://www.iana.org/assignments/service-names).<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>protocol</b></td>
-        <td>enum</td>
-        <td>
-          The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".<br/>
-          <br/>
-            <i>Enum</i>: TCP, UDP, SCTP<br/>
-            <i>Default</i>: TCP<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -31356,15 +28765,6 @@ More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/<br
         <td>object</td>
         <td>
           AdditionalMetadata defines which additional metadata, such as labels and annotations, must be attached to the created resource.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobes">probes</a></b></td>
-        <td>object</td>
-        <td>
-          Probes defines the probe configuration for the Control Plane components
-(kube-apiserver, controller-manager, and scheduler).
-Override TimeoutSeconds, PeriodSeconds, and FailureThreshold for resource-constrained environments.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -31584,8 +28984,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalcontainersindexresizepolicyindex">resizePolicy</a></b></td>
         <td>[]object</td>
         <td>
-          Resources resize policy for the container.
-This field cannot be set on ephemeral containers.<br/>
+          Resources resize policy for the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -34536,8 +31935,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentadditionalinitcontainersindexresizepolicyindex">resizePolicy</a></b></td>
         <td>[]object</td>
         <td>
-          Resources resize policy for the container.
-This field cannot be set on ephemeral containers.<br/>
+          Resources resize policy for the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -38995,7 +36393,7 @@ There are three important differences between dataSource and dataSourceRef:
         <td>object</td>
         <td>
           resources represents the minimum resources the volume should have.
-Users are allowed to specify resource requirements
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
 that are lower than previous value but must still be higher than capacity recorded in the
 status field of the claim.
 More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
@@ -39175,7 +36573,7 @@ Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGr
 
 
 resources represents the minimum resources the volume should have.
-Users are allowed to specify resource requirements
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
 that are lower than previous value but must still be higher than capacity recorded in the
 status field of the claim.
 More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -40705,25 +38103,6 @@ seconds (1 hour).  This constraint is enforced by kube-apiserver.
 longer than 24 hours.<br/>
           <br/>
             <i>Format</i>: int32<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>userAnnotations</b></td>
-        <td>map[string]string</td>
-        <td>
-          userAnnotations allow pod authors to pass additional information to
-the signer implementation.  Kubernetes does not restrict or validate this
-metadata in any way.
-
-These values are copied verbatim into the `spec.unverifiedUserAnnotations` field of
-the PodCertificateRequest objects that Kubelet creates.
-
-Entries are subject to the same validation as object metadata annotations,
-with the addition that all keys must be domain-prefixed. No restrictions
-are placed on values, except an overall size limitation on the entire field.
-
-Signers should document the keys and values they support. Signers should
-deny requests that contain keys they do not recognize.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -43102,1013 +40481,6 @@ AdditionalMetadata defines which additional metadata, such as labels and annotat
 </table>
 
 
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobes">`TenantControlPlane.spec.controlPlane.deployment.probes`</span>
-
-
-Probes defines the probe configuration for the Control Plane components
-(kube-apiserver, controller-manager, and scheduler).
-Override TimeoutSeconds, PeriodSeconds, and FailureThreshold for resource-constrained environments.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesapiserver">apiServer</a></b></td>
-        <td>object</td>
-        <td>
-          APIServer defines probe overrides for kube-apiserver, taking precedence over global probe settings.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobescontrollermanager">controllerManager</a></b></td>
-        <td>object</td>
-        <td>
-          ControllerManager defines probe overrides for kube-controller-manager, taking precedence over global probe settings.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesliveness">liveness</a></b></td>
-        <td>object</td>
-        <td>
-          Liveness defines default parameters for liveness probes of all Control Plane components.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesreadiness">readiness</a></b></td>
-        <td>object</td>
-        <td>
-          Readiness defines default parameters for the readiness probe of kube-apiserver.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesscheduler">scheduler</a></b></td>
-        <td>object</td>
-        <td>
-          Scheduler defines probe overrides for kube-scheduler, taking precedence over global probe settings.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesstartup">startup</a></b></td>
-        <td>object</td>
-        <td>
-          Startup defines default parameters for startup probes of all Control Plane components.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobesapiserver">`TenantControlPlane.spec.controlPlane.deployment.probes.apiServer`</span>
-
-
-APIServer defines probe overrides for kube-apiserver, taking precedence over global probe settings.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesapiserverliveness">liveness</a></b></td>
-        <td>object</td>
-        <td>
-          Liveness defines parameters for the liveness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesapiserverreadiness">readiness</a></b></td>
-        <td>object</td>
-        <td>
-          Readiness defines parameters for the readiness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesapiserverstartup">startup</a></b></td>
-        <td>object</td>
-        <td>
-          Startup defines parameters for the startup probe.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobesapiserverliveness">`TenantControlPlane.spec.controlPlane.deployment.probes.apiServer.liveness`</span>
-
-
-Liveness defines parameters for the liveness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobesapiserverreadiness">`TenantControlPlane.spec.controlPlane.deployment.probes.apiServer.readiness`</span>
-
-
-Readiness defines parameters for the readiness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobesapiserverstartup">`TenantControlPlane.spec.controlPlane.deployment.probes.apiServer.startup`</span>
-
-
-Startup defines parameters for the startup probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobescontrollermanager">`TenantControlPlane.spec.controlPlane.deployment.probes.controllerManager`</span>
-
-
-ControllerManager defines probe overrides for kube-controller-manager, taking precedence over global probe settings.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobescontrollermanagerliveness">liveness</a></b></td>
-        <td>object</td>
-        <td>
-          Liveness defines parameters for the liveness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobescontrollermanagerreadiness">readiness</a></b></td>
-        <td>object</td>
-        <td>
-          Readiness defines parameters for the readiness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobescontrollermanagerstartup">startup</a></b></td>
-        <td>object</td>
-        <td>
-          Startup defines parameters for the startup probe.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobescontrollermanagerliveness">`TenantControlPlane.spec.controlPlane.deployment.probes.controllerManager.liveness`</span>
-
-
-Liveness defines parameters for the liveness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobescontrollermanagerreadiness">`TenantControlPlane.spec.controlPlane.deployment.probes.controllerManager.readiness`</span>
-
-
-Readiness defines parameters for the readiness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobescontrollermanagerstartup">`TenantControlPlane.spec.controlPlane.deployment.probes.controllerManager.startup`</span>
-
-
-Startup defines parameters for the startup probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobesliveness">`TenantControlPlane.spec.controlPlane.deployment.probes.liveness`</span>
-
-
-Liveness defines default parameters for liveness probes of all Control Plane components.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobesreadiness">`TenantControlPlane.spec.controlPlane.deployment.probes.readiness`</span>
-
-
-Readiness defines default parameters for the readiness probe of kube-apiserver.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobesscheduler">`TenantControlPlane.spec.controlPlane.deployment.probes.scheduler`</span>
-
-
-Scheduler defines probe overrides for kube-scheduler, taking precedence over global probe settings.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesschedulerliveness">liveness</a></b></td>
-        <td>object</td>
-        <td>
-          Liveness defines parameters for the liveness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesschedulerreadiness">readiness</a></b></td>
-        <td>object</td>
-        <td>
-          Readiness defines parameters for the readiness probe.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesschedulerstartup">startup</a></b></td>
-        <td>object</td>
-        <td>
-          Startup defines parameters for the startup probe.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobesschedulerliveness">`TenantControlPlane.spec.controlPlane.deployment.probes.scheduler.liveness`</span>
-
-
-Liveness defines parameters for the liveness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobesschedulerreadiness">`TenantControlPlane.spec.controlPlane.deployment.probes.scheduler.readiness`</span>
-
-
-Readiness defines parameters for the readiness probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobesschedulerstartup">`TenantControlPlane.spec.controlPlane.deployment.probes.scheduler.startup`</span>
-
-
-Startup defines parameters for the startup probe.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanedeploymentprobesstartup">`TenantControlPlane.spec.controlPlane.deployment.probes.startup`</span>
-
-
-Startup defines default parameters for startup probes of all Control Plane components.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>failureThreshold</b></td>
-        <td>integer</td>
-        <td>
-          FailureThreshold is the consecutive failure count required to consider the probe failed.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>initialDelaySeconds</b></td>
-        <td>integer</td>
-        <td>
-          InitialDelaySeconds is the number of seconds after the container has started before the probe is initiated.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>periodSeconds</b></td>
-        <td>integer</td>
-        <td>
-          PeriodSeconds is how often (in seconds) to perform the probe.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>successThreshold</b></td>
-        <td>integer</td>
-        <td>
-          SuccessThreshold is the minimum consecutive successes for the probe to be considered successful.
-Must be 1 for liveness and startup probes.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>timeoutSeconds</b></td>
-        <td>integer</td>
-        <td>
-          TimeoutSeconds is the number of seconds after which the probe times out.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
 <span id="tenantcontrolplanespeccontrolplanedeploymentregistrysettings">`TenantControlPlane.spec.controlPlane.deployment.registrySettings`</span>
 
 
@@ -44683,10 +41055,9 @@ If the key is empty, operator must be Exists; this combination means to match al
         <td>string</td>
         <td>
           Operator represents a key's relationship to the value.
-Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
+Valid operators are Exists and Equal. Defaults to Equal.
 Exists is equivalent to wildcard for value, so that a pod can
-tolerate all taints of a particular category.
-Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).<br/>
+tolerate all taints of a particular category.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -44953,243 +41324,6 @@ merge patch.<br/>
 </table>
 
 
-<span id="tenantcontrolplanespeccontrolplanegateway">`TenantControlPlane.spec.controlPlane.gateway`</span>
-
-
-Defining the options for an Optional Gateway which will expose API Server of the Tenant Control Plane
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanegatewayadditionalmetadata">additionalMetadata</a></b></td>
-        <td>object</td>
-        <td>
-          AdditionalMetadata to add Labels and Annotations support.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>hostname</b></td>
-        <td>string</td>
-        <td>
-          Hostname is an optional field which will be used as a route hostname.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeccontrolplanegatewayparentrefsindex">parentRefs</a></b></td>
-        <td>[]object</td>
-        <td>
-          GatewayParentRefs is the class of the Gateway resource to use.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanegatewayadditionalmetadata">`TenantControlPlane.spec.controlPlane.gateway.additionalMetadata`</span>
-
-
-AdditionalMetadata to add Labels and Annotations support.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>annotations</b></td>
-        <td>map[string]string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>labels</b></td>
-        <td>map[string]string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeccontrolplanegatewayparentrefsindex">`TenantControlPlane.spec.controlPlane.gateway.parentRefs[index]`</span>
-
-
-ParentReference identifies an API object (usually a Gateway) that can be considered
-a parent of this resource (usually a route). There are two kinds of parent resources
-with "Core" support:
-
-* Gateway (Gateway conformance profile)
-* Service (Mesh conformance profile, ClusterIP Services only)
-
-This API may be extended in the future to support additional kinds of parent
-resources.
-
-The API object must be valid in the cluster; the Group and Kind must
-be registered in the cluster for this reference to be valid.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name is the name of the referent.
-
-Support: Core<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>group</b></td>
-        <td>string</td>
-        <td>
-          Group is the group of the referent.
-When unspecified, "gateway.networking.k8s.io" is inferred.
-To set the core API group (such as for a "Service" kind referent),
-Group must be explicitly set to "" (empty string).
-
-Support: Core<br/>
-          <br/>
-            <i>Default</i>: gateway.networking.k8s.io<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>kind</b></td>
-        <td>string</td>
-        <td>
-          Kind is kind of the referent.
-
-There are two kinds of parent resources with "Core" support:
-
-* Gateway (Gateway conformance profile)
-* Service (Mesh conformance profile, ClusterIP Services only)
-
-Support for other resources is Implementation-Specific.<br/>
-          <br/>
-            <i>Default</i>: Gateway<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>namespace</b></td>
-        <td>string</td>
-        <td>
-          Namespace is the namespace of the referent. When unspecified, this refers
-to the local namespace of the Route.
-
-Note that there are specific rules for ParentRefs which cross namespace
-boundaries. Cross-namespace references are only valid if they are explicitly
-allowed by something in the namespace they are referring to. For example:
-Gateway has the AllowedRoutes field, and ReferenceGrant provides a
-generic way to enable any other kind of cross-namespace reference.
-
-<gateway:experimental:description>
-ParentRefs from a Route to a Service in the same namespace are "producer"
-routes, which apply default routing rules to inbound connections from
-any namespace to the Service.
-
-ParentRefs from a Route to a Service in a different namespace are
-"consumer" routes, and these routing rules are only applied to outbound
-connections originating from the same namespace as the Route, for which
-the intended destination of the connections are a Service targeted as a
-ParentRef of the Route.
-</gateway:experimental:description>
-
-Support: Core<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>port</b></td>
-        <td>integer</td>
-        <td>
-          Port is the network port this Route targets. It can be interpreted
-differently based on the type of parent resource.
-
-When the parent resource is a Gateway, this targets all listeners
-listening on the specified port that also support this kind of Route(and
-select this Route). It's not recommended to set `Port` unless the
-networking behaviors specified in a Route must apply to a specific port
-as opposed to a listener(s) whose port(s) may be changed. When both Port
-and SectionName are specified, the name and port of the selected listener
-must match both specified values.
-
-<gateway:experimental:description>
-When the parent resource is a Service, this targets a specific port in the
-Service spec. When both Port (experimental) and SectionName are specified,
-the name and port of the selected port must match both specified values.
-</gateway:experimental:description>
-
-Implementations MAY choose to support other parent resources.
-Implementations supporting other types of parent resources MUST clearly
-document how/if Port is interpreted.
-
-For the purpose of status, an attachment is considered successful as
-long as the parent resource accepts it partially. For example, Gateway
-listeners can restrict which Routes can attach to them by Route kind,
-namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
-from the referencing Route, the Route MUST be considered successfully
-attached. If no Gateway listeners accept attachment from this Route,
-the Route MUST be considered detached from the Gateway.
-
-Support: Extended<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-            <i>Maximum</i>: 65535<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>sectionName</b></td>
-        <td>string</td>
-        <td>
-          SectionName is the name of a section within the target resource. In the
-following resources, SectionName is interpreted as the following:
-
-* Gateway: Listener name. When both Port (experimental) and SectionName
-are specified, the name and port of the selected listener must match
-both specified values.
-* Service: Port name. When both Port (experimental) and SectionName
-are specified, the name and port of the selected listener must match
-both specified values.
-
-Implementations MAY choose to support attaching Routes to other resources.
-If that is the case, they MUST clearly document how SectionName is
-interpreted.
-
-When unspecified (empty string), this will reference the entire resource.
-For the purpose of status, an attachment is considered successful if at
-least one section in the parent resource accepts it. For example, Gateway
-listeners can restrict which Routes can attach to them by Route kind,
-namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
-the referencing Route, the Route MUST be considered successfully
-attached. If no Gateway listeners accept attachment from this Route, the
-Route MUST be considered detached from the Gateway.
-
-Support: Core<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
 <span id="tenantcontrolplanespeccontrolplaneingress">`TenantControlPlane.spec.controlPlane.ingress`</span>
 
 
@@ -45324,22 +41458,9 @@ Full reference available here: https://kubernetes.io/docs/reference/access-authn
         <td>enum</td>
         <td>
           CGroupFS defines the cgroup driver for Kubelet
-https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
-
-Deprecated: use ConfigurationJSONPatches.<br/>
+https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/<br/>
           <br/>
             <i>Enum</i>: systemd, cgroupfs<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanespeckuberneteskubeletconfigurationjsonpatchesindex">configurationJSONPatches</a></b></td>
-        <td>[]object</td>
-        <td>
-          ConfigurationJSONPatches contains the RFC 6902 JSON patches to customise the kubeadm generate configuration,
-useful to customise and mangling the configuration according to your needs;
-e.g.: configuring the cgroup driver used by Kubelet is possible via the following patch:
-
-[{"op": "replace", "path": "/cgroupDriver", "value": "systemd"}]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -45351,54 +41472,6 @@ Default to InternalIP, ExternalIP, Hostname.<br/>
           <br/>
             <i>Enum</i>: Hostname, InternalIP, ExternalIP, InternalDNS, ExternalDNS<br/>
             <i>Default</i>: [InternalIP ExternalIP Hostname]<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespeckuberneteskubeletconfigurationjsonpatchesindex">`TenantControlPlane.spec.kubernetes.kubelet.configurationJSONPatches[index]`</span>
-
-
-
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>op</b></td>
-        <td>enum</td>
-        <td>
-          Op is the RFC 6902 JSON Patch operation.<br/>
-          <br/>
-            <i>Enum</i>: add, remove, replace, move, copy, test<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>path</b></td>
-        <td>string</td>
-        <td>
-          Path specifies the target location in the JSON document. Use "/" to separate keys; "-" for appending to arrays.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>from</b></td>
-        <td>string</td>
-        <td>
-          From specifies the source location for move or copy operations.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>value</b></td>
-        <td>JSON</td>
-        <td>
-          Value is the operation value to be used when Op is add, replace, test.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -45642,10 +41715,9 @@ If the key is empty, operator must be Exists; this combination means to match al
         <td>string</td>
         <td>
           Operator represents a key's relationship to the value.
-Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
+Valid operators are Exists and Equal. Defaults to Equal.
 Exists is equivalent to wildcard for value, so that a pod can
-tolerate all taints of a particular category.
-Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).<br/>
+tolerate all taints of a particular category.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -45855,10 +41927,11 @@ In case this value is set, kubeadm does not change automatically the version of 
 </table>
 
 
-<span id="tenantcontrolplanespecdatastoreoverridesindex">`TenantControlPlane.spec.dataStoreOverrides[index]`</span>
+<span id="tenantcontrolplanespecbootstrap">`TenantControlPlane.spec.bootstrap`</span>
 
 
-DataStoreOverride defines which kubernetes resource will be stored in a dedicated datastore.
+Bootstrap configures initial cluster setup including RBAC and essential components.
+This is applied once during cluster creation to solve common bootstrap problems.
 
 <table>
     <thead>
@@ -45870,17 +41943,70 @@ DataStoreOverride defines which kubernetes resource will be stored in a dedicate
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>dataStore</b></td>
-        <td>string</td>
+        <td><b>initManifests</b></td>
+        <td>[]string</td>
         <td>
-          DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Resource.<br/>
+          InitManifests contains additional Kubernetes manifests to apply after RBAC setup.
+Common use cases include CNI deployments (Cilium, Calico), GitOps operators
+(Flux, ArgoCD), or any other foundational cluster components.
+Manifests are applied as raw YAML after RBAC bootstrap is complete.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>resource</b></td>
-        <td>string</td>
+        <td><b><a href="#tenantcontrolplanespecbootstraprbac">rbac</a></b></td>
+        <td>object</td>
         <td>
-          Resource specifies which kubernetes resource to target.<br/>
+          RBAC configures Role-Based Access Control bootstrap.
+This solves the common problem where admin kubeconfig is generated
+but no ClusterRoleBinding grants the user actual permissions.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecbootstraprbac">`TenantControlPlane.spec.bootstrap.rbac`</span>
+
+
+RBAC configures Role-Based Access Control bootstrap.
+This solves the common problem where admin kubeconfig is generated
+but no ClusterRoleBinding grants the user actual permissions.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>adminGroups</b></td>
+        <td>[]string</td>
+        <td>
+          AdminGroups specifies groups that should be granted cluster-admin privileges.
+Common choices include "system:masters" (traditional K8s admin group).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>adminUsers</b></td>
+        <td>[]string</td>
+        <td>
+          AdminUsers specifies users that should be granted cluster-admin privileges.
+Defaults to ["kubernetes-admin"] which matches the generated kubeconfig user.<br/>
+          <br/>
+            <i>Default</i>: [kubernetes-admin]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled controls whether RBAC bootstrap is performed.
+When enabled, creates ClusterRoleBindings for admin users and groups.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -45905,18 +42031,8 @@ NetworkProfile specifies how the network is
         <td><b>address</b></td>
         <td>string</td>
         <td>
-          Address where API server will be exposed.
-In the case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>advertiseAddress</b></td>
-        <td>string</td>
-        <td>
-          AdvertiseAddress is the address advertised to tenant-side consumers (workers, konnectivity).
-When set, the management address is used for CAPI and status reporting, while this address
-is used for kubeadm ControlPlaneEndpoint, cluster-info, and admin.conf.
-Both addresses are included in the API server certificate SANs.<br/>
+          Address where API server of will be exposed.
+In case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -45988,7 +42104,7 @@ Example: {"192.168.1.0/24", "10.0.0.0/8"}<br/>
         <td><b>port</b></td>
         <td>integer</td>
         <td>
-          Port where API server will be exposed<br/>
+          Port where API server of will be exposed<br/>
           <br/>
             <i>Format</i>: int32<br/>
             <i>Default</i>: 6443<br/>
@@ -46001,6 +42117,391 @@ Example: {"192.168.1.0/24", "10.0.0.0/8"}<br/>
           CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.<br/>
           <br/>
             <i>Default</i>: 10.96.0.0/16<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificates">`TenantControlPlane.spec.preGeneratedCertificates`</span>
+
+
+PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
+This field is immutable after creation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificatesapiserver">apiServer</a></b></td>
+        <td>object</td>
+        <td>
+          API Server certificate and key from existing Secret.
+If specified, this certificate will be used instead of generating a new one.
+The certificate must be signed by the CA specified above or the generated CA.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificatesca">ca</a></b></td>
+        <td>object</td>
+        <td>
+          CA certificate and key from existing Secret.
+If specified, this CA will be used instead of generating a new one.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificatesfrontproxyca">frontProxyCA</a></b></td>
+        <td>object</td>
+        <td>
+          Front proxy CA certificate and key from existing Secret.
+If specified, this CA will be used instead of generating a new one.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificatesfrontproxyclient">frontProxyClient</a></b></td>
+        <td>object</td>
+        <td>
+          Front proxy client certificate and key from existing Secret.
+If specified, this certificate will be used instead of generating a new one.
+The certificate must be signed by the front proxy CA specified above or the generated front proxy CA.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificateskubeletclient">kubeletClient</a></b></td>
+        <td>object</td>
+        <td>
+          Kubelet client certificate and key from existing Secret.
+If specified, this certificate will be used instead of generating a new one.
+The certificate must be signed by the CA specified above or the generated CA.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecpregeneratedcertificatesserviceaccount">serviceAccount</a></b></td>
+        <td>object</td>
+        <td>
+          Service account signing key from existing Secret.
+If specified, this key pair will be used instead of generating a new one.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificatesapiserver">`TenantControlPlane.spec.preGeneratedCertificates.apiServer`</span>
+
+
+API Server certificate and key from existing Secret.
+If specified, this certificate will be used instead of generating a new one.
+The certificate must be signed by the CA specified above or the generated CA.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName references a Secret containing certificate data<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateKey</b></td>
+        <td>string</td>
+        <td>
+          CertificateKey is the key in the Secret containing the certificate.<br/>
+          <br/>
+            <i>Default</i>: tls.crt<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>privateKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PrivateKeyKey is the key in the Secret containing the private key.<br/>
+          <br/>
+            <i>Default</i>: tls.key<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretNamespace</b></td>
+        <td>string</td>
+        <td>
+          SecretNamespace is the namespace of the referenced Secret.
+If empty, defaults to the TenantControlPlane namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificatesca">`TenantControlPlane.spec.preGeneratedCertificates.ca`</span>
+
+
+CA certificate and key from existing Secret.
+If specified, this CA will be used instead of generating a new one.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName references a Secret containing certificate data<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateKey</b></td>
+        <td>string</td>
+        <td>
+          CertificateKey is the key in the Secret containing the certificate.<br/>
+          <br/>
+            <i>Default</i>: tls.crt<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>privateKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PrivateKeyKey is the key in the Secret containing the private key.<br/>
+          <br/>
+            <i>Default</i>: tls.key<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretNamespace</b></td>
+        <td>string</td>
+        <td>
+          SecretNamespace is the namespace of the referenced Secret.
+If empty, defaults to the TenantControlPlane namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificatesfrontproxyca">`TenantControlPlane.spec.preGeneratedCertificates.frontProxyCA`</span>
+
+
+Front proxy CA certificate and key from existing Secret.
+If specified, this CA will be used instead of generating a new one.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName references a Secret containing certificate data<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateKey</b></td>
+        <td>string</td>
+        <td>
+          CertificateKey is the key in the Secret containing the certificate.<br/>
+          <br/>
+            <i>Default</i>: tls.crt<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>privateKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PrivateKeyKey is the key in the Secret containing the private key.<br/>
+          <br/>
+            <i>Default</i>: tls.key<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretNamespace</b></td>
+        <td>string</td>
+        <td>
+          SecretNamespace is the namespace of the referenced Secret.
+If empty, defaults to the TenantControlPlane namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificatesfrontproxyclient">`TenantControlPlane.spec.preGeneratedCertificates.frontProxyClient`</span>
+
+
+Front proxy client certificate and key from existing Secret.
+If specified, this certificate will be used instead of generating a new one.
+The certificate must be signed by the front proxy CA specified above or the generated front proxy CA.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName references a Secret containing certificate data<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateKey</b></td>
+        <td>string</td>
+        <td>
+          CertificateKey is the key in the Secret containing the certificate.<br/>
+          <br/>
+            <i>Default</i>: tls.crt<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>privateKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PrivateKeyKey is the key in the Secret containing the private key.<br/>
+          <br/>
+            <i>Default</i>: tls.key<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretNamespace</b></td>
+        <td>string</td>
+        <td>
+          SecretNamespace is the namespace of the referenced Secret.
+If empty, defaults to the TenantControlPlane namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificateskubeletclient">`TenantControlPlane.spec.preGeneratedCertificates.kubeletClient`</span>
+
+
+Kubelet client certificate and key from existing Secret.
+If specified, this certificate will be used instead of generating a new one.
+The certificate must be signed by the CA specified above or the generated CA.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName references a Secret containing certificate data<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateKey</b></td>
+        <td>string</td>
+        <td>
+          CertificateKey is the key in the Secret containing the certificate.<br/>
+          <br/>
+            <i>Default</i>: tls.crt<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>privateKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PrivateKeyKey is the key in the Secret containing the private key.<br/>
+          <br/>
+            <i>Default</i>: tls.key<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretNamespace</b></td>
+        <td>string</td>
+        <td>
+          SecretNamespace is the namespace of the referenced Secret.
+If empty, defaults to the TenantControlPlane namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecpregeneratedcertificatesserviceaccount">`TenantControlPlane.spec.preGeneratedCertificates.serviceAccount`</span>
+
+
+Service account signing key from existing Secret.
+If specified, this key pair will be used instead of generating a new one.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName references a Secret containing key data<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>privateKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PrivateKeyKey is the key in the Secret containing the private key.<br/>
+          <br/>
+            <i>Default</i>: sa.key<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>publicKeyKey</b></td>
+        <td>string</td>
+        <td>
+          PublicKeyKey is the key in the Secret containing the public key.<br/>
+          <br/>
+            <i>Default</i>: sa.pub<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretNamespace</b></td>
+        <td>string</td>
+        <td>
+          SecretNamespace is the namespace of the referenced Secret.
+If empty, defaults to the TenantControlPlane namespace.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -46113,15 +42614,6 @@ that are necessary to run a kubernetes control plane<br/>
         <td>object</td>
         <td>
           Kubernetes contains information about the reconciliation of the required Kubernetes resources deployed in the admin cluster<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>observedGeneration</b></td>
-        <td>integer</td>
-        <td>
-          ObservedGeneration represents the .metadata.generation that was last reconciled.<br/>
-          <br/>
-            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -46255,13 +42747,6 @@ KonnectivityStatus defines the status of Konnectivity as Addon.
         <td>object</td>
         <td>
           <br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitygateway">gateway</a></b></td>
-        <td>object</td>
-        <td>
-          KubernetesGatewayStatus defines the status for the Tenant Control Plane Gateway in the management cluster.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -46445,505 +42930,6 @@ CertificatePrivateKeyPairStatus defines the status.
         <td>string</td>
         <td>
           <br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanestatusaddonskonnectivitygateway">`TenantControlPlane.status.addons.konnectivity.gateway`</span>
-
-
-KubernetesGatewayStatus defines the status for the Tenant Control Plane Gateway in the management cluster.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitygatewayparentsindex">parents</a></b></td>
-        <td>[]object</td>
-        <td>
-          Parents is a list of parent resources (usually Gateways) that are
-associated with the route, and the status of the route with respect to
-each parent. When this route attaches to a parent, the controller that
-manages the parent must add an entry to this list when the controller
-first sees the route and should update the entry as appropriate when the
-route or gateway is modified.
-
-Note that parent references that cannot be resolved by an implementation
-of this API will not be added to this list. Implementations of this API
-can only populate Route status for the Gateways/parent resources they are
-responsible for.
-
-A maximum of 32 Gateways will be represented in this list. An empty list
-means the route has not been attached to any Gateway.
-
-<gateway:util:excludeFromCRD>
-Notes for implementors:
-
-While parents is not a listType `map`, this is due to the fact that the
-list key is not scalar, and Kubernetes is unable to represent this.
-
-Parent status MUST be considered to be namespaced by the combination of
-the parentRef and controllerName fields, and implementations should keep
-the following rules in mind when updating this status:
-
-* Implementations MUST update only entries that have a matching value of
-  `controllerName` for that implementation.
-* Implementations MUST NOT update entries with non-matching `controllerName`
-  fields.
-* Implementations MUST treat each `parentRef`` in the Route separately and
-  update its status based on the relationship with that parent.
-* Implementations MUST perform a read-modify-write cycle on this field
-  before modifying it. That is, when modifying this field, implementations
-  must be confident they have fetched the most recent version of this field,
-  and ensure that changes they make are on that recent version.
-
-</gateway:util:excludeFromCRD><br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitygatewayaccesspointsindex">accessPoints</a></b></td>
-        <td>[]object</td>
-        <td>
-          A list of valid access points that the route exposes.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitygatewayrouteref">routeRef</a></b></td>
-        <td>object</td>
-        <td>
-          Reference to the route created for this tenant.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanestatusaddonskonnectivitygatewayparentsindex">`TenantControlPlane.status.addons.konnectivity.gateway.parents[index]`</span>
-
-
-RouteParentStatus describes the status of a route with respect to an
-associated Parent.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitygatewayparentsindexconditionsindex">conditions</a></b></td>
-        <td>[]object</td>
-        <td>
-          Conditions describes the status of the route with respect to the Gateway.
-Note that the route's availability is also subject to the Gateway's own
-status conditions and listener status.
-
-If the Route's ParentRef specifies an existing Gateway that supports
-Routes of this kind AND that Gateway's controller has sufficient access,
-then that Gateway's controller MUST set the "Accepted" condition on the
-Route, to indicate whether the route has been accepted or rejected by the
-Gateway, and why.
-
-A Route MUST be considered "Accepted" if at least one of the Route's
-rules is implemented by the Gateway.
-
-There are a number of cases where the "Accepted" condition may not be set
-due to lack of controller visibility, that includes when:
-
-* The Route refers to a nonexistent parent.
-* The Route is of a type that the controller does not support.
-* The Route is in a namespace the controller does not have access to.
-
-<gateway:util:excludeFromCRD>
-
-Notes for implementors:
-
-Conditions are a listType `map`, which means that they function like a
-map with a key of the `type` field _in the k8s apiserver_.
-
-This means that implementations must obey some rules when updating this
-section.
-
-* Implementations MUST perform a read-modify-write cycle on this field
-  before modifying it. That is, when modifying this field, implementations
-  must be confident they have fetched the most recent version of this field,
-  and ensure that changes they make are on that recent version.
-* Implementations MUST NOT remove or reorder Conditions that they are not
-  directly responsible for. For example, if an implementation sees a Condition
-  with type `special.io/SomeField`, it MUST NOT remove, change or update that
-  Condition.
-* Implementations MUST always _merge_ changes into Conditions of the same Type,
-  rather than creating more than one Condition of the same Type.
-* Implementations MUST always update the `observedGeneration` field of the
-  Condition to the `metadata.generation` of the Gateway at the time of update creation.
-* If the `observedGeneration` of a Condition is _greater than_ the value the
-  implementation knows about, then it MUST NOT perform the update on that Condition,
-  but must wait for a future reconciliation and status update. (The assumption is that
-  the implementation's copy of the object is stale and an update will be re-triggered
-  if relevant.)
-
-</gateway:util:excludeFromCRD><br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>controllerName</b></td>
-        <td>string</td>
-        <td>
-          ControllerName is a domain/path string that indicates the name of the
-controller that wrote this status. This corresponds with the
-controllerName field on GatewayClass.
-
-Example: "example.net/gateway-controller".
-
-The format of this field is DOMAIN "/" PATH, where DOMAIN and PATH are
-valid Kubernetes names
-(https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names).
-
-Controllers MUST populate this field when writing status. Controllers should ensure that
-entries to status populated with their ControllerName are cleaned up when they are no
-longer necessary.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanestatusaddonskonnectivitygatewayparentsindexparentref">parentRef</a></b></td>
-        <td>object</td>
-        <td>
-          ParentRef corresponds with a ParentRef in the spec that this
-RouteParentStatus struct describes the status of.<br/>
-        </td>
-        <td>true</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanestatusaddonskonnectivitygatewayparentsindexconditionsindex">`TenantControlPlane.status.addons.konnectivity.gateway.parents[index].conditions[index]`</span>
-
-
-Condition contains details for one aspect of the current state of this API Resource.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>lastTransitionTime</b></td>
-        <td>string</td>
-        <td>
-          lastTransitionTime is the last time the condition transitioned from one status to another.
-This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
-          <br/>
-            <i>Format</i>: date-time<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>message</b></td>
-        <td>string</td>
-        <td>
-          message is a human readable message indicating details about the transition.
-This may be an empty string.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>reason</b></td>
-        <td>string</td>
-        <td>
-          reason contains a programmatic identifier indicating the reason for the condition's last transition.
-Producers of specific condition types may define expected values and meanings for this field,
-and whether the values are considered a guaranteed API.
-The value should be a CamelCase string.
-This field may not be empty.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>status</b></td>
-        <td>enum</td>
-        <td>
-          status of the condition, one of True, False, Unknown.<br/>
-          <br/>
-            <i>Enum</i>: True, False, Unknown<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>type</b></td>
-        <td>string</td>
-        <td>
-          type of condition in CamelCase or in foo.example.com/CamelCase.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>observedGeneration</b></td>
-        <td>integer</td>
-        <td>
-          observedGeneration represents the .metadata.generation that the condition was set based upon.
-For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-with respect to the current state of the instance.<br/>
-          <br/>
-            <i>Format</i>: int64<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanestatusaddonskonnectivitygatewayparentsindexparentref">`TenantControlPlane.status.addons.konnectivity.gateway.parents[index].parentRef`</span>
-
-
-ParentRef corresponds with a ParentRef in the spec that this
-RouteParentStatus struct describes the status of.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name is the name of the referent.
-
-Support: Core<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>group</b></td>
-        <td>string</td>
-        <td>
-          Group is the group of the referent.
-When unspecified, "gateway.networking.k8s.io" is inferred.
-To set the core API group (such as for a "Service" kind referent),
-Group must be explicitly set to "" (empty string).
-
-Support: Core<br/>
-          <br/>
-            <i>Default</i>: gateway.networking.k8s.io<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>kind</b></td>
-        <td>string</td>
-        <td>
-          Kind is kind of the referent.
-
-There are two kinds of parent resources with "Core" support:
-
-* Gateway (Gateway conformance profile)
-* Service (Mesh conformance profile, ClusterIP Services only)
-
-Support for other resources is Implementation-Specific.<br/>
-          <br/>
-            <i>Default</i>: Gateway<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>namespace</b></td>
-        <td>string</td>
-        <td>
-          Namespace is the namespace of the referent. When unspecified, this refers
-to the local namespace of the Route.
-
-Note that there are specific rules for ParentRefs which cross namespace
-boundaries. Cross-namespace references are only valid if they are explicitly
-allowed by something in the namespace they are referring to. For example:
-Gateway has the AllowedRoutes field, and ReferenceGrant provides a
-generic way to enable any other kind of cross-namespace reference.
-
-<gateway:experimental:description>
-ParentRefs from a Route to a Service in the same namespace are "producer"
-routes, which apply default routing rules to inbound connections from
-any namespace to the Service.
-
-ParentRefs from a Route to a Service in a different namespace are
-"consumer" routes, and these routing rules are only applied to outbound
-connections originating from the same namespace as the Route, for which
-the intended destination of the connections are a Service targeted as a
-ParentRef of the Route.
-</gateway:experimental:description>
-
-Support: Core<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>port</b></td>
-        <td>integer</td>
-        <td>
-          Port is the network port this Route targets. It can be interpreted
-differently based on the type of parent resource.
-
-When the parent resource is a Gateway, this targets all listeners
-listening on the specified port that also support this kind of Route(and
-select this Route). It's not recommended to set `Port` unless the
-networking behaviors specified in a Route must apply to a specific port
-as opposed to a listener(s) whose port(s) may be changed. When both Port
-and SectionName are specified, the name and port of the selected listener
-must match both specified values.
-
-<gateway:experimental:description>
-When the parent resource is a Service, this targets a specific port in the
-Service spec. When both Port (experimental) and SectionName are specified,
-the name and port of the selected port must match both specified values.
-</gateway:experimental:description>
-
-Implementations MAY choose to support other parent resources.
-Implementations supporting other types of parent resources MUST clearly
-document how/if Port is interpreted.
-
-For the purpose of status, an attachment is considered successful as
-long as the parent resource accepts it partially. For example, Gateway
-listeners can restrict which Routes can attach to them by Route kind,
-namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
-from the referencing Route, the Route MUST be considered successfully
-attached. If no Gateway listeners accept attachment from this Route,
-the Route MUST be considered detached from the Gateway.
-
-Support: Extended<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-            <i>Maximum</i>: 65535<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>sectionName</b></td>
-        <td>string</td>
-        <td>
-          SectionName is the name of a section within the target resource. In the
-following resources, SectionName is interpreted as the following:
-
-* Gateway: Listener name. When both Port (experimental) and SectionName
-are specified, the name and port of the selected listener must match
-both specified values.
-* Service: Port name. When both Port (experimental) and SectionName
-are specified, the name and port of the selected listener must match
-both specified values.
-
-Implementations MAY choose to support attaching Routes to other resources.
-If that is the case, they MUST clearly document how SectionName is
-interpreted.
-
-When unspecified (empty string), this will reference the entire resource.
-For the purpose of status, an attachment is considered successful if at
-least one section in the parent resource accepts it. For example, Gateway
-listeners can restrict which Routes can attach to them by Route kind,
-namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
-the referencing Route, the Route MUST be considered successfully
-attached. If no Gateway listeners accept attachment from this Route, the
-Route MUST be considered detached from the Gateway.
-
-Support: Core<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanestatusaddonskonnectivitygatewayaccesspointsindex">`TenantControlPlane.status.addons.konnectivity.gateway.accessPoints[index]`</span>
-
-
-
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>port</b></td>
-        <td>integer</td>
-        <td>
-          <br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>type</b></td>
-        <td>string</td>
-        <td>
-          AddressType defines how a network address is represented as a text string.
-This may take two possible forms:
-
-* A predefined CamelCase string identifier (currently limited to `IPAddress` or `Hostname`)
-* A domain-prefixed string identifier (like `acme.io/CustomAddressType`)
-
-Values `IPAddress` and `Hostname` have Extended support.
-
-The `NamedAddress` value has been deprecated in favor of implementation
-specific domain-prefixed strings.
-
-All other values, including domain-prefixed values have Implementation-specific support,
-which are used in implementation-specific behaviors. Support for additional
-predefined CamelCase identifiers may be added in future releases.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>value</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>urls</b></td>
-        <td>[]string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanestatusaddonskonnectivitygatewayrouteref">`TenantControlPlane.status.addons.konnectivity.gateway.routeRef`</span>
-
-
-Reference to the route created for this tenant.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name of the referent.
-This field is effectively required, but due to backwards compatibility is
-allowed to be empty. Instances of this type with an empty value here are
-almost certainly wrong.
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
-          <br/>
-            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -48038,13 +44024,6 @@ Kubernetes contains information about the reconciliation of the required Kuberne
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesgateway">gateway</a></b></td>
-        <td>object</td>
-        <td>
-          KubernetesGatewayStatus defines the status for the Tenant Control Plane Gateway in the management cluster.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesingress">ingress</a></b></td>
         <td>object</td>
         <td>
@@ -48174,7 +44153,7 @@ newest ReplicaSet.<br/>
           Total number of terminating pods targeted by this deployment. Terminating pods have a non-null
 .metadata.deletionTimestamp and have not yet reached the Failed or Succeeded .status.phase.
 
-This is a beta field and requires enabling DeploymentReplicaSetTerminatingReplicas feature (enabled by default).<br/>
+This is an alpha field. Enable DeploymentReplicaSetTerminatingReplicas to be able to use this field.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -48261,505 +44240,6 @@ DeploymentCondition describes the state of a deployment at a certain point.
         <td>string</td>
         <td>
           The reason for the condition's last transition.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanestatuskubernetesresourcesgateway">`TenantControlPlane.status.kubernetesResources.gateway`</span>
-
-
-KubernetesGatewayStatus defines the status for the Tenant Control Plane Gateway in the management cluster.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesgatewayparentsindex">parents</a></b></td>
-        <td>[]object</td>
-        <td>
-          Parents is a list of parent resources (usually Gateways) that are
-associated with the route, and the status of the route with respect to
-each parent. When this route attaches to a parent, the controller that
-manages the parent must add an entry to this list when the controller
-first sees the route and should update the entry as appropriate when the
-route or gateway is modified.
-
-Note that parent references that cannot be resolved by an implementation
-of this API will not be added to this list. Implementations of this API
-can only populate Route status for the Gateways/parent resources they are
-responsible for.
-
-A maximum of 32 Gateways will be represented in this list. An empty list
-means the route has not been attached to any Gateway.
-
-<gateway:util:excludeFromCRD>
-Notes for implementors:
-
-While parents is not a listType `map`, this is due to the fact that the
-list key is not scalar, and Kubernetes is unable to represent this.
-
-Parent status MUST be considered to be namespaced by the combination of
-the parentRef and controllerName fields, and implementations should keep
-the following rules in mind when updating this status:
-
-* Implementations MUST update only entries that have a matching value of
-  `controllerName` for that implementation.
-* Implementations MUST NOT update entries with non-matching `controllerName`
-  fields.
-* Implementations MUST treat each `parentRef`` in the Route separately and
-  update its status based on the relationship with that parent.
-* Implementations MUST perform a read-modify-write cycle on this field
-  before modifying it. That is, when modifying this field, implementations
-  must be confident they have fetched the most recent version of this field,
-  and ensure that changes they make are on that recent version.
-
-</gateway:util:excludeFromCRD><br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesgatewayaccesspointsindex">accessPoints</a></b></td>
-        <td>[]object</td>
-        <td>
-          A list of valid access points that the route exposes.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesgatewayrouteref">routeRef</a></b></td>
-        <td>object</td>
-        <td>
-          Reference to the route created for this tenant.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanestatuskubernetesresourcesgatewayparentsindex">`TenantControlPlane.status.kubernetesResources.gateway.parents[index]`</span>
-
-
-RouteParentStatus describes the status of a route with respect to an
-associated Parent.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesgatewayparentsindexconditionsindex">conditions</a></b></td>
-        <td>[]object</td>
-        <td>
-          Conditions describes the status of the route with respect to the Gateway.
-Note that the route's availability is also subject to the Gateway's own
-status conditions and listener status.
-
-If the Route's ParentRef specifies an existing Gateway that supports
-Routes of this kind AND that Gateway's controller has sufficient access,
-then that Gateway's controller MUST set the "Accepted" condition on the
-Route, to indicate whether the route has been accepted or rejected by the
-Gateway, and why.
-
-A Route MUST be considered "Accepted" if at least one of the Route's
-rules is implemented by the Gateway.
-
-There are a number of cases where the "Accepted" condition may not be set
-due to lack of controller visibility, that includes when:
-
-* The Route refers to a nonexistent parent.
-* The Route is of a type that the controller does not support.
-* The Route is in a namespace the controller does not have access to.
-
-<gateway:util:excludeFromCRD>
-
-Notes for implementors:
-
-Conditions are a listType `map`, which means that they function like a
-map with a key of the `type` field _in the k8s apiserver_.
-
-This means that implementations must obey some rules when updating this
-section.
-
-* Implementations MUST perform a read-modify-write cycle on this field
-  before modifying it. That is, when modifying this field, implementations
-  must be confident they have fetched the most recent version of this field,
-  and ensure that changes they make are on that recent version.
-* Implementations MUST NOT remove or reorder Conditions that they are not
-  directly responsible for. For example, if an implementation sees a Condition
-  with type `special.io/SomeField`, it MUST NOT remove, change or update that
-  Condition.
-* Implementations MUST always _merge_ changes into Conditions of the same Type,
-  rather than creating more than one Condition of the same Type.
-* Implementations MUST always update the `observedGeneration` field of the
-  Condition to the `metadata.generation` of the Gateway at the time of update creation.
-* If the `observedGeneration` of a Condition is _greater than_ the value the
-  implementation knows about, then it MUST NOT perform the update on that Condition,
-  but must wait for a future reconciliation and status update. (The assumption is that
-  the implementation's copy of the object is stale and an update will be re-triggered
-  if relevant.)
-
-</gateway:util:excludeFromCRD><br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>controllerName</b></td>
-        <td>string</td>
-        <td>
-          ControllerName is a domain/path string that indicates the name of the
-controller that wrote this status. This corresponds with the
-controllerName field on GatewayClass.
-
-Example: "example.net/gateway-controller".
-
-The format of this field is DOMAIN "/" PATH, where DOMAIN and PATH are
-valid Kubernetes names
-(https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names).
-
-Controllers MUST populate this field when writing status. Controllers should ensure that
-entries to status populated with their ControllerName are cleaned up when they are no
-longer necessary.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesgatewayparentsindexparentref">parentRef</a></b></td>
-        <td>object</td>
-        <td>
-          ParentRef corresponds with a ParentRef in the spec that this
-RouteParentStatus struct describes the status of.<br/>
-        </td>
-        <td>true</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanestatuskubernetesresourcesgatewayparentsindexconditionsindex">`TenantControlPlane.status.kubernetesResources.gateway.parents[index].conditions[index]`</span>
-
-
-Condition contains details for one aspect of the current state of this API Resource.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>lastTransitionTime</b></td>
-        <td>string</td>
-        <td>
-          lastTransitionTime is the last time the condition transitioned from one status to another.
-This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
-          <br/>
-            <i>Format</i>: date-time<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>message</b></td>
-        <td>string</td>
-        <td>
-          message is a human readable message indicating details about the transition.
-This may be an empty string.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>reason</b></td>
-        <td>string</td>
-        <td>
-          reason contains a programmatic identifier indicating the reason for the condition's last transition.
-Producers of specific condition types may define expected values and meanings for this field,
-and whether the values are considered a guaranteed API.
-The value should be a CamelCase string.
-This field may not be empty.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>status</b></td>
-        <td>enum</td>
-        <td>
-          status of the condition, one of True, False, Unknown.<br/>
-          <br/>
-            <i>Enum</i>: True, False, Unknown<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>type</b></td>
-        <td>string</td>
-        <td>
-          type of condition in CamelCase or in foo.example.com/CamelCase.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>observedGeneration</b></td>
-        <td>integer</td>
-        <td>
-          observedGeneration represents the .metadata.generation that the condition was set based upon.
-For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-with respect to the current state of the instance.<br/>
-          <br/>
-            <i>Format</i>: int64<br/>
-            <i>Minimum</i>: 0<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanestatuskubernetesresourcesgatewayparentsindexparentref">`TenantControlPlane.status.kubernetesResources.gateway.parents[index].parentRef`</span>
-
-
-ParentRef corresponds with a ParentRef in the spec that this
-RouteParentStatus struct describes the status of.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name is the name of the referent.
-
-Support: Core<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>group</b></td>
-        <td>string</td>
-        <td>
-          Group is the group of the referent.
-When unspecified, "gateway.networking.k8s.io" is inferred.
-To set the core API group (such as for a "Service" kind referent),
-Group must be explicitly set to "" (empty string).
-
-Support: Core<br/>
-          <br/>
-            <i>Default</i>: gateway.networking.k8s.io<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>kind</b></td>
-        <td>string</td>
-        <td>
-          Kind is kind of the referent.
-
-There are two kinds of parent resources with "Core" support:
-
-* Gateway (Gateway conformance profile)
-* Service (Mesh conformance profile, ClusterIP Services only)
-
-Support for other resources is Implementation-Specific.<br/>
-          <br/>
-            <i>Default</i>: Gateway<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>namespace</b></td>
-        <td>string</td>
-        <td>
-          Namespace is the namespace of the referent. When unspecified, this refers
-to the local namespace of the Route.
-
-Note that there are specific rules for ParentRefs which cross namespace
-boundaries. Cross-namespace references are only valid if they are explicitly
-allowed by something in the namespace they are referring to. For example:
-Gateway has the AllowedRoutes field, and ReferenceGrant provides a
-generic way to enable any other kind of cross-namespace reference.
-
-<gateway:experimental:description>
-ParentRefs from a Route to a Service in the same namespace are "producer"
-routes, which apply default routing rules to inbound connections from
-any namespace to the Service.
-
-ParentRefs from a Route to a Service in a different namespace are
-"consumer" routes, and these routing rules are only applied to outbound
-connections originating from the same namespace as the Route, for which
-the intended destination of the connections are a Service targeted as a
-ParentRef of the Route.
-</gateway:experimental:description>
-
-Support: Core<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>port</b></td>
-        <td>integer</td>
-        <td>
-          Port is the network port this Route targets. It can be interpreted
-differently based on the type of parent resource.
-
-When the parent resource is a Gateway, this targets all listeners
-listening on the specified port that also support this kind of Route(and
-select this Route). It's not recommended to set `Port` unless the
-networking behaviors specified in a Route must apply to a specific port
-as opposed to a listener(s) whose port(s) may be changed. When both Port
-and SectionName are specified, the name and port of the selected listener
-must match both specified values.
-
-<gateway:experimental:description>
-When the parent resource is a Service, this targets a specific port in the
-Service spec. When both Port (experimental) and SectionName are specified,
-the name and port of the selected port must match both specified values.
-</gateway:experimental:description>
-
-Implementations MAY choose to support other parent resources.
-Implementations supporting other types of parent resources MUST clearly
-document how/if Port is interpreted.
-
-For the purpose of status, an attachment is considered successful as
-long as the parent resource accepts it partially. For example, Gateway
-listeners can restrict which Routes can attach to them by Route kind,
-namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
-from the referencing Route, the Route MUST be considered successfully
-attached. If no Gateway listeners accept attachment from this Route,
-the Route MUST be considered detached from the Gateway.
-
-Support: Extended<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-            <i>Minimum</i>: 1<br/>
-            <i>Maximum</i>: 65535<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>sectionName</b></td>
-        <td>string</td>
-        <td>
-          SectionName is the name of a section within the target resource. In the
-following resources, SectionName is interpreted as the following:
-
-* Gateway: Listener name. When both Port (experimental) and SectionName
-are specified, the name and port of the selected listener must match
-both specified values.
-* Service: Port name. When both Port (experimental) and SectionName
-are specified, the name and port of the selected listener must match
-both specified values.
-
-Implementations MAY choose to support attaching Routes to other resources.
-If that is the case, they MUST clearly document how SectionName is
-interpreted.
-
-When unspecified (empty string), this will reference the entire resource.
-For the purpose of status, an attachment is considered successful if at
-least one section in the parent resource accepts it. For example, Gateway
-listeners can restrict which Routes can attach to them by Route kind,
-namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
-the referencing Route, the Route MUST be considered successfully
-attached. If no Gateway listeners accept attachment from this Route, the
-Route MUST be considered detached from the Gateway.
-
-Support: Core<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanestatuskubernetesresourcesgatewayaccesspointsindex">`TenantControlPlane.status.kubernetesResources.gateway.accessPoints[index]`</span>
-
-
-
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>port</b></td>
-        <td>integer</td>
-        <td>
-          <br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>type</b></td>
-        <td>string</td>
-        <td>
-          AddressType defines how a network address is represented as a text string.
-This may take two possible forms:
-
-* A predefined CamelCase string identifier (currently limited to `IPAddress` or `Hostname`)
-* A domain-prefixed string identifier (like `acme.io/CustomAddressType`)
-
-Values `IPAddress` and `Hostname` have Extended support.
-
-The `NamedAddress` value has been deprecated in favor of implementation
-specific domain-prefixed strings.
-
-All other values, including domain-prefixed values have Implementation-specific support,
-which are used in implementation-specific behaviors. Support for additional
-predefined CamelCase identifiers may be added in future releases.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>value</b></td>
-        <td>string</td>
-        <td>
-          <br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>urls</b></td>
-        <td>[]string</td>
-        <td>
-          <br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanestatuskubernetesresourcesgatewayrouteref">`TenantControlPlane.status.kubernetesResources.gateway.routeRef`</span>
-
-
-Reference to the route created for this tenant.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name of the referent.
-This field is effectively required, but due to backwards compatibility is
-allowed to be empty. Instances of this type with an empty value here are
-almost certainly wrong.
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
-          <br/>
-            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
