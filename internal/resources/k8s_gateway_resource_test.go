@@ -347,6 +347,38 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			Expect(aps[0].Value).To(Equal("https://tcp.example.com:32132"))
 		})
 
+		It("ignores a non-TLS listener even when explicitly selected via sectionName", func() {
+			section := gatewayv1.SectionName("http-noise")
+			ns := gatewayv1.Namespace(gwNamespace)
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name:        gatewayv1.ObjectName(gwName),
+				Namespace:   &ns,
+				SectionName: &section,
+			})
+
+			aps, err := resources.BuildGatewayAccessPointsStatus(ctx, fakeClient, route, statuses)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(aps).To(BeEmpty())
+		})
+
+		It("ignores a TLS listener whose port disagrees with parentRef.Port", func() {
+			section := gatewayv1.SectionName("kube-apiserver")
+			ns := gatewayv1.Namespace(gwNamespace)
+			mismatch := gatewayv1.PortNumber(9999)
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name:        gatewayv1.ObjectName(gwName),
+				Namespace:   &ns,
+				SectionName: &section,
+				Port:        &mismatch,
+			})
+
+			aps, err := resources.BuildGatewayAccessPointsStatus(ctx, fakeClient, route, statuses)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(aps).To(BeEmpty())
+		})
+
 		It("builds one access point per listener when sectionName is unset", func() {
 			ns := gatewayv1.Namespace(gwNamespace)
 

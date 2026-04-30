@@ -268,6 +268,10 @@ func resolveMatchingListeners(ctx context.Context, c client.Client, ref gatewayv
 			return nil, fmt.Errorf("failed to match listener: %w", err)
 		}
 
+		if !isEligibleListener(listener, ref) {
+			return nil, nil
+		}
+
 		return []gatewayv1.Listener{listener}, nil
 	}
 
