@@ -32,6 +32,7 @@ var _ = BeforeSuite(func() {
 	runtimeScheme = runtime.NewScheme()
 	Expect(scheme.AddToScheme(runtimeScheme)).To(Succeed())
 	Expect(kamajiv1alpha1.AddToScheme(runtimeScheme)).To(Succeed())
+	Expect(gatewayv1.Install(runtimeScheme)).To(Succeed())
 	Expect(gatewayv1alpha2.Install(runtimeScheme)).To(Succeed())
 })
 
@@ -265,6 +266,244 @@ var _ = Describe("KubernetesGatewayResource", func() {
 			listener, err := resources.FindMatchingListener(listeners, ref)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(listener.Port).To(Equal(gatewayv1.PortNumber(80)))
+		})
+	})
+
+	Describe("BuildGatewayAccessPointsStatus", func() {
+		var (
+			gwNamespace = "gateway-system"
+			gwName      = "test-gateway"
+			gateway     *gatewayv1.Gateway
+			route       *gatewayv1alpha2.TLSRoute
+			fakeClient  client.Client
+		)
+
+		// Builds a RouteStatus with a single Accepted parent using the
+		// supplied ParentReference.
+		buildRouteStatus := func(ref gatewayv1.ParentReference) gatewayv1alpha2.RouteStatus {
+			return gatewayv1alpha2.RouteStatus{
+				Parents: []gatewayv1.RouteParentStatus{{
+					ParentRef: ref,
+					Conditions: []metav1.Condition{{
+						Type:               string(gatewayv1.RouteConditionAccepted),
+						Status:             metav1.ConditionTrue,
+						Reason:             "Accepted",
+						LastTransitionTime: metav1.Now(),
+					}},
+				}},
+			}
+		}
+
+		BeforeEach(func() {
+			gateway = &gatewayv1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{Name: gwName, Namespace: gwNamespace},
+				Spec: gatewayv1.GatewaySpec{
+					Listeners: []gatewayv1.Listener{
+						{Name: "kube-apiserver", Port: 31443, Protocol: gatewayv1.TLSProtocolType},
+						{Name: "konnectivity-server", Port: 32132, Protocol: gatewayv1.TLSProtocolType},
+						// Non-TLS listener on the same Gateway: it must not be turned
+						// into a TLSRoute access point.
+						{Name: "http-noise", Port: 8080, Protocol: gatewayv1.HTTPProtocolType},
+					},
+				},
+				Status: gatewayv1.GatewayStatus{
+					Conditions: []metav1.Condition{{
+						Type:               string(gatewayv1.GatewayConditionProgrammed),
+						Status:             metav1.ConditionTrue,
+						Reason:             "Programmed",
+						LastTransitionTime: metav1.Now(),
+					}},
+				},
+			}
+
+			route = &gatewayv1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{Name: "tcp", Namespace: "tenant-ns"},
+				Spec: gatewayv1alpha2.TLSRouteSpec{
+					Hostnames: []gatewayv1.Hostname{"tcp.example.com"},
+				},
+			}
+
+			fakeClient = fake.NewClientBuilder().
+				WithScheme(runtimeScheme).
+				WithObjects(gateway).
+				WithIndex(&gatewayv1.Gateway{}, kamajiv1alpha1.GatewayListenerNameKey, (&kamajiv1alpha1.GatewayListener{}).ExtractValue()).
+				Build()
+		})
+
+		It("builds a single access point when the parentRef specifies a sectionName", func() {
+			section := gatewayv1.SectionName("konnectivity-server")
+			ns := gatewayv1.Namespace(gwNamespace)
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name:        gatewayv1.ObjectName(gwName),
+				Namespace:   &ns,
+				SectionName: &section,
+			})
+
+			aps, err := resources.BuildGatewayAccessPointsStatus(ctx, fakeClient, route, statuses)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(aps).To(HaveLen(1))
+			Expect(aps[0].Port).To(Equal(gatewayv1.PortNumber(32132)))
+			Expect(aps[0].Value).To(Equal("https://tcp.example.com:32132"))
+		})
+
+		It("ignores a non-TLS listener even when explicitly selected via sectionName", func() {
+			section := gatewayv1.SectionName("http-noise")
+			ns := gatewayv1.Namespace(gwNamespace)
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name:        gatewayv1.ObjectName(gwName),
+				Namespace:   &ns,
+				SectionName: &section,
+			})
+
+			aps, err := resources.BuildGatewayAccessPointsStatus(ctx, fakeClient, route, statuses)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(aps).To(BeEmpty())
+		})
+
+		It("ignores a TLS listener whose port disagrees with parentRef.Port", func() {
+			section := gatewayv1.SectionName("kube-apiserver")
+			ns := gatewayv1.Namespace(gwNamespace)
+			mismatch := gatewayv1.PortNumber(9999)
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name:        gatewayv1.ObjectName(gwName),
+				Namespace:   &ns,
+				SectionName: &section,
+				Port:        &mismatch,
+			})
+
+			aps, err := resources.BuildGatewayAccessPointsStatus(ctx, fakeClient, route, statuses)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(aps).To(BeEmpty())
+		})
+
+		It("builds one access point per listener when sectionName is unset", func() {
+			ns := gatewayv1.Namespace(gwNamespace)
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name:      gatewayv1.ObjectName(gwName),
+				Namespace: &ns,
+			})
+
+			aps, err := resources.BuildGatewayAccessPointsStatus(ctx, fakeClient, route, statuses)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(aps).To(HaveLen(2))
+			ports := []gatewayv1.PortNumber{aps[0].Port, aps[1].Port}
+			Expect(ports).To(ConsistOf(gatewayv1.PortNumber(31443), gatewayv1.PortNumber(32132)))
+		})
+
+		It("filters listeners by port when sectionName is unset but port is specified", func() {
+			ns := gatewayv1.Namespace(gwNamespace)
+			port := gatewayv1.PortNumber(31443)
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name:      gatewayv1.ObjectName(gwName),
+				Namespace: &ns,
+				Port:      &port,
+			})
+
+			aps, err := resources.BuildGatewayAccessPointsStatus(ctx, fakeClient, route, statuses)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(aps).To(HaveLen(1))
+			Expect(aps[0].Port).To(Equal(port))
+		})
+
+		It("defaults the parent namespace to the route namespace when unset", func() {
+			// Gateway is in the route's namespace so the nil-namespace default kicks in.
+			colocated := gateway.DeepCopy()
+			colocated.Namespace = route.Namespace
+
+			c := fake.NewClientBuilder().
+				WithScheme(runtimeScheme).
+				WithObjects(colocated).
+				WithIndex(&gatewayv1.Gateway{}, kamajiv1alpha1.GatewayListenerNameKey, (&kamajiv1alpha1.GatewayListener{}).ExtractValue()).
+				Build()
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name: gatewayv1.ObjectName(gwName),
+			})
+
+			aps, err := resources.BuildGatewayAccessPointsStatus(ctx, c, route, statuses)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(aps).To(HaveLen(2))
+		})
+
+		It("skips silently when the referenced Gateway is missing", func() {
+			ns := gatewayv1.Namespace("does-not-exist")
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name:      gatewayv1.ObjectName("ghost-gateway"),
+				Namespace: &ns,
+			})
+
+			aps, err := resources.BuildGatewayAccessPointsStatus(ctx, fakeClient, route, statuses)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(aps).To(BeEmpty())
+		})
+
+		It("skips Gateways that are not Programmed", func() {
+			notProgrammed := gateway.DeepCopy()
+			notProgrammed.Status.Conditions = nil
+
+			c := fake.NewClientBuilder().
+				WithScheme(runtimeScheme).
+				WithObjects(notProgrammed).
+				WithIndex(&gatewayv1.Gateway{}, kamajiv1alpha1.GatewayListenerNameKey, (&kamajiv1alpha1.GatewayListener{}).ExtractValue()).
+				Build()
+
+			ns := gatewayv1.Namespace(gwNamespace)
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name:      gatewayv1.ObjectName(gwName),
+				Namespace: &ns,
+			})
+
+			aps, err := resources.BuildGatewayAccessPointsStatus(ctx, c, route, statuses)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(aps).To(BeEmpty())
+		})
+
+		It("ignores non-TLS listeners when sectionName is unset", func() {
+			ns := gatewayv1.Namespace(gwNamespace)
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name:      gatewayv1.ObjectName(gwName),
+				Namespace: &ns,
+			})
+
+			aps, err := resources.BuildGatewayAccessPointsStatus(ctx, fakeClient, route, statuses)
+			Expect(err).NotTo(HaveOccurred())
+			// Only the two TLS listeners may produce https:// access points.
+			Expect(aps).To(HaveLen(2))
+			ports := []gatewayv1.PortNumber{aps[0].Port, aps[1].Port}
+			Expect(ports).To(ConsistOf(gatewayv1.PortNumber(31443), gatewayv1.PortNumber(32132)))
+			Expect(ports).NotTo(ContainElement(gatewayv1.PortNumber(8080)))
+		})
+
+		It("propagates indexer failures from the sectionName fast path", func() {
+			// Fault-injection; build a client *without* the listener-name, i.e.
+			// WithIndex(&gatewayv1.Gateway{}, GatewayListenerNameKey, …).
+			// An error is expected to be propagated
+			c := fake.NewClientBuilder().
+				WithScheme(runtimeScheme).
+				WithObjects(gateway).
+				Build()
+
+			section := gatewayv1.SectionName("konnectivity-server")
+			ns := gatewayv1.Namespace(gwNamespace)
+
+			statuses := buildRouteStatus(gatewayv1.ParentReference{
+				Name:        gatewayv1.ObjectName(gwName),
+				Namespace:   &ns,
+				SectionName: &section,
+			})
+
+			_, err := resources.BuildGatewayAccessPointsStatus(ctx, c, route, statuses)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("could not resolve gateway listeners for parentRef"))
+			Expect(err.Error()).To(ContainSubstring("failed to fetch gateway for listener"))
 		})
 	})
 })
