@@ -7375,6 +7375,12 @@ versions:
                             - targetPort
                           type: object
                         type: array
+                      publicAPIServerAddress:
+                        description: |-
+                          PublicAPIServerAddress allows specifying a custom hostname for the API server.
+                          If set, this address will be used in cluster-info ConfigMaps and kubeconfigs
+                          instead of the LoadBalancer IP, enabling the use of DNS names that match certificate SANs.
+                        type: string
                       serviceType:
                         description: ServiceType allows specifying how to expose the Tenant Control Plane.
                         enum:
