@@ -246,9 +246,20 @@ kubeScheduler:
 
 ## Grafana
 
-**Grafana** is a widely used tool for visualizing metrics. You can create custom dashboards for Tenant Control Planes and visualize the metrics scraped by Prometheus. The Prometheus Operator Helm Chart also installs Grafana with a set of predefined dashboards for Kubernetes Control Plane components: `kube-apiserver`, `kube-scheduler`, and `kube-controller-manager`. These dashboards can serve as a starting point for creating custom dashboards for Tenant Control Planes or can be used as-is.
+**Grafana** is a widely used tool for visualizing metrics. You can create custom dashboards for Tenant Control Planes and visualize the metrics scraped by Prometheus. When using `kube-prometheus-stack`, Grafana can also be installed with a set of predefined dashboards for Kubernetes Control Plane components: `kube-apiserver`, `kube-scheduler`, and `kube-controller-manager`. These dashboards can serve as a starting point for creating custom dashboards for Tenant Control Planes or can be used as-is, provided that the scraped metrics use the labels expected by those dashboards.
 
 !!! tip "Multi-Cluster Mode"
-    In Grafana, enable the "Multi-Cluster Mode" option for improved visualization of metrics. This option is available in the Grafana settings.
+    When using the predefined `kube-prometheus-stack` dashboards to visualize multiple Tenant Control Planes, enable the multi-cluster dashboard mode in the chart values:
+
+    ```yaml
+    grafana:
+      sidecar:
+        dashboards:
+          multicluster:
+            global:
+              enabled: true
+    ```
+
+    This exposes the `cluster` variable in the dashboards. Each Tenant Control Plane `ServiceMonitor` should relabel scraped metrics with a unique `cluster` value, for example the Tenant Control Plane name, and with the standard Control Plane `job` labels expected by the dashboards: `apiserver`, `kube-scheduler`, and `kube-controller-manager`.
 
 That's it!
