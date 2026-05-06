@@ -122,6 +122,7 @@ Here the values you can override:
 | telemetry | object | `{"disabled":false}` | Disable the analytics traces collection |
 | temporaryDirectoryPath | string | `"/tmp/kamaji"` | Directory which will be used to work with temporary files. (default "/tmp/kamaji") |
 | tolerations | list | `[]` | Kubernetes node taints that the Kamaji controller pods would tolerate |
+| watchNamespaces | list | `[]` | Optional list of namespaces the operator restricts its watch to. When empty (default) Kamaji watches every namespace. Cluster-scoped resources (DataStore, ClusterRole, ...) are never affected, and the release namespace is always watched implicitly to keep the migration Job lifecycle working. |
 
 ## Installing and managing etcd as DataStore
 

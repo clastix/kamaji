@@ -98,6 +98,13 @@ loggingDevel:
 # -- If specified, all the Kamaji instances with an unassigned DataStore will inherit this default value.
 defaultDatastoreName: default
 
+# -- Optional list of namespaces the operator restricts its watch to.
+# When empty (default) Kamaji watches every namespace.
+# Cluster-scoped resources (DataStore, ClusterRole, ...) are never affected,
+# and the release namespace is always watched implicitly to keep the migration
+# Job lifecycle working.
+watchNamespaces: []
+
 # -- Subchart: See https://github.com/clastix/kamaji-etcd/blob/master/charts/kamaji-etcd/values.yaml
 kamaji-etcd:
   deploy: true

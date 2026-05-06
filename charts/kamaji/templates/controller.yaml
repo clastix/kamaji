@@ -32,6 +32,9 @@ spec:
         {{- if not (eq .Values.defaultDatastoreName "") }}
         - --datastore={{ .Values.defaultDatastoreName }}
         {{- end }}
+        {{- with .Values.watchNamespaces }}
+        - --watch-namespaces={{ join "," . }}
+        {{- end }}
         {{- if .Values.telemetry.disabled }}
         - --disable-telemetry
         {{- end }}
