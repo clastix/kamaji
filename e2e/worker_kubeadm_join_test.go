@@ -140,6 +140,11 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 
 		By("enabling br_netfilter", func() {
 			exitCode, stdout, err := workerContainer.Exec(ctx, []string{"modprobe", "br_netfilter"})
+			if err != nil {
+				_, _ = fmt.Fprintln(GinkgoWriter, "modprobe error: "+err.Error())
+
+				return
+			}
 
 			out, _ := io.ReadAll(stdout)
 			if len(out) > 0 {
@@ -149,14 +154,15 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 			if exitCode != 0 {
 				_, _ = fmt.Fprintln(GinkgoWriter, "modprobe exit code: "+strconv.FormatUint(uint64(exitCode), 10))
 			}
-
-			if err != nil {
-				_, _ = fmt.Fprintln(GinkgoWriter, "modprobe error: "+err.Error())
-			}
 		})
 
 		By("disabling swap", func() {
 			exitCode, stdout, err := workerContainer.Exec(ctx, []string{"swapoff", "-a"})
+			if err != nil {
+				_, _ = fmt.Fprintln(GinkgoWriter, "swapoff error: "+err.Error())
+
+				return
+			}
 
 			out, _ := io.ReadAll(stdout)
 			if len(out) > 0 {
@@ -166,16 +172,13 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 			if exitCode != 0 {
 				_, _ = fmt.Fprintln(GinkgoWriter, "swapoff exit code: "+strconv.FormatUint(uint64(exitCode), 10))
 			}
-
-			if err != nil {
-				_, _ = fmt.Fprintln(GinkgoWriter, "swapoff error: "+err.Error())
-			}
 		})
 
 		By("executing the command in the worker node", func() {
 			cmds := append(strings.Split(strings.TrimSpace(joinCommandBuffer.String()), " "), "--ignore-preflight-errors=SystemVerification,FileExisting")
 
 			exitCode, stdout, err := workerContainer.Exec(ctx, cmds)
+			Expect(err).ToNot(HaveOccurred())
 
 			out, _ := io.ReadAll(stdout)
 			if len(out) > 0 {
@@ -183,7 +186,6 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 			}
 
 			Expect(exitCode).To(Equal(0))
-			Expect(err).ToNot(HaveOccurred())
 		})
 
 		By("waiting for nodes", func() {
