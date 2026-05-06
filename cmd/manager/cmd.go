@@ -17,10 +17,8 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -33,6 +31,7 @@ import (
 	"github.com/clastix/kamaji/controllers/soot"
 	"github.com/clastix/kamaji/internal"
 	"github.com/clastix/kamaji/internal/builders/controlplane"
+	kamajimanager "github.com/clastix/kamaji/internal/manager"
 	"github.com/clastix/kamaji/internal/metrics"
 	"github.com/clastix/kamaji/internal/utilities"
 	"github.com/clastix/kamaji/internal/webhook"
@@ -60,6 +59,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		maxConcurrentReconciles       int
 		disableTelemetry              bool
 		certificateExpirationDeadline time.Duration
+		watchNamespaces               []string
 
 		webhookCAPath string
 	)
@@ -90,6 +90,11 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return fmt.Errorf("the controller reconcile timeout must be greater than zero")
 			}
 
+			err = kamajimanager.ValidateNamespaces(watchNamespaces)
+			if err != nil {
+				return err
+			}
+
 			return nil
 		},
 		RunE: func(*cobra.Command, []string) error {
@@ -109,6 +114,16 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				telemetryClient = telemetryclient.NewNewOp()
 			}
 
+			// When namespace scoping is requested, the operator's install namespace
+			// must remain in the watch set: TenantControlPlane migration Jobs are
+			// created and watched there (see TenantControlPlaneReconciler.Watches
+			// on batchv1.Job, predicated by KamajiNamespace).
+			cachedNamespaces := kamajimanager.MergeWatchedNamespaces(watchNamespaces, managerNamespace)
+
+			if len(cachedNamespaces) > 0 {
+				setupLog.Info("restricting cache to namespaces", "namespaces", cachedNamespaces)
+			}
+
 			ctrlOpts := ctrl.Options{
 				Scheme: scheme,
 				Metrics: metricsserver.Options{
@@ -121,11 +136,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				LeaderElection:          leaderElect,
 				LeaderElectionNamespace: managerNamespace,
 				LeaderElectionID:        "kamaji.clastix.io",
-				NewCache: func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
-					opts.SyncPeriod = &cacheResyncPeriod
-
-					return cache.New(config, opts)
-				},
+				NewCache:                kamajimanager.NewCacheFunc(cacheResyncPeriod, cachedNamespaces),
 			}
 
 			mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrlOpts)
@@ -336,6 +347,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	cmd.Flags().DurationVar(&cacheResyncPeriod, "cache-resync-period", 10*time.Hour, "The controller-runtime.Manager cache resync period.")
 	cmd.Flags().BoolVar(&disableTelemetry, "disable-telemetry", false, "Disable the analytics traces collection.")
 	cmd.Flags().DurationVar(&certificateExpirationDeadline, "certificate-expiration-deadline", 24*time.Hour, "Define the deadline upon certificate expiration to start the renewal process, cannot be less than a 24 hours.")
+	cmd.Flags().StringSliceVar(&watchNamespaces, "watch-namespaces", nil, "Optional, comma-separated list of namespaces the operator should watch for TenantControlPlane (and dependent) resources. When empty Kamaji watches every namespace. Cluster-scoped resources are never affected by this flag, and the operator's own install namespace is always watched implicitly.")
 
 	cobra.OnInitialize(func() {
 		viper.AutomaticEnv()
