@@ -38,7 +38,7 @@ require (
 	k8s.io/kubelet v0.0.0
 	k8s.io/kubernetes v1.36.0
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
-	sigs.k8s.io/controller-runtime v0.24.0
+	sigs.k8s.io/controller-runtime v0.24.1
 	sigs.k8s.io/gateway-api v1.4.1
 )
 
