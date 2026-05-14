@@ -21,6 +21,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/constants"
+	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -115,17 +116,18 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 		isRotationRequested := utilities.IsRotationRequested(r.resource)
 
-		checksum := tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum
-		if len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) && !isRotationRequested {
-			return nil
-		}
-
 		caNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
 		secretCA := &corev1.Secret{}
 		if err := r.Client.Get(ctx, caNamespacedName, secretCA); err != nil {
 			logger.Error(err, "cannot retrieve the CA secret")
 
 			return err
+		}
+
+		checksum := tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum
+		if len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) && !isRotationRequested &&
+			kubeadm.IsKubeconfigCAValid(r.resource.Data[konnectivityKubeconfigFileName], secretCA.Data[kubeadmconstants.CACertName]) {
+			return nil
 		}
 
 		certificateNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Addons.Konnectivity.Certificate.SecretName}
