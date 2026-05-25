@@ -82,7 +82,7 @@ Here the values you can override:
 | image.repository | string | `"clastix/kamaji"` | The container image of the Kamaji controller. |
 | image.tag | string | `nil` | Overrides the image tag whose default is the chart appVersion. |
 | imagePullSecrets | list | `[]` |  |
-| kamaji-etcd | object | `{"clusterDomain":"cluster.local","datastore":{"enabled":true,"name":"default"},"deploy":true,"fullnameOverride":"kamaji-etcd"}` | Subchart: See https://github.com/clastix/kamaji-etcd/blob/master/charts/kamaji-etcd/values.yaml |
+| kamaji-etcd | object | `{"certManager":{"enabled":true,"issuerRef":{"group":"cert-manager.io","kind":"Issuer","name":"kamaji-selfsigned-issuer"}},"clusterDomain":"cluster.local","datastore":{"enabled":true,"name":"default"},"deploy":true,"fullnameOverride":"kamaji-etcd","selfSignedCertificates":{"enabled":false}}` | Subchart: See https://github.com/clastix/kamaji-etcd/blob/master/charts/kamaji-etcd/values.yaml |
 | kubeconfigGenerator.affinity | object | `{}` | Kubernetes affinity rules to apply to Kubeconfig Generator controller pods |
 | kubeconfigGenerator.enableLeaderElect | bool | `true` | Enables the leader election. |
 | kubeconfigGenerator.enabled | bool | `false` | Toggle to deploy the Kubeconfig Generator Deployment. |
