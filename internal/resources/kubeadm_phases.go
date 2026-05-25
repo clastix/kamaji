@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
 	bootstrapapi "k8s.io/cluster-bootstrap/token/api"
+	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/kubeconfig"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -202,8 +203,13 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 				_ = os.WriteFile(fmt.Sprintf("%s/%s", tmp, i), kubeconfigValue, os.ModePerm)
 			}
 
-			if _, err = kubeconfig.EnsureAdminClusterRoleBinding(tmp, func(_ context.Context, _ clientset.Interface, _ clientset.Interface, duration time.Duration, duration2 time.Duration) (clientset.Interface, error) {
-				return kubeconfig.EnsureAdminClusterRoleBindingImpl(ctx, c, c, duration, duration2)
+			localAPIEndpoint := kubeadmapi.APIEndpoint{
+				AdvertiseAddress: fmt.Sprintf("%s.%s.svc", tcp.Name, tcp.Namespace),
+				BindPort:         tcp.Spec.NetworkProfile.Port,
+			}
+
+			if _, err = kubeconfig.EnsureAdminClusterRoleBinding(tmp, &localAPIEndpoint, func(_ context.Context, _ clientset.Interface, _ clientset.Interface, retryInterval time.Duration, retryTimeout time.Duration) (clientset.Interface, error) {
+				return kubeconfig.EnsureAdminClusterRoleBindingImpl(ctx, c, c, retryInterval, retryTimeout)
 			}); err != nil {
 				return nil, err
 			}
