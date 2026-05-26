@@ -287,6 +287,21 @@ func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
 				enqueueFn(deleteEvent.Object.(*kamajiv1alpha1.TenantControlPlane), w)
 			},
 		}).
+		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object client.Object) []reconcile.Request {
+			var dsList kamajiv1alpha1.DataStoreList
+			if err := r.Client.List(ctx, &dsList, client.MatchingFieldsSelector{Selector: fields.OneTermEqualSelector(kamajiv1alpha1.DatastoreUsedSecretNamespacedNameKey, fmt.Sprintf("%s/%s", object.GetNamespace(), object.GetName()))}); err != nil {
+				return nil
+			}
+
+			requests := make([]reconcile.Request, 0, len(dsList.Items))
+			for _, ds := range dsList.Items {
+				requests = append(requests, reconcile.Request{NamespacedName: k8stypes.NamespacedName{
+					Name: ds.Name,
+				}})
+			}
+
+			return requests
+		})).
 		Complete(r)
 }
 
