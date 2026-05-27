@@ -5,6 +5,7 @@ package controlplane
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/blang/semver"
 	appsv1 "k8s.io/api/apps/v1"
@@ -168,13 +169,22 @@ func (k Konnectivity) RemovingVolumes(podSpec *corev1.PodSpec) {
 }
 
 func (k Konnectivity) RemovingKubeAPIServerContainerArg(podSpec *corev1.PodSpec) {
-	if found, index := utilities.HasNamedContainer(podSpec.Containers, apiServerContainerName); found {
-		argsMap := utilities.ArgsFromSliceToMap(podSpec.Containers[index].Args)
-
-		if utilities.ArgsRemoveFlag(argsMap, "--egress-selector-config-file") {
-			podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(argsMap)
-		}
+	found, index := utilities.HasNamedContainer(podSpec.Containers, apiServerContainerName)
+	if !found {
+		return
 	}
+	//nolint:prealloc
+	var parsedArgs []string
+
+	for _, v := range podSpec.Containers[index].Args {
+		if strings.HasPrefix(v, "--egress-selector-config-file") || strings.HasPrefix(v, "--egress-selector-config-file=") {
+			continue
+		}
+
+		parsedArgs = append(parsedArgs, v)
+	}
+
+	podSpec.Containers[index].Args = parsedArgs
 }
 
 func (k Konnectivity) RemovingContainer(podSpec *corev1.PodSpec) {
@@ -193,12 +203,28 @@ func (k Konnectivity) buildVolumeMounts(podSpec *corev1.PodSpec) {
 	if !found {
 		return
 	}
-	// Adding the egress selector config file flag
-	args := utilities.ArgsFromSliceToMap(podSpec.Containers[index].Args)
+	// Adding the egress selector config file flag:
+	// we can't rely on maps since not preserving order of arguments,
+	// api-server has sensitive parameters.
+	egressConfigFlag := fmt.Sprintf("--egress-selector-config-file=%s", konnectivityEgressSelectorConfigurationPath)
 
-	utilities.ArgsAddFlagValue(args, "--egress-selector-config-file", konnectivityEgressSelectorConfigurationPath)
+	var foundFlag bool
 
-	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
+	for i, v := range podSpec.Containers[index].Args {
+		if !strings.HasPrefix(v, "--egress-selector-config-file") {
+			continue
+		}
+
+		if v != egressConfigFlag {
+			podSpec.Containers[index].Args[i] = egressConfigFlag
+		}
+
+		foundFlag = true
+	}
+
+	if !foundFlag {
+		podSpec.Containers[index].Args = append(podSpec.Containers[index].Args, egressConfigFlag)
+	}
 
 	vFound, vIndex := false, 0 //nolint:wastedassign
 	// Patching the volume mounts

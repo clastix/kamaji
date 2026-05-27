@@ -39,23 +39,3 @@ func ArgsFromMapToSlice(args map[string]string) (slice []string) {
 
 	return slice
 }
-
-// ArgsRemoveFlag removes a flag from the arguments map, returning true if found and removed.
-func ArgsRemoveFlag(args map[string]string, flag string) bool {
-	if _, found := args[flag]; found {
-		delete(args, flag)
-
-		return true
-	}
-
-	return false
-}
-
-// ArgsAddFlagValue performs upsert of a flag in the arguments map, returning true if created.
-func ArgsAddFlagValue(args map[string]string, flag, value string) bool {
-	_, ok := args[flag]
-
-	args[flag] = value
-
-	return !ok
-}
