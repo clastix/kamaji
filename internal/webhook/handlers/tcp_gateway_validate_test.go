@@ -109,7 +109,7 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 						{Name: "gateway.networking.k8s.io"},
 					},
 				}
-				mockDiscovery.serverResources["gateway.networking.k8s.io/v1alpha2"] = &metav1.APIResourceList{
+				mockDiscovery.serverResources["gateway.networking.k8s.io/v1"] = &metav1.APIResourceList{
 					APIResources: []metav1.APIResource{
 						{Kind: "TLSRoute"},
 					},
@@ -156,7 +156,7 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 						{Name: "gateway.networking.k8s.io"},
 					},
 				}
-				mockDiscovery.serverResources["gateway.networking.k8s.io/v1alpha2"] = &metav1.APIResourceList{
+				mockDiscovery.serverResources["gateway.networking.k8s.io/v1"] = &metav1.APIResourceList{
 					APIResources: []metav1.APIResource{
 						{Kind: "Gateway"},
 						{Kind: "HTTPRoute"},
@@ -218,36 +218,6 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 			admissionResponse := handler.OnDelete(tcp)
 			_, err := admissionResponse(ctx, admission.Request{})
 			Expect(err).ToNot(HaveOccurred())
-		})
-	})
-
-	Context("with different Gateway API versions", func() {
-		BeforeEach(func() {
-			tcp.Spec.ControlPlane.Gateway = &kamajiv1alpha1.GatewaySpec{
-				Hostname: gatewayv1.Hostname("api.example.com"),
-			}
-			mockDiscovery.serverGroups = &metav1.APIGroupList{
-				Groups: []metav1.APIGroup{
-					{Name: "gateway.networking.k8s.io"},
-				},
-			}
-		})
-
-		It("should work with v1alpha2 TLSRoute", func() {
-			mockDiscovery.serverResources["gateway.networking.k8s.io/v1alpha2"] = &metav1.APIResourceList{
-				APIResources: []metav1.APIResource{
-					{Kind: "TLSRoute"},
-				},
-			}
-
-			_, err := handler.OnCreate(tcp)(ctx, admission.Request{})
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should handle missing version gracefully", func() {
-			_, err := handler.OnCreate(tcp)(ctx, admission.Request{})
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("TLSRoute resource is not available"))
 		})
 	})
 })

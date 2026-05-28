@@ -14,14 +14,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type KubernetesGatewayResource struct {
-	resource *gatewayv1alpha2.TLSRoute
+	resource *gatewayv1.TLSRoute
 	Client   client.Client
 }
 
@@ -126,7 +125,7 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 }
 
 func (r *KubernetesGatewayResource) Define(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error {
-	r.resource = &gatewayv1alpha2.TLSRoute{
+	r.resource = &gatewayv1.TLSRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      tcp.GetName(),
 			Namespace: tcp.GetNamespace(),
@@ -154,17 +153,17 @@ func (r *KubernetesGatewayResource) mutate(tcp *kamajiv1alpha1.TenantControlPlan
 			r.resource.Spec.ParentRefs = tcp.Spec.ControlPlane.Gateway.GatewayParentRefs
 		}
 
-		serviceName := gatewayv1alpha2.ObjectName(tcp.Status.Kubernetes.Service.Name)
+		serviceName := gatewayv1.ObjectName(tcp.Status.Kubernetes.Service.Name)
 		servicePort := tcp.Status.Kubernetes.Service.Port
 
 		if serviceName == "" || servicePort == 0 {
 			return fmt.Errorf("service not ready, cannot create TLSRoute")
 		}
 
-		rule := gatewayv1alpha2.TLSRouteRule{
-			BackendRefs: []gatewayv1alpha2.BackendRef{
+		rule := gatewayv1.TLSRouteRule{
+			BackendRefs: []gatewayv1.BackendRef{
 				{
-					BackendObjectReference: gatewayv1alpha2.BackendObjectReference{
+					BackendObjectReference: gatewayv1.BackendObjectReference{
 						Name: serviceName,
 						Port: &servicePort,
 					},
@@ -173,7 +172,7 @@ func (r *KubernetesGatewayResource) mutate(tcp *kamajiv1alpha1.TenantControlPlan
 		}
 
 		r.resource.Spec.Hostnames = []gatewayv1.Hostname{tcp.Spec.ControlPlane.Gateway.Hostname}
-		r.resource.Spec.Rules = []gatewayv1alpha2.TLSRouteRule{rule}
+		r.resource.Spec.Rules = []gatewayv1.TLSRouteRule{rule}
 
 		return controllerutil.SetControllerReference(tcp, r.resource, r.Client.Scheme())
 	}
