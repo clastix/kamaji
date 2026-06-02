@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"path"
 	"sort"
-	"strconv"
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -1217,24 +1216,21 @@ func (d Deployment) resetKubeAPIServerFlags(resource *appsv1.Deployment, tcp kam
 	if resource.GetAnnotations() == nil {
 		resource.SetAnnotations(map[string]string{})
 	}
-	// retrieving the current amount of extra flags, used as a sort of hash:
+	// retrieving the previous hash for the apiserver args:
 	// in case of non-matching values, removing all the args in order to perform a full reconciliation from a clean start.
-	var count int
-
-	if v, ok := resource.GetAnnotations()[apiServerFlagsAnnotation]; ok {
-		var err error
-
-		if count, err = strconv.Atoi(v); err != nil {
-			return
-		}
+	previousHash := resource.GetAnnotations()[apiServerFlagsAnnotation]
+	currentHash, err := utilities.CalculateStringSliceChecksum(tcp.Spec.ControlPlane.Deployment.ExtraArgs.APIServer)
+	if err != nil {
+		return
 	}
-	// there's a mismatch in the count from the previous hash: let's reset and store the desired extra args count.
-	if count != len(tcp.Spec.ControlPlane.Deployment.ExtraArgs.APIServer) {
+
+	// there's a mismatch between current and previous hash: let's reset and store the new hash.
+	if previousHash != currentHash {
 		_, index := utilities.HasNamedContainer(resource.Spec.Template.Spec.Containers, apiServerContainerName)
 		resource.Spec.Template.Spec.Containers[index].Args = []string{}
 	}
 
-	resource.GetAnnotations()[apiServerFlagsAnnotation] = fmt.Sprintf("%d", len(tcp.Spec.ControlPlane.Deployment.ExtraArgs.APIServer))
+	resource.GetAnnotations()[apiServerFlagsAnnotation] = currentHash
 }
 
 func (d Deployment) setNodeSelector(spec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
