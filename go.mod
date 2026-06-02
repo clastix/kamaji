@@ -8,7 +8,7 @@ require (
 	github.com/clastix/kamaji-telemetry v1.0.0
 	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/go-logr/logr v1.4.3
-	github.com/go-pg/pg/v10 v10.15.0
+	github.com/go-pg/pg/v10 v10.15.1
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
