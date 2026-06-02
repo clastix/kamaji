@@ -36,6 +36,25 @@ func SetObjectChecksum(obj client.Object, data any) {
 	obj.SetAnnotations(annotations)
 }
 
+// CalculateStringSliceChecksum calculates a checksum of slice, calculating the overall md5 of each values.
+// It takes order into account, as in :
+//
+//	CalculateStringSliceChecksum([a, b]) != CalculateStringSliceChecksum([b, a]) // (if a != b)
+func CalculateStringSliceChecksum(data []string) (string, error) {
+	h := md5.New()
+	for _, s := range data {
+		if _, err := h.Write([]byte(s)); err != nil {
+			return "", err
+		}
+		// Add separator to avoid collisions (e.g., ["ab", "c"] vs ["a", "bc"])
+		if _, err := h.Write([]byte{0}); err != nil {
+			return "", err
+		}
+	}
+
+	return hex.EncodeToString(h.Sum([]byte{})), nil
+}
+
 // CalculateMapChecksum orders the map according to its key, and calculating the overall md5 of the values.
 // It's expected to work with ConfigMap (map[string]string) and Secrets (map[string][]byte).
 func CalculateMapChecksum(data any) string {
