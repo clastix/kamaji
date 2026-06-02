@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	pointer "k8s.io/utils/ptr"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
@@ -94,7 +93,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 
 	It("Should create control plane TLSRoute preserving user-provided parentRef fields", func() {
 		Eventually(func() error {
-			route := &gatewayv1alpha2.TLSRoute{}
+			route := &gatewayv1.TLSRoute{}
 			// TODO: Check ownership.
 			if err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name,
@@ -125,7 +124,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 	It("Should not create Konnectivity TLSRoute", func() {
 		// Verify Konnectivity route is not created
 		Consistently(func() error {
-			route := &gatewayv1alpha2.TLSRoute{}
+			route := &gatewayv1.TLSRoute{}
 
 			return k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name + "-konnectivity",

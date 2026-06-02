@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	pointer "k8s.io/utils/ptr"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
@@ -100,7 +99,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API and Konnectivity"
 
 	It("Should create control plane TLSRoute preserving user-provided parentRef fields", func() {
 		Eventually(func() error {
-			route := &gatewayv1alpha2.TLSRoute{}
+			route := &gatewayv1.TLSRoute{}
 			if err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name,
 				Namespace: tcp.Namespace,
@@ -129,7 +128,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API and Konnectivity"
 
 	It("Should create Konnectivity TLSRoute with correct sectionName", func() {
 		Eventually(func() error {
-			route := &gatewayv1alpha2.TLSRoute{}
+			route := &gatewayv1.TLSRoute{}
 			if err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name + "-konnectivity",
 				Namespace: tcp.Namespace,
@@ -152,7 +151,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API and Konnectivity"
 
 	It("Should use same hostname for both TLSRoutes", func() {
 		Eventually(func() error {
-			controlPlaneRoute := &gatewayv1alpha2.TLSRoute{}
+			controlPlaneRoute := &gatewayv1.TLSRoute{}
 			if err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name,
 				Namespace: tcp.Namespace,
@@ -160,7 +159,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API and Konnectivity"
 				return err
 			}
 
-			konnectivityRoute := &gatewayv1alpha2.TLSRoute{}
+			konnectivityRoute := &gatewayv1.TLSRoute{}
 			if err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name + "-konnectivity",
 				Namespace: tcp.Namespace,

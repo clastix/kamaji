@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/resources"
@@ -22,7 +21,7 @@ import (
 )
 
 type KubernetesKonnectivityGatewayResource struct {
-	resource *gatewayv1alpha2.TLSRoute
+	resource *gatewayv1.TLSRoute
 	Client   client.Client
 }
 
@@ -136,7 +135,7 @@ func (r *KubernetesKonnectivityGatewayResource) UpdateTenantControlPlaneStatus(c
 }
 
 func (r *KubernetesKonnectivityGatewayResource) Define(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) error {
-	r.resource = &gatewayv1alpha2.TLSRoute{
+	r.resource = &gatewayv1.TLSRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-konnectivity", tcp.GetName()),
 			Namespace: tcp.GetNamespace(),
@@ -171,7 +170,7 @@ func (r *KubernetesKonnectivityGatewayResource) mutate(tcp *kamajiv1alpha1.Tenan
 			return fmt.Errorf("control plane gateway hostname is not set")
 		}
 
-		serviceName := gatewayv1alpha2.ObjectName(tcp.Status.Addons.Konnectivity.Service.Name)
+		serviceName := gatewayv1.ObjectName(tcp.Status.Addons.Konnectivity.Service.Name)
 		servicePort := tcp.Status.Addons.Konnectivity.Service.Port
 
 		if serviceName == "" || servicePort == 0 {
@@ -184,10 +183,10 @@ func (r *KubernetesKonnectivityGatewayResource) mutate(tcp *kamajiv1alpha1.Tenan
 		}
 		r.resource.Spec.ParentRefs = newParentRefsSpecWithPortAndSection(tcp.Spec.ControlPlane.Gateway.GatewayParentRefs, servicePort, "konnectivity-server")
 
-		rule := gatewayv1alpha2.TLSRouteRule{
-			BackendRefs: []gatewayv1alpha2.BackendRef{
+		rule := gatewayv1.TLSRouteRule{
+			BackendRefs: []gatewayv1.BackendRef{
 				{
-					BackendObjectReference: gatewayv1alpha2.BackendObjectReference{
+					BackendObjectReference: gatewayv1.BackendObjectReference{
 						Name: serviceName,
 						Port: &servicePort,
 					},
@@ -196,7 +195,7 @@ func (r *KubernetesKonnectivityGatewayResource) mutate(tcp *kamajiv1alpha1.Tenan
 		}
 
 		r.resource.Spec.Hostnames = []gatewayv1.Hostname{tcp.Spec.ControlPlane.Gateway.Hostname}
-		r.resource.Spec.Rules = []gatewayv1alpha2.TLSRouteRule{rule}
+		r.resource.Spec.Rules = []gatewayv1.TLSRouteRule{rule}
 
 		return controllerutil.SetControllerReference(tcp, r.resource, r.Client.Scheme())
 	}
