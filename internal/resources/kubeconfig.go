@@ -212,7 +212,18 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 				r.resource.Data = map[string][]byte{}
 			}
 
-			kubeconfig, kcErr := kubeadm.CreateKubeconfig(r.KubeConfigFileName, crtKeyPair, config)
+			// admin.conf uses the super-admin cert config (O=system:masters) so it has
+			// unconditional cluster access without depending on the kubeadm:cluster-admins
+			// ClusterRoleBinding that PhaseClusterAdminRBAC creates asynchronously.
+			// Since kubeadm v1.29 (KEP-2305), CreateKubeconfig("admin.conf",...) emits
+			// O=kubeadm:cluster-admins, which requires that CRB to exist; between the TCP
+			// reconciler writing admin.conf and the soot manager finishing
+			// PhaseClusterAdminRBAC, any caller using admin.conf gets 403.
+			kubeconfigFileName := r.KubeConfigFileName
+			if kubeconfigFileName == kubeadmconstants.AdminKubeConfigFileName {
+				kubeconfigFileName = kubeadmconstants.SuperAdminKubeConfigFileName
+			}
+			kubeconfig, kcErr := kubeadm.CreateKubeconfig(kubeconfigFileName, crtKeyPair, config)
 			if kcErr != nil {
 				logger.Error(kcErr, "cannot create a valid kubeconfig")
 
