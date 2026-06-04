@@ -403,6 +403,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			uploadKubeadmConfig.TriggerChannel,
 			uploadKubeletConfig.TriggerChannel,
 			bootstrapToken.TriggerChannel,
+			kubeadmRbac.TriggerChannel,
 		},
 		cancelFn:    tcpCancelFn,
 		completedCh: completedCh,
