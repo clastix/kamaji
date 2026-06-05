@@ -355,15 +355,13 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		return reconcile.Result{}, err
 	}
 
-	// Buffered (cap 1) so we can pre-seed an initial event before the manager's
-	// source goroutine starts consuming, without blocking the Reconcile call.
 	kubeadmRbac := &controllers.KubeadmPhase{
 		GetTenantControlPlaneFunc: m.retrieveTenantControlPlane(tcpCtx, request),
 		Phase: &resources.KubeadmPhase{
 			Client: m.AdminClient,
 			Phase:  resources.PhaseClusterAdminRBAC,
 		},
-		TriggerChannel: make(chan event.GenericEvent, 1),
+		TriggerChannel: make(chan event.GenericEvent, 1), // buffered: pre-seeded below to run on startup
 		ControllerName: fmt.Sprintf("%s-kubeadmrbac", controllerNamePrefix),
 	}
 	if err = kubeadmRbac.SetupWithManager(mgr); err != nil {
@@ -395,14 +393,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		close(completedCh)
 	}()
 
-	// Pre-seed kubeadmRbac so PhaseClusterAdminRBAC runs as soon as the soot
-	// manager's caches warm up, rather than waiting for the next TCP reconcile
-	// cycle (RequeueAfter: time.Second) or a kubeadm: ClusterRoleBinding event.
-	// Without this, a freshly created cluster has no kubeadm:* CRBs to trigger
-	// the watch, so the phase is never scheduled and admin.conf callers that
-	// rely on kubeadm:cluster-admins being bound receive 403 until the next
-	// TCP reconcile fires. The buffered channel absorbs this send before the
-	// manager's source goroutine starts consuming.
+	// Pre-seed so PhaseClusterAdminRBAC runs on startup rather than waiting for a kubeadm: CRB watch event.
 	var initTCP kamajiv1alpha1.TenantControlPlane
 	initTCP.Name = tcp.Name
 	initTCP.Namespace = tcp.Namespace
