@@ -14,6 +14,7 @@ This guide will lead you through the process of creating a working Kamaji setup 
   * [Creating IP Address Pool](#creating-ip-address-pool)
   * [Installing Kamaji](#installing-kamaji)
   * [Creating Tenant Control Plane](#creating-tenant-control-plane)
+  * [Troubleshooting](#troubleshooting)
 
 
 ## Creating Kind Cluster
@@ -69,6 +70,9 @@ Extract the Gateway IP of the network Kind is running on.
 ```
 # docker
 GW_IP=$(docker network inspect -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}' kind)
+
+# docker (when the kind docker network has IPv6 enabled)
+GW_IP=$(docker network inspect kind | jq -r '.[0].IPAM.Config[] | select(.Gateway | test("^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$")) | .Gateway')
 
 # podman
 GW_IP=$(podman network inspect kind --format '{{(index .Subnets 1).Gateway}}')
@@ -170,3 +174,19 @@ kubectl get nodes
 ```
 
 A Video Tutorial of the [demonstration](https://www.youtube.com/watch?v=hDTvnOyUmo4&t=577s) can also be viewed.
+
+## Troubleshooting
+
+When creating the `Address Pool`, if you encounter the following error, this is probably because your `kind` docker network has IPv6 enabled and you did not use the correct command to extract `GW_IP`. See [above](#creating-ip-address-pool) for the correct command.
+
+```
+Error from server (Forbidden): error when creating "STDIN": admission webhook "ipaddresspoolvalidationwebhook.metallb.io" denied the request: parsing address pool kind-ip-pool: invalid CIDR "fc00:f853:ccd:e793::1172.18.0.1.255.200-fc00:f853:ccd:e793::1172.18.0.1.255.250" in pool "kind-ip-pool": invalid IP range "fc00:f853:ccd:e793::1172.18.0.1.255.200-fc00:f853:ccd:e793::1172.18.0.1.255.250": invalid start IP "fc00:f853:ccd:e793::1172.18.0.1.255.200"
+```
+
+To check if your `kind` docker network has IPv6 enabled you can use the following command:
+
+```
+docker network inspect kind | jq '.[0].EnableIPv6'
+true
+```
+
