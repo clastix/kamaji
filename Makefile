@@ -257,7 +257,15 @@ run: manifests generate ## Run a controller from your host.
 build: $(KO)
 	LD_FLAGS=$(LD_FLAGS) \
 	KOCACHE=/tmp/ko-cache KO_DOCKER_REPO=${CONTAINER_REPOSITORY} \
-	$(KO) build ./ --bare --tags=$(VERSION) --local=$(KO_LOCAL) --push=$(KO_PUSH)
+	$(KO) build ./ --bare --tags=$(VERSION) --local=$(KO_LOCAL) --push=$(KO_PUSH) \
+		--image-label "org.opencontainers.image.authors=Clastix https://clastix.io/" \
+		--image-label "org.opencontainers.image.title=Kamaji" \
+		--image-label "org.opencontainers.image.vendor=Clastix" \
+		--image-label "org.opencontainers.image.source=https://github.com/clastix/kamaji" \
+		--image-label "org.opencontainers.image.url=https://kamaji.clastix.io" \
+		--image-label "org.opencontainers.image.created=$$(date --utc '+%FT%H:%M:%SZ')" \
+		--image-label "org.opencontainers.image.revision=$(GIT_HEAD_COMMIT)" \
+		--image-label "org.opencontainers.image.version=$(VERSION)"
 
 ##@ Development
 
