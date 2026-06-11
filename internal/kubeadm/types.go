@@ -39,8 +39,8 @@ type Parameters struct {
 	TenantControlPlaneCertSANs      []string
 	TenantControlPlanePort          int32
 	TenantControlPlaneClusterDomain string
-	TenantControlPlanePodCIDR       string
-	TenantControlPlaneServiceCIDR   string
+	TenantControlPlanePodCIDR       []string
+	TenantControlPlaneServiceCIDR   []string
 	TenantDNSServiceIPs             []string
 	TenantControlPlaneVersion       string
 	TenantControlPlaneCGroupDriver  string

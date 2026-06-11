@@ -46000,6 +46000,26 @@ Example: {"192.168.1.0/24", "10.0.0.0/8"}<br/>
         </td>
         <td>false</td>
       </tr></tbody>
+      <tr>
+        <td><b>serviceCidrs</b></td>
+        <td>[]string</td>
+        <td>
+          List of CIDRs for Kubernetes Services.
+Supports single-stack and dual-stack configurations.
+When specified, this field takes precedence over serviceCidr.
+        </td>
+        <td>false</td>
+      </tr>
+      <tr>
+        <td><b>podCidrs</b></td>
+        <td>[]string</td>
+        <td>
+          List of CIDRs for Kubernetes Pods.
+Supports single-stack and dual-stack configurations.
+When specified, this field takes precedence over podCidr.
+        </td>
+        <td>false</td>
+      </tr>
 </table>
 
 

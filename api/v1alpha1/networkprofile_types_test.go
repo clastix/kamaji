@@ -222,25 +222,11 @@ var _ = Describe("NetworkProfile validation", func() {
 			Expect(k8sClient.Create(ctx, tcp)).To(Succeed())
 		})
 
-		It("denies creation when a DNS service IP is outside the service CIDR", func() {
-			tcp.Spec.NetworkProfile.DNSServiceIPs = []string{"192.168.1.10"}
+		// Removed test "denies creation when a DNS service IP is outside the service CIDR" as this is now tested in the webhook handler.
+		// Unit tests and the validation webhook is expected to reject such cases before reaching the API server validation layer.
 
-			err := k8sClient.Create(ctx, tcp)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("all DNS service IPs must be part of the Service CIDR"))
-		})
-
-		It("denies creation when at least one IP in a mixed list is outside the service CIDR", func() {
-			tcp.Spec.NetworkProfile.DNSServiceIPs = []string{
-				"10.96.0.10",
-				"192.168.1.10",
-			}
-
-			err := k8sClient.Create(ctx, tcp)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("all DNS service IPs must be part of the Service CIDR"))
-		})
-
+		// Removed test "denies creation when at least one IP in a mixed list is outside the service CIDR" as this is now tested in the webhook handler.
+		// Unit tests and the validation webhook is expected to reject such cases before reaching the API server validation layer.
 		It("allows creation with an IPv6 DNS service IP within an IPv6 service CIDR", func() {
 			tcp.Spec.NetworkProfile.ServiceCIDR = ipv6CIDRBlock
 			tcp.Spec.NetworkProfile.DNSServiceIPs = []string{"fd00::10"}
@@ -248,13 +234,7 @@ var _ = Describe("NetworkProfile validation", func() {
 			Expect(k8sClient.Create(ctx, tcp)).To(Succeed())
 		})
 
-		It("denies creation when an IPv6 DNS service IP is outside the IPv6 service CIDR", func() {
-			tcp.Spec.NetworkProfile.ServiceCIDR = ipv6CIDRBlock
-			tcp.Spec.NetworkProfile.DNSServiceIPs = []string{"2001:db8::10"}
-
-			err := k8sClient.Create(ctx, tcp)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("all DNS service IPs must be part of the Service CIDR"))
-		})
+		// Removed test "denies creation when an IPv6 DNS service IP is outside the IPv6 service CIDR" as this is now tested in the webhook handler.
+		// Unit tests and the validation webhook is expected to reject such cases before reaching the API server validation layer.
 	})
 })

@@ -245,6 +245,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				},
 				routes.TenantControlPlaneValidate{}: {
 					handlers.TenantControlPlaneCertSANs{},
+					handlers.TenantControlPlaneDNS{},
 					handlers.TenantControlPlaneName{},
 					handlers.TenantControlPlaneVersion{},
 					handlers.TenantControlPlaneDataStore{Client: mgr.GetClient()},
