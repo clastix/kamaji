@@ -368,6 +368,8 @@ type KonnectivityServerSpec struct {
 	// Resources define the amount of CPU and memory to allocate to the Konnectivity server.
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	ExtraArgs ExtraArgs                    `json:"extraArgs,omitempty"`
+	// SecurityContext defines the SecurityContext for the Konnectivity server container.
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 type KonnectivityAgentMode string

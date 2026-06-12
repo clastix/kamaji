@@ -135,6 +135,8 @@ func (k Konnectivity) buildKonnectivityContainer(tcpVersion string, addon *kamaj
 		podSpec.Containers[index].Resources.Limits = resources.Limits
 		podSpec.Containers[index].Resources.Requests = resources.Requests
 	}
+
+	podSpec.Containers[index].SecurityContext = addon.KonnectivityServerSpec.SecurityContext
 }
 
 func (k Konnectivity) RemovingVolumeMounts(podSpec *corev1.PodSpec) {
