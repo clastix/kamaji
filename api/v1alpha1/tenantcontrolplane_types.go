@@ -235,6 +235,16 @@ type ControlPlaneProbes struct {
 	Scheduler *ProbeSet `json:"scheduler,omitempty"`
 }
 
+// ControlPlaneContainerSecurityContexts defines security contexts for individual Control Plane component containers.
+type ControlPlaneContainerSecurityContexts struct {
+	// APIServer defines the security context for the kube-apiserver container.
+	APIServer *corev1.SecurityContext `json:"apiServer,omitempty"`
+	// ControllerManager defines the security context for the kube-controller-manager container.
+	ControllerManager *corev1.SecurityContext `json:"controllerManager,omitempty"`
+	// Scheduler defines the security context for the kube-scheduler container.
+	Scheduler *corev1.SecurityContext `json:"scheduler,omitempty"`
+}
+
 type DeploymentSpec struct {
 	// RegistrySettings allows to override the default images for the given Tenant Control Plane instance.
 	// It could be used to point to a different container registry rather than the public one.
@@ -293,6 +303,10 @@ type DeploymentSpec struct {
 	//+kubebuilder:default="default"
 	// ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	// ContainerSecurityContexts allows to specify the security context for the individual control plane components.
+	ContainerSecurityContexts *ControlPlaneContainerSecurityContexts `json:"containerSecurityContexts,omitempty"`
+	// PodSecurityContext allows to specify the security context for the control plane pod.
+	PodSecurityContext *corev1.PodSecurityContext `json:"podSecurityContext,omitempty"`
 }
 
 // AdditionalVolumeMounts allows mounting additional volumes to the Control Plane components.

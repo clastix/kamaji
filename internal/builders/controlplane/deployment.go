@@ -94,6 +94,7 @@ func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, te
 	d.setInitContainers(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setAdditionalContainers(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setContainers(&deployment.Spec.Template.Spec, tenantControlPlane, address)
+	d.setSecurityContext(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setAdditionalVolumes(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setVolumes(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setServiceAccount(&deployment.Spec.Template.Spec, tenantControlPlane)
@@ -406,6 +407,12 @@ func (d Deployment) buildScheduler(podSpec *corev1.PodSpec, tenantControlPlane k
 		}
 	}
 
+	if containerSecurityContexts := tenantControlPlane.Spec.ControlPlane.Deployment.ContainerSecurityContexts; containerSecurityContexts != nil {
+		podSpec.Containers[index].SecurityContext = containerSecurityContexts.Scheduler
+	} else {
+		podSpec.Containers[index].SecurityContext = nil
+	}
+
 	switch {
 	case tenantControlPlane.Spec.ControlPlane.Deployment.Resources == nil:
 		podSpec.Containers[index].Resources = corev1.ResourceRequirements{}
@@ -506,6 +513,12 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 			applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.ControllerManager.Liveness)
 			applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.ControllerManager.Startup)
 		}
+	}
+
+	if containerSecurityContexts := tenantControlPlane.Spec.ControlPlane.Deployment.ContainerSecurityContexts; containerSecurityContexts != nil {
+		podSpec.Containers[index].SecurityContext = containerSecurityContexts.ControllerManager
+	} else {
+		podSpec.Containers[index].SecurityContext = nil
 	}
 
 	switch {
@@ -650,6 +663,12 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 			applyProbeOverrides(podSpec.Containers[index].ReadinessProbe, probes.APIServer.Readiness)
 			applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.APIServer.Startup)
 		}
+	}
+
+	if containerSecurityContexts := tenantControlPlane.Spec.ControlPlane.Deployment.ContainerSecurityContexts; containerSecurityContexts != nil {
+		podSpec.Containers[index].SecurityContext = containerSecurityContexts.APIServer
+	} else {
+		podSpec.Containers[index].SecurityContext = nil
 	}
 
 	podSpec.Containers[index].ImagePullPolicy = corev1.PullAlways
@@ -1253,4 +1272,8 @@ func (d Deployment) setServiceAccount(spec *corev1.PodSpec, tcp kamajiv1alpha1.T
 	}
 
 	spec.ServiceAccountName = "default"
+}
+
+func (d Deployment) setSecurityContext(spec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
+	spec.SecurityContext = tcp.Spec.ControlPlane.Deployment.PodSecurityContext
 }
