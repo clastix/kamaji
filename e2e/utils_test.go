@@ -268,3 +268,122 @@ func CreateGatewayWithListeners(gatewayName, namespace, gatewayClassName, hostna
 	}
 	Expect(k8sClient.Create(context.Background(), gateway)).NotTo(HaveOccurred())
 }
+
+// containerSecurityContextMustEqualTo verifies if the container with the given containerName in the control plane pods has the given security context.
+func containerSecurityContextMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, containerName string, containerSecurityContext *corev1.SecurityContext) {
+	GinkgoHelper()
+	tcpPods := &corev1.PodList{}
+	err := k8sClient.List(context.Background(), tcpPods, client.MatchingLabels{
+		"kamaji.clastix.io/name": tcp.GetName(),
+	})
+	Expect(err).ToNot(HaveOccurred())
+	Expect(tcpPods.Items).ToNot(BeEmpty())
+
+	for _, pod := range tcpPods.Items {
+		// containerFound tracks if the container with the given containerName is actually present
+		containerFound := false
+		for _, container := range pod.Spec.Containers {
+			if container.Name == containerName {
+				containerFound = true
+				Expect(container.SecurityContext).To(Equal(containerSecurityContext), fmt.Sprintf("securityContext for container %s does not match expected value", containerName))
+			} else {
+				continue
+			}
+		}
+		Expect(containerFound).To(BeTrue(), fmt.Sprintf("pod does not container a container with name '%s'", containerName))
+	}
+}
+
+// podSecurityContextMustEqualTo verifies if the control plane pods have the given security context.
+func podSecurityContextMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, podSecurityContext *corev1.PodSecurityContext) {
+	GinkgoHelper()
+	tcpPods := &corev1.PodList{}
+	err := k8sClient.List(context.Background(), tcpPods, client.MatchingLabels{
+		"kamaji.clastix.io/name": tcp.GetName(),
+	})
+	Expect(err).ToNot(HaveOccurred())
+	Expect(tcpPods.Items).ToNot(BeEmpty())
+
+	for _, pod := range tcpPods.Items {
+		Expect(pod.Spec.SecurityContext).To(Equal(podSecurityContext), "podSecurityContext does not match expected value")
+	}
+}
+
+// waitUntilControlPlaneReconciliationIsFinished waits until the controller has finished reconciling the control plane deployment.
+// This is useful as the controller updates the control plane deployment several times, resulting in multiple replicasets running in parallel.
+func waitUntilControlPlaneReconciliationIsFinished(tcp *kamajiv1alpha1.TenantControlPlane) {
+	Eventually(func() bool {
+		tcpPods, err := getControlPlanePods(tcp)
+		if err != nil {
+			return false
+		}
+
+		// if there are no pods, reconciliation is clearly not finished
+		podCount := len(tcpPods.Items)
+		if podCount == 0 {
+			return false
+		}
+
+		// all pods must have the same pod-template-hash and be ready
+		firstPodTemplateHash := tcpPods.Items[0].Labels["pod-template-hash"]
+		for _, pod := range tcpPods.Items {
+			if pod.Labels["pod-template-hash"] != firstPodTemplateHash {
+				return false
+			}
+			if !isPodReady(&pod) {
+				return false
+			}
+		}
+
+		// things are looking good at this point
+		// wait an arbitrary amount of time to see if something is still happening
+		time.Sleep(5 * time.Second)
+
+		// repeat the process
+		tcpPods, err = getControlPlanePods(tcp)
+		if err != nil {
+			return false
+		}
+
+		// the number of pods must stay stable
+		if len(tcpPods.Items) != podCount {
+			return false
+		}
+
+		// verify that the pod template hash is stable and all pods are still ready
+		for _, pod := range tcpPods.Items {
+			if pod.Labels["pod-template-hash"] != firstPodTemplateHash {
+				return false
+			}
+			if !isPodReady(&pod) {
+				return false
+			}
+		}
+
+		return true
+	}, 5*time.Minute, time.Second).Should(BeTrue())
+}
+
+// getControlPlanePods returns all pods that belong to the given tenant control plane.
+func getControlPlanePods(tcp *kamajiv1alpha1.TenantControlPlane) (*corev1.PodList, error) {
+	tcpPods := &corev1.PodList{}
+	err := k8sClient.List(context.Background(), tcpPods, client.MatchingLabels{
+		"kamaji.clastix.io/name": tcp.GetName(),
+	})
+	if err != nil {
+		return &corev1.PodList{}, err
+	}
+
+	return tcpPods, nil
+}
+
+// isPodReady returns true if and only if the given Pod has status "Ready" = true.
+func isPodReady(pod *corev1.Pod) bool {
+	for _, cond := range pod.Status.Conditions {
+		if cond.Type == corev1.PodReady && cond.Status == corev1.ConditionTrue {
+			return true
+		}
+	}
+
+	return false
+}
