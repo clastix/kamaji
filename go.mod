@@ -16,7 +16,7 @@ require (
 	github.com/juju/mutex/v2 v2.0.0
 	github.com/moby/moby/api v1.54.2
 	github.com/nats-io/nats.go v1.52.0
-	github.com/onsi/ginkgo/v2 v2.30.0
+	github.com/onsi/ginkgo/v2 v2.31.0
 	github.com/onsi/gomega v1.41.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
