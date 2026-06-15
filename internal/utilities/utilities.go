@@ -111,3 +111,36 @@ func EncodeToJSON(o runtime.Object) ([]byte, error) {
 
 	return buf.Bytes(), nil
 }
+
+// GetEffectiveCIDRs returns the CIDRs to use.
+//
+// If the new CIDRs field is populated, it is considered authoritative.
+// The deprecated field is only used as a fallback for backward compatibility.
+func GetEffectiveCIDRs(deprecated string, current []string) []string {
+	if len(current) > 0 {
+		return UniqueStrings(current)
+	}
+
+	if deprecated != "" {
+		return []string{deprecated}
+	}
+
+	return nil
+}
+
+// UniqueStrings returns a slice of unique strings from the provided slice.
+func UniqueStrings(input []string) []string {
+	stringSeen := make(map[string]struct{})
+	uniqueList := make([]string, 0, len(input))
+
+	for _, str := range input {
+		if _, ok := stringSeen[str]; ok {
+			continue
+		}
+
+		stringSeen[str] = struct{}{}
+		uniqueList = append(uniqueList, str)
+	}
+
+	return uniqueList
+}
