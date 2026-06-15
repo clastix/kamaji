@@ -38,12 +38,15 @@ func GetKubeadmManifestDeps(ctx context.Context, client client.Client, tenantCon
 		return nil, nil, fmt.Errorf("cannot retrieve Tenant Control Plane address: %w", err)
 	}
 
+	// Backward compatibility for deprecated CIDR fields
+	podCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.PodCIDR, tenantControlPlane.Spec.NetworkProfile.PodCIDRs)
+
 	config.Kubeconfig = *kubeconfig
 	config.Parameters = kubeadm.Parameters{
 		TenantControlPlaneName:         tenantControlPlane.GetName(),
 		TenantDNSServiceIPs:            tenantControlPlane.Spec.NetworkProfile.DNSServiceIPs,
 		TenantControlPlaneVersion:      tenantControlPlane.Spec.Kubernetes.Version,
-		TenantControlPlanePodCIDR:      tenantControlPlane.Spec.NetworkProfile.PodCIDRs,
+		TenantControlPlanePodCIDR:      podCIDRs,
 		TenantControlPlaneAddress:      address,
 		TenantControlPlaneCertSANs:     tenantControlPlane.Spec.NetworkProfile.CertSANs,
 		TenantControlPlanePort:         tenantControlPlane.Spec.NetworkProfile.Port,
@@ -191,12 +194,15 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr
 		return controllerutil.OperationResultNone, err
 	}
 
+	// Backward compatibility for deprecated CIDR fields
+	podCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.PodCIDR, tenantControlPlane.Spec.NetworkProfile.PodCIDRs)
+
 	config.Kubeconfig = *kubeconfig
 	config.Parameters = kubeadm.Parameters{
 		TenantControlPlaneName:         tenantControlPlane.GetName(),
 		TenantDNSServiceIPs:            tenantControlPlane.Spec.NetworkProfile.DNSServiceIPs,
 		TenantControlPlaneVersion:      tenantControlPlane.Spec.Kubernetes.Version,
-		TenantControlPlanePodCIDR:      tenantControlPlane.Spec.NetworkProfile.PodCIDRs,
+		TenantControlPlanePodCIDR:      podCIDRs,
 		TenantControlPlaneAddress:      address,
 		TenantControlPlaneCertSANs:     tenantControlPlane.Spec.NetworkProfile.CertSANs,
 		TenantControlPlanePort:         tenantControlPlane.Spec.NetworkProfile.Port,

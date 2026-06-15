@@ -117,6 +117,18 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 			certSANs = append(append([]string{}, certSANs...), advAddress)
 		}
 
+		// Backward compatibility for deprecated CIDR fields
+		if tenantControlPlane.Spec.NetworkProfile.ServiceCIDR != "" {
+			logger.Info("serviceCidr is deprecated, please migrate to serviceCidrs")
+		}
+
+		if tenantControlPlane.Spec.NetworkProfile.PodCIDR != "" {
+			logger.Info("podCidr is deprecated, please migrate to podCidrs")
+		}
+
+		serviceCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.ServiceCIDR, tenantControlPlane.Spec.NetworkProfile.ServiceCIDRs)
+		podCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.PodCIDR, tenantControlPlane.Spec.NetworkProfile.PodCIDRs)
+
 		params := kubeadm.Parameters{
 			TenantControlPlaneAddress:       address,
 			TenantControlPlanePort:          port,
@@ -125,8 +137,8 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 			TenantControlPlaneEndpoint:      endpoint,
 			TenantControlPlaneCertSANs:      certSANs,
 			TenantControlPlaneClusterDomain: tenantControlPlane.Spec.NetworkProfile.ClusterDomain,
-			TenantControlPlanePodCIDR:       tenantControlPlane.Spec.NetworkProfile.PodCIDRs,
-			TenantControlPlaneServiceCIDR:   tenantControlPlane.Spec.NetworkProfile.ServiceCIDRs,
+			TenantControlPlanePodCIDR:       podCIDRs,
+			TenantControlPlaneServiceCIDR:   serviceCIDRs,
 			TenantControlPlaneVersion:       tenantControlPlane.Spec.Kubernetes.Version,
 			ETCDs:                           r.ETCDs,
 			CertificatesDir:                 r.TmpDirectory,
