@@ -92,8 +92,6 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 		BeforeEach(func() {
 			tcp.Spec.NetworkProfile.ServiceCIDRs = nil
 			tcp.Spec.NetworkProfile.PodCIDRs = nil
-
-			tcp.Spec.NetworkProfile.ServiceCIDR = "10.96.0.0/16"
 			tcp.Spec.NetworkProfile.PodCIDR = "10.244.0.0/16"
 		})
 
@@ -103,7 +101,7 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(ops).To(ContainElement(
-				jsonpatch.Operation{Operation: "add", Path: "/spec/networkProfile/serviceCidrs", Value: []interface{}{"10.96.0.0/16"}},
+				jsonpatch.Operation{Operation: "add", Path: "/spec/networkProfile/serviceCidrs", Value: []interface{}{"10.96.0.0/12"}},
 			))
 
 			Expect(ops).To(ContainElement(
@@ -112,14 +110,13 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 		})
 
 		It("should prefer ServiceCIDRs over deprecated ServiceCIDR when both are set", func() {
-			tcp.Spec.NetworkProfile.ServiceCIDR = "10.96.0.0/16"
 			tcp.Spec.NetworkProfile.ServiceCIDRs = []string{"10.97.0.0/16", "fd00::/120"}
 
 			_, err := t.OnCreate(tcp)(ctx, admission.Request{})
 			Expect(err).ToNot(HaveOccurred())
 
 			// extra sanity check: ensure deprecated value is ignored
-			Expect(len(tcp.Spec.NetworkProfile.ServiceCIDRs)).To(Equal(2))
+			Expect(tcp.Spec.NetworkProfile.ServiceCIDRs).To(HaveLen(2))
 			Expect(tcp.Spec.NetworkProfile.ServiceCIDRs).To(ContainElements("10.97.0.0/16", "fd00::/120"))
 		})
 	})

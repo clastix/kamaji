@@ -75,6 +75,7 @@ func validateDNSServiceIPs(tcp *kamajiv1alpha1.TenantControlPlane) error {
 
 			if network.Contains(parsedIP) {
 				found = true
+
 				break
 			}
 		}

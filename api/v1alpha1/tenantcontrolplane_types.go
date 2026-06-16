@@ -61,6 +61,7 @@ type NetworkProfileSpec struct {
 	// When specified, this field takes precedence over ServiceCIDR.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=2
 	// +kubebuilder:validation:XValidation:rule="self.all(x, isCIDR(x))",message="all serviceCidrs entries must be valid CIDRs"
 	ServiceCIDRs []string `json:"serviceCidrs,omitempty"`
 	// CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.
@@ -74,6 +75,7 @@ type NetworkProfileSpec struct {
 	// When specified, this field takes precedence over PodCIDR.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=2
 	// +kubebuilder:validation:XValidation:rule="self.all(x, isCIDR(x))",message="all podCidrs entries must be valid CIDRs"
 	PodCIDRs []string `json:"podCidrs,omitempty"`
 	// The DNS Service for internal resolution, it must match the Service CIDR.

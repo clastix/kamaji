@@ -6,9 +6,11 @@ package utilities
 import (
 	"bytes"
 	"fmt"
+	"sort"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/constants"
@@ -130,17 +132,10 @@ func GetEffectiveCIDRs(deprecated string, current []string) []string {
 
 // UniqueStrings returns a slice of unique strings from the provided slice.
 func UniqueStrings(input []string) []string {
-	stringSeen := make(map[string]struct{})
-	uniqueList := make([]string, 0, len(input))
+	unique := sets.New[string](input...)
 
-	for _, str := range input {
-		if _, ok := stringSeen[str]; ok {
-			continue
-		}
+	result := unique.UnsortedList()
+	sort.Strings(result)
 
-		stringSeen[str] = struct{}{}
-		uniqueList = append(uniqueList, str)
-	}
-
-	return uniqueList
+	return result
 }

@@ -7656,7 +7656,10 @@ spec:
                         - message: podCidr must be empty or a valid CIDR
                           rule: self == '' || isCIDR(self)
                     podCidrs:
-                      description: CIDRs for Kubernetes pods.
+                      description: |-
+                        PodCIDRs defines one or more CIDRs for Kubernetes Pods.
+                        Supports single-stack and dual-stack configurations.
+                        When specified, this field takes precedence over PodCIDR.
                       items:
                         type: string
                       maxItems: 2
@@ -7680,7 +7683,10 @@ spec:
                         - message: serviceCidr must be empty or a valid CIDR
                           rule: self == '' || isCIDR(self)
                     serviceCidrs:
-                      description: CIDRs for Kubernetes Services.
+                      description: |-
+                        Service CIDRs for Kubernetes Services.
+                        Supports single-stack and dual-stack configurations.
+                        When specified, this field takes precedence over ServiceCIDR.
                       items:
                         type: string
                       maxItems: 2
