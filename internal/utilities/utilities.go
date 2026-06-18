@@ -6,9 +6,11 @@ package utilities
 import (
 	"bytes"
 	"fmt"
+	"sort"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/constants"
@@ -110,4 +112,30 @@ func EncodeToJSON(o runtime.Object) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+// GetEffectiveCIDRs returns the CIDRs to use.
+//
+// If the new CIDRs field is populated, it is considered authoritative.
+// The deprecated field is only used as a fallback for backward compatibility.
+func GetEffectiveCIDRs(deprecated string, current []string) []string {
+	if len(current) > 0 {
+		return UniqueStrings(current)
+	}
+
+	if deprecated != "" {
+		return []string{deprecated}
+	}
+
+	return nil
+}
+
+// UniqueStrings returns a slice of unique strings from the provided slice.
+func UniqueStrings(input []string) []string {
+	unique := sets.New[string](input...)
+
+	result := unique.UnsortedList()
+	sort.Strings(result)
+
+	return result
 }

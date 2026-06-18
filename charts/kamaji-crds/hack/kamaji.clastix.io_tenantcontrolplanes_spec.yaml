@@ -7640,11 +7640,26 @@ versions:
                         rule: self.all(r, isCIDR(r))
                   podCidr:
                     default: 10.244.0.0/16
-                    description: 'CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.'
+                    description: |-
+                      CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.
+                      Deprecated: use PodCIDRs instead.
                     type: string
                     x-kubernetes-validations:
                       - message: podCidr must be empty or a valid CIDR
                         rule: self == '' || isCIDR(self)
+                  podCidrs:
+                    description: |-
+                      PodCIDRs defines one or more CIDRs for Kubernetes Pods.
+                      Supports single-stack and dual-stack configurations.
+                      When specified, this field takes precedence over PodCIDR.
+                    items:
+                      type: string
+                    maxItems: 2
+                    minItems: 1
+                    type: array
+                    x-kubernetes-validations:
+                      - message: all podCidrs entries must be valid CIDRs
+                        rule: self.all(x, isCIDR(x))
                   port:
                     default: 6443
                     description: Port where API server will be exposed
@@ -7652,15 +7667,27 @@ versions:
                     type: integer
                   serviceCidr:
                     default: 10.96.0.0/16
-                    description: 'CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.'
+                    description: |-
+                      CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.
+                      Deprecated: use ServiceCIDRs instead.
                     type: string
                     x-kubernetes-validations:
                       - message: serviceCidr must be empty or a valid CIDR
                         rule: self == '' || isCIDR(self)
+                  serviceCidrs:
+                    description: |-
+                      Service CIDRs for Kubernetes Services.
+                      Supports single-stack and dual-stack configurations.
+                      When specified, this field takes precedence over ServiceCIDR.
+                    items:
+                      type: string
+                    maxItems: 2
+                    minItems: 1
+                    type: array
+                    x-kubernetes-validations:
+                      - message: all serviceCidrs entries must be valid CIDRs
+                        rule: self.all(x, isCIDR(x))
                 type: object
-                x-kubernetes-validations:
-                  - message: all DNS service IPs must be part of the Service CIDR
-                    rule: '!has(self.dnsServiceIPs) || self.dnsServiceIPs.all(r, cidr(self.serviceCidr).containsIP(r))'
               writePermissions:
                 description: |-
                   WritePermissions allows to select which operations (create, delete, update) must be blocked:

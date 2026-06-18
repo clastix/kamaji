@@ -51,8 +51,8 @@ func CreateKubeadmInitConfiguration(params Parameters) (*Configuration, error) {
 	}
 	conf.Networking = kubeadmapi.Networking{
 		DNSDomain:     params.TenantControlPlaneClusterDomain,
-		PodSubnet:     params.TenantControlPlanePodCIDR,
-		ServiceSubnet: params.TenantControlPlaneServiceCIDR,
+		PodSubnet:     strings.Join(params.TenantControlPlanePodCIDR, ","),
+		ServiceSubnet: strings.Join(params.TenantControlPlaneServiceCIDR, ","),
 	}
 	conf.KubernetesVersion = params.TenantControlPlaneVersion
 	conf.ControlPlaneEndpoint = params.TenantControlPlaneEndpoint

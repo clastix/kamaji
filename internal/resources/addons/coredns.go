@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
 
 	"github.com/prometheus/client_golang/prometheus"
 	appsv1 "k8s.io/api/apps/v1"
@@ -236,6 +237,29 @@ func (c *CoreDNS) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Tenan
 	manifests, err := kubeadm.AddCoreDNS(tcpClient, config)
 	if err != nil {
 		return fmt.Errorf("unable to generate manifests: %w", err)
+	}
+
+	// If multiple service CIDRs are defined, CoreDNS needs to be configured with multiple service addresses, and ip families and dualstack if required.
+	if len(tcp.Spec.NetworkProfile.DNSServiceIPs) > 1 {
+		c.service.Spec.ClusterIP = tcp.Spec.NetworkProfile.DNSServiceIPs[0]
+		c.service.Spec.ClusterIPs = tcp.Spec.NetworkProfile.DNSServiceIPs
+
+		families := make([]corev1.IPFamily, 0, len(tcp.Spec.NetworkProfile.DNSServiceIPs))
+
+		for _, ip := range tcp.Spec.NetworkProfile.DNSServiceIPs {
+			parsedIP := net.ParseIP(ip)
+
+			if parsedIP.To4() != nil {
+				families = append(families, corev1.IPv4Protocol)
+			} else if parsedIP.To16() != nil {
+				families = append(families, corev1.IPv6Protocol)
+			}
+		}
+
+		policy := corev1.IPFamilyPolicyPreferDualStack
+
+		c.service.Spec.IPFamilies = families
+		c.service.Spec.IPFamilyPolicy = &policy
 	}
 
 	parts := bytes.Split(manifests, []byte("---"))

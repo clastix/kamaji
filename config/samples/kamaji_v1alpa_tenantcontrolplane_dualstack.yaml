@@ -1,0 +1,44 @@
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: k8s-133
+  labels:
+    tenant.clastix.io: k8s-133
+spec:
+  spec:
+  controlPlane:
+    deployment:
+      replicas: 2
+    service:
+      serviceType: LoadBalancer
+  kubernetes:
+    version: "v1.33.0"
+    kubelet:
+      configurationJSONPatches:
+        - op: add
+          path: /featureGates
+          value:
+            KubeletCrashLoopBackOffMax: false
+            KubeletEnsureSecretPulledImages: false
+        - op: replace
+          path: /cgroupDriver
+          value: systemd
+  networkProfile:
+    port: 6443
+    podCidrs:
+      - 10.244.0.0/16
+      - fd00:244::/56
+    serviceCidrs:
+      - 10.96.0.0/16
+      - fd00::/120
+    dnsServiceIPs:
+      - 10.96.0.10
+      - fd00::10
+  addons:
+    coreDNS: {}
+    kubeProxy: {}
+    konnectivity:
+     server:
+       port: 8132
+     agent:
+       mode: DaemonSet

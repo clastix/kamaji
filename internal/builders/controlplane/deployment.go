@@ -439,6 +439,10 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
 	}
 
+	// backward compatibility for deprecated CIDR fields
+	serviceCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.ServiceCIDR, tenantControlPlane.Spec.NetworkProfile.ServiceCIDRs)
+	podCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.PodCIDR, tenantControlPlane.Spec.NetworkProfile.PodCIDRs)
+
 	kubeconfig := "/etc/kubernetes/controller-manager.conf"
 
 	args := map[string]string{
@@ -453,8 +457,8 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		"--controllers":                      "*,bootstrapsigner,tokencleaner",
 		"--kubeconfig":                       kubeconfig,
 		"--leader-elect":                     "true",
-		"--service-cluster-ip-range":         tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
-		"--cluster-cidr":                     tenantControlPlane.Spec.NetworkProfile.PodCIDR,
+		"--service-cluster-ip-range":         strings.Join(serviceCIDRs, ","),
+		"--cluster-cidr":                     strings.Join(podCIDRs, ","),
 		"--requestheader-client-ca-file":     path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyCACertName),
 		"--root-ca-file":                     path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
 		"--service-account-private-key-file": path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName),
@@ -734,12 +738,16 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 		"--requestheader-username-headers":     "X-Remote-User",
 		"--service-account-issuer":             "https://kubernetes.default.svc.cluster.local",
 	}
+
+	// backward compatibility for deprecated CIDR fields
+	serviceCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.ServiceCIDR, tenantControlPlane.Spec.NetworkProfile.ServiceCIDRs)
+
 	// Managed flags: derived from the TCP spec, always applied, override any user duplicate.
 	managed := map[string]string{
 		"--advertise-address":                apiAdvertiseAddress,
 		"--client-ca-file":                   path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
 		"--enable-admission-plugins":         strings.Join(tenantControlPlane.Spec.Kubernetes.AdmissionControllers.ToSlice(), ","),
-		"--service-cluster-ip-range":         tenantControlPlane.Spec.NetworkProfile.ServiceCIDR,
+		"--service-cluster-ip-range":         strings.Join(serviceCIDRs, ","),
 		"--kubelet-client-certificate":       path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientCertName),
 		"--kubelet-client-key":               path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientKeyName),
 		"--kubelet-preferred-address-types":  strings.Join(kubeletPreferredAddressTypes, ","),

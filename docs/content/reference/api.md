@@ -45975,9 +45975,19 @@ Example: {"192.168.1.0/24", "10.0.0.0/8"}<br/>
         <td><b>podCidr</b></td>
         <td>string</td>
         <td>
-          CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.<br/>
+          CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.
+Deprecated: use PodCIDRs instead.<br/>
           <br/>
             <i>Default</i>: 10.244.0.0/16<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>podCidrs</b></td>
+        <td>[]string</td>
+        <td>
+          PodCIDRs defines one or more CIDRs for Kubernetes Pods.
+Supports single-stack and dual-stack configurations.
+When specified, this field takes precedence over PodCIDR.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -45994,9 +46004,19 @@ Example: {"192.168.1.0/24", "10.0.0.0/8"}<br/>
         <td><b>serviceCidr</b></td>
         <td>string</td>
         <td>
-          CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.<br/>
+          CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.
+Deprecated: use ServiceCIDRs instead.<br/>
           <br/>
             <i>Default</i>: 10.96.0.0/16<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serviceCidrs</b></td>
+        <td>[]string</td>
+        <td>
+          Service CIDRs for Kubernetes Services.
+Supports single-stack and dual-stack configurations.
+When specified, this field takes precedence over ServiceCIDR.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
