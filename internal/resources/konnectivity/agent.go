@@ -269,6 +269,17 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		}
 
 		podTemplateSpec.Spec.Containers[0].Args = utilities.ArgsFromMapToSlice(args)
+
+		envVars := make(map[string]corev1.EnvVar)
+
+		extraEnvs := utilities.EnvarsFromSliceToMap((tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.ExtraEnvs))
+
+		for k, v := range extraEnvs {
+			envVars[k] = v
+		}
+
+		podTemplateSpec.Spec.Containers[0].Env = utilities.EnvarsFromMapToSlice(envVars)
+
 		podTemplateSpec.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
 			{
 				MountPath: "/var/run/secrets/tokens",
