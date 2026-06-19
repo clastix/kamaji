@@ -608,7 +608,8 @@ spec:
     upgrade:
       maxHistory: 10
   valuesTemplate: |
-    installCRDs: true
+    crds: 
+      enabled: true
 ---
 apiVersion: addons.cluster.x-k8s.io/v1alpha1
 kind: HelmChartProxy

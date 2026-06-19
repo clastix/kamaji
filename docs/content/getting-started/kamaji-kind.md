@@ -44,7 +44,7 @@ helm install \
   cert-manager jetstack/cert-manager \
   --namespace cert-manager \
   --create-namespace \
-  --set installCRDs=true
+  --set crds.enabled=true
 ```
 
 This will install cert-manager to the cluster. You can watch the progress of the installation on the cluster using the command
@@ -189,4 +189,3 @@ To check if your `kind` docker network has IPv6 enabled you can use the followin
 docker network inspect kind | jq '.[0].EnableIPv6'
 true
 ```
-
