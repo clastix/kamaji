@@ -5,6 +5,7 @@ package soot
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -29,16 +30,17 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/controllers/finalizers"
 	"github.com/clastix/kamaji/controllers/soot/controllers"
-	"github.com/clastix/kamaji/controllers/soot/controllers/errors"
+	kamajierrors "github.com/clastix/kamaji/controllers/soot/controllers/errors"
 	"github.com/clastix/kamaji/controllers/utils"
 	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type sootItem struct {
-	triggers    []chan event.GenericEvent
-	cancelFn    context.CancelFunc
-	completedCh chan struct{}
+	certificateSha string
+	triggers       []chan event.GenericEvent
+	cancelFn       context.CancelFunc
+	completedCh    chan struct{}
 }
 
 type sootMap map[string]sootItem
@@ -71,7 +73,7 @@ func (m *Manager) retrieveTenantControlPlane(ctx context.Context, request reconc
 		}
 
 		if utils.IsPaused(tcp) {
-			return nil, errors.ErrPausedReconciliation
+			return nil, kamajierrors.ErrPausedReconciliation
 		}
 
 		return tcp, nil
@@ -147,8 +149,9 @@ func (m *Manager) retryTenantControlPlaneAnnotations(ctx context.Context, reques
 	})
 }
 
-//nolint:maintidx
+//nolint:maintidx,gocyclo
 func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res reconcile.Result, err error) {
+	logger := log.FromContext(ctx)
 	// Retrieving the TenantControlPlane:
 	// in case of deletion, we must be sure to properly remove from the memory the soot manager.
 	tcp := &kamajiv1alpha1.TenantControlPlane{}
@@ -189,6 +192,10 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			// we don't want to pollute with messages due to broken connection.
 			// Once the TCP will be ready again, the event will be intercepted and the manager started back.
 			return reconcile.Result{}, m.cleanup(ctx, request, tcp)
+		case tcp.Status.KubeConfig.Admin.Checksum != v.certificateSha:
+			// The stored kubeconfig to access the Tenant Control Plane has changed:
+			// we need to clean-up and requeue to fetch the updated value.
+			return reconcile.Result{RequeueAfter: time.Second}, m.cleanup(ctx, request, tcp)
 		default:
 			for _, trigger := range v.triggers {
 				var shrunkTCP kamajiv1alpha1.TenantControlPlane
@@ -205,9 +212,21 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	// No need to start a soot manager if the TenantControlPlane is not ready:
 	// enqueuing back is not required since we're going to get that event once ready.
 	if tcpStatus == kamajiv1alpha1.VersionNotReady || tcpStatus == kamajiv1alpha1.VersionCARotating || tcpStatus == kamajiv1alpha1.VersionSleeping {
-		log.FromContext(ctx).Info("skipping start of the soot manager for a not ready instance")
+		logger.Info("skipping start of the soot manager for a not ready instance")
 
 		return reconcile.Result{}, nil
+	}
+	// Generating the manager and starting it:
+	// in case of any error, reconciling the request to start it back from the beginning.
+	tcpRest, err := utilities.GetRESTClientConfig(ctx, m.AdminClient, tcp)
+	if err != nil {
+		if errors.Is(err, utilities.ErrMissingKubeconfigKey) {
+			logger.Info("soot manager waiting for kubeconfig, enqueuing back")
+
+			return reconcile.Result{RequeueAfter: time.Second}, nil
+		}
+
+		return reconcile.Result{}, err
 	}
 	// Setting the finalizer for the soot manager:
 	// upon deletion the soot manager will be shut down prior the Deployment, avoiding logs pollution.
@@ -219,12 +238,6 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		})
 
 		return reconcile.Result{RequeueAfter: time.Second}, finalizerErr
-	}
-	// Generating the manager and starting it:
-	// in case of any error, reconciling the request to start it back from the beginning.
-	tcpRest, err := utilities.GetRESTClientConfig(ctx, m.AdminClient, tcp)
-	if err != nil {
-		return reconcile.Result{}, err
 	}
 
 	tcpCtx, tcpCancelFn := context.WithCancel(ctx)
@@ -371,14 +384,14 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	// Starting the manager
 	go func() {
 		if err = mgr.Start(tcpCtx); err != nil {
-			log.FromContext(ctx).Error(err, "unable to start soot manager")
+			logger.Error(err, "unable to start soot manager")
 			// The sootManagerAnnotation is used to propagate the error between reconciliations with its state:
 			// this is required to avoid mutex and prevent concurrent read/write on the soot map
 			annotationErr := m.retryTenantControlPlaneAnnotations(ctx, request, func(annotations map[string]string) {
 				annotations[sootManagerAnnotation] = sootManagerFailedAnnotation
 			})
 			if annotationErr != nil {
-				log.FromContext(ctx).Error(err, "unable to update TenantControlPlane for soot failed annotation")
+				logger.Error(err, "unable to update TenantControlPlane for soot failed annotation")
 			}
 			// When the manager cannot start we're enqueuing back the request to take advantage of the backoff factor
 			// of the queue: this is a goroutine and cannot return an error since the manager is running on its own,
@@ -394,6 +407,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	}()
 
 	m.sootMap[request.NamespacedName.String()] = sootItem{
+		certificateSha: tcp.Status.KubeConfig.Admin.Checksum,
 		triggers: []chan event.GenericEvent{
 			writePermissions.TriggerChannel,
 			migrate.TriggerChannel,
