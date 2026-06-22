@@ -205,4 +205,83 @@ var _ = Describe("Controlplane Deployment", func() {
 			}))
 		})
 	})
+
+	Describe("control plane probes", func() {
+		// helper: find a container by name in a built PodSpec
+		containerByName := func(spec *corev1.PodSpec, name string) corev1.Container {
+			for _, c := range spec.Containers {
+				if c.Name == name {
+					return c
+				}
+			}
+			Fail("container not found: " + name)
+
+			return corev1.Container{}
+		}
+
+		It("renders a readiness probe for kube-scheduler on /healthz:10259", func() {
+			podSpec := &corev1.PodSpec{}
+			d.buildScheduler(podSpec, kamajiv1alpha1.TenantControlPlane{})
+
+			c := containerByName(podSpec, "kube-scheduler")
+			Expect(c.ReadinessProbe).ToNot(BeNil())
+			Expect(c.ReadinessProbe.HTTPGet.Path).To(Equal("/healthz"))
+			Expect(c.ReadinessProbe.HTTPGet.Port.IntValue()).To(Equal(10259))
+			Expect(c.ReadinessProbe.HTTPGet.Scheme).To(Equal(corev1.URISchemeHTTPS))
+			Expect(c.ReadinessProbe.PeriodSeconds).To(Equal(int32(10)))
+		})
+
+		It("renders a readiness probe for kube-controller-manager on /healthz:10257", func() {
+			podSpec := &corev1.PodSpec{}
+			d.buildControllerManager(podSpec, kamajiv1alpha1.TenantControlPlane{})
+
+			c := containerByName(podSpec, "kube-controller-manager")
+			Expect(c.ReadinessProbe).ToNot(BeNil())
+			Expect(c.ReadinessProbe.HTTPGet.Path).To(Equal("/healthz"))
+			Expect(c.ReadinessProbe.HTTPGet.Port.IntValue()).To(Equal(10257))
+			Expect(c.ReadinessProbe.HTTPGet.Scheme).To(Equal(corev1.URISchemeHTTPS))
+		})
+
+		It("cascades global then component readiness overrides onto the scheduler", func() {
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.Probes = &kamajiv1alpha1.ControlPlaneProbes{
+				Readiness: &kamajiv1alpha1.ProbeSpec{PeriodSeconds: pointer.To(int32(20))},
+				Scheduler: &kamajiv1alpha1.ProbeSet{
+					Readiness: &kamajiv1alpha1.ProbeSpec{PeriodSeconds: pointer.To(int32(30))},
+				},
+			}
+
+			podSpec := &corev1.PodSpec{}
+			d.buildScheduler(podSpec, tcp)
+
+			c := containerByName(podSpec, "kube-scheduler")
+			Expect(c.ReadinessProbe.PeriodSeconds).To(Equal(int32(30))) // component wins over global
+		})
+
+		It("applies a global-only readiness override to the scheduler", func() {
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.Probes = &kamajiv1alpha1.ControlPlaneProbes{
+				Readiness: &kamajiv1alpha1.ProbeSpec{PeriodSeconds: pointer.To(int32(20))},
+			}
+
+			podSpec := &corev1.PodSpec{}
+			d.buildScheduler(podSpec, tcp)
+
+			c := containerByName(podSpec, "kube-scheduler")
+			Expect(c.ReadinessProbe.PeriodSeconds).To(Equal(int32(20)))
+		})
+
+		It("leaves the kube-apiserver probes unchanged (regression guard)", func() {
+			podSpec := &corev1.PodSpec{}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.NetworkProfile.Port = 6443
+			d.buildKubeAPIServer(podSpec, tcp, "")
+
+			c := containerByName(podSpec, "kube-apiserver")
+			Expect(c.LivenessProbe.HTTPGet.Path).To(Equal("/livez"))
+			Expect(c.ReadinessProbe.HTTPGet.Path).To(Equal("/readyz"))
+			Expect(c.StartupProbe.HTTPGet.Path).To(Equal("/livez"))
+			Expect(c.ReadinessProbe.HTTPGet.Port.IntValue()).To(Equal(6443))
+		})
+	})
 })
