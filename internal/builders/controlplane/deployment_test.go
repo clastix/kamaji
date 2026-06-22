@@ -121,6 +121,11 @@ var _ = Describe("Controlplane Deployment", func() {
 			Expect(probe.InitialDelaySeconds).To(Equal(int32(0)))
 			Expect(probe.SuccessThreshold).To(Equal(int32(1)))
 		})
+
+		It("should not panic when probe is nil", func() {
+			spec := &kamajiv1alpha1.ProbeSpec{PeriodSeconds: pointer.To(int32(20))}
+			Expect(func() { applyProbeOverrides(nil, spec) }).ToNot(Panic())
+		})
 	})
 
 	Describe("mergeAPIServerArgs", func() {

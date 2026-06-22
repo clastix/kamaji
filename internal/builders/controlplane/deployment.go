@@ -52,7 +52,7 @@ const (
 )
 
 func applyProbeOverrides(probe *corev1.Probe, spec *kamajiv1alpha1.ProbeSpec) {
-	if spec == nil {
+	if probe == nil || spec == nil {
 		return
 	}
 
