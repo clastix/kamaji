@@ -139,8 +139,8 @@ helm install \
   cert-manager jetstack/cert-manager \
   --namespace cert-manager \
   --create-namespace \
-  --version v1.11.0 \
-  --set installCRDs=true
+  --version v1.18.3 \
+  --set crds.enabled=true
 ```
 
 ### Install ExternalDNS (optional)
