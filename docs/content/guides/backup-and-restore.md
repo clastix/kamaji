@@ -2,7 +2,7 @@
 
 As mentioned in the introduction, Tenant Control Planes are just regular pods scheduled in the Management Cluster. As such, you can take advantage of the same backup and restore methods that you would use to maintain the standard workload.
 
-This guide will assist you in how to backup and restore TCP resources on the Management Cluster using [Velero](https://tanzu.vmware.com/developer/guides/what-is-velero/).
+This guide will assist you in how to backup and restore TCP resources on the Management Cluster using [Velero](https://velero.io/).
 
 ## Prerequisites
 
