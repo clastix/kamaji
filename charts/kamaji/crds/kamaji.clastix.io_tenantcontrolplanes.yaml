@@ -7369,7 +7369,7 @@ spec:
                                   type: integer
                               type: object
                             readiness:
-                              description: Readiness defines default parameters for the readiness probe of kube-apiserver.
+                              description: Readiness defines default parameters for readiness probes of all Control Plane components.
                               properties:
                                 failureThreshold:
                                   description: FailureThreshold is the consecutive failure count required to consider the probe failed.

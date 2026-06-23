@@ -240,7 +240,7 @@ type ProbeSet struct {
 type ControlPlaneProbes struct {
 	// Liveness defines default parameters for liveness probes of all Control Plane components.
 	Liveness *ProbeSpec `json:"liveness,omitempty"`
-	// Readiness defines default parameters for the readiness probe of kube-apiserver.
+	// Readiness defines default parameters for readiness probes of all Control Plane components.
 	Readiness *ProbeSpec `json:"readiness,omitempty"`
 	// Startup defines default parameters for startup probes of all Control Plane components.
 	Startup *ProbeSpec `json:"startup,omitempty"`

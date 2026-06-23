@@ -44720,7 +44720,7 @@ Override TimeoutSeconds, PeriodSeconds, and FailureThreshold for resource-constr
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentprobesreadiness">readiness</a></b></td>
         <td>object</td>
         <td>
-          Readiness defines default parameters for the readiness probe of kube-apiserver.<br/>
+          Readiness defines default parameters for readiness probes of all Control Plane components.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -45305,7 +45305,7 @@ Must be 1 for liveness and startup probes.<br/>
 <span id="tenantcontrolplanespeccontrolplanedeploymentprobesreadiness">`TenantControlPlane.spec.controlPlane.deployment.probes.readiness`</span>
 
 
-Readiness defines default parameters for the readiness probe of kube-apiserver.
+Readiness defines default parameters for readiness probes of all Control Plane components.
 
 <table>
     <thead>
