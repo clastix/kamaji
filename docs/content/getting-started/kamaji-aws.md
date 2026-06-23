@@ -140,7 +140,7 @@ helm install \
   --namespace cert-manager \
   --create-namespace \
   --version v1.11.0 \
-  --set crds.enabled=true
+  --set installCRDs=true
 ```
 
 ### Install ExternalDNS (optional)
