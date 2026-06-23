@@ -149,6 +149,7 @@ Install cert-manager:
 helm upgrade --install cert-manager jetstack/cert-manager \
   --namespace cert-manager \
   --create-namespace \
+  --version v1.18.3 \
   --set crds.enabled=true
 ```
 
