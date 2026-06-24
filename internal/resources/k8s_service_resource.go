@@ -134,6 +134,16 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 		case kamajiv1alpha1.ServiceTypeLoadBalancer:
 			r.resource.Spec.Type = corev1.ServiceTypeLoadBalancer
 
+			r.resource.Spec.AllocateLoadBalancerNodePorts = tenantControlPlane.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts
+			// Kubernetes does not deallocate an already-assigned NodePort when allocation
+			// is turned off, and the port loop above copies the live NodePort back, so clear
+			// it explicitly when allocation is disabled.
+			if alloc := tenantControlPlane.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts; alloc != nil && !*alloc {
+				for i := range r.resource.Spec.Ports {
+					r.resource.Spec.Ports[i].NodePort = 0
+				}
+			}
+
 			if tenantControlPlane.Spec.NetworkProfile.LoadBalancerClass != nil {
 				r.resource.Spec.LoadBalancerClass = ptr.To(*tenantControlPlane.Spec.NetworkProfile.LoadBalancerClass)
 			}
