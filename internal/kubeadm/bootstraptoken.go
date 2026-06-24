@@ -40,6 +40,10 @@ func BootstrapToken(client kubernetes.Interface, config *Configuration) error {
 		return err
 	}
 
+	if err := node.AllowAPIServerToAccessKubeletAPI(client); err != nil {
+		return fmt.Errorf("error allowing API server kubelet client to access the kubelet API: %w", err)
+	}
+
 	bootstrapConfig := &clientcmdapi.Config{
 		Clusters: map[string]*clientcmdapi.Cluster{
 			"": {
