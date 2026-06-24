@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/jsonpatch/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -32,6 +33,7 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "tcp",
 				Namespace: "default",
+				UID:       uuid.NewUUID(),
 			},
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
@@ -64,10 +66,10 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 			ops, err := t.OnCreate(tcp)(ctx, admission.Request{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ops).To(ContainElement(
-				jsonpatch.Operation{Operation: "add", Path: "/spec/dataStoreSchema", Value: "default_tcp"},
+				jsonpatch.Operation{Operation: "add", Path: "/spec/dataStoreSchema", Value: string(tcp.UID)},
 			))
 			Expect(ops).To(ContainElement(
-				jsonpatch.Operation{Operation: "add", Path: "/spec/dataStoreUsername", Value: "default_tcp"},
+				jsonpatch.Operation{Operation: "add", Path: "/spec/dataStoreUsername", Value: string(tcp.UID)},
 			))
 		})
 	})

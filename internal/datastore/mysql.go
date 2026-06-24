@@ -27,7 +27,7 @@ const (
 	mysqlFetchUserStatement        = "SELECT User FROM mysql.user WHERE User= ? LIMIT 1"
 	mysqlFetchDBStatement          = "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME=? LIMIT 1"
 	mysqlShowGrantsStatement       = "SHOW GRANTS FOR `%s`@`%%`"
-	mysqlCreateDBStatement         = "CREATE DATABASE IF NOT EXISTS %s"
+	mysqlCreateDBStatement         = "CREATE DATABASE IF NOT EXISTS `%s`"
 	mysqlCreateUserStatement       = "CREATE USER `%s`@`%%` IDENTIFIED BY '%s'"
 	mysqlUpdateUserStatement       = "ALTER USER `%s`@`%%` IDENTIFIED BY '%s'"
 	mysqlGrantPrivilegesStatement  = "GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON `%s`.* TO `%s`@`%%`"
@@ -59,7 +59,7 @@ func (c *MySQLConnection) Migrate(ctx context.Context, tcp kamajiv1alpha1.Tenant
 	}
 	defer os.RemoveAll(dir)
 
-	if _, err = c.db.ExecContext(ctx, fmt.Sprintf("USE %s_%s", tcp.GetNamespace(), tcp.GetName())); err != nil {
+	if _, err = c.db.ExecContext(ctx, fmt.Sprintf("USE %s", tcp.Status.Storage.Setup.Schema)); err != nil {
 		return fmt.Errorf("unable to switch DB for MySQL migration: %w", err)
 	}
 

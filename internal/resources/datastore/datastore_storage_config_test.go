@@ -5,7 +5,6 @@ package datastore_test
 
 import (
 	"context"
-	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -71,7 +70,7 @@ var _ = Describe("DatastoreStorageConfig", func() {
 			Expect(fakeClient.List(ctx, &secrets)).To(Succeed())
 			Expect(secrets.Items).To(HaveLen(1))
 
-			expectedValue := []byte(fmt.Sprintf("%s_%s", tcp.Namespace, tcp.Name))
+			expectedValue := []byte(string(tcp.UID))
 
 			Expect(secrets.Items[0].Data["DB_SCHEMA"]).To(Equal(expectedValue))
 			Expect(secrets.Items[0].Data["DB_USER"]).To(Equal(expectedValue))

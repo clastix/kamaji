@@ -227,7 +227,7 @@ func (r *PostgreSQLConnection) GrantPrivileges(ctx context.Context, user, dbName
 	}
 
 	if tableExists {
-		if _, err = dbConn.ExecContext(ctx, fmt.Sprintf("ALTER TABLE kine OWNER TO %s", user)); err != nil {
+		if _, err = dbConn.ExecContext(ctx, fmt.Sprintf(`ALTER TABLE kine OWNER TO "%s"`, user)); err != nil {
 			return errors.NewGrantPrivilegesError(err)
 		}
 	}

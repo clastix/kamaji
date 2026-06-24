@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -112,16 +111,10 @@ func getLoadBalancerAddress(ingress []corev1.LoadBalancerIngress) (string, error
 	return "", kamajierrors.MissingValidIPError{}
 }
 
-func (in *TenantControlPlane) normalizeNamespaceName() string {
-	// The dash character (-) must be replaced with an underscore, PostgreSQL is complaining about it:
-	// https://github.com/clastix/kamaji/issues/328
-	return strings.ReplaceAll(fmt.Sprintf("%s_%s", in.GetNamespace(), in.GetName()), "-", "_")
-}
-
 func (in *TenantControlPlane) GetDefaultDatastoreUsername() string {
-	return in.normalizeNamespaceName()
+	return string(in.UID)
 }
 
 func (in *TenantControlPlane) GetDefaultDatastoreSchema() string {
-	return in.normalizeNamespaceName()
+	return string(in.UID)
 }
