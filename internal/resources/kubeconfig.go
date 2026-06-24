@@ -128,11 +128,12 @@ func (r *KubeconfigResource) CreateOrUpdate(ctx context.Context, tenantControlPl
 	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
-func (r *KubeconfigResource) checksum(caCertificatesSecret *corev1.Secret, kubeadmChecksum string) string {
+func (r *KubeconfigResource) checksum(caCertificatesSecret *corev1.Secret, kubeadmChecksum string, checksum string) string {
 	return utilities.CalculateMapChecksum(map[string][]byte{
 		"ca-cert-checksum": caCertificatesSecret.Data[kubeadmconstants.CACertName],
 		"ca-key-checksum":  caCertificatesSecret.Data[kubeadmconstants.CAKeyName],
 		"kubeadmconfig":    []byte(kubeadmChecksum),
+		"kubeconfig":       []byte(checksum),
 	})
 }
 
@@ -162,7 +163,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
-		checksum := r.checksum(caCertificatesSecret, config.Checksum())
+		checksum := r.checksum(caCertificatesSecret, config.Checksum(), utilities.CalculateMapChecksum(r.resource.Data))
 
 		status, err := r.getKubeconfigStatus(tenantControlPlane)
 		if err != nil {
@@ -241,6 +242,9 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 				r.resource.Data[key] = kubeconfig
 			}
+
+			checksum = r.checksum(caCertificatesSecret, config.Checksum(), utilities.CalculateMapChecksum(r.resource.Data))
+			r.resource.SetAnnotations(utilities.MergeMaps(r.resource.GetAnnotations(), map[string]string{constants.Checksum: checksum}))
 		}
 
 		return nil
