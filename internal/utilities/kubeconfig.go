@@ -4,16 +4,19 @@
 package utilities
 
 import (
+	"errors"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	clientcmdapiv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
+var ErrMissingKubeconfigKey = errors.New("the given key is not available in the kubeconfig Secret")
+
 func DecodeKubeconfig(secret corev1.Secret, key string) (*clientcmdapiv1.Config, error) {
 	bytes, ok := secret.Data[key]
 	if !ok {
-		return nil, fmt.Errorf("%s is not into kubeconfig secret", key)
+		return nil, fmt.Errorf("%w: %s", ErrMissingKubeconfigKey, key)
 	}
 
 	return DecodeKubeconfigYAML(bytes)
