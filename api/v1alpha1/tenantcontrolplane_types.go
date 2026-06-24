@@ -356,6 +356,14 @@ type ServiceSpec struct {
 	AdditionalPorts []AdditionalPort `json:"additionalPorts,omitempty"`
 	// ServiceType allows specifying how to expose the Tenant Control Plane.
 	ServiceType ServiceType `json:"serviceType"`
+	// AllocateLoadBalancerNodePorts defines whether NodePorts are automatically allocated
+	// for the Service when serviceType is LoadBalancer. It maps directly to the Service's
+	// spec.allocateLoadBalancerNodePorts. When nil, the Kubernetes default (true) applies,
+	// preserving existing behaviour. Set to false to expose the Tenant Control Plane only
+	// via the LoadBalancer IP and ClusterIP, without a per-node NodePort. Has no effect for
+	// serviceType NodePort or ClusterIP.
+	//+optional
+	AllocateLoadBalancerNodePorts *bool `json:"allocateLoadBalancerNodePorts,omitempty"`
 }
 
 // AddonSpec defines the spec for every addon.

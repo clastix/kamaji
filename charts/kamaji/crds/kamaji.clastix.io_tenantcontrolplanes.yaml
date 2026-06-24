@@ -8347,6 +8347,15 @@ spec:
                               - targetPort
                             type: object
                           type: array
+                        allocateLoadBalancerNodePorts:
+                          description: |-
+                            AllocateLoadBalancerNodePorts defines whether NodePorts are automatically allocated
+                            for the Service when serviceType is LoadBalancer. It maps directly to the Service's
+                            spec.allocateLoadBalancerNodePorts. When nil, the Kubernetes default (true) applies,
+                            preserving existing behaviour. Set to false to expose the Tenant Control Plane only
+                            via the LoadBalancer IP and ClusterIP, without a per-node NodePort. Has no effect for
+                            serviceType NodePort or ClusterIP.
+                          type: boolean
                         serviceType:
                           description: ServiceType allows specifying how to expose the Tenant Control Plane.
                           enum:

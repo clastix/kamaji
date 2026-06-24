@@ -1564,6 +1564,16 @@ func (in *NetworkProfileSpec) DeepCopyInto(out *NetworkProfileSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.ServiceCIDRs != nil {
+		in, out := &in.ServiceCIDRs, &out.ServiceCIDRs
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.PodCIDRs != nil {
+		in, out := &in.PodCIDRs, &out.PodCIDRs
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.DNSServiceIPs != nil {
 		in, out := &in.DNSServiceIPs, &out.DNSServiceIPs
 		*out = make([]string, len(*in))
@@ -1723,6 +1733,11 @@ func (in *ServiceSpec) DeepCopyInto(out *ServiceSpec) {
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
+	}
+	if in.AllocateLoadBalancerNodePorts != nil {
+		in, out := &in.AllocateLoadBalancerNodePorts, &out.AllocateLoadBalancerNodePorts
+		*out = new(bool)
+		**out = **in
 	}
 }
 
