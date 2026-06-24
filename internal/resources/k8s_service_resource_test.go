@@ -25,6 +25,11 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 		tcp *kamajiv1alpha1.TenantControlPlane
 	)
 
+	// tcpName is shared by both the TenantControlPlane ObjectMeta and the existingService
+	// fixture so they can't silently drift apart (Define() derives the Service name from
+	// the TCP name, so they must match).
+	const tcpName = "test-tcp"
+
 	// seededNodePort is an arbitrary fixed value in the NodePort range that we
 	// pre-populate on the Service fixture. The fake client never allocates NodePorts,
 	// so this value is fully deterministic in the test — unlike a real cluster, where
@@ -35,7 +40,7 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 	// already has a NodePort assigned (as Kubernetes would allocate by default).
 	existingService := func() *corev1.Service {
 		return &corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-tcp", Namespace: "default"},
+			ObjectMeta: metav1.ObjectMeta{Name: tcpName, Namespace: "default"},
 			Spec: corev1.ServiceSpec{
 				Type: corev1.ServiceTypeLoadBalancer,
 				Ports: []corev1.ServicePort{{
@@ -61,7 +66,7 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 	BeforeEach(func() {
 		ctx = context.Background()
 		tcp = &kamajiv1alpha1.TenantControlPlane{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-tcp", Namespace: "default"},
+			ObjectMeta: metav1.ObjectMeta{Name: tcpName, Namespace: "default"},
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					Service: kamajiv1alpha1.ServiceSpec{
@@ -88,10 +93,13 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 		Expect(svc.Spec.AllocateLoadBalancerNodePorts).NotTo(BeNil())
 		Expect(*svc.Spec.AllocateLoadBalancerNodePorts).To(BeFalse())
 		Expect(svc.Spec.Ports).To(HaveLen(1))
-		Expect(svc.Spec.Ports[0].NodePort).To(Equal(int32(0)))
+		Expect(svc.Spec.Ports[0].NodePort).To(BeZero())
 	})
 
-	It("preserves an existing NodePort when the field is unset", func() {
+	It("defaults to true when unset, preserving an existing NodePort", func() {
+		// An unset (nil) field means "use the Kubernetes LoadBalancer default" (true).
+		// The builder writes true explicitly so clearing the field reverts the Service to
+		// the default without churn.
 		tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = nil
 		resource := newResource(existingService())
 
@@ -101,9 +109,47 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 
 		svc := &corev1.Service{}
 		Expect(resource.Client.Get(ctx, client.ObjectKey{Name: tcp.Name, Namespace: tcp.Namespace}, svc)).To(Succeed())
-		Expect(svc.Spec.AllocateLoadBalancerNodePorts).To(BeNil())
+		Expect(svc.Spec.AllocateLoadBalancerNodePorts).NotTo(BeNil())
+		Expect(*svc.Spec.AllocateLoadBalancerNodePorts).To(BeTrue())
 		Expect(svc.Spec.Ports).To(HaveLen(1))
 		Expect(svc.Spec.Ports[0].NodePort).To(Equal(seededNodePort))
+	})
+
+	It("does not churn against a server-defaulted true when field is unset", func() {
+		// Writing the same default value (true) that the API server already defaulted to
+		// produces no diff on DeepEqual, preventing perpetual reconcile churn.
+		tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = nil
+		existing := existingService()
+		existing.Spec.AllocateLoadBalancerNodePorts = ptr.To(true) // API server default on a live LB Service
+		resource := newResource(existing)
+
+		Expect(resource.Define(ctx, tcp)).To(Succeed())
+		_, err := resource.CreateOrUpdate(ctx, tcp)
+		Expect(err).NotTo(HaveOccurred())
+
+		svc := &corev1.Service{}
+		Expect(resource.Client.Get(ctx, client.ObjectKey{Name: tcp.Name, Namespace: tcp.Namespace}, svc)).To(Succeed())
+		Expect(svc.Spec.AllocateLoadBalancerNodePorts).NotTo(BeNil())
+		Expect(*svc.Spec.AllocateLoadBalancerNodePorts).To(BeTrue())
+	})
+
+	It("reverts a previously-false allocation to the default when field is cleared (unset)", func() {
+		// Clearing the field (setting to nil in the TCP spec) is the declarative way to
+		// revert to the Kubernetes LoadBalancer default (true).
+		tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = nil
+		existing := existingService()
+		existing.Spec.AllocateLoadBalancerNodePorts = ptr.To(false) // previously disabled
+		resource := newResource(existing)
+
+		Expect(resource.Define(ctx, tcp)).To(Succeed())
+		_, err := resource.CreateOrUpdate(ctx, tcp)
+		Expect(err).NotTo(HaveOccurred())
+
+		svc := &corev1.Service{}
+		Expect(resource.Client.Get(ctx, client.ObjectKey{Name: tcp.Name, Namespace: tcp.Namespace}, svc)).To(Succeed())
+		Expect(svc.Spec.AllocateLoadBalancerNodePorts).NotTo(BeNil())
+		Expect(*svc.Spec.AllocateLoadBalancerNodePorts).To(BeTrue())
+		// NodePort re-allocation is not modeled by the fake client; no port assertion here.
 	})
 
 	It("propagates an explicit true and leaves the NodePort untouched", func() {

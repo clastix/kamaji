@@ -134,11 +134,20 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 		case kamajiv1alpha1.ServiceTypeLoadBalancer:
 			r.resource.Spec.Type = corev1.ServiceTypeLoadBalancer
 
-			r.resource.Spec.AllocateLoadBalancerNodePorts = tenantControlPlane.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts
+			// AllocateLoadBalancerNodePorts is a declarative knob: an unset (nil) field
+			// means "use the Kubernetes LoadBalancer default" (true). We write that default
+			// explicitly so that clearing the field reverts the Service to the default, and
+			// so reconciles do not churn — writing the same `true` the API server already
+			// defaults to produces no diff, unlike writing nil over a server-defaulted true.
+			allocate := tenantControlPlane.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts
+			if allocate == nil {
+				allocate = ptr.To(true)
+			}
+			r.resource.Spec.AllocateLoadBalancerNodePorts = allocate
 			// Kubernetes does not deallocate an already-assigned NodePort when allocation
 			// is turned off, and the port loop above copies the live NodePort back, so clear
 			// it explicitly when allocation is disabled.
-			if alloc := tenantControlPlane.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts; alloc != nil && !*alloc {
+			if !*allocate {
 				for i := range r.resource.Spec.Ports {
 					r.resource.Spec.Ports[i].NodePort = 0
 				}
