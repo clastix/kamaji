@@ -258,7 +258,7 @@ kubectl apply -f capi-kamaji-vsphere-cluster.yaml
 For cluster deletion, use the following command:
 
 ```bash
-kubectl delete cluster sample
+kubectl delete cluster $CLUSTER_NAME
 ```
 
 Always use `kubectl delete cluster $CLUSTER_NAME` to delete the tenant cluster. Using `kubectl delete -f capi-kamaji-vsphere-cluster.yaml` may lead to orphaned resources in some scenarios, as this method doesn't always respect ownership references between resources that were created after the initial deployment.

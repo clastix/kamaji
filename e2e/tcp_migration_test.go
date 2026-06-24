@@ -10,6 +10,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -98,6 +99,11 @@ func featureTestMigration(driver string) {
 
 		By("waiting for the migrating status")
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionMigrating)
+
+		By("waiting for the webhook installation")
+		Eventually(func() error {
+			return tcpClient.Get(context.Background(), types.NamespacedName{Name: "kamaji-freeze"}, &admissionregistrationv1.ValidatingWebhookConfiguration{})
+		}, time.Minute, time.Second).Should(Succeed())
 
 		By("ensuring changes are not allowed")
 		Consistently(func() error {

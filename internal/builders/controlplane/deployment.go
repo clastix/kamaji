@@ -52,7 +52,7 @@ const (
 )
 
 func applyProbeOverrides(probe *corev1.Probe, spec *kamajiv1alpha1.ProbeSpec) {
-	if spec == nil {
+	if probe == nil || spec == nil {
 		return
 	}
 
@@ -61,6 +61,44 @@ func applyProbeOverrides(probe *corev1.Probe, spec *kamajiv1alpha1.ProbeSpec) {
 	probe.PeriodSeconds = pointer.Deref(spec.PeriodSeconds, probe.PeriodSeconds)
 	probe.SuccessThreshold = pointer.Deref(spec.SuccessThreshold, probe.SuccessThreshold)
 	probe.FailureThreshold = pointer.Deref(spec.FailureThreshold, probe.FailureThreshold)
+}
+
+// defaultProbe builds the standard HTTPS probe shared by all control plane
+// components; only the path and port differ between components and probe types.
+func defaultProbe(path string, port int32) *corev1.Probe {
+	return &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   path,
+				Port:   intstr.FromInt32(port),
+				Scheme: corev1.URISchemeHTTPS,
+			},
+		},
+		InitialDelaySeconds: 0,
+		TimeoutSeconds:      1,
+		PeriodSeconds:       10,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	}
+}
+
+// applyProbeSetOverrides applies the global probe overrides first, then the
+// per-component overrides, to every probe of the container. Probe pointers that
+// are nil are skipped (applyProbeOverrides is nil-safe).
+func applyProbeSetOverrides(c *corev1.Container, probes *kamajiv1alpha1.ControlPlaneProbes, set *kamajiv1alpha1.ProbeSet) {
+	if probes == nil {
+		return
+	}
+
+	applyProbeOverrides(c.LivenessProbe, probes.Liveness)
+	applyProbeOverrides(c.ReadinessProbe, probes.Readiness)
+	applyProbeOverrides(c.StartupProbe, probes.Startup)
+
+	if set != nil {
+		applyProbeOverrides(c.LivenessProbe, set.Liveness)
+		applyProbeOverrides(c.ReadinessProbe, set.Readiness)
+		applyProbeOverrides(c.StartupProbe, set.Startup)
+	}
 }
 
 type DataStoreOverrides struct {
@@ -368,43 +406,12 @@ func (d Deployment) buildScheduler(podSpec *corev1.PodSpec, tenantControlPlane k
 	podSpec.Containers[index].Image = tenantControlPlane.Spec.ControlPlane.Deployment.RegistrySettings.KubeSchedulerImage(tenantControlPlane.Spec.Kubernetes.Version)
 	podSpec.Containers[index].Command = []string{"kube-scheduler"}
 	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
-	podSpec.Containers[index].LivenessProbe = &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/healthz",
-				Port:   intstr.FromInt32(10259),
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 0,
-		TimeoutSeconds:      1,
-		PeriodSeconds:       10,
-		SuccessThreshold:    1,
-		FailureThreshold:    3,
-	}
-	podSpec.Containers[index].StartupProbe = &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/healthz",
-				Port:   intstr.FromInt32(10259),
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 0,
-		TimeoutSeconds:      1,
-		PeriodSeconds:       10,
-		SuccessThreshold:    1,
-		FailureThreshold:    3,
-	}
+	podSpec.Containers[index].LivenessProbe = defaultProbe("/healthz", 10259)
+	podSpec.Containers[index].ReadinessProbe = defaultProbe("/healthz", 10259)
+	podSpec.Containers[index].StartupProbe = defaultProbe("/healthz", 10259)
 
 	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
-		applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Liveness)
-		applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Startup)
-
-		if probes.Scheduler != nil {
-			applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Scheduler.Liveness)
-			applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Scheduler.Startup)
-		}
+		applyProbeSetOverrides(&podSpec.Containers[index], probes, probes.Scheduler)
 	}
 
 	if containerSecurityContexts := tenantControlPlane.Spec.ControlPlane.Deployment.ContainerSecurityContexts; containerSecurityContexts != nil {
@@ -480,43 +487,12 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 	podSpec.Containers[index].Image = tenantControlPlane.Spec.ControlPlane.Deployment.RegistrySettings.KubeControllerManagerImage(tenantControlPlane.Spec.Kubernetes.Version)
 	podSpec.Containers[index].Command = []string{"kube-controller-manager"}
 	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
-	podSpec.Containers[index].LivenessProbe = &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/healthz",
-				Port:   intstr.FromInt32(10257),
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 0,
-		TimeoutSeconds:      1,
-		PeriodSeconds:       10,
-		SuccessThreshold:    1,
-		FailureThreshold:    3,
-	}
-	podSpec.Containers[index].StartupProbe = &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/healthz",
-				Port:   intstr.FromInt32(10257),
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 0,
-		TimeoutSeconds:      1,
-		PeriodSeconds:       10,
-		SuccessThreshold:    1,
-		FailureThreshold:    3,
-	}
+	podSpec.Containers[index].LivenessProbe = defaultProbe("/healthz", 10257)
+	podSpec.Containers[index].ReadinessProbe = defaultProbe("/healthz", 10257)
+	podSpec.Containers[index].StartupProbe = defaultProbe("/healthz", 10257)
 
 	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
-		applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Liveness)
-		applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Startup)
-
-		if probes.ControllerManager != nil {
-			applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.ControllerManager.Liveness)
-			applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.ControllerManager.Startup)
-		}
+		applyProbeSetOverrides(&podSpec.Containers[index], probes, probes.ControllerManager)
 	}
 
 	if containerSecurityContexts := tenantControlPlane.Spec.ControlPlane.Deployment.ContainerSecurityContexts; containerSecurityContexts != nil {
@@ -614,59 +590,12 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 	podSpec.Containers[index].Args = args
 	podSpec.Containers[index].Image = tenantControlPlane.Spec.ControlPlane.Deployment.RegistrySettings.KubeAPIServerImage(tenantControlPlane.Spec.Kubernetes.Version)
 	podSpec.Containers[index].Command = []string{"kube-apiserver"}
-	podSpec.Containers[index].LivenessProbe = &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/livez",
-				Port:   intstr.FromInt32(tenantControlPlane.Spec.NetworkProfile.Port),
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 0,
-		TimeoutSeconds:      1,
-		PeriodSeconds:       10,
-		SuccessThreshold:    1,
-		FailureThreshold:    3,
-	}
-	podSpec.Containers[index].ReadinessProbe = &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/readyz",
-				Port:   intstr.FromInt32(tenantControlPlane.Spec.NetworkProfile.Port),
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 0,
-		TimeoutSeconds:      1,
-		PeriodSeconds:       10,
-		SuccessThreshold:    1,
-		FailureThreshold:    3,
-	}
-	podSpec.Containers[index].StartupProbe = &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/livez",
-				Port:   intstr.FromInt32(tenantControlPlane.Spec.NetworkProfile.Port),
-				Scheme: corev1.URISchemeHTTPS,
-			},
-		},
-		InitialDelaySeconds: 0,
-		TimeoutSeconds:      1,
-		PeriodSeconds:       10,
-		SuccessThreshold:    1,
-		FailureThreshold:    3,
-	}
+	podSpec.Containers[index].LivenessProbe = defaultProbe("/livez", tenantControlPlane.Spec.NetworkProfile.Port)
+	podSpec.Containers[index].ReadinessProbe = defaultProbe("/readyz", tenantControlPlane.Spec.NetworkProfile.Port)
+	podSpec.Containers[index].StartupProbe = defaultProbe("/livez", tenantControlPlane.Spec.NetworkProfile.Port)
 
 	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
-		applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.Liveness)
-		applyProbeOverrides(podSpec.Containers[index].ReadinessProbe, probes.Readiness)
-		applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.Startup)
-
-		if probes.APIServer != nil {
-			applyProbeOverrides(podSpec.Containers[index].LivenessProbe, probes.APIServer.Liveness)
-			applyProbeOverrides(podSpec.Containers[index].ReadinessProbe, probes.APIServer.Readiness)
-			applyProbeOverrides(podSpec.Containers[index].StartupProbe, probes.APIServer.Startup)
-		}
+		applyProbeSetOverrides(&podSpec.Containers[index], probes, probes.APIServer)
 	}
 
 	if containerSecurityContexts := tenantControlPlane.Spec.ControlPlane.Deployment.ContainerSecurityContexts; containerSecurityContexts != nil {

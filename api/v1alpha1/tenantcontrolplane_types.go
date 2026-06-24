@@ -31,10 +31,17 @@ type NetworkProfileSpec struct {
 	// Address where API server will be exposed.
 	// In the case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.
 	Address string `json:"address,omitempty"`
-	// AdvertiseAddress is the address advertised to tenant-side consumers (workers, konnectivity).
-	// When set, the management address is used for CAPI and status reporting, while this address
-	// is used for kubeadm ControlPlaneEndpoint, cluster-info, and admin.conf.
-	// Both addresses are included in the API server certificate SANs.
+	// AdvertiseAddress is the IP address advertised to tenant-side consumers (workers, konnectivity).
+	// It is passed to the API server's --advertise-address flag and used for the kubeadm
+	// ControlPlaneEndpoint, cluster-info, and admin.conf; when set, the management address is used
+	// for CAPI and status reporting. Both addresses are included in the API server certificate SANs.
+	//
+	// This must be an IP address, not a DNS name: --advertise-address and the in-tenant "kubernetes"
+	// Service endpoints only accept IPs. To expose the control plane under a hostname, point a DNS
+	// record at a stable VIP and add the hostname to networkProfile.certSANs; for L7/hostname exposure
+	// see spec.controlPlane.ingress / spec.controlPlane.gateway (mind the TLS-passthrough caveats for
+	// client-certificate authentication).
+	//+kubebuilder:validation:XValidation:rule="self == '' || isIP(self)",message="advertiseAddress must be a valid IP address"
 	AdvertiseAddress string `json:"advertiseAddress,omitempty"`
 	// The default domain name used for DNS resolution within the cluster.
 	//+kubebuilder:default="cluster.local"
@@ -240,7 +247,7 @@ type ProbeSet struct {
 type ControlPlaneProbes struct {
 	// Liveness defines default parameters for liveness probes of all Control Plane components.
 	Liveness *ProbeSpec `json:"liveness,omitempty"`
-	// Readiness defines default parameters for the readiness probe of kube-apiserver.
+	// Readiness defines default parameters for readiness probes of all Control Plane components.
 	Readiness *ProbeSpec `json:"readiness,omitempty"`
 	// Startup defines default parameters for startup probes of all Control Plane components.
 	Startup *ProbeSpec `json:"startup,omitempty"`
