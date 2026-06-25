@@ -96,6 +96,39 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 		Expect(svc.Spec.Ports[0].NodePort).To(BeZero())
 	})
 
+	It("clears NodePorts on every port, including additional ports, when set to false", func() {
+		tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = ptr.To(false)
+		tcp.Spec.ControlPlane.Service.AdditionalPorts = []kamajiv1alpha1.AdditionalPort{{
+			Name:       "metrics",
+			Protocol:   corev1.ProtocolTCP,
+			Port:       9443,
+			TargetPort: intstr.FromInt32(9443),
+		}}
+		resource := newResource(existingService())
+
+		Expect(resource.Define(ctx, tcp)).To(Succeed())
+		_, err := resource.CreateOrUpdate(ctx, tcp)
+		Expect(err).NotTo(HaveOccurred())
+
+		svc := &corev1.Service{}
+		Expect(resource.Client.Get(ctx, client.ObjectKey{Name: tcp.Name, Namespace: tcp.Namespace}, svc)).To(Succeed())
+		Expect(svc.Spec.AllocateLoadBalancerNodePorts).NotTo(BeNil())
+		Expect(*svc.Spec.AllocateLoadBalancerNodePorts).To(BeFalse())
+
+		// Both the kube-apiserver port and the additional port must be present with their
+		// NodePort cleared — the clearing loop covers every port, not just the first one.
+		Expect(svc.Spec.Ports).To(HaveLen(2))
+		byName := map[string]corev1.ServicePort{}
+		for _, p := range svc.Spec.Ports {
+			byName[p.Name] = p
+		}
+		Expect(byName).To(HaveKey("kube-apiserver"))
+		Expect(byName).To(HaveKey("metrics"))
+		Expect(byName["kube-apiserver"].NodePort).To(BeZero())
+		Expect(byName["metrics"].NodePort).To(BeZero())
+		Expect(byName["metrics"].Port).To(Equal(int32(9443)))
+	})
+
 	It("defaults to true when unset, preserving an existing NodePort", func() {
 		// An unset (nil) field means "use the Kubernetes LoadBalancer default" (true).
 		// The builder writes true explicitly so clearing the field reverts the Service to

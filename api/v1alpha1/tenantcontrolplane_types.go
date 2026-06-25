@@ -360,8 +360,9 @@ type ServiceSpec struct {
 	// for the Service when serviceType is LoadBalancer. It maps directly to the Service's
 	// spec.allocateLoadBalancerNodePorts. When nil, the Kubernetes default (true) applies,
 	// preserving existing behaviour. Set to false to expose the Tenant Control Plane only
-	// via the LoadBalancer IP and ClusterIP, without a per-node NodePort. Has no effect for
-	// serviceType NodePort or ClusterIP.
+	// via the LoadBalancer IP and ClusterIP, without a per-node NodePort. This field is only
+	// valid when serviceType is LoadBalancer; setting it with any other serviceType is
+	// rejected by validation.
 	//+optional
 	AllocateLoadBalancerNodePorts *bool `json:"allocateLoadBalancerNodePorts,omitempty"`
 }
@@ -491,6 +492,7 @@ type DataStoreOverride struct {
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreUsername) || has(self.dataStoreUsername)", message="unsetting the dataStoreUsername is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == 'LoadBalancer')", message="LoadBalancer source ranges are supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == 'LoadBalancer'", message="LoadBalancerClass is supported only with LoadBalancer service type"
+// +kubebuilder:validation:XValidation:rule="!has(self.controlPlane.service.allocateLoadBalancerNodePorts) || self.controlPlane.service.serviceType == 'LoadBalancer'", message="allocateLoadBalancerNodePorts is supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)",message="LoadBalancerClass cannot be set or unset at runtime"
 
 type TenantControlPlaneSpec struct {
