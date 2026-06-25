@@ -75,4 +75,47 @@ var _ = Describe("Cluster controller", func() {
 			Expect(err.Error()).To(ContainSubstring("LoadBalancer source ranges are supported only with LoadBalancer service type"))
 		})
 	})
+
+	Context("AdvertiseAddress", func() {
+		It("allows a valid IPv4 address", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
+			tcp.Spec.NetworkProfile.AdvertiseAddress = "10.0.0.10"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("allows a valid IPv6 address", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
+			tcp.Spec.NetworkProfile.AdvertiseAddress = "2001:db8::1"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("allows creation when advertiseAddress is unset", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("denies a DNS hostname", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
+			tcp.Spec.NetworkProfile.AdvertiseAddress = "control-plane.example.com"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("advertiseAddress must be a valid IP address"))
+		})
+
+		It("denies a malformed IP address", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
+			tcp.Spec.NetworkProfile.AdvertiseAddress = "10.0.0.999"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("advertiseAddress must be a valid IP address"))
+		})
+	})
 })
