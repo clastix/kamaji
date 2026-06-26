@@ -8339,6 +8339,16 @@ versions:
                             - targetPort
                           type: object
                         type: array
+                      allocateLoadBalancerNodePorts:
+                        description: |-
+                          AllocateLoadBalancerNodePorts defines whether NodePorts are automatically allocated
+                          for the Service when serviceType is LoadBalancer. It maps directly to the Service's
+                          spec.allocateLoadBalancerNodePorts. When nil, the Kubernetes default (true) applies,
+                          preserving existing behaviour. Set to false to expose the Tenant Control Plane only
+                          via the LoadBalancer IP and ClusterIP, without a per-node NodePort. This field is only
+                          valid when serviceType is LoadBalancer; setting it with any other serviceType is
+                          rejected by validation.
+                        type: boolean
                       serviceType:
                         description: ServiceType allows specifying how to expose the Tenant Control Plane.
                         enum:
@@ -8695,6 +8705,8 @@ versions:
                 rule: '!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == ''LoadBalancer'')'
               - message: LoadBalancerClass is supported only with LoadBalancer service type
                 rule: '!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == ''LoadBalancer'''
+              - message: allocateLoadBalancerNodePorts is supported only with LoadBalancer service type
+                rule: '!has(self.controlPlane.service.allocateLoadBalancerNodePorts) || self.controlPlane.service.serviceType == ''LoadBalancer'''
               - message: LoadBalancerClass cannot be set or unset at runtime
                 rule: self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)
           status:

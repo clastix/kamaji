@@ -31169,6 +31169,19 @@ Defining the options for the Tenant Control Plane Service resource.
 which targets the Tenant Control Plane pods.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>allocateLoadBalancerNodePorts</b></td>
+        <td>boolean</td>
+        <td>
+          AllocateLoadBalancerNodePorts defines whether NodePorts are automatically allocated
+for the Service when serviceType is LoadBalancer. It maps directly to the Service's
+spec.allocateLoadBalancerNodePorts. When nil, the Kubernetes default (true) applies,
+preserving existing behaviour. Set to false to expose the Tenant Control Plane only
+via the LoadBalancer IP and ClusterIP, without a per-node NodePort. This field is only
+valid when serviceType is LoadBalancer; setting it with any other serviceType is
+rejected by validation.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

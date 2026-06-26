@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 var _ = Describe("Cluster controller", func() {
@@ -116,6 +117,32 @@ var _ = Describe("Cluster controller", func() {
 			err := k8sClient.Create(ctx, tcp)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("advertiseAddress must be a valid IP address"))
+		})
+	})
+
+	Context("AllocateLoadBalancerNodePorts", func() {
+		It("allows the field when service type is LoadBalancer", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeLoadBalancer
+			tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = ptr.To(false)
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("allows creation when the field is unset and service type is not LoadBalancer", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("denies the field when service type is not LoadBalancer", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
+			tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = ptr.To(false)
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("allocateLoadBalancerNodePorts is supported only with LoadBalancer service type"))
 		})
 	})
 })
