@@ -16,20 +16,24 @@ import (
 )
 
 const (
+	// Identifiers (database and role names) cannot be passed as bind parameters,
+	// so the `%s` verbs below must only ever be fed values run through
+	// quotePostgreSQLIdentifier. Plain values keep using the `?` placeholder as
+	// regular bind parameters.
 	postgresqlFetchDBStatement            = "SELECT FROM pg_database WHERE datname = ?"
-	postgresqlCreateDBStatement           = `CREATE DATABASE "%s"`
+	postgresqlCreateDBStatement           = `CREATE DATABASE %s`
 	postgresqlUserExists                  = "SELECT 1 FROM pg_roles WHERE rolname = ?"
-	postgresqlCreateUserStatement         = `CREATE ROLE "%s" LOGIN PASSWORD ?`
-	postgresqlUpdateUserStatement         = `ALTER ROLE "%s" WITH PASSWORD ?`
+	postgresqlCreateUserStatement         = `CREATE ROLE %s LOGIN PASSWORD ?`
+	postgresqlUpdateUserStatement         = `ALTER ROLE %s WITH PASSWORD ?`
 	postgresqlShowGrantsStatement         = "SELECT has_database_privilege(rolname, ?, 'create') from pg_roles where rolcanlogin and rolname = ?"
 	postgresqlShowOwnershipStatement      = "SELECT 't' FROM pg_catalog.pg_database AS d WHERE d.datname = ? AND pg_catalog.pg_get_userbyid(d.datdba) = ?"
 	postgresqlShowTableOwnershipStatement = "SELECT 't' from pg_tables where tableowner = ? AND tablename = ?"
 	postgresqlKineTableExistsStatement    = "SELECT 't' FROM pg_tables WHERE schemaname = ? AND tablename  = ?"
-	postgresqlGrantPrivilegesStatement    = `GRANT CONNECT, CREATE ON DATABASE "%s" TO "%s"`
-	postgresqlChangeOwnerStatement        = `ALTER DATABASE "%s" OWNER TO "%s"`
-	postgresqlRevokePrivilegesStatement   = `REVOKE ALL PRIVILEGES ON DATABASE "%s" FROM "%s"`
-	postgresqlDropRoleStatement           = `DROP ROLE "%s"`
-	postgresqlDropDBStatement             = `DROP DATABASE "%s" WITH (FORCE)`
+	postgresqlGrantPrivilegesStatement    = `GRANT CONNECT, CREATE ON DATABASE %s TO %s`
+	postgresqlChangeOwnerStatement        = `ALTER DATABASE %s OWNER TO %s`
+	postgresqlRevokePrivilegesStatement   = `REVOKE ALL PRIVILEGES ON DATABASE %s FROM %s`
+	postgresqlDropRoleStatement           = `DROP ROLE %s`
+	postgresqlDropDBStatement             = `DROP DATABASE %s WITH (FORCE)`
 )
 
 type PostgreSQLConnection struct {
@@ -135,7 +139,7 @@ func (r *PostgreSQLConnection) UserExists(ctx context.Context, user string) (boo
 }
 
 func (r *PostgreSQLConnection) CreateUser(ctx context.Context, user, password string) error {
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlCreateUserStatement, user), password)
+	_, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlCreateUserStatement, quotePostgreSQLIdentifier(user)), password)
 	if err != nil {
 		return errors.NewCreateUserError(err)
 	}
@@ -144,7 +148,7 @@ func (r *PostgreSQLConnection) CreateUser(ctx context.Context, user, password st
 }
 
 func (r *PostgreSQLConnection) UpdateUser(ctx context.Context, user, password string) error {
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlUpdateUserStatement, user), password)
+	_, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlUpdateUserStatement, quotePostgreSQLIdentifier(user)), password)
 	if err != nil {
 		return errors.NewUpdateUserError(err)
 	}
@@ -162,7 +166,7 @@ func (r *PostgreSQLConnection) DBExists(ctx context.Context, dbName string) (boo
 }
 
 func (r *PostgreSQLConnection) CreateDB(ctx context.Context, dbName string) error {
-	_, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlCreateDBStatement, dbName))
+	_, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlCreateDBStatement, quotePostgreSQLIdentifier(dbName)))
 	if err != nil {
 		return errors.NewCreateDBError(err)
 	}
@@ -210,14 +214,14 @@ func (r *PostgreSQLConnection) GrantPrivilegesExists(ctx context.Context, user, 
 }
 
 func (r *PostgreSQLConnection) GrantPrivileges(ctx context.Context, user, dbName string) error {
-	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlGrantPrivilegesStatement, dbName, user)); err != nil {
+	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlGrantPrivilegesStatement, quotePostgreSQLIdentifier(dbName), quotePostgreSQLIdentifier(user))); err != nil {
 		return errors.NewGrantPrivilegesError(err)
 	}
 
 	dbConn := r.switchDatabaseFn(dbName)
 	defer dbConn.Close()
 
-	if _, err := dbConn.ExecContext(ctx, fmt.Sprintf(postgresqlChangeOwnerStatement, dbName, user)); err != nil {
+	if _, err := dbConn.ExecContext(ctx, fmt.Sprintf(postgresqlChangeOwnerStatement, quotePostgreSQLIdentifier(dbName), quotePostgreSQLIdentifier(user))); err != nil {
 		return errors.NewGrantPrivilegesError(err)
 	}
 
@@ -227,7 +231,7 @@ func (r *PostgreSQLConnection) GrantPrivileges(ctx context.Context, user, dbName
 	}
 
 	if tableExists {
-		if _, err = dbConn.ExecContext(ctx, fmt.Sprintf(`ALTER TABLE kine OWNER TO "%s"`, user)); err != nil {
+		if _, err = dbConn.ExecContext(ctx, fmt.Sprintf("ALTER TABLE kine OWNER TO %s", quotePostgreSQLIdentifier(user))); err != nil {
 			return errors.NewGrantPrivilegesError(err)
 		}
 	}
@@ -236,7 +240,7 @@ func (r *PostgreSQLConnection) GrantPrivileges(ctx context.Context, user, dbName
 }
 
 func (r *PostgreSQLConnection) DeleteUser(ctx context.Context, user string) error {
-	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlDropRoleStatement, user)); err != nil {
+	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlDropRoleStatement, quotePostgreSQLIdentifier(user))); err != nil {
 		return errors.NewDeleteUserError(err)
 	}
 
@@ -248,7 +252,7 @@ func (r *PostgreSQLConnection) DeleteDB(ctx context.Context, dbName string) erro
 		return errors.NewCannotDeleteDatabaseError(fmt.Errorf("cannot grant privileges to root user: %w", err))
 	}
 
-	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlDropDBStatement, dbName)); err != nil {
+	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlDropDBStatement, quotePostgreSQLIdentifier(dbName))); err != nil {
 		return errors.NewCannotDeleteDatabaseError(err)
 	}
 
@@ -256,7 +260,7 @@ func (r *PostgreSQLConnection) DeleteDB(ctx context.Context, dbName string) erro
 }
 
 func (r *PostgreSQLConnection) RevokePrivileges(ctx context.Context, user, dbName string) error {
-	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlRevokePrivilegesStatement, dbName, user)); err != nil {
+	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(postgresqlRevokePrivilegesStatement, quotePostgreSQLIdentifier(dbName), quotePostgreSQLIdentifier(user))); err != nil {
 		return errors.NewRevokePrivilegesError(err)
 	}
 
@@ -291,4 +295,18 @@ func (r *PostgreSQLConnection) kineTableExists(ctx context.Context, db *pg.DB) (
 	}
 
 	return tableExists == "t", nil
+}
+
+// quotePostgreSQLIdentifier safely quotes a PostgreSQL identifier (such as a
+// database or role name) so it can be interpolated into a statement: it wraps
+// the value in double quotes and doubles any embedded double quote, preventing
+// a malicious value from breaking out of the identifier and injecting SQL. NUL
+// bytes, which are illegal in identifiers, are stripped. Identifiers cannot be
+// supplied as bind parameters, hence the manual quoting. The whole value is
+// treated as a single identifier (dots are not treated as schema separators),
+// preserving the historical behaviour for dotted database/role names.
+func quotePostgreSQLIdentifier(identifier string) string {
+	identifier = strings.ReplaceAll(identifier, "\x00", "")
+
+	return `"` + strings.ReplaceAll(identifier, `"`, `""`) + `"`
 }

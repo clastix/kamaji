@@ -25,10 +25,12 @@ func NewStorageConnection(ctx context.Context, client client.Client, ds kamajiv1
 			cc.TLSConfig.ServerName = cc.Endpoints[0].Host
 		}
 
-		cc.Parameters = map[string][]string{
-			"multiStatements": {"true"},
-		}
-
+		// NOTE: multiStatements is intentionally NOT enabled here. Only the dump
+		// import performed during Migrate needs to execute a batch of statements
+		// in a single call, and it opens its own scoped connection for that.
+		// Keeping the primary connection single-statement prevents any SQL
+		// injection on the interpolated DDL statements from escalating into
+		// stacked queries.
 		return NewMySQLConnection(*cc)
 	case kamajiv1alpha1.KinePostgreSQLDriver:
 		if ds.Spec.TLSConfig != nil {
