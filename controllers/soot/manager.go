@@ -374,7 +374,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			Client: m.AdminClient,
 			Phase:  resources.PhaseClusterAdminRBAC,
 		},
-		TriggerChannel: make(chan event.GenericEvent),
+		TriggerChannel: make(chan event.GenericEvent, 1), // buffered: pre-seeded below to run on startup
 		ControllerName: fmt.Sprintf("%s-kubeadmrbac", controllerNamePrefix),
 	}
 	if err = kubeadmRbac.SetupWithManager(mgr); err != nil {
@@ -406,6 +406,12 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		close(completedCh)
 	}()
 
+	// Pre-seed so PhaseClusterAdminRBAC runs on startup rather than waiting for a kubeadm: CRB watch event.
+	var initTCP kamajiv1alpha1.TenantControlPlane
+	initTCP.Name = tcp.Name
+	initTCP.Namespace = tcp.Namespace
+	kubeadmRbac.TriggerChannel <- event.GenericEvent{Object: &initTCP}
+
 	m.sootMap[request.NamespacedName.String()] = sootItem{
 		certificateSha: tcp.Status.KubeConfig.Admin.Checksum,
 		triggers: []chan event.GenericEvent{
@@ -417,6 +423,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			uploadKubeadmConfig.TriggerChannel,
 			uploadKubeletConfig.TriggerChannel,
 			bootstrapToken.TriggerChannel,
+			kubeadmRbac.TriggerChannel,
 		},
 		cancelFn:    tcpCancelFn,
 		completedCh: completedCh,
