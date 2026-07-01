@@ -4,7 +4,6 @@
   <img src="https://img.shields.io/github/license/clastix/kamaji"/>
   <img src="https://img.shields.io/github/go-mod/go-version/clastix/kamaji"/>
   <a href="https://github.com/clastix/kamaji/releases"><img src="https://img.shields.io/github/v/release/clastix/kamaji"/></a>
-  <img src="https://goreportcard.com/badge/github.com/clastix/kamaji">
   <a href="https://kubernetes.slack.com/archives/C03GLTTMWNN"><img alt="#kamaji on Kubernetes Slack" src="https://img.shields.io/badge/slack-@kubernetes/kamaji-blue.svg?logo=slack"/></a>
 </p>
 
