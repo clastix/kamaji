@@ -284,4 +284,44 @@ var _ = Describe("Controlplane Deployment", func() {
 			Expect(c.ReadinessProbe.HTTPGet.Port.IntValue()).To(Equal(6443))
 		})
 	})
+
+	Describe("ServiceAccount", func() {
+		It("should default to 'default' SA with nil automount", func() {
+			podSpec := &corev1.PodSpec{}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			d.setServiceAccount(podSpec, tcp)
+			Expect(podSpec.ServiceAccountName).To(Equal("default"))
+			Expect(podSpec.AutomountServiceAccountToken).To(BeNil())
+		})
+
+		It("should set a custom SA name with nil automount", func() {
+			podSpec := &corev1.PodSpec{}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.ServiceAccountName = "custom-sa"
+			d.setServiceAccount(podSpec, tcp)
+			Expect(podSpec.ServiceAccountName).To(Equal("custom-sa"))
+			Expect(podSpec.AutomountServiceAccountToken).To(BeNil())
+		})
+
+		It("should enable automount when AutomountServiceAccountToken is true", func() {
+			podSpec := &corev1.PodSpec{}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.AutomountServiceAccountToken = pointer.To(true)
+			d.setServiceAccount(podSpec, tcp)
+			Expect(podSpec.ServiceAccountName).To(Equal("default"))
+			Expect(podSpec.AutomountServiceAccountToken).ToNot(BeNil())
+			Expect(*podSpec.AutomountServiceAccountToken).To(BeTrue())
+		})
+
+		It("should disable automount when AutomountServiceAccountToken is false", func() {
+			podSpec := &corev1.PodSpec{}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.AutomountServiceAccountToken = pointer.To(false)
+			tcp.Spec.ControlPlane.Deployment.ServiceAccountName = "another-sa"
+			d.setServiceAccount(podSpec, tcp)
+			Expect(podSpec.ServiceAccountName).To(Equal("another-sa"))
+			Expect(podSpec.AutomountServiceAccountToken).ToNot(BeNil())
+			Expect(*podSpec.AutomountServiceAccountToken).To(BeFalse())
+		})
+	})
 })
