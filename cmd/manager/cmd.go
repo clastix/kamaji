@@ -46,6 +46,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	var (
 		metricsBindAddress            string
 		healthProbeBindAddress        string
+		pprofBindAddress              string
 		leaderElect                   bool
 		tmpDirectory                  string
 		kineImage                     string
@@ -114,6 +115,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				Metrics: metricsserver.Options{
 					BindAddress: metricsBindAddress,
 				},
+				PprofBindAddress: pprofBindAddress,
 				WebhookServer: ctrlwebhook.NewServer(ctrlwebhook.Options{
 					Port: 9443,
 				}),
@@ -323,6 +325,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	// Setting CLI flags
 	cmd.Flags().StringVar(&metricsBindAddress, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	cmd.Flags().StringVar(&healthProbeBindAddress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	cmd.Flags().StringVar(&pprofBindAddress, "pprof-bind-address", "", "The address the pprof profiler binds to.")
 	cmd.Flags().BoolVar(&leaderElect, "leader-elect", true, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	cmd.Flags().StringVar(&tmpDirectory, "tmp-directory", "/tmp/kamaji", "Directory which will be used to work with temporary files.")
 	cmd.Flags().StringVar(&kineImage, "kine-image", "rancher/kine:v0.11.10-amd64", "Container image along with tag to use for the Kine sidecar container (used only if etcd-storage-type is set to one of kine strategies).")
