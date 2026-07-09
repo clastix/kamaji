@@ -144,6 +144,12 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
+			if err = (&controllers.DataStoreUsage{Client: mgr.GetClient()}).SetupWithManager(mgr); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "DataStoreUsage")
+
+				return err
+			}
+
 			discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
 			if err != nil {
 				setupLog.Error(err, "unable to create discovery client")

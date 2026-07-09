@@ -13,15 +13,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	k8stypes "k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/util/workqueue"
 	controllerruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -82,26 +82,17 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 			return reconcile.Result{}, uErr
 		}
 
-		return reconcile.Result{}, nil
+		// Finalizer updates are ignored by the DataStore predicate, so explicitly requeue
+		// to continue with validation and status reconciliation.
+		return reconcile.Result{Requeue: true}, nil
 	}
 	// Extracting the list of TenantControlPlane objects referenced by the given DataStore:
-	// this data is used to reference these in the Status, as well as propagating changes
-	// that would be required, such as changing TLS Configuration, or Basic Auth.
-	var tcpList kamajiv1alpha1.TenantControlPlaneList
-
-	if lErr := r.Client.List(ctx, &tcpList, client.MatchingFieldsSelector{
-		Selector: fields.OneTermEqualSelector(kamajiv1alpha1.TenantControlPlaneUsedDataStoreKey, ds.GetName()),
-	}); lErr != nil {
+	// this data is used to block deletions, as well as propagating changes that would be required,
+	// such as changing TLS Configuration, or Basic Auth.
+	tcpList, lErr := listTenantControlPlanesUsingDataStore(ctx, r.Client, ds.GetName())
+	if lErr != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot retrieve list of the Tenant Control Plane using the following instance: %w", lErr)
 	}
-
-	tcpSets := sets.NewString()
-
-	for _, tcp := range tcpList.Items {
-		tcpSets.Insert(getNamespacedName(tcp.GetNamespace(), tcp.GetName()).String())
-	}
-
-	ds.Status.UsedBy = tcpSets.List()
 	// Performing the status update only at the end of the reconciliation loop:
 	// this is performed in defer to avoid duplication of code,
 	// and triggering a reconciliation of depending on TenantControlPlanes only if the update was successful.
@@ -138,7 +129,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 
 		logger.Info("triggering cascading reconciliation for TenantControlPlanes")
 
-		for _, tcp := range tcpList.Items {
+		for _, tcp := range tcpList {
 			var shrunkTCP kamajiv1alpha1.TenantControlPlane
 
 			shrunkTCP.Name = tcp.Name
@@ -149,7 +140,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	}()
 
 	if ds.GetDeletionTimestamp() != nil {
-		if len(tcpList.Items) > 0 {
+		if len(tcpList) > 0 {
 			logger.Info("deletion is blocked due to DataStore still being referenced")
 
 			meta.SetStatusCondition(&ds.Status.Conditions, metav1.Condition{
@@ -163,7 +154,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 			return reconcile.Result{}, nil
 		}
 
-		if meta.IsStatusConditionFalse(ds.Status.Conditions, kamajiv1alpha1.DataStoreConditionAllowedDeletionType) || len(tcpList.Items) == 0 {
+		if meta.IsStatusConditionFalse(ds.Status.Conditions, kamajiv1alpha1.DataStoreConditionAllowedDeletionType) || len(tcpList) == 0 {
 			logger.Info("DataStore is not used by any TenantControlPlane object")
 
 			meta.SetStatusCondition(&ds.Status.Conditions, metav1.Condition{
@@ -197,7 +188,9 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 			return reconcile.Result{}, fmt.Errorf("cannot update the status for the given instance: %w", sErr)
 		}
 
-		return reconcile.Result{}, nil
+		// Status-only updates are ignored by the DataStore predicate, so explicitly requeue
+		// to continue with the actual validation flow.
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	if ds.Spec.BasicAuth != nil {
@@ -263,30 +256,8 @@ func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
 		return err
 	}
 
-	enqueueFn := func(tcp *kamajiv1alpha1.TenantControlPlane, limitingInterface workqueue.TypedRateLimitingInterface[reconcile.Request]) {
-		if dataStoreName := tcp.Status.Storage.DataStoreName; len(dataStoreName) > 0 {
-			limitingInterface.AddRateLimited(reconcile.Request{
-				NamespacedName: k8stypes.NamespacedName{
-					Name: dataStoreName,
-				},
-			})
-		}
-	}
-	//nolint:forcetypeassert
 	return controllerruntime.NewControllerManagedBy(mgr).
-		For(&kamajiv1alpha1.DataStore{}).
-		Watches(&kamajiv1alpha1.TenantControlPlane{}, handler.Funcs{
-			CreateFunc: func(_ context.Context, createEvent event.TypedCreateEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
-				enqueueFn(createEvent.Object.(*kamajiv1alpha1.TenantControlPlane), w)
-			},
-			UpdateFunc: func(_ context.Context, updateEvent event.TypedUpdateEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
-				enqueueFn(updateEvent.ObjectOld.(*kamajiv1alpha1.TenantControlPlane), w)
-				enqueueFn(updateEvent.ObjectNew.(*kamajiv1alpha1.TenantControlPlane), w)
-			},
-			DeleteFunc: func(_ context.Context, deleteEvent event.TypedDeleteEvent[client.Object], w workqueue.TypedRateLimitingInterface[reconcile.Request]) {
-				enqueueFn(deleteEvent.Object.(*kamajiv1alpha1.TenantControlPlane), w)
-			},
-		}).
+		For(&kamajiv1alpha1.DataStore{}, builder.WithPredicates(dataStoreReconcilePredicate{})).
 		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object client.Object) []reconcile.Request {
 			var dsList kamajiv1alpha1.DataStoreList
 			if err := r.Client.List(ctx, &dsList, client.MatchingFieldsSelector{Selector: fields.OneTermEqualSelector(kamajiv1alpha1.DatastoreUsedSecretNamespacedNameKey, fmt.Sprintf("%s/%s", object.GetNamespace(), object.GetName()))}); err != nil {
@@ -303,6 +274,29 @@ func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
 			return requests
 		})).
 		Complete(r)
+}
+
+// dataStoreReconcilePredicate ignores status-only DataStore updates, such as
+// DataStore.status.usedBy updates maintained by DataStoreUsage, to avoid
+// cascading TenantControlPlane reconciliation from status maintenance.
+type dataStoreReconcilePredicate struct {
+	predicate.Funcs
+}
+
+func (dataStoreReconcilePredicate) Create(event.TypedCreateEvent[client.Object]) bool {
+	return true
+}
+
+func (dataStoreReconcilePredicate) Delete(event.TypedDeleteEvent[client.Object]) bool {
+	return true
+}
+
+func (dataStoreReconcilePredicate) Update(e event.TypedUpdateEvent[client.Object]) bool {
+	if e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration() {
+		return true
+	}
+
+	return e.ObjectOld.GetDeletionTimestamp().IsZero() && !e.ObjectNew.GetDeletionTimestamp().IsZero()
 }
 
 func (r *DataStore) refreshDatastoreMetrics(ctx context.Context) error {

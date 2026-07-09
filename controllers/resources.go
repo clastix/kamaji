@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -332,10 +331,6 @@ func getKonnectivityServerPatchResources(c client.Client) []resources.Resource {
 		&konnectivity.KubernetesDeploymentResource{Builder: builder.Konnectivity{Scheme: *c.Scheme()}, Client: c},
 		&konnectivity.ServiceResource{Client: c},
 	}
-}
-
-func getNamespacedName(namespace string, name string) k8stypes.NamespacedName {
-	return k8stypes.NamespacedName{Namespace: namespace, Name: name}
 }
 
 func getTmpDirectory(base string, tenantControlPlane kamajiv1alpha1.TenantControlPlane) string {
