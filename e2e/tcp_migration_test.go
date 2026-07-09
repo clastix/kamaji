@@ -86,6 +86,11 @@ func featureTestMigration(driver string) {
 		ns.SetName("kamaji-test")
 		Expect(tcpClient.Create(context.Background(), ns)).ToNot(HaveOccurred())
 
+		By("checking the initial DataStore usedBy membership")
+		Eventually(func() bool {
+			return dataStoreUsedByContains(fmt.Sprintf("%s-bronze", driver), tcp)
+		}, time.Minute, time.Second).Should(BeTrue())
+
 		By("start migration to a new DataStore")
 		Eventually(func() error {
 			if err := k8sClient.Get(context.Background(), types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.GetName()}, tcp); err != nil {
@@ -122,6 +127,14 @@ func featureTestMigration(driver string) {
 			return tcp.Status.Storage.DataStoreName
 		}, time.Minute, time.Second).Should(BeEquivalentTo(fmt.Sprintf("%s-silver", driver)))
 
+		By("checking the DataStore usedBy membership")
+		Eventually(func() bool {
+			return dataStoreUsedByContains(fmt.Sprintf("%s-bronze", driver), tcp)
+		}, time.Minute, time.Second).Should(BeFalse())
+		Eventually(func() bool {
+			return dataStoreUsedByContains(fmt.Sprintf("%s-silver", driver), tcp)
+		}, time.Minute, time.Second).Should(BeTrue())
+
 		By("checking the presence of the previous Namespace")
 		Eventually(func() error {
 			return tcpClient.Get(context.Background(), types.NamespacedName{Name: ns.GetName()}, &corev1.Namespace{})
@@ -145,3 +158,19 @@ var _ = Describe("When migrating a Tenant Control Plane to another datastore (et
 var _ = Describe("When migrating a Tenant Control Plane to another datastore (postgresql)", func() {
 	featureTestMigration("postgresql")
 })
+
+func dataStoreUsedByContains(dataStoreName string, tcp *kamajiv1alpha1.TenantControlPlane) bool {
+	var dataStore kamajiv1alpha1.DataStore
+	if err := k8sClient.Get(context.Background(), types.NamespacedName{Name: dataStoreName}, &dataStore); err != nil {
+		return false
+	}
+
+	tcpNamespacedName := types.NamespacedName{Name: tcp.GetName(), Namespace: tcp.GetNamespace()}.String()
+	for _, usedBy := range dataStore.Status.UsedBy {
+		if usedBy == tcpNamespacedName {
+			return true
+		}
+	}
+
+	return false
+}
