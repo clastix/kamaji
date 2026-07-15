@@ -685,12 +685,17 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 	// Opinionated defaults: applied only when the user didn't provide the same flag in ExtraArgs.
 	safeDefaults := map[string]string{
 		"--allow-privileged":                   "true",
-		"--authorization-mode":                 "Node,RBAC",
 		"--enable-bootstrap-token-auth":        "true",
 		"--requestheader-extra-headers-prefix": "X-Remote-Extra-",
 		"--requestheader-group-headers":        "X-Remote-Group",
 		"--requestheader-username-headers":     "X-Remote-User",
 		"--service-account-issuer":             "https://kubernetes.default.svc.cluster.local",
+	}
+
+	// https://github.com/kubernetes/kubernetes/blob/6720f0f96000abb82ad51d1177489b04188819d8/cmd/kubeadm/app/phases/controlplane/manifests.go#L253-L255
+	// Mirror kubeadm's mutually exclusive configuration
+	if _, ok := utilities.ArgsFromSliceToMap(userExtras)["--authorization-config"]; !ok {
+		safeDefaults["--authorization-mode"] = "Node,RBAC"
 	}
 
 	// backward compatibility for deprecated CIDR fields
