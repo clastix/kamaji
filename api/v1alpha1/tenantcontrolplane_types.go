@@ -446,6 +446,8 @@ type KonnectivityAgentSpec struct {
 	// Must be 0 if Mode is DaemonSet.
 	//+kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
+	// SecurityContext defines the SecurityContext for the Konnectivity agent container.
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.
