@@ -31,6 +31,8 @@ type Migrate struct {
 	KamajiServiceName    string
 	ShouldCleanUp        bool
 	MigrateImage         string
+	PodSecurityContext   *corev1.PodSecurityContext
+	SecurityContext      *corev1.SecurityContext
 
 	actualDatastore  *kamajiv1alpha1.DataStore
 	desiredDatastore *kamajiv1alpha1.DataStore
@@ -117,6 +119,8 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 			d.job.Spec.Template.Spec.Containers = append(d.job.Spec.Template.Spec.Containers, corev1.Container{})
 		}
 		d.job.Spec.Template.Spec.Containers[0].Name = "migrate"
+		d.job.Spec.Template.Spec.Containers[0].SecurityContext = d.SecurityContext
+		d.job.Spec.Template.Spec.SecurityContext = d.PodSecurityContext
 		d.job.Spec.Template.Spec.Containers[0].Image = d.MigrateImage
 		d.job.Spec.Template.Spec.Containers[0].Args = []string{
 			"migrate",

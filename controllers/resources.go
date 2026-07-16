@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
+	corev1 "k8s.io/api/core/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,6 +40,8 @@ type GroupResourceBuilderConfiguration struct {
 	KamajiServiceAccount          string
 	KamajiService                 string
 	KamajiMigrateImage            string
+	MigratePodSecurityContext     *corev1.PodSecurityContext
+	MigrateSecurityContext        *corev1.SecurityContext
 	DiscoveryClient               discovery.DiscoveryInterface
 }
 
@@ -57,7 +60,7 @@ type GroupDeletableResourceBuilderConfiguration struct {
 func GetResources(ctx context.Context, config GroupResourceBuilderConfiguration) []resources.Resource {
 	resources := []resources.Resource{}
 
-	resources = append(resources, getDataStoreMigratingResources(config.client, config.KamajiNamespace, config.KamajiMigrateImage, config.KamajiServiceAccount, config.KamajiService)...)
+	resources = append(resources, getDataStoreMigratingResources(config.client, config.KamajiNamespace, config.KamajiMigrateImage, config.KamajiServiceAccount, config.KamajiService, config.MigratePodSecurityContext, config.MigrateSecurityContext)...)
 	resources = append(resources, getUpgradeResources(config.client)...)
 	resources = append(resources, getKubernetesServiceResources(config.client)...)
 	resources = append(resources, getKubeadmConfigResources(config.client, getTmpDirectory(config.tcpReconcilerConfig.TmpBaseDirectory, config.tenantControlPlane), config.DataStore)...)
@@ -111,7 +114,7 @@ func getDataStoreMigratingCleanup(c client.Client, kamajiNamespace string) []res
 	}
 }
 
-func getDataStoreMigratingResources(c client.Client, kamajiNamespace, migrateImage string, kamajiServiceAccount, kamajiService string) []resources.Resource {
+func getDataStoreMigratingResources(c client.Client, kamajiNamespace, migrateImage string, kamajiServiceAccount, kamajiService string, podSC *corev1.PodSecurityContext, containerSC *corev1.SecurityContext) []resources.Resource {
 	return []resources.Resource{
 		&ds.Migrate{
 			Client:               c,
@@ -119,6 +122,8 @@ func getDataStoreMigratingResources(c client.Client, kamajiNamespace, migrateIma
 			KamajiNamespace:      kamajiNamespace,
 			KamajiServiceAccount: kamajiServiceAccount,
 			KamajiServiceName:    kamajiService,
+			PodSecurityContext:   podSC,
+			SecurityContext:      containerSC,
 		},
 	}
 }
