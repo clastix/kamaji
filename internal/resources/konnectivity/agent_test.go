@@ -11,6 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
@@ -62,8 +63,8 @@ var _ = Describe("Agent securityContext", func() {
 	When("KonnectivityAgentSpec.SecurityContext is set", func() {
 		It("threads the securityContext onto the DaemonSet container", func() {
 			sc := &corev1.SecurityContext{
-				RunAsNonRoot: func(b bool) *bool { return &b }(true),
-				RunAsUser:    func(i int64) *int64 { return &i }(65534),
+				RunAsNonRoot: ptr.To(true),
+				RunAsUser:    ptr.To(int64(65534)),
 			}
 			tcp.Spec.Addons.Konnectivity.KonnectivityAgentSpec.SecurityContext = sc
 
@@ -85,6 +86,24 @@ var _ = Describe("Agent securityContext", func() {
 			ds := r.resource.(*appsv1.DaemonSet) //nolint:forcetypeassert
 			Expect(ds.Spec.Template.Spec.Containers).To(HaveLen(1))
 			Expect(ds.Spec.Template.Spec.Containers[0].SecurityContext).To(BeNil())
+		})
+	})
+
+	When("Mode is Deployment and SecurityContext is set", func() {
+		It("threads the securityContext onto the Deployment container", func() {
+			sc := &corev1.SecurityContext{
+				RunAsNonRoot: ptr.To(true),
+				RunAsUser:    ptr.To(int64(65534)),
+			}
+			tcp.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode = kamajiv1alpha1.KonnectivityAgentModeDeployment
+			tcp.Spec.Addons.Konnectivity.KonnectivityAgentSpec.SecurityContext = sc
+
+			r := &Agent{resource: &appsv1.Deployment{}}
+			Expect(r.mutate(ctx, tcp)()).To(Succeed())
+
+			deploy := r.resource.(*appsv1.Deployment) //nolint:forcetypeassert
+			Expect(deploy.Spec.Template.Spec.Containers).To(HaveLen(1))
+			Expect(deploy.Spec.Template.Spec.Containers[0].SecurityContext).To(Equal(sc))
 		})
 	})
 })
