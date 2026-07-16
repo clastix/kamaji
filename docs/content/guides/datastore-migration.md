@@ -211,7 +211,7 @@ If the `kamaji-system` namespace enforces a `restricted` [Pod Security Standard]
 The migration Job automatically inherits the pod- and container-level `securityContext` from the Kamaji controller pod. No additional configuration is needed — the Helm chart ships the required `POD_NAME` environment variable and the `pods/get` RBAC permission.
 
 !!! info "Prerequisite"
-    The inherit mechanism reads the controller's own pod at runtime. It requires the `kamaji-controller-manager` service account to have `pods/get` on the `kamaji-system` namespace, which the Helm chart configures automatically. Custom RBAC setups must add this permission explicitly.
+    The inherit mechanism reads the controller's own pod at runtime. It requires the controller's `ClusterRole` to grant `pods/get` (cluster-scoped, since Kamaji generates RBAC from controller-gen markers), which the Helm chart ships automatically. Custom RBAC setups must add this permission explicitly.
 
 #### Kine sidecar (non-etcd datastores)
 
