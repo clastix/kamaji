@@ -476,6 +476,8 @@ type KonnectivityAgentSpec struct {
 	// depend on. Setting requests here promotes the agent to Burstable so it is
 	// scheduled with a guaranteed share of CPU.
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// SecurityContext defines the SecurityContext for the Konnectivity agent container.
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.
