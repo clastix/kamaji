@@ -34,7 +34,7 @@ jobs:
           git tag ${{ steps.git.outputs.tag }}
           git push origin ${{ steps.git.outputs.tag }}
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
