@@ -972,6 +972,12 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 			},
 		}
 
+		if csc := tcp.Spec.ControlPlane.Deployment.ContainerSecurityContexts; csc != nil {
+			podSpec.InitContainers[index].SecurityContext = csc.KineInit
+		} else {
+			podSpec.InitContainers[index].SecurityContext = nil
+		}
+
 		args["--ca-file"] = "/certs/ca.crt"
 
 		if d.DataStore.Spec.TLSConfig.ClientCertificate != nil {
@@ -1049,6 +1055,12 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 	}
 
 	podSpec.Containers[index].ImagePullPolicy = corev1.PullAlways
+
+	if csc := tcp.Spec.ControlPlane.Deployment.ContainerSecurityContexts; csc != nil {
+		podSpec.Containers[index].SecurityContext = csc.Kine
+	} else {
+		podSpec.Containers[index].SecurityContext = nil
+	}
 
 	switch {
 	case tcp.Spec.ControlPlane.Deployment.Resources == nil:
