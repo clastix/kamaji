@@ -30,7 +30,6 @@ const (
 	// quoteMySQLIdentifier; the password literal must be fed escapeMySQLString.
 	mysqlFetchUserStatement        = "SELECT User FROM mysql.user WHERE User= ? LIMIT 1"
 	mysqlFetchDBStatement          = "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME=? LIMIT 1"
-	mysqlShowGrantsStatement       = "SHOW GRANTS FOR %s@`%%`"
 	mysqlCreateDBStatement         = "CREATE DATABASE IF NOT EXISTS %s"
 	mysqlCreateUserStatement       = "CREATE USER %s@`%%` IDENTIFIED BY '%s'"
 	mysqlUpdateUserStatement       = "ALTER USER %s@`%%` IDENTIFIED BY '%s'"
@@ -38,6 +37,18 @@ const (
 	mysqlDropDBStatement           = "DROP DATABASE IF EXISTS %s"
 	mysqlDropUserStatement         = "DROP USER IF EXISTS %s"
 	mysqlRevokePrivilegesStatement = "REVOKE ALL PRIVILEGES ON %s.* FROM %s"
+	mysqlCheckGrantsStatement      = `
+		SELECT 1
+		FROM mysql.db
+		WHERE user = ? AND db = ? AND host = '%'
+		  AND Select_priv = 'Y'
+		  AND Insert_priv = 'Y'
+		  AND Update_priv = 'Y'
+		  AND Delete_priv = 'Y'
+		  AND Create_priv = 'Y'
+		  AND Alter_priv = 'Y'
+		  AND Index_priv = 'Y'
+	`
 )
 
 type MySQLConnection struct {
@@ -266,31 +277,18 @@ func (c *MySQLConnection) DBExists(ctx context.Context, dbName string) (bool, er
 	return ok, nil
 }
 
-func (c *MySQLConnection) GrantPrivilegesExists(_ context.Context, user, dbName string) (bool, error) {
-	statementShowGrantsStatement := fmt.Sprintf(mysqlShowGrantsStatement, quoteMySQLIdentifier(user))
-	rows, err := c.db.Query(statementShowGrantsStatement) //nolint:sqlclosecheck
-	if err != nil {
-		return false, errors.NewGrantPrivilegesError(err)
-	}
+func (c *MySQLConnection) GrantPrivilegesExists(ctx context.Context, user, dbName string) (bool, error) {
+	var exists int
 
-	if err = rows.Err(); err != nil {
-		return false, errors.NewGrantPrivilegesError(err)
-	}
-
-	expected := fmt.Sprintf(mysqlGrantPrivilegesStatement, quoteMySQLIdentifier(dbName), quoteMySQLIdentifier(user))
-	var grant string
-
-	for rows.Next() {
-		if err = rows.Scan(&grant); err != nil {
-			return false, errors.NewGrantPrivilegesError(err)
+	if err := c.db.QueryRowContext(ctx, mysqlCheckGrantsStatement, user, dbName).Scan(&exists); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
 		}
 
-		if grant == expected {
-			return true, nil
-		}
+		return false, errors.NewCheckGrantExistsError(err)
 	}
 
-	return false, nil
+	return true, nil
 }
 
 func (c *MySQLConnection) DeleteUser(ctx context.Context, user string) error {
