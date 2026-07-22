@@ -341,10 +341,17 @@ type AdditionalVolumeMounts struct {
 }
 
 // ControlPlaneExtraArgs allows specifying additional arguments to the Control Plane components.
+// Extra arguments are applied last and override the defaults Kamaji sets.
 type ControlPlaneExtraArgs struct {
-	APIServer         []string `json:"apiServer,omitempty"`
+	APIServer []string `json:"apiServer,omitempty"`
+	// ControllerManager extra args. kube-controller-manager defaults --bind-address to the
+	// IPv6 wildcard "::" (which also serves IPv4 on a dual-stack pod); on hosts with IPv6
+	// disabled in the kernel, override it to "0.0.0.0" here.
 	ControllerManager []string `json:"controllerManager,omitempty"`
-	Scheduler         []string `json:"scheduler,omitempty"`
+	// Scheduler extra args. kube-scheduler defaults --bind-address to the IPv6 wildcard "::"
+	// (which also serves IPv4 on a dual-stack pod); on hosts with IPv6 disabled in the
+	// kernel, override it to "0.0.0.0" here.
+	Scheduler []string `json:"scheduler,omitempty"`
 	// Available only if Kamaji is running using Kine as backing storage.
 	Kine []string `json:"kine,omitempty"`
 }
