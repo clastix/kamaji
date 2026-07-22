@@ -367,6 +367,10 @@ type ServiceSpec struct {
 	AllocateLoadBalancerNodePorts *bool `json:"allocateLoadBalancerNodePorts,omitempty"`
 	// IPFamilyPolicy maps directly to the generated Service's spec.ipFamilyPolicy.
 	// When nil, the management cluster default applies, preserving existing behaviour.
+	// PreferDualStack and RequireDualStack describe a dual-stack Service and expect
+	// two entries in ipFamilies; a RequireDualStack policy that cannot be satisfied
+	// (for example with a single family) is rejected by the API server and surfaces
+	// as a reconcile error.
 	//+optional
 	//+kubebuilder:validation:Enum=SingleStack;PreferDualStack;RequireDualStack
 	IPFamilyPolicy *corev1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`

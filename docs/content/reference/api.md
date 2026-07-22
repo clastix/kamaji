@@ -31200,7 +31200,11 @@ forbidden transitions are rejected by the API server and surface as a reconcile 
         <td>enum</td>
         <td>
           IPFamilyPolicy maps directly to the generated Service's spec.ipFamilyPolicy.
-When nil, the management cluster default applies, preserving existing behaviour.<br/>
+When nil, the management cluster default applies, preserving existing behaviour.
+PreferDualStack and RequireDualStack describe a dual-stack Service and expect
+two entries in ipFamilies; a RequireDualStack policy that cannot be satisfied
+(for example with a single family) is rejected by the API server and surfaces
+as a reconcile error.<br/>
           <br/>
             <i>Enum</i>: SingleStack, PreferDualStack, RequireDualStack<br/>
         </td>
