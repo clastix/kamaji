@@ -129,7 +129,7 @@ versions:
                 minItems: 1
                 type: array
                 x-kubernetes-validations:
-                  - message: each endpoint must be host:port; an IPv6 address must be bracketed, e.g. [2001:db8::1]:2379
+                  - message: an IPv6 endpoint address must be bracketed, e.g. [2001:db8::1]:2379
                     rule: self.all(e, e.startsWith('[') || e.split(':').size() <= 2)
               tlsConfig:
                 description: |-

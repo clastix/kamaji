@@ -61,6 +61,6 @@ var _ = Describe("DataStore endpoints validation", func() {
 
 		err := k8sClient.Create(ctx, ds)
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("each endpoint must be host:port"))
+		Expect(err.Error()).To(ContainSubstring("an IPv6 endpoint address must be bracketed"))
 	})
 })
