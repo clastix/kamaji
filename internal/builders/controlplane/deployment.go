@@ -398,19 +398,24 @@ func (d Deployment) buildScheduler(podSpec *corev1.PodSpec, tenantControlPlane k
 		podSpec.Containers = append(podSpec.Containers, corev1.Container{})
 	}
 
-	args := map[string]string{}
-
-	if tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs != nil {
-		args = utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs.Scheduler)
-	}
-
 	kubeconfig := "/etc/kubernetes/scheduler.conf"
 
-	args["--authentication-kubeconfig"] = kubeconfig
-	args["--authorization-kubeconfig"] = kubeconfig
-	args["--bind-address"] = "0.0.0.0"
-	args["--kubeconfig"] = kubeconfig
-	args["--leader-elect"] = "true"
+	// Bind to the IPv6 wildcard so the component serves on both families on a
+	// dual-stack pod (and on IPv4 via v4-mapped addresses when the kernel default
+	// bindv6only=0 applies). Operators on hosts with IPv6 disabled in the kernel
+	// must override this to 0.0.0.0 via extraArgs. ExtraArgs are applied last so
+	// they can override any default, consistent with kube-controller-manager.
+	args := map[string]string{
+		"--authentication-kubeconfig": kubeconfig,
+		"--authorization-kubeconfig":  kubeconfig,
+		"--bind-address":              "::",
+		"--kubeconfig":                kubeconfig,
+		"--leader-elect":              "true",
+	}
+
+	if extraArgs := tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs; extraArgs != nil {
+		args = utilities.MergeMaps(args, utilities.ArgsFromSliceToMap(extraArgs.Scheduler))
+	}
 
 	podSpec.Containers[index].Name = schedulerContainerName
 	podSpec.Containers[index].Image = tenantControlPlane.Spec.ControlPlane.Deployment.RegistrySettings.KubeSchedulerImage(tenantControlPlane.Spec.Kubernetes.Version)
@@ -473,7 +478,7 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		"--allocate-node-cidrs":              "true",
 		"--authentication-kubeconfig":        kubeconfig,
 		"--authorization-kubeconfig":         kubeconfig,
-		"--bind-address":                     "0.0.0.0",
+		"--bind-address":                     "::",
 		"--client-ca-file":                   path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
 		"--cluster-name":                     tenantControlPlane.GetName(),
 		"--cluster-signing-cert-file":        path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
@@ -487,6 +492,14 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		"--root-ca-file":                     path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
 		"--service-account-private-key-file": path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName),
 		"--use-service-account-credentials":  "true",
+	}
+
+	// kube-controller-manager already derives 24/64 for a dual-stack cluster-cidr;
+	// setting them explicitly pins the node CIDR sizes so a change to the upstream
+	// defaults cannot silently resize tenant node CIDRs. Both stay overridable.
+	if len(podCIDRs) > 1 {
+		args["--node-cidr-mask-size-ipv4"] = "24"
+		args["--node-cidr-mask-size-ipv6"] = "64"
 	}
 
 	if extraArgs := tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs; extraArgs != nil && len(extraArgs.ControllerManager) > 0 {

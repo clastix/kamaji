@@ -389,4 +389,69 @@ var _ = Describe("Controlplane Deployment", func() {
 			Expect(podSpec.Containers[index].Image).To(Equal("custom-kine:latest"))
 		})
 	})
+
+	Describe("component network flags", func() {
+		containerByName := func(spec *corev1.PodSpec, name string) corev1.Container {
+			for _, c := range spec.Containers {
+				if c.Name == name {
+					return c
+				}
+			}
+			Fail("container not found: " + name)
+
+			return corev1.Container{}
+		}
+
+		It("defaults the scheduler bind-address to the IPv6 wildcard", func() {
+			podSpec := &corev1.PodSpec{}
+			d.buildScheduler(podSpec, kamajiv1alpha1.TenantControlPlane{})
+
+			Expect(containerByName(podSpec, "kube-scheduler").Args).To(ContainElement("--bind-address=::"))
+		})
+
+		It("defaults the controller-manager bind-address to the IPv6 wildcard", func() {
+			podSpec := &corev1.PodSpec{}
+			d.buildControllerManager(podSpec, kamajiv1alpha1.TenantControlPlane{})
+
+			Expect(containerByName(podSpec, "kube-controller-manager").Args).To(ContainElement("--bind-address=::"))
+		})
+
+		It("lets scheduler extraArgs override the bind-address", func() {
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{
+				Scheduler: []string{"--bind-address=0.0.0.0"},
+			}
+
+			podSpec := &corev1.PodSpec{}
+			d.buildScheduler(podSpec, tcp)
+
+			args := containerByName(podSpec, "kube-scheduler").Args
+			Expect(args).To(ContainElement("--bind-address=0.0.0.0"))
+			Expect(args).ToNot(ContainElement("--bind-address=::"))
+		})
+
+		It("sets per-family node CIDR masks for a dual-stack pod network", func() {
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.NetworkProfile.PodCIDRs = []string{"10.244.0.0/16", "fd00::/64"}
+
+			podSpec := &corev1.PodSpec{}
+			d.buildControllerManager(podSpec, tcp)
+
+			args := containerByName(podSpec, "kube-controller-manager").Args
+			Expect(args).To(ContainElement("--node-cidr-mask-size-ipv4=24"))
+			Expect(args).To(ContainElement("--node-cidr-mask-size-ipv6=64"))
+		})
+
+		It("omits per-family node CIDR masks for a single-stack pod network", func() {
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.NetworkProfile.PodCIDRs = []string{"10.244.0.0/16"}
+
+			podSpec := &corev1.PodSpec{}
+			d.buildControllerManager(podSpec, tcp)
+
+			args := containerByName(podSpec, "kube-controller-manager").Args
+			Expect(args).ToNot(ContainElement("--node-cidr-mask-size-ipv4=24"))
+			Expect(args).ToNot(ContainElement("--node-cidr-mask-size-ipv6=64"))
+		})
+	})
 })
