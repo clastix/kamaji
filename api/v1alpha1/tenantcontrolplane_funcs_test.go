@@ -4,12 +4,16 @@
 package v1alpha1
 
 import (
-	"context"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+)
+
+const (
+	clusterIPv4 = "10.96.0.1"
+	clusterIPv6 = "2001:db8::1"
 )
 
 func TestControlPlaneServiceIPs(t *testing.T) {
@@ -36,27 +40,27 @@ func TestControlPlaneServiceIPs(t *testing.T) {
 			name: "dual-stack ClusterIP returns both families",
 			service: svc(func(s *corev1.Service) {
 				s.Spec.Type = corev1.ServiceTypeClusterIP
-				s.Spec.ClusterIP = "10.96.0.1"
-				s.Spec.ClusterIPs = []string{"10.96.0.1", "2001:db8::1"}
+				s.Spec.ClusterIP = clusterIPv4
+				s.Spec.ClusterIPs = []string{clusterIPv4, clusterIPv6}
 			}),
-			want: []string{"10.96.0.1", "2001:db8::1"},
+			want: []string{clusterIPv4, clusterIPv6},
 		},
 		{
 			name: "single-stack ClusterIP returns one IP",
 			service: svc(func(s *corev1.Service) {
 				s.Spec.Type = corev1.ServiceTypeClusterIP
-				s.Spec.ClusterIP = "2001:db8::1"
-				s.Spec.ClusterIPs = []string{"2001:db8::1"}
+				s.Spec.ClusterIP = clusterIPv6
+				s.Spec.ClusterIPs = []string{clusterIPv6}
 			}),
-			want: []string{"2001:db8::1"},
+			want: []string{clusterIPv6},
 		},
 		{
 			name: "legacy Service with only ClusterIP falls back",
 			service: svc(func(s *corev1.Service) {
 				s.Spec.Type = corev1.ServiceTypeClusterIP
-				s.Spec.ClusterIP = "10.96.0.1"
+				s.Spec.ClusterIP = clusterIPv4
 			}),
-			want: []string{"10.96.0.1"},
+			want: []string{clusterIPv4},
 		},
 		{
 			name: "headless ClusterIP is skipped",
@@ -71,33 +75,33 @@ func TestControlPlaneServiceIPs(t *testing.T) {
 			name: "LoadBalancer returns ClusterIPs and all ingress IPs",
 			service: svc(func(s *corev1.Service) {
 				s.Spec.Type = corev1.ServiceTypeLoadBalancer
-				s.Spec.ClusterIP = "10.96.0.1"
-				s.Spec.ClusterIPs = []string{"10.96.0.1", "2001:db8::1"}
+				s.Spec.ClusterIP = clusterIPv4
+				s.Spec.ClusterIPs = []string{clusterIPv4, clusterIPv6}
 				s.Status.LoadBalancer.Ingress = []corev1.LoadBalancerIngress{
 					{IP: "192.0.2.10"},
 					{IP: "2001:db8:cafe::10"},
 				}
 			}),
-			want: []string{"10.96.0.1", "2001:db8::1", "192.0.2.10", "2001:db8:cafe::10"},
+			want: []string{clusterIPv4, clusterIPv6, "192.0.2.10", "2001:db8:cafe::10"},
 		},
 		{
 			name: "LoadBalancer not yet provisioned returns ClusterIPs only",
 			service: svc(func(s *corev1.Service) {
 				s.Spec.Type = corev1.ServiceTypeLoadBalancer
-				s.Spec.ClusterIP = "10.96.0.1"
-				s.Spec.ClusterIPs = []string{"10.96.0.1"}
+				s.Spec.ClusterIP = clusterIPv4
+				s.Spec.ClusterIPs = []string{clusterIPv4}
 			}),
-			want: []string{"10.96.0.1"},
+			want: []string{clusterIPv4},
 		},
 		{
 			name: "ingress hostname without IP is skipped",
 			service: svc(func(s *corev1.Service) {
 				s.Spec.Type = corev1.ServiceTypeLoadBalancer
-				s.Spec.ClusterIP = "10.96.0.1"
-				s.Spec.ClusterIPs = []string{"10.96.0.1"}
+				s.Spec.ClusterIP = clusterIPv4
+				s.Spec.ClusterIPs = []string{clusterIPv4}
 				s.Status.LoadBalancer.Ingress = []corev1.LoadBalancerIngress{{Hostname: "lb.example.com"}}
 			}),
-			want: []string{"10.96.0.1"},
+			want: []string{clusterIPv4},
 		},
 	}
 
@@ -105,7 +109,7 @@ func TestControlPlaneServiceIPs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := fake.NewClientBuilder().WithObjects(tt.service).Build()
 
-			got, err := tcp.ControlPlaneServiceIPs(context.Background(), c)
+			got, err := tcp.ControlPlaneServiceIPs(t.Context(), c)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -127,7 +131,7 @@ func TestControlPlaneServiceIPsMissingService(t *testing.T) {
 	tcp := &TenantControlPlane{ObjectMeta: metav1.ObjectMeta{Name: "tcp", Namespace: "default"}}
 	c := fake.NewClientBuilder().Build()
 
-	if _, err := tcp.ControlPlaneServiceIPs(context.Background(), c); err == nil {
+	if _, err := tcp.ControlPlaneServiceIPs(t.Context(), c); err == nil {
 		t.Fatal("expected an error when the Service does not exist, got nil")
 	}
 }
