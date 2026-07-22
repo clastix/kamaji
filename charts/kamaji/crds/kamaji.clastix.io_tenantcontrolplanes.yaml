@@ -8695,6 +8695,8 @@ spec:
                       x-kubernetes-validations:
                         - message: all podCidrs entries must be valid CIDRs
                           rule: self.all(x, isCIDR(x))
+                        - message: podCidrs must not contain two CIDRs of the same IP family
+                          rule: size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()
                     port:
                       default: 6443
                       description: Port where API server will be exposed
@@ -8722,6 +8724,8 @@ spec:
                       x-kubernetes-validations:
                         - message: all serviceCidrs entries must be valid CIDRs
                           rule: self.all(x, isCIDR(x))
+                        - message: serviceCidrs must not contain two CIDRs of the same IP family
+                          rule: size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()
                   type: object
                 writePermissions:
                   description: |-
