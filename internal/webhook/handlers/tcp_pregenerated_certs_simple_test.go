@@ -23,7 +23,7 @@ var _ = Describe("TCP PreGenerated Certificates Simple Tests", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = context.Background() //nolint:fatcontext
+		ctx = context.Background()
 		handler = handlers.TenantControlPlanePreGeneratedCerts{
 			Client: k8sClient,
 		}
@@ -68,8 +68,8 @@ var _ = Describe("TCP PreGenerated Certificates Simple Tests", func() {
 			}
 			tcp.Spec.NetworkProfile.CertSANs = []string{"example.com"}
 
-			oldTcp := tcp.DeepCopy()
-			ops, err := handler.OnUpdate(tcp, oldTcp)(ctx, admission.Request{})
+			oldTCP := tcp.DeepCopy()
+			ops, err := handler.OnUpdate(oldTCP, tcp)(ctx, admission.Request{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("preGeneratedCertificates cannot be specified when certSANs is configured"))
 			Expect(ops).To(BeNil())

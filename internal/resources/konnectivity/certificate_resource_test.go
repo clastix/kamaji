@@ -90,7 +90,7 @@ var _ = Describe("Konnectivity Certificate Resource", func() {
 			// Initially TCP status checksum should be empty, and resource checksum should be different
 			// This should trigger a status update
 			shouldUpdate := cert.ShouldStatusBeUpdated(ctx, tcp)
-			
+
 			// If the checksums match, it means both are empty initially - this is expected behavior
 			// In real usage, this method is called after resource creation/update
 			// Accept both cases as valid since the initial state can vary
@@ -176,7 +176,7 @@ var _ = Describe("Konnectivity Certificate Resource", func() {
 			Expect(shouldCleanup).To(BeTrue())
 
 			cleaned, err := cert.CleanUp(ctx, tcp)
-			
+
 			// Should attempt cleanup (may succeed or fail based on test environment)
 			_ = cleaned
 			_ = err

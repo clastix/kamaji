@@ -11,7 +11,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	pointer "k8s.io/utils/ptr"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -25,7 +24,25 @@ var _ = Describe("Deploy TenantControlPlane with PreGenerated Certificates", fun
 		)
 
 		BeforeEach(func() {
-			// Create pregenerated CA certificate secret
+			caCertData := `-----BEGIN CERTIFICATE-----
+MIIDCTCCAfGgAwIBAgIJAKNr9YHPXB3IMA0GCSqGSIb3DQEBCwUAMBIxEDAOBgNV
+BAMMB0V0Y2QgQ0EwHhcNMjMwMjEwMTAwMDAwWhcNMzMwMjA3MTAwMDAwWjASMRAw
+DgYDVQQDDAdFdGNkIENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA
+0p1yQMvyBEQ1nDGrxWwoZgFkj1UGHZwnZSMzdoomMqQao1Y9cso8h2QQQQQQQQQQQ
+QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ
+AoGBAPj/k8HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+-----END CERTIFICATE-----`
+
+			caKeyData := `-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA0p1yQMvyBEQxZwxq8VsKGYBZI9VBh2cJ2UjM3aKJjKkGqHWHL
+ZhE6H2QAAAAAAAAAAAAAAABAAAAAAAAAAAAAAACgYEA/4/5PGFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+AoGBAPj/k8HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+-----END RSA PRIVATE KEY-----`
+
 			caSecret = &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "pregen-ca-cert",
@@ -33,17 +50,8 @@ var _ = Describe("Deploy TenantControlPlane with PreGenerated Certificates", fun
 				},
 				Type: corev1.SecretTypeTLS,
 				Data: map[string][]byte{
-					kubeadmconstants.CACertName: []byte(`-----BEGIN CERTIFICATE-----
-MIIDCTCCAfGgAwIBAgIJAKNr9YHPXB3IMA0GCSqGSIb3DQEBCwUAMBIxEDAOBgNV
-BAMMB0V0Y2QgQ0EwHhcNMjMwMjEwMTAwMDAwWhcNMzMwMjA3MTAwMDAwWjASMRAw
-DgYDVQQDDAdFdGNkIENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA
-0p1yQMvyBEQ==
------END CERTIFICATE-----`),
-					kubeadmconstants.CAKeyName: []byte(`-----BEGIN RSA PRIVATE KEY-----
-MIIEpAIBAAKCAQEA0p1yQMvyBEQxZwxq8VsKGYBZI9VBh2cJ2UjM3aKJjKkGqHWH
-LZhE6H2QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQq
-AoGBAPj/k8HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
------END RSA PRIVATE KEY-----`),
+					"tls.crt": []byte(caCertData),
+					"tls.key": []byte(caKeyData),
 				},
 			}
 
@@ -70,11 +78,11 @@ AoGBAPj/k8HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 							CGroupFS: "cgroupfs",
 						},
 					},
-					DataStore: "etcd-bronze",
+					DataStore: "default",
 					PreGeneratedCertificates: &kamajiv1alpha1.PreGeneratedCertificatesSpec{
 						CA: &kamajiv1alpha1.CertificateReference{
 							SecretName:     "pregen-ca-cert",
-							CertificateKey: kubeadmconstants.CACertName,
+							CertificateKey: "tls.crt",
 						},
 					},
 				},
@@ -103,6 +111,7 @@ AoGBAPj/k8HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 				if tcp.Status.Kubernetes.Version.Status == nil {
 					return ""
 				}
+
 				return *tcp.Status.Kubernetes.Version.Status
 			}, "10m", "5s").Should(Equal(kamajiv1alpha1.VersionReady))
 
@@ -121,8 +130,8 @@ AoGBAPj/k8HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 			Expect(k8sClient.Get(context.Background(), secretNamespacedName, createdSecret)).To(Succeed())
 
 			// The created secret should contain our pregenerated certificate data
-			Expect(createdSecret.Data).To(HaveKey(kubeadmconstants.CACertName))
-			Expect(createdSecret.Data[kubeadmconstants.CACertName]).To(Equal(caSecret.Data[kubeadmconstants.CACertName]))
+			Expect(createdSecret.Data).To(HaveKey("tls.crt"))
+			Expect(createdSecret.Data["tls.crt"]).To(Equal(caSecret.Data["tls.crt"]))
 		})
 
 		It("should reject creation when pregenerated secret doesn't exist", func() {

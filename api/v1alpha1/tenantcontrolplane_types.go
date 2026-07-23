@@ -588,6 +588,7 @@ type BootstrapSpec struct {
 	// Manifests are applied as raw YAML after RBAC bootstrap is complete.
 	InitManifests []string `json:"initManifests,omitempty"`
 }
+
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStore) || has(self.dataStore)", message="unsetting the dataStore is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"

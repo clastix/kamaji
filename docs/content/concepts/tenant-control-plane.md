@@ -69,3 +69,47 @@ When configured, Kamaji will mount these certificates to standard CA certificate
 
 This resolves "x509: certificate signed by unknown authority" errors that can occur when control plane components interact with internal services.
 
+### Pre-generated Certificates
+
+Kamaji can use your own certificates instead of auto-generating them. This is useful for:
+- Using certificates from an external PKI
+- Rotating certificates managed outside Kamaji
+- Compliance with existing certificate policies
+
+Configure pre-generated certificates by referencing a Secret containing your certificate and key pairs:
+
+```yaml
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: my-cluster
+spec:
+  preGeneratedCertificates:
+    ca:
+      secretName: my-ca-cert
+      certificateKey: ca.crt
+      privateKeyKey: ca.key
+    apiServer:
+      secretName: my-ca-cert
+      certificateKey: tls.crt
+      privateKeyKey: tls.key
+    kubeletClient:
+      secretName: my-ca-cert
+      certificateKey: kubelet-client.crt
+      privateKeyKey: kubelet-client.key
+    frontProxyCA:
+      secretName: my-ca-cert
+      certificateKey: front-proxy-ca.crt
+      privateKeyKey: front-proxy-ca.key
+    frontProxyClient:
+      secretName: my-ca-cert
+      certificateKey: front-proxy-client.crt
+      privateKeyKey: front-proxy-client.key
+    serviceAccount:
+      secretName: my-ca-cert
+      publicKeyKey: sa.pub
+      privateKeyKey: sa.key
+```
+
+The Secret must contain all referenced keys. Supported key formats: PKCS1, PKCS8, and EC.
+

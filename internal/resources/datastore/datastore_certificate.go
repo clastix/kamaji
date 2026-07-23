@@ -37,7 +37,7 @@ func (r *Certificate) GetHistogram() prometheus.Histogram {
 }
 
 func (r *Certificate) getCollector() prometheus.Histogram {
-	// Return a nil collector since this is in a separate package 
+	// Return a nil collector since this is in a separate package
 	// LazyLoadHistogramFromResource will handle creating the collector
 	return nil
 }

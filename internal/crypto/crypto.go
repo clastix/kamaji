@@ -129,6 +129,20 @@ func ParsePrivateKeyBytes(content []byte) (crypto.Signer, error) {
 		return privateKey, nil
 	}
 
+	if pemContent.Type == "PRIVATE KEY" {
+		privateKey, err := x509.ParsePKCS8PrivateKey(pemContent.Bytes)
+		if err != nil {
+			return nil, fmt.Errorf("cannot parse PKCS8 Private Key: %w", err)
+		}
+
+		signer, ok := privateKey.(crypto.Signer)
+		if !ok {
+			return nil, fmt.Errorf("PKCS8 private key is not a signer")
+		}
+
+		return signer, nil
+	}
+
 	privateKey, err := x509.ParsePKCS1PrivateKey(pemContent.Bytes)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse PKCS1 Private Key: %w", err)

@@ -107,6 +107,7 @@ func TestBootstrapToken_ClusterInfoGeneration(t *testing.T) {
 			var actualServerURL string
 			for _, cluster := range parsedConfig.Clusters {
 				actualServerURL = cluster.Server
+
 				break
 			}
 
@@ -115,6 +116,7 @@ func TestBootstrapToken_ClusterInfoGeneration(t *testing.T) {
 			// Verify CA certificate is preserved
 			for _, cluster := range parsedConfig.Clusters {
 				assert.Equal(t, caCert, cluster.CertificateAuthorityData, "CA certificate should be preserved")
+
 				break
 			}
 		})
@@ -183,6 +185,7 @@ func TestBootstrapToken_EdgeCases(t *testing.T) {
 		for _, cluster := range parsedConfig.Clusters {
 			assert.Equal(t, caCert, cluster.CertificateAuthorityData)
 			assert.Equal(t, "https://k8s-api.example.com:6443", cluster.Server)
+
 			break
 		}
 	})

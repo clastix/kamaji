@@ -1,4 +1,4 @@
-// Copyright 2025 Clastix Labs
+// Copyright 2022 Clastix Labs
 // SPDX-License-Identifier: Apache-2.0
 
 package v1alpha1
@@ -8,6 +8,8 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const testPublicAPIServerAddress = "k8s-api.example.com"
 
 var _ = Describe("TenantControlPlane PublicControlPlaneAddress", func() {
 	var tcp *TenantControlPlane
@@ -61,13 +63,13 @@ var _ = Describe("TenantControlPlane PublicControlPlaneAddress", func() {
 
 	Context("when PublicAPIServerAddress is specified", func() {
 		BeforeEach(func() {
-			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = "k8s-api.example.com"
+			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = testPublicAPIServerAddress
 		})
 
 		It("should return the public address instead of assigned address", func() {
 			address, port, err := tcp.PublicControlPlaneAddress()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(address).To(Equal("k8s-api.example.com"))
+			Expect(address).To(Equal(testPublicAPIServerAddress))
 			Expect(port).To(Equal(int32(6443)))
 		})
 
@@ -75,7 +77,7 @@ var _ = Describe("TenantControlPlane PublicControlPlaneAddress", func() {
 			tcp.Spec.NetworkProfile.Port = 0
 			address, port, err := tcp.PublicControlPlaneAddress()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(address).To(Equal("k8s-api.example.com"))
+			Expect(address).To(Equal(testPublicAPIServerAddress))
 			Expect(port).To(Equal(int32(6443)))
 		})
 
@@ -83,7 +85,7 @@ var _ = Describe("TenantControlPlane PublicControlPlaneAddress", func() {
 			tcp.Spec.NetworkProfile.Port = 8443
 			address, port, err := tcp.PublicControlPlaneAddress()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(address).To(Equal("k8s-api.example.com"))
+			Expect(address).To(Equal(testPublicAPIServerAddress))
 			Expect(port).To(Equal(int32(8443)))
 		})
 
@@ -91,7 +93,7 @@ var _ = Describe("TenantControlPlane PublicControlPlaneAddress", func() {
 			tcp.Status.ControlPlaneEndpoint = ""
 			address, port, err := tcp.PublicControlPlaneAddress()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(address).To(Equal("k8s-api.example.com"))
+			Expect(address).To(Equal(testPublicAPIServerAddress))
 			Expect(port).To(Equal(int32(6443)))
 		})
 	})

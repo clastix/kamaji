@@ -20,13 +20,13 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
-// TenantClusterValidator provides validation utilities for tenant cluster resources
+// TenantClusterValidator provides validation utilities for tenant cluster resources.
 type TenantClusterValidator struct {
 	tenantClient kubernetes.Interface
 	tcp          *kamajiv1alpha1.TenantControlPlane
 }
 
-// NewTenantClusterValidator creates a new validator for the given TenantControlPlane
+// NewTenantClusterValidator creates a new validator for the given TenantControlPlane.
 func NewTenantClusterValidator(tcp *kamajiv1alpha1.TenantControlPlane) (*TenantClusterValidator, error) {
 	GinkgoHelper()
 
@@ -77,7 +77,7 @@ func NewTenantClusterValidator(tcp *kamajiv1alpha1.TenantControlPlane) (*TenantC
 	}, nil
 }
 
-// ValidateClusterAdminRBAC validates that cluster-admin RBAC bindings exist
+// ValidateClusterAdminRBAC validates that cluster-admin RBAC bindings exist.
 func (v *TenantClusterValidator) ValidateClusterAdminRBAC() {
 	GinkgoHelper()
 
@@ -92,6 +92,7 @@ func (v *TenantClusterValidator) ValidateClusterAdminRBAC() {
 		// Validate admin users ClusterRoleBinding
 		Eventually(func() error {
 			_, err := v.tenantClient.RbacV1().ClusterRoleBindings().Get(ctx, "kamaji-bootstrap-admin-users", metav1.GetOptions{})
+
 			return err
 		}, 2*time.Minute, 5*time.Second).Should(Succeed(), "kamaji-bootstrap-admin-users ClusterRoleBinding should exist")
 
@@ -99,6 +100,7 @@ func (v *TenantClusterValidator) ValidateClusterAdminRBAC() {
 		if v.tcp.Spec.Bootstrap != nil && v.tcp.Spec.Bootstrap.RBAC != nil && len(v.tcp.Spec.Bootstrap.RBAC.AdminGroups) > 0 {
 			Eventually(func() error {
 				_, err := v.tenantClient.RbacV1().ClusterRoleBindings().Get(ctx, "kamaji-bootstrap-admin-groups", metav1.GetOptions{})
+
 				return err
 			}, 2*time.Minute, 5*time.Second).Should(Succeed(), "kamaji-bootstrap-admin-groups ClusterRoleBinding should exist")
 		}
@@ -107,6 +109,7 @@ func (v *TenantClusterValidator) ValidateClusterAdminRBAC() {
 	By("validating cluster-admin ClusterRole exists", func() {
 		Eventually(func() error {
 			_, err := v.tenantClient.RbacV1().ClusterRoles().Get(ctx, "cluster-admin", metav1.GetOptions{})
+
 			return err
 		}, 2*time.Minute, 5*time.Second).Should(Succeed(), "cluster-admin ClusterRole should exist")
 	})
@@ -117,12 +120,13 @@ func (v *TenantClusterValidator) ValidateClusterAdminRBAC() {
 			if err != nil {
 				return false
 			}
+
 			return crb.RoleRef.Name == "cluster-admin"
 		}, 2*time.Minute, 5*time.Second).Should(BeTrue(), "ClusterRoleBinding should reference cluster-admin role")
 	})
 }
 
-// ValidateCoreDNS validates that CoreDNS addon resources exist when enabled
+// ValidateCoreDNS validates that CoreDNS addon resources exist when enabled.
 func (v *TenantClusterValidator) ValidateCoreDNS() {
 	GinkgoHelper()
 
@@ -135,6 +139,7 @@ func (v *TenantClusterValidator) ValidateCoreDNS() {
 	By("validating kube-dns service exists", func() {
 		Eventually(func() error {
 			_, err := v.tenantClient.CoreV1().Services("kube-system").Get(ctx, "kube-dns", metav1.GetOptions{})
+
 			return err
 		}, 3*time.Minute, 5*time.Second).Should(Succeed(), "kube-dns service should exist in kube-system namespace")
 	})
@@ -145,6 +150,7 @@ func (v *TenantClusterValidator) ValidateCoreDNS() {
 			if err != nil {
 				return false
 			}
+
 			return deployment.Status.ReadyReplicas > 0
 		}, 5*time.Minute, 10*time.Second).Should(BeTrue(), "CoreDNS deployment should exist and have ready replicas")
 	})
@@ -152,6 +158,7 @@ func (v *TenantClusterValidator) ValidateCoreDNS() {
 	By("validating CoreDNS ConfigMap exists", func() {
 		Eventually(func() error {
 			_, err := v.tenantClient.CoreV1().ConfigMaps("kube-system").Get(ctx, "coredns", metav1.GetOptions{})
+
 			return err
 		}, 2*time.Minute, 5*time.Second).Should(Succeed(), "coredns ConfigMap should exist")
 	})
@@ -159,6 +166,7 @@ func (v *TenantClusterValidator) ValidateCoreDNS() {
 	By("validating CoreDNS ServiceAccount exists", func() {
 		Eventually(func() error {
 			_, err := v.tenantClient.CoreV1().ServiceAccounts("kube-system").Get(ctx, "coredns", metav1.GetOptions{})
+
 			return err
 		}, 2*time.Minute, 5*time.Second).Should(Succeed(), "coredns ServiceAccount should exist")
 	})
@@ -166,17 +174,19 @@ func (v *TenantClusterValidator) ValidateCoreDNS() {
 	By("validating CoreDNS RBAC resources exist", func() {
 		Eventually(func() error {
 			_, err := v.tenantClient.RbacV1().ClusterRoles().Get(ctx, "system:coredns", metav1.GetOptions{})
+
 			return err
 		}, 2*time.Minute, 5*time.Second).Should(Succeed(), "system:coredns ClusterRole should exist")
 
 		Eventually(func() error {
 			_, err := v.tenantClient.RbacV1().ClusterRoleBindings().Get(ctx, "system:coredns", metav1.GetOptions{})
+
 			return err
 		}, 2*time.Minute, 5*time.Second).Should(Succeed(), "system:coredns ClusterRoleBinding should exist")
 	})
 }
 
-// ValidateKubeProxy validates that kube-proxy addon resources exist when enabled
+// ValidateKubeProxy validates that kube-proxy addon resources exist when enabled.
 func (v *TenantClusterValidator) ValidateKubeProxy() {
 	GinkgoHelper()
 
@@ -215,7 +225,7 @@ func (v *TenantClusterValidator) ValidateKubeProxy() {
 	})
 }
 
-// ValidateStandardKubernetesResources validates standard Kubernetes bootstrap resources
+// ValidateStandardKubernetesResources validates standard Kubernetes bootstrap resources.
 func (v *TenantClusterValidator) ValidateStandardKubernetesResources() {
 	GinkgoHelper()
 
@@ -252,16 +262,16 @@ func (v *TenantClusterValidator) ValidateStandardKubernetesResources() {
 		}
 
 		for _, role := range systemRoles {
-			role := role // capture for closure
 			Eventually(func() error {
 				_, err := v.tenantClient.RbacV1().ClusterRoles().Get(ctx, role, metav1.GetOptions{})
+
 				return err
 			}, 2*time.Minute, 5*time.Second).Should(Succeed(), fmt.Sprintf("%s ClusterRole should exist", role))
 		}
 	})
 }
 
-// ValidateClusterHealth performs basic cluster health checks
+// ValidateClusterHealth performs basic cluster health checks.
 func (v *TenantClusterValidator) ValidateClusterHealth() {
 	GinkgoHelper()
 
@@ -282,7 +292,7 @@ func (v *TenantClusterValidator) ValidateClusterHealth() {
 	})
 }
 
-// ValidateAllResources runs all validation checks
+// ValidateAllResources runs all validation checks.
 func (v *TenantClusterValidator) ValidateAllResources() {
 	GinkgoHelper()
 
@@ -293,7 +303,7 @@ func (v *TenantClusterValidator) ValidateAllResources() {
 	v.ValidateKubeProxy()
 }
 
-// TenantClusterResourcesMustBeValid validates that all expected resources exist in the tenant cluster
+// TenantClusterResourcesMustBeValid validates that all expected resources exist in the tenant cluster.
 func TenantClusterResourcesMustBeValid(tcp *kamajiv1alpha1.TenantControlPlane) {
 	GinkgoHelper()
 

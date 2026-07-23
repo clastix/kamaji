@@ -90,7 +90,7 @@ func (r *FrontProxyClientCertificate) UpdateTenantControlPlaneStatus(_ context.C
 	return nil
 }
 
-// getCertificateDataFromSecret retrieves certificate data from the secret, trying multiple key formats
+// getCertificateDataFromSecret retrieves certificate data from the secret, trying multiple key formats.
 func (r *FrontProxyClientCertificate) getCertificateDataFromSecret(secretData map[string][]byte, preferredCertKey, preferredKeyKey string) (certData, keyData []byte, found bool) {
 	// Try preferred keys first (from TenantControlPlane config)
 	if cert, exists := secretData[preferredCertKey]; exists {
