@@ -70,10 +70,10 @@ var _ = Describe("Deploy TenantControlPlane with PreGenerated Certificates", fun
 					Namespace: "default",
 				},
 				Type: corev1.SecretTypeTLS,
-Data: map[string][]byte{
-				"tls.crt": caCertData,
-				"tls.key": caKeyData,
-			},
+				Data: map[string][]byte{
+					"tls.crt": caCertData,
+					"tls.key": caKeyData,
+				},
 			}
 
 			tcp = &kamajiv1alpha1.TenantControlPlane{
@@ -135,6 +135,7 @@ Data: map[string][]byte{
 				if tcp.Status.Certificates.CA.SecretName != "" {
 					return tcp.Status.Certificates.CA.SecretName
 				}
+
 				return ""
 			}, "2m", "5s").Should(Equal("tcp-pregenerated-ca"))
 
