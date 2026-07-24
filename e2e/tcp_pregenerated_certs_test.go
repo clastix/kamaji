@@ -10,6 +10,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -156,10 +157,10 @@ var _ = Describe("Deploy TenantControlPlane with PreGenerated Certificates", fun
 		})
 
 		It("should reject creation when pregenerated secret doesn't exist", func() {
-			// Create a new TCP with a different name to avoid conflict with previous test's deletion
+			// Create a new TCP with a unique name to avoid conflict with previous test's deletion
 			tcpWithBadSecret := &kamajiv1alpha1.TenantControlPlane{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "tcp-pregenerated-reject",
+					Name:      fmt.Sprintf("tcp-pregenerated-reject-%d", time.Now().UnixNano()),
 					Namespace: "default",
 				},
 				Spec: tcp.Spec,
