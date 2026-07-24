@@ -4,9 +4,11 @@
 package kubeadm
 
 import (
+	"bytes"
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/kubeconfig"
@@ -21,7 +23,6 @@ func buildCertificateDirectoryWithCA(ca CertificatePrivateKeyPair, directory str
 	}
 
 	certPath := path.Join(directory, kubeadmconstants.CACertName)
-	// Write the entire certificate chain, not just the first certificate
 	if err := os.WriteFile(certPath, ca.Certificate, os.FileMode(0o600)); err != nil {
 		return err
 	}
@@ -47,13 +48,28 @@ func CreateKubeconfig(kubeconfigName string, ca CertificatePrivateKeyPair, confi
 	return os.ReadFile(path)
 }
 
-func IsKubeconfigValid(bytes []byte) bool {
+func IsKubeconfigCAValid(in, caCrt []byte) bool {
+	kc, err := utilities.DecodeKubeconfigYAML(in)
+	if err != nil {
+		return false
+	}
+
+	for _, cluster := range kc.Clusters {
+		if !bytes.Equal(cluster.Cluster.CertificateAuthorityData, caCrt) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func IsKubeconfigValid(bytes []byte, expirationThreshold time.Duration) bool {
 	kc, err := utilities.DecodeKubeconfigYAML(bytes)
 	if err != nil {
 		return false
 	}
 
-	ok, _ := crypto.IsValidCertificateKeyPairBytes(kc.AuthInfos[0].AuthInfo.ClientCertificateData, kc.AuthInfos[0].AuthInfo.ClientKeyData, 0)
+	ok, _ := crypto.IsValidCertificateKeyPairBytes(kc.AuthInfos[0].AuthInfo.ClientCertificateData, kc.AuthInfos[0].AuthInfo.ClientKeyData, expirationThreshold)
 
 	return ok
 }

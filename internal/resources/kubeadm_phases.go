@@ -17,7 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	bootstrapapi "k8s.io/cluster-bootstrap/token/api"
-	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	clientset "k8s.io/client-go/kubernetes"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -192,20 +191,12 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 				return nil, err
 			}
 
-			crtKeyPair := kubeadm.CertificatePrivateKeyPair{
+crtKeyPair := kubeadm.CertificatePrivateKeyPair{
 				Certificate: caSecret.Data[kubeadmconstants.CACertName],
 				PrivateKey:  caSecret.Data[kubeadmconstants.CAKeyName],
 			}
 
 			for _, i := range []string{AdminKubeConfigFileName, SuperAdminKubeConfigFileName} {
-				configuration.InitConfiguration.CertificatesDir, _ = os.MkdirTemp(tmp, "")
-
-				kubeconfig, err := kubeadm.CreateKubeconfig(i, crtKeyPair, configuration)
-				if err != nil {
-					return nil, err
-				}
-
-for _, i := range []string{AdminKubeConfigFileName, SuperAdminKubeConfigFileName} {
 				configuration.InitConfiguration.CertificatesDir, _ = os.MkdirTemp(tmp, "")
 
 				kubeconfig, err := kubeadm.CreateKubeconfig(i, crtKeyPair, configuration)

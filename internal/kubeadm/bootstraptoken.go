@@ -40,10 +40,6 @@ func BootstrapToken(client kubernetes.Interface, config *Configuration) error {
 		return err
 	}
 
-	if err := node.AllowAPIServerToAccessKubeletAPI(client); err != nil {
-		return fmt.Errorf("error allowing API server kubelet client to access the kubelet API: %w", err)
-	}
-
 	// Use public address for cluster-info if specified, otherwise fall back to kubeconfig server
 	serverAddress := config.Kubeconfig.Clusters[0].Cluster.Server
 	if len(config.Parameters.TenantControlPlanePublicAddress) > 0 {
