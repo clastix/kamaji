@@ -8685,6 +8685,165 @@ spec:
                         - message: all serviceCidrs entries must be valid CIDRs
                           rule: self.all(x, isCIDR(x))
                   type: object
+                preGeneratedCertificates:
+                  description: |-
+                    PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
+                    This field is immutable after creation.
+                  properties:
+                    apiServer:
+                      description: |-
+                        API Server certificate and key from existing Secret.
+                        If specified, this certificate will be used instead of generating a new one.
+                        The certificate must be signed by the CA specified above or the generated CA.
+                      properties:
+                        certificateKey:
+                          default: tls.crt
+                          description: CertificateKey is the key in the Secret containing the certificate.
+                          type: string
+                        privateKeyKey:
+                          default: tls.key
+                          description: PrivateKeyKey is the key in the Secret containing the private key.
+                          type: string
+                        secretName:
+                          description: SecretName references a Secret containing certificate data
+                          minLength: 1
+                          type: string
+                        secretNamespace:
+                          description: |-
+                            SecretNamespace is the namespace of the referenced Secret.
+                            If empty, defaults to the TenantControlPlane namespace.
+                          type: string
+                      required:
+                        - secretName
+                      type: object
+                    ca:
+                      description: |-
+                        CA certificate and key from existing Secret.
+                        If specified, this CA will be used instead of generating a new one.
+                      properties:
+                        certificateKey:
+                          default: tls.crt
+                          description: CertificateKey is the key in the Secret containing the certificate.
+                          type: string
+                        privateKeyKey:
+                          default: tls.key
+                          description: PrivateKeyKey is the key in the Secret containing the private key.
+                          type: string
+                        secretName:
+                          description: SecretName references a Secret containing certificate data
+                          minLength: 1
+                          type: string
+                        secretNamespace:
+                          description: |-
+                            SecretNamespace is the namespace of the referenced Secret.
+                            If empty, defaults to the TenantControlPlane namespace.
+                          type: string
+                      required:
+                        - secretName
+                      type: object
+                    frontProxyCA:
+                      description: |-
+                        Front proxy CA certificate and key from existing Secret.
+                        If specified, this CA will be used instead of generating a new one.
+                      properties:
+                        certificateKey:
+                          default: tls.crt
+                          description: CertificateKey is the key in the Secret containing the certificate.
+                          type: string
+                        privateKeyKey:
+                          default: tls.key
+                          description: PrivateKeyKey is the key in the Secret containing the private key.
+                          type: string
+                        secretName:
+                          description: SecretName references a Secret containing certificate data
+                          minLength: 1
+                          type: string
+                        secretNamespace:
+                          description: |-
+                            SecretNamespace is the namespace of the referenced Secret.
+                            If empty, defaults to the TenantControlPlane namespace.
+                          type: string
+                      required:
+                        - secretName
+                      type: object
+                    frontProxyClient:
+                      description: |-
+                        Front proxy client certificate and key from existing Secret.
+                        If specified, this certificate will be used instead of generating a new one.
+                        The certificate must be signed by the front proxy CA specified above or the generated front proxy CA.
+                      properties:
+                        certificateKey:
+                          default: tls.crt
+                          description: CertificateKey is the key in the Secret containing the certificate.
+                          type: string
+                        privateKeyKey:
+                          default: tls.key
+                          description: PrivateKeyKey is the key in the Secret containing the private key.
+                          type: string
+                        secretName:
+                          description: SecretName references a Secret containing certificate data
+                          minLength: 1
+                          type: string
+                        secretNamespace:
+                          description: |-
+                            SecretNamespace is the namespace of the referenced Secret.
+                            If empty, defaults to the TenantControlPlane namespace.
+                          type: string
+                      required:
+                        - secretName
+                      type: object
+                    kubeletClient:
+                      description: |-
+                        Kubelet client certificate and key from existing Secret.
+                        If specified, this certificate will be used instead of generating a new one.
+                        The certificate must be signed by the CA specified above or the generated CA.
+                      properties:
+                        certificateKey:
+                          default: tls.crt
+                          description: CertificateKey is the key in the Secret containing the certificate.
+                          type: string
+                        privateKeyKey:
+                          default: tls.key
+                          description: PrivateKeyKey is the key in the Secret containing the private key.
+                          type: string
+                        secretName:
+                          description: SecretName references a Secret containing certificate data
+                          minLength: 1
+                          type: string
+                        secretNamespace:
+                          description: |-
+                            SecretNamespace is the namespace of the referenced Secret.
+                            If empty, defaults to the TenantControlPlane namespace.
+                          type: string
+                      required:
+                        - secretName
+                      type: object
+                    serviceAccount:
+                      description: |-
+                        Service account key pair from existing Secret.
+                        If specified, this key pair will be used instead of generating a new one.
+                      properties:
+                        privateKeyKey:
+                          default: sa.key
+                          description: PrivateKeyKey is the key in the Secret containing the private key.
+                          type: string
+                        publicKeyKey:
+                          default: sa.pub
+                          description: PublicKeyKey is the key in the Secret containing the public key.
+                          type: string
+                        secretName:
+                          description: SecretName references a Secret containing key data
+                          minLength: 1
+                          type: string
+                        secretNamespace:
+                          description: |-
+                            SecretNamespace is the namespace of the referenced Secret.
+                            If empty, defaults to the TenantControlPlane namespace.
+                          type: string
+                      required:
+                        - secretName
+                      type: object
+                  type: object
                 writePermissions:
                   description: |-
                     WritePermissions allows to select which operations (create, delete, update) must be blocked:
