@@ -70,7 +70,6 @@ type NetworkProfileSpec struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=2
 	// +kubebuilder:validation:XValidation:rule="self.all(x, isCIDR(x))",message="all serviceCidrs entries must be valid CIDRs"
-	// +kubebuilder:validation:XValidation:rule="size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()",message="serviceCidrs must not contain two CIDRs of the same IP family"
 	ServiceCIDRs []string `json:"serviceCidrs,omitempty"`
 	// CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.
 	// Deprecated: use PodCIDRs instead.
@@ -85,7 +84,6 @@ type NetworkProfileSpec struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=2
 	// +kubebuilder:validation:XValidation:rule="self.all(x, isCIDR(x))",message="all podCidrs entries must be valid CIDRs"
-	// +kubebuilder:validation:XValidation:rule="size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()",message="podCidrs must not contain two CIDRs of the same IP family"
 	PodCIDRs []string `json:"podCidrs,omitempty"`
 	// The DNS Service for internal resolution, it must match the Service CIDR.
 	// In case of an empty value, it is automatically computed according to the Service CIDR, e.g.:
@@ -118,9 +116,7 @@ type KubeletSpec struct {
 	// Default to InternalIP, ExternalIP, Hostname.
 	//+kubebuilder:default={"InternalIP","ExternalIP","Hostname"}
 	//+kubebuilder:validation:MinItems=1
-	//+kubebuilder:validation:MaxItems=5
-	//+kubebuilder:validation:XValidation:rule="self.all(x, self.exists_one(y, y == x))",message="preferredAddressTypes entries must be unique"
-	//+listType=atomic
+	//+listType=set
 	PreferredAddressTypes []KubeletPreferredAddressType `json:"preferredAddressTypes,omitempty"`
 	// CGroupFS defines the cgroup driver for Kubelet
 	// https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
@@ -347,17 +343,10 @@ type AdditionalVolumeMounts struct {
 }
 
 // ControlPlaneExtraArgs allows specifying additional arguments to the Control Plane components.
-// Extra arguments are applied last and override the defaults Kamaji sets.
 type ControlPlaneExtraArgs struct {
-	APIServer []string `json:"apiServer,omitempty"`
-	// ControllerManager extra args. Kamaji sets --bind-address to the IPv6 wildcard "::"
-	// (which also serves IPv4 on a dual-stack pod); on hosts with IPv6 disabled in the
-	// kernel, override it to "0.0.0.0" here.
+	APIServer         []string `json:"apiServer,omitempty"`
 	ControllerManager []string `json:"controllerManager,omitempty"`
-	// Scheduler extra args. Kamaji sets --bind-address to the IPv6 wildcard "::"
-	// (which also serves IPv4 on a dual-stack pod); on hosts with IPv6 disabled in the
-	// kernel, override it to "0.0.0.0" here.
-	Scheduler []string `json:"scheduler,omitempty"`
+	Scheduler         []string `json:"scheduler,omitempty"`
 	// Available only if Kamaji is running using Kine as backing storage.
 	Kine []string `json:"kine,omitempty"`
 }
@@ -478,16 +467,6 @@ type KonnectivityAgentSpec struct {
 	// Must be 0 if Mode is DaemonSet.
 	//+kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
-	// Resources define the amount of CPU and memory to allocate to the Konnectivity agent.
-	//
-	// When unset the agent container declares no requests or limits, which places
-	// its Pod in the BestEffort QoS class. Since the agent tolerates all taints and
-	// commonly runs alongside the cluster's heaviest workloads, BestEffort makes it
-	// the first candidate for CPU starvation and eviction on a busy node, degrading
-	// the very tunnel that `kubectl exec`, `kubectl logs` and `kubectl port-forward`
-	// depend on. Setting requests here promotes the agent to Burstable so it is
-	// scheduled with a guaranteed share of CPU.
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.
@@ -538,6 +517,10 @@ type CertificateReference struct {
 	// +kubebuilder:validation:MinLength=1
 	SecretName string `json:"secretName"`
 
+	// SecretNamespace is the namespace of the referenced Secret.
+	// If empty, defaults to the TenantControlPlane namespace.
+	SecretNamespace string `json:"secretNamespace,omitempty"`
+
 	// CertificateKey is the key in the Secret containing the certificate.
 	// +kubebuilder:default="tls.crt"
 	CertificateKey string `json:"certificateKey,omitempty"`
@@ -552,6 +535,10 @@ type KeyReference struct {
 	// SecretName references a Secret containing key data
 	// +kubebuilder:validation:MinLength=1
 	SecretName string `json:"secretName"`
+
+	// SecretNamespace is the namespace of the referenced Secret.
+	// If empty, defaults to the TenantControlPlane namespace.
+	SecretNamespace string `json:"secretNamespace,omitempty"`
 
 	// PublicKeyKey is the key in the Secret containing the public key.
 	// +kubebuilder:default="sa.pub"

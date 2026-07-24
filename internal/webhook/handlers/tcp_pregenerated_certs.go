@@ -82,13 +82,19 @@ func (t TenantControlPlanePreGeneratedCerts) ValidatePreGeneratedCerts(ctx conte
 }
 
 func (t TenantControlPlanePreGeneratedCerts) validateCertificateReference(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane, certRef *kamajiv1alpha1.CertificateReference, _ string) error {
-	// Secrets must be in the same namespace as the TenantControlPlane
-	secretKey := types.NamespacedName{
-		Name:      certRef.SecretName,
-		Namespace: tcp.GetNamespace(),
+	// Determine the namespace for the secret
+	secretNamespace := certRef.SecretNamespace
+	if secretNamespace == "" {
+		secretNamespace = tcp.GetNamespace()
 	}
 
+	// Get the referenced secret
 	secret := &corev1.Secret{}
+	secretKey := types.NamespacedName{
+		Name:      certRef.SecretName,
+		Namespace: secretNamespace,
+	}
+
 	if err := t.Client.Get(ctx, secretKey, secret); err != nil {
 		return fmt.Errorf("failed to get secret %s: %w", secretKey, err)
 	}
@@ -129,13 +135,19 @@ func (t TenantControlPlanePreGeneratedCerts) validateCertificateReference(ctx co
 }
 
 func (t TenantControlPlanePreGeneratedCerts) validateKeyReference(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane, keyRef *kamajiv1alpha1.KeyReference, _ string) error {
-	// Secrets must be in the same namespace as the TenantControlPlane
-	secretKey := types.NamespacedName{
-		Name:      keyRef.SecretName,
-		Namespace: tcp.GetNamespace(),
+	// Determine the namespace for the secret
+	secretNamespace := keyRef.SecretNamespace
+	if secretNamespace == "" {
+		secretNamespace = tcp.GetNamespace()
 	}
 
+	// Get the referenced secret
 	secret := &corev1.Secret{}
+	secretKey := types.NamespacedName{
+		Name:      keyRef.SecretName,
+		Namespace: secretNamespace,
+	}
+
 	if err := t.Client.Get(ctx, secretKey, secret); err != nil {
 		return fmt.Errorf("failed to get secret %s: %w", secretKey, err)
 	}
