@@ -506,6 +506,74 @@ type DataStoreOverride struct {
 	DataStore string `json:"dataStore,omitempty"`
 }
 
+// CertificateReference references a Secret containing certificate and private key data.
+type CertificateReference struct {
+	// SecretName references a Secret containing certificate data
+	// +kubebuilder:validation:MinLength=1
+	SecretName string `json:"secretName"`
+
+	// SecretNamespace is the namespace of the referenced Secret.
+	// If empty, defaults to the TenantControlPlane namespace.
+	SecretNamespace string `json:"secretNamespace,omitempty"`
+
+	// CertificateKey is the key in the Secret containing the certificate.
+	// +kubebuilder:default="tls.crt"
+	CertificateKey string `json:"certificateKey,omitempty"`
+
+	// PrivateKeyKey is the key in the Secret containing the private key.
+	// +kubebuilder:default="tls.key"
+	PrivateKeyKey string `json:"privateKeyKey,omitempty"`
+}
+
+// KeyReference references a Secret containing public and private key data.
+type KeyReference struct {
+	// SecretName references a Secret containing key data
+	// +kubebuilder:validation:MinLength=1
+	SecretName string `json:"secretName"`
+
+	// SecretNamespace is the namespace of the referenced Secret.
+	// If empty, defaults to the TenantControlPlane namespace.
+	SecretNamespace string `json:"secretNamespace,omitempty"`
+
+	// PublicKeyKey is the key in the Secret containing the public key.
+	// +kubebuilder:default="sa.pub"
+	PublicKeyKey string `json:"publicKeyKey,omitempty"`
+
+	// PrivateKeyKey is the key in the Secret containing the private key.
+	// +kubebuilder:default="sa.key"
+	PrivateKeyKey string `json:"privateKeyKey,omitempty"`
+}
+
+// PreGeneratedCertificatesSpec allows specifying existing certificates instead of generating new ones.
+type PreGeneratedCertificatesSpec struct {
+	// CA certificate and key from existing Secret.
+	// If specified, this CA will be used instead of generating a new one.
+	CA *CertificateReference `json:"ca,omitempty"`
+
+	// API Server certificate and key from existing Secret.
+	// If specified, this certificate will be used instead of generating a new one.
+	// The certificate must be signed by the CA specified above or the generated CA.
+	APIServer *CertificateReference `json:"apiServer,omitempty"`
+
+	// Kubelet client certificate and key from existing Secret.
+	// If specified, this certificate will be used instead of generating a new one.
+	// The certificate must be signed by the CA specified above or the generated CA.
+	KubeletClient *CertificateReference `json:"kubeletClient,omitempty"`
+
+	// Front proxy CA certificate and key from existing Secret.
+	// If specified, this CA will be used instead of generating a new one.
+	FrontProxyCA *CertificateReference `json:"frontProxyCA,omitempty"`
+
+	// Front proxy client certificate and key from existing Secret.
+	// If specified, this certificate will be used instead of generating a new one.
+	// The certificate must be signed by the front proxy CA specified above or the generated front proxy CA.
+	FrontProxyClient *CertificateReference `json:"frontProxyClient,omitempty"`
+
+	// Service account key pair from existing Secret.
+	// If specified, this key pair will be used instead of generating a new one.
+	ServiceAccount *KeyReference `json:"serviceAccount,omitempty"`
+}
+
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStore) || has(self.dataStore)", message="unsetting the dataStore is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"
@@ -551,6 +619,9 @@ type TenantControlPlaneSpec struct {
 	Kubernetes KubernetesSpec `json:"kubernetes"`
 	// NetworkProfile specifies how the network is
 	NetworkProfile NetworkProfileSpec `json:"networkProfile,omitempty"`
+	// PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
+	// This field is immutable after creation.
+	PreGeneratedCertificates *PreGeneratedCertificatesSpec `json:"preGeneratedCertificates,omitempty"`
 	// Addons contain which addons are enabled
 	Addons AddonsSpec `json:"addons,omitempty"`
 }
