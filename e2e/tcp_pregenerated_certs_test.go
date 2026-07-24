@@ -5,6 +5,13 @@ package e2e
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -16,6 +23,36 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
+func generateTestCertificate() (certPEM, keyPEM []byte) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		panic(err)
+	}
+
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Organization: []string{"Test CA"},
+			CommonName:   "Test CA",
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+	}
+
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	if err != nil {
+		panic(err)
+	}
+
+	certPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	keyPEM = pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
+
+	return certPEM, keyPEM
+}
+
 var _ = Describe("Deploy TenantControlPlane with PreGenerated Certificates", func() {
 	Context("using pregenerated CA certificate", func() {
 		var (
@@ -24,24 +61,7 @@ var _ = Describe("Deploy TenantControlPlane with PreGenerated Certificates", fun
 		)
 
 		BeforeEach(func() {
-			caCertData := `-----BEGIN CERTIFICATE-----
-MIIDCTCCAfGgAwIBAgIJAKNr9YHPXB3IMA0GCSqGSIb3DQEBCwUAMBIxEDAOBgNV
-BAMMB0V0Y2QgQ0EwHhcNMjMwMjEwMTAwMDAwWhcNMzMwMjA3MTAwMDAwWjASMRAw
-DgYDVQQDDAdFdGNkIENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA
-0p1yQMvyBEQ1nDGrxWwoZgFkj1UGHZwnZSMzdoomMqQao1Y9cso8h2QQQQQQQQQQQ
-QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ
-AoGBAPj/k8HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
-HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
------END CERTIFICATE-----`
-
-			caKeyData := `-----BEGIN RSA PRIVATE KEY-----
-MIIEpAIBAAKCAQEA0p1yQMvyBEQxZwxq8VsKGYBZI9VBh2cJ2UjM3aKJjKkGqHWHL
-ZhE6H2QAAAAAAAAAAAAAAABAAAAAAAAAAAAAAACgYEA/4/5PGFFFFFFFFFFFFFFFFF
-FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-AoGBAPj/k8HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
-HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
------END RSA PRIVATE KEY-----`
+			caCertData, caKeyData := generateTestCertificate()
 
 			caSecret = &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
