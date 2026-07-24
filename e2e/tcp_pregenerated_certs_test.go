@@ -70,10 +70,10 @@ var _ = Describe("Deploy TenantControlPlane with PreGenerated Certificates", fun
 					Namespace: "default",
 				},
 				Type: corev1.SecretTypeTLS,
-				Data: map[string][]byte{
-					"tls.crt": []byte(caCertData),
-					"tls.key": []byte(caKeyData),
-				},
+Data: map[string][]byte{
+				"tls.crt": caCertData,
+				"tls.key": caKeyData,
+			},
 			}
 
 			tcp = &kamajiv1alpha1.TenantControlPlane{
