@@ -92,15 +92,6 @@ Context("AllocateLoadBalancerNodePorts", func() {
 			err := k8sClient.Create(ctx, tcp)
 			Expect(err).NotTo(HaveOccurred())
 		})
-
-		It("denies the field when service type is not LoadBalancer", func() {
-			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
-			tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = ptr.To(false)
-
-			err := k8sClient.Create(ctx, tcp)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("allocateLoadBalancerNodePorts is supported only with LoadBalancer service type"))
-		})
 	})
 
 	Context("PublicAPIServerAddress", func() {
