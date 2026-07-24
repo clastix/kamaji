@@ -156,13 +156,24 @@ var _ = Describe("Deploy TenantControlPlane with PreGenerated Certificates", fun
 		})
 
 		It("should reject creation when pregenerated secret doesn't exist", func() {
+			// Create a new TCP with a different name to avoid conflict with previous test's deletion
+			tcpWithBadSecret := &kamajiv1alpha1.TenantControlPlane{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tcp-pregenerated-reject",
+					Namespace: "default",
+				},
+				Spec: tcp.Spec,
+			}
 			// Use a non-existent secret name
-			tcp.Spec.PreGeneratedCertificates.CA.SecretName = "non-existent-ca"
+			tcpWithBadSecret.Spec.PreGeneratedCertificates.CA.SecretName = "non-existent-ca"
 
 			// Attempt to create the TenantControlPlane
-			err := k8sClient.Create(context.Background(), tcp)
+			err := k8sClient.Create(context.Background(), tcpWithBadSecret)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("not found"))
+
+			// Cleanup
+			_ = k8sClient.Delete(context.Background(), tcpWithBadSecret)
 		})
 	})
 })

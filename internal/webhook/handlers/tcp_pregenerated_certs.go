@@ -202,6 +202,10 @@ func (t TenantControlPlanePreGeneratedCerts) OnUpdate(newObject runtime.Object, 
 	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp := newObject.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
+		if tcp.GetDeletionTimestamp() != nil {
+			return nil, nil
+		}
+
 		return nil, t.ValidatePreGeneratedCerts(ctx, tcp)
 	}
 }
