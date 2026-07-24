@@ -566,6 +566,28 @@ type PreGeneratedCertificatesSpec struct {
 	ServiceAccount *KeyReference `json:"serviceAccount,omitempty"`
 }
 
+// RBACBootstrapSpec defines the RBAC bootstrap configuration.
+type RBACBootstrapSpec struct {
+	// Enabled controls whether RBAC bootstrap is performed.
+	// When enabled, creates ClusterRoleBindings for admin users and groups.
+	// +kubebuilder:default=true
+	Enabled bool `json:"enabled,omitempty"`
+	// AdminUsers specifies users that should be granted cluster-admin privileges.
+	// Defaults to ["kubernetes-admin"] which matches the generated kubeconfig user.
+	// +kubebuilder:default={"kubernetes-admin"}
+	AdminUsers []string `json:"adminUsers,omitempty"`
+	// AdminGroups specifies groups that should be granted cluster-admin privileges.
+	// Defaults to ["system:masters"] which is the traditional K8s admin group.
+	// +kubebuilder:default={"system:masters"}
+	AdminGroups []string `json:"adminGroups,omitempty"`
+}
+
+// BootstrapSpec defines the bootstrap configuration for tenant control plane clusters.
+type BootstrapSpec struct {
+	// RBAC configures Role-Based Access Control bootstrap.
+	RBAC *RBACBootstrapSpec `json:"rbac,omitempty"`
+}
+
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStore) || has(self.dataStore)", message="unsetting the dataStore is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"
@@ -614,6 +636,8 @@ type TenantControlPlaneSpec struct {
 	// PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
 	// This field is immutable after creation.
 	PreGeneratedCertificates *PreGeneratedCertificatesSpec `json:"preGeneratedCertificates,omitempty"`
+	// Bootstrap configures initial cluster setup including RBAC and essential components.
+	Bootstrap *BootstrapSpec `json:"bootstrap,omitempty"`
 	// Addons contain which addons are enabled
 	Addons AddonsSpec `json:"addons,omitempty"`
 }
