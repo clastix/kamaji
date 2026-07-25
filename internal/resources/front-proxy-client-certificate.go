@@ -139,36 +139,90 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 			}
 		}
 
-		config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
-		if err != nil {
-			logger.Error(err, "cannot retrieve kubeadm configuration")
+		// Check if pregenerated FrontProxy Client certificate is specified
+		if tenantControlPlane.Spec.PreGeneratedCertificates != nil && tenantControlPlane.Spec.PreGeneratedCertificates.FrontProxyClient != nil {
+			logger.Info("Using pregenerated FrontProxy Client certificate")
+			if err := r.usePreGeneratedFrontProxyClientCertificate(ctx, tenantControlPlane); err != nil {
+				logger.Error(err, "cannot use pregenerated FrontProxy Client certificate")
 
-			return err
-		}
+				return err
+			}
+		} else {
+			logger.Info("Generating new FrontProxy Client certificate")
 
-		ca := kubeadm.CertificatePrivateKeyPair{
-			Name:        kubeadmconstants.FrontProxyCACertAndKeyBaseName,
-			Certificate: secretCA.Data[kubeadmconstants.FrontProxyCACertName],
-			PrivateKey:  secretCA.Data[kubeadmconstants.FrontProxyCAKeyName],
-		}
-		certificateKeyPair, err := kubeadm.GenerateCertificatePrivateKeyPair(kubeadmconstants.FrontProxyClientCertAndKeyBaseName, config, ca)
-		if err != nil {
-			logger.Error(err, "cannot generate certificate and private key")
+			config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
+			if err != nil {
+				logger.Error(err, "cannot retrieve kubeadm configuration")
 
-			return err
-		}
+				return err
+			}
 
-		if isRotationRequested {
-			utilities.SetLastRotationTimestamp(r.resource)
-		}
+			ca := kubeadm.CertificatePrivateKeyPair{
+				Name:        kubeadmconstants.FrontProxyCACertAndKeyBaseName,
+				Certificate: secretCA.Data[kubeadmconstants.FrontProxyCACertName],
+				PrivateKey:  secretCA.Data[kubeadmconstants.FrontProxyCAKeyName],
+			}
+			certificateKeyPair, err := kubeadm.GenerateCertificatePrivateKeyPair(kubeadmconstants.FrontProxyClientCertAndKeyBaseName, config, ca)
+			if err != nil {
+				logger.Error(err, "cannot generate certificate and private key")
 
-		r.resource.Data = map[string][]byte{
-			kubeadmconstants.FrontProxyClientCertName: certificateKeyPair.Certificate,
-			kubeadmconstants.FrontProxyClientKeyName:  certificateKeyPair.PrivateKey,
+				return err
+			}
+
+			r.resource.Data = map[string][]byte{
+				kubeadmconstants.FrontProxyClientCertName: certificateKeyPair.Certificate,
+				kubeadmconstants.FrontProxyClientKeyName:  certificateKeyPair.PrivateKey,
+			}
 		}
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
 		return nil
 	}
+}
+
+func (r *FrontProxyClientCertificate) usePreGeneratedFrontProxyClientCertificate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	certRef := tenantControlPlane.Spec.PreGeneratedCertificates.FrontProxyClient
+
+	secretNamespace := certRef.SecretNamespace
+	if secretNamespace == "" {
+		secretNamespace = tenantControlPlane.GetNamespace()
+	}
+
+	secret := &corev1.Secret{}
+	secretKey := k8stypes.NamespacedName{
+		Name:      certRef.SecretName,
+		Namespace: secretNamespace,
+	}
+
+	if err := r.Client.Get(ctx, secretKey, secret); err != nil {
+		return fmt.Errorf("failed to get secret %s: %w", secretKey, err)
+	}
+
+	certKey := certRef.CertificateKey
+	if certKey == "" {
+		certKey = corev1.TLSCertKey
+	}
+
+	privKeyKey := certRef.PrivateKeyKey
+	if privKeyKey == "" {
+		privKeyKey = corev1.TLSPrivateKeyKey
+	}
+
+	certData, exists := secret.Data[certKey]
+	if !exists {
+		return fmt.Errorf("certificate key %s not found in secret %s", certKey, secretKey)
+	}
+
+	privKeyData, exists := secret.Data[privKeyKey]
+	if !exists {
+		return fmt.Errorf("private key %s not found in secret %s", privKeyKey, secretKey)
+	}
+
+	r.resource.Data = map[string][]byte{
+		kubeadmconstants.FrontProxyClientCertName: certData,
+		kubeadmconstants.FrontProxyClientKeyName:  privKeyData,
+	}
+
+	return nil
 }
