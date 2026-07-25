@@ -164,29 +164,83 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 			}
 		}
 
-		ca := kubeadm.CertificatePrivateKeyPair{
-			Name:        kubeadmconstants.CACertAndKeyBaseName,
-			Certificate: secretCA.Data[kubeadmconstants.CACertName],
-			PrivateKey:  secretCA.Data[kubeadmconstants.CAKeyName],
-		}
-		certificateKeyPair, err := kubeadm.GenerateCertificatePrivateKeyPair(kubeadmconstants.APIServerCertAndKeyBaseName, config, ca)
-		if err != nil {
-			logger.Error(err, "cannot generate certificate and private key")
+		// Check if pregenerated API Server certificate is specified
+		if tenantControlPlane.Spec.PreGeneratedCertificates != nil && tenantControlPlane.Spec.PreGeneratedCertificates.APIServer != nil {
+			logger.Info("Using pregenerated API Server certificate")
+			if err := r.usePreGeneratedAPIServerCertificate(ctx, tenantControlPlane); err != nil {
+				logger.Error(err, "cannot use pregenerated API Server certificate")
 
-			return err
-		}
+				return err
+			}
+		} else {
+			logger.Info("Generating new API Server certificate")
 
-		if isRotationRequested {
-			utilities.SetLastRotationTimestamp(r.resource)
-		}
+			ca := kubeadm.CertificatePrivateKeyPair{
+				Name:        kubeadmconstants.CACertAndKeyBaseName,
+				Certificate: secretCA.Data[kubeadmconstants.CACertName],
+				PrivateKey:  secretCA.Data[kubeadmconstants.CAKeyName],
+			}
+			certificateKeyPair, err := kubeadm.GenerateCertificatePrivateKeyPair(kubeadmconstants.APIServerCertAndKeyBaseName, config, ca)
+			if err != nil {
+				logger.Error(err, "cannot generate certificate and private key")
 
-		r.resource.Data = map[string][]byte{
-			kubeadmconstants.APIServerCertName: certificateKeyPair.Certificate,
-			kubeadmconstants.APIServerKeyName:  certificateKeyPair.PrivateKey,
+				return err
+			}
+
+			r.resource.Data = map[string][]byte{
+				kubeadmconstants.APIServerCertName: certificateKeyPair.Certificate,
+				kubeadmconstants.APIServerKeyName:  certificateKeyPair.PrivateKey,
+			}
 		}
 
 		utilities.SetObjectChecksum(r.resource, r.resource.Data)
 
 		return nil
 	}
+}
+
+func (r *APIServerCertificate) usePreGeneratedAPIServerCertificate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	certRef := tenantControlPlane.Spec.PreGeneratedCertificates.APIServer
+
+	secretNamespace := certRef.SecretNamespace
+	if secretNamespace == "" {
+		secretNamespace = tenantControlPlane.GetNamespace()
+	}
+
+	secret := &corev1.Secret{}
+	secretKey := k8stypes.NamespacedName{
+		Name:      certRef.SecretName,
+		Namespace: secretNamespace,
+	}
+
+	if err := r.Client.Get(ctx, secretKey, secret); err != nil {
+		return fmt.Errorf("failed to get secret %s: %w", secretKey, err)
+	}
+
+	certKey := certRef.CertificateKey
+	if certKey == "" {
+		certKey = corev1.TLSCertKey
+	}
+
+	privKeyKey := certRef.PrivateKeyKey
+	if privKeyKey == "" {
+		privKeyKey = corev1.TLSPrivateKeyKey
+	}
+
+	certData, exists := secret.Data[certKey]
+	if !exists {
+		return fmt.Errorf("certificate key %s not found in secret %s", certKey, secretKey)
+	}
+
+	privKeyData, exists := secret.Data[privKeyKey]
+	if !exists {
+		return fmt.Errorf("private key %s not found in secret %s", privKeyKey, secretKey)
+	}
+
+	r.resource.Data = map[string][]byte{
+		kubeadmconstants.APIServerCertName: certData,
+		kubeadmconstants.APIServerKeyName:  privKeyData,
+	}
+
+	return nil
 }
