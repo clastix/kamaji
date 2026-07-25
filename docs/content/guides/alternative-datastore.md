@@ -12,6 +12,29 @@ The following `make` recipes help you to setup alternative `Datastore` resources
 
 - **NATS**: `$ make -C deploy/kine/nats nats`
 
+## Using a Custom Kine Image
+
+The default kine image can be overridden per-tenant by specifying a custom container image in the `additionalContainers` field:
+
+```yaml
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: tenant-name
+  namespace: kamaji-system
+spec:
+  controlPlane:
+    deployment:
+      additionalContainers:
+        - name: kine
+          image: custom-kine-image:tag
+```
+
+This is useful for:
+- Different database backends (postgresql, mysql, sqlite)
+- Custom kine builds with specific features
+- Air-gapped environments needing custom images
+
 !!! warning "Not for production"
     The default settings are not production grade: the following scripts are just used to test the Kamaji usage of different drivers.
 
