@@ -58,7 +58,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 					Address: "172.18.0.3",
 				},
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
-					Version: "v1.23.6",
+					Version: kamajiv1alpha1.DefaultKubernetesVersion,
 					Kubelet: kamajiv1alpha1.KubeletSpec{
 						CGroupFS: "cgroupfs",
 					},

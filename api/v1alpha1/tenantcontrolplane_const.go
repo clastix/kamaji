@@ -7,4 +7,7 @@ const (
 	// PausedReconciliationAnnotation is an annotation that can be applied to
 	// Tenant Control Plane objects to prevent the controller from processing such a resource.
 	PausedReconciliationAnnotation = "kamaji.clastix.io/paused"
+
+	// DefaultKubernetesVersion is the default Kubernetes version used in e2e tests.
+	DefaultKubernetesVersion = "v1.35.7"
 )

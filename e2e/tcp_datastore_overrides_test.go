@@ -39,7 +39,7 @@ var _ = Describe("Deploy a TenantControlPlane resource with DataStoreOverrides",
 				Address: "172.18.0.2",
 			},
 			Kubernetes: kamajiv1alpha1.KubernetesSpec{
-				Version: "v1.23.6",
+				Version: kamajiv1alpha1.DefaultKubernetesVersion,
 				Kubelet: kamajiv1alpha1.KubeletSpec{
 					CGroupFS: "cgroupfs",
 				},

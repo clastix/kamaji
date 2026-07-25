@@ -34,7 +34,7 @@ var _ = Describe("Deploy a TenantControlPlane with wrong preferred kubelet addre
 						},
 					},
 					Kubernetes: kamajiv1alpha1.KubernetesSpec{
-						Version: "v1.23.6",
+						Version: kamajiv1alpha1.DefaultKubernetesVersion,
 						Kubelet: kamajiv1alpha1.KubeletSpec{
 							PreferredAddressTypes: []kamajiv1alpha1.KubeletPreferredAddressType{
 								kamajiv1alpha1.NodeHostName,
@@ -70,7 +70,7 @@ var _ = Describe("Deploy a TenantControlPlane with wrong preferred kubelet addre
 						},
 					},
 					Kubernetes: kamajiv1alpha1.KubernetesSpec{
-						Version: "v1.23.6",
+						Version: kamajiv1alpha1.DefaultKubernetesVersion,
 						Kubelet: kamajiv1alpha1.KubeletSpec{
 							PreferredAddressTypes: []kamajiv1alpha1.KubeletPreferredAddressType{
 								kamajiv1alpha1.NodeHostName,
