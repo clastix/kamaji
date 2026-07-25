@@ -31023,6 +31023,13 @@ such as the number of Pod replicas, the Service resource, or the Ingress.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecbootstrap">bootstrap</a></b></td>
+        <td>object</td>
+        <td>
+          Bootstrap configures initial cluster setup including RBAC and essential components.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>dataStore</b></td>
         <td>string</td>
         <td>
@@ -47860,6 +47867,79 @@ if not set, the default ImageRepository will be used instead.<br/>
         <td>
           ImageTag allows to specify a tag for the image.
 In case this value is set, kubeadm does not change automatically the version of the above components during upgrades.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecbootstrap">`TenantControlPlane.spec.bootstrap`</span>
+
+
+Bootstrap configures initial cluster setup including RBAC and essential components.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespecbootstraprbac">rbac</a></b></td>
+        <td>object</td>
+        <td>
+          RBAC configures Role-Based Access Control bootstrap.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecbootstraprbac">`TenantControlPlane.spec.bootstrap.rbac`</span>
+
+
+RBAC configures Role-Based Access Control bootstrap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>adminGroups</b></td>
+        <td>[]string</td>
+        <td>
+          AdminGroups specifies groups that should be granted cluster-admin privileges.
+Defaults to ["system:masters"] which is the traditional K8s admin group.<br/>
+          <br/>
+            <i>Default</i>: [system:masters]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>adminUsers</b></td>
+        <td>[]string</td>
+        <td>
+          AdminUsers specifies users that should be granted cluster-admin privileges.
+Defaults to ["kubernetes-admin"] which matches the generated kubeconfig user.<br/>
+          <br/>
+            <i>Default</i>: [kubernetes-admin]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled controls whether RBAC bootstrap is performed.
+When enabled, creates ClusterRoleBindings for admin users and groups.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
         </td>
         <td>false</td>
       </tr></tbody>
