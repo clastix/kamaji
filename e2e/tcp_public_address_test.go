@@ -8,7 +8,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -94,6 +93,7 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 					Name:      tcp.Name + "-scheduler-kubeconfig",
 					Namespace: tcp.Namespace,
 				}, schedSecret)
+
 				return err == nil
 			}, 300, 5).Should(BeTrue())
 
