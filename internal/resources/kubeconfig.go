@@ -149,7 +149,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
-		if err = r.customizeConfig(config); err != nil {
+		if err = r.customizeConfig(config, tenantControlPlane); err != nil {
 			logger.Error(err, "cannot customize the configuration")
 
 			return err
@@ -251,11 +251,9 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 	}
 }
 
-func (r *KubeconfigResource) customizeConfig(config *kubeadm.Configuration) error {
+func (r *KubeconfigResource) customizeConfig(config *kubeadm.Configuration, _ *kamajiv1alpha1.TenantControlPlane) error {
 	switch r.KubeConfigFileName {
-	case kubeadmconstants.ControllerManagerKubeConfigFileName:
-		return r.localhostAsAdvertiseAddress(config)
-	case kubeadmconstants.SchedulerKubeConfigFileName:
+	case kubeadmconstants.ControllerManagerKubeConfigFileName, kubeadmconstants.SchedulerKubeConfigFileName:
 		return r.localhostAsAdvertiseAddress(config)
 	default:
 		return nil

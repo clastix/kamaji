@@ -367,6 +367,11 @@ type ServiceSpec struct {
 	// rejected by validation.
 	//+optional
 	AllocateLoadBalancerNodePorts *bool `json:"allocateLoadBalancerNodePorts,omitempty"`
+	// PublicAPIServerAddress allows specifying a custom hostname for the API server.
+	// If set, this address will be used in cluster-info ConfigMaps and kubeconfigs
+	// instead of the LoadBalancer IP, enabling the use of DNS names that match certificate SANs.
+	// +optional
+	PublicAPIServerAddress string `json:"publicAPIServerAddress,omitempty"`
 }
 
 // AddonSpec defines the spec for every addon.
