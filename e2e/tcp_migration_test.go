@@ -48,7 +48,7 @@ func featureTestMigration(driver string) {
 					Port:    int32(rand.Int63nRange(31000, 32000)),
 				},
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
-					Version: "v1.23.6",
+					Version: kamajiv1alpha1.DefaultKubernetesVersion,
 					Kubelet: kamajiv1alpha1.KubeletSpec{
 						CGroupFS: "cgroupfs",
 					},

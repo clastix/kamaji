@@ -214,7 +214,7 @@ func TestTenantControlPlaneInfoMetric(t *testing.T) {
 	recorder := testRecorder()
 
 	recorder.ResetTenantControlPlaneInfo()
-	recorder.SetTenantControlPlaneInfo("default", "test", "v1.33.0", string(kamajiv1alpha1.EtcdDriver), "https://203.0.113.10:6443", TenantControlPlaneExposureService)
+	recorder.SetTenantControlPlaneInfo("default", "test", kamajiv1alpha1.DefaultKubernetesVersion, string(kamajiv1alpha1.EtcdDriver), "https://203.0.113.10:6443", TenantControlPlaneExposureService)
 
 	family := mustMetricFamily(t, "kamaji_tenant_control_plane_info")
 	if len(family.GetMetric()) != 1 {
@@ -224,7 +224,7 @@ func TestTenantControlPlaneInfoMetric(t *testing.T) {
 	labels := map[string]string{
 		"tcp_namespace":      "default",
 		"tcp_name":           "test",
-		"kubernetes_version": "v1.33.0",
+		"kubernetes_version": kamajiv1alpha1.DefaultKubernetesVersion,
 		"datastore_driver":   string(kamajiv1alpha1.EtcdDriver),
 		"address":            "https://203.0.113.10:6443",
 		"exposure_strategy":  TenantControlPlaneExposureService,

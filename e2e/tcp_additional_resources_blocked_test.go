@@ -99,7 +99,7 @@ var _ = Describe("Deploy a TenantControlPlane resource with additional resources
 				},
 			},
 			Kubernetes: kamajiv1alpha1.KubernetesSpec{
-				Version: "v1.23.6",
+				Version: kamajiv1alpha1.DefaultKubernetesVersion,
 			},
 		},
 	}

@@ -71,7 +71,7 @@ spec:
     service:
       serviceType: ClusterIP
   kubernetes:
-    version: v1.32.0
+    version: v1.35.7
     kubelet:
       cgroupfs: systemd
   networkProfile:
