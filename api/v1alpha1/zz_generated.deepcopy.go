@@ -797,6 +797,11 @@ func (in *DeploymentSpec) DeepCopyInto(out *DeploymentSpec) {
 		*out = new(ControlPlaneProbes)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.AutomountServiceAccountToken != nil {
+		in, out := &in.AutomountServiceAccountToken, &out.AutomountServiceAccountToken
+		*out = new(bool)
+		**out = **in
+	}
 	if in.ContainerSecurityContexts != nil {
 		in, out := &in.ContainerSecurityContexts, &out.ContainerSecurityContexts
 		*out = new(ControlPlaneContainerSecurityContexts)

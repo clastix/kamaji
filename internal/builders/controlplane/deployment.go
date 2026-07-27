@@ -1213,6 +1213,8 @@ func (d Deployment) setAffinity(spec *corev1.PodSpec, tcp kamajiv1alpha1.TenantC
 }
 
 func (d Deployment) setServiceAccount(spec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
+	spec.AutomountServiceAccountToken = tcp.Spec.ControlPlane.Deployment.AutomountServiceAccountToken
+
 	if len(tcp.Spec.ControlPlane.Deployment.ServiceAccountName) > 0 {
 		spec.ServiceAccountName = tcp.Spec.ControlPlane.Deployment.ServiceAccountName
 

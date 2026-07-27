@@ -327,6 +327,8 @@ type DeploymentSpec struct {
 	//+kubebuilder:default="default"
 	// ServiceAccountName allows to specify the service account to be mounted to the pods of the Control plane deployment
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	// AutomountServiceAccountToken allows to enable the automatic mounting of the service account token to the pods of the Control plane deployment
+	AutomountServiceAccountToken *bool `json:"automountServiceAccountToken,omitempty"`
 	// ContainerSecurityContexts allows to specify the security context for the individual control plane components.
 	ContainerSecurityContexts *ControlPlaneContainerSecurityContexts `json:"containerSecurityContexts,omitempty"`
 	// PodSecurityContext allows to specify the security context for the control plane pod.

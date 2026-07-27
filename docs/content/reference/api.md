@@ -31346,6 +31346,13 @@ More info: https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>automountServiceAccountToken</b></td>
+        <td>boolean</td>
+        <td>
+          AutomountServiceAccountToken allows to enable the automatic mounting of the service account token to the pods of the Control plane deployment<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanespeccontrolplanedeploymentcontainersecuritycontexts">containerSecurityContexts</a></b></td>
         <td>object</td>
         <td>

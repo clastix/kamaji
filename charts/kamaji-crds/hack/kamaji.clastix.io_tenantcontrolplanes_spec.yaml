@@ -6301,6 +6301,9 @@ versions:
                                 x-kubernetes-list-type: atomic
                             type: object
                         type: object
+                      automountServiceAccountToken:
+                        description: AutomountServiceAccountToken allows to enable the automatic mounting of the service account token to the pods of the Control plane deployment
+                        type: boolean
                       containerSecurityContexts:
                         description: ContainerSecurityContexts allows to specify the security context for the individual control plane components.
                         properties:
