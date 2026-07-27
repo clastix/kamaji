@@ -118,9 +118,27 @@ func EncodeToJSON(o runtime.Object) ([]byte, error) {
 //
 // If the new CIDRs field is populated, it is considered authoritative.
 // The deprecated field is only used as a fallback for backward compatibility.
+//
+// The user-specified order is preserved (duplicates removed): for dual-stack it
+// determines the primary IP family across --service-cluster-ip-range,
+// --cluster-cidr and the kubeadm service/pod subnets, so it must not be sorted.
 func GetEffectiveCIDRs(deprecated string, current []string) []string {
 	if len(current) > 0 {
-		return UniqueStrings(current)
+		// Deduplicate with a set for membership, but keep the user-specified order
+		// by appending to a slice (sets.Set iteration order is not deterministic).
+		seen := sets.New[string]()
+		result := make([]string, 0, len(current))
+
+		for _, cidr := range current {
+			if seen.Has(cidr) {
+				continue
+			}
+
+			seen.Insert(cidr)
+			result = append(result, cidr)
+		}
+
+		return result
 	}
 
 	if deprecated != "" {

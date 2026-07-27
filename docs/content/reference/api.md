@@ -44227,7 +44227,9 @@ Only modify if you know what you are doing.
         <td><b>controllerManager</b></td>
         <td>[]string</td>
         <td>
-          <br/>
+          ControllerManager extra args. kube-controller-manager defaults --bind-address to the
+IPv6 wildcard "::" (which also serves IPv4 on a dual-stack pod); on hosts with IPv6
+disabled in the kernel, override it to "0.0.0.0" here.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -44241,7 +44243,9 @@ Only modify if you know what you are doing.
         <td><b>scheduler</b></td>
         <td>[]string</td>
         <td>
-          <br/>
+          Scheduler extra args. kube-scheduler defaults --bind-address to the IPv6 wildcard "::"
+(which also serves IPv4 on a dual-stack pod); on hosts with IPv6 disabled in the
+kernel, override it to "0.0.0.0" here.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

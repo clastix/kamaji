@@ -6869,6 +6869,10 @@ versions:
                               type: string
                             type: array
                           controllerManager:
+                            description: |-
+                              ControllerManager extra args. kube-controller-manager defaults --bind-address to the
+                              IPv6 wildcard "::" (which also serves IPv4 on a dual-stack pod); on hosts with IPv6
+                              disabled in the kernel, override it to "0.0.0.0" here.
                             items:
                               type: string
                             type: array
@@ -6878,6 +6882,10 @@ versions:
                               type: string
                             type: array
                           scheduler:
+                            description: |-
+                              Scheduler extra args. kube-scheduler defaults --bind-address to the IPv6 wildcard "::"
+                              (which also serves IPv4 on a dual-stack pod); on hosts with IPv6 disabled in the
+                              kernel, override it to "0.0.0.0" here.
                             items:
                               type: string
                             type: array
@@ -8646,6 +8654,8 @@ versions:
                     x-kubernetes-validations:
                       - message: all podCidrs entries must be valid CIDRs
                         rule: self.all(x, isCIDR(x))
+                      - message: podCidrs must not contain two CIDRs of the same IP family
+                        rule: size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()
                   port:
                     default: 6443
                     description: Port where API server will be exposed
@@ -8673,6 +8683,8 @@ versions:
                     x-kubernetes-validations:
                       - message: all serviceCidrs entries must be valid CIDRs
                         rule: self.all(x, isCIDR(x))
+                      - message: serviceCidrs must not contain two CIDRs of the same IP family
+                        rule: size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()
                 type: object
               writePermissions:
                 description: |-

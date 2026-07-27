@@ -70,6 +70,7 @@ type NetworkProfileSpec struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=2
 	// +kubebuilder:validation:XValidation:rule="self.all(x, isCIDR(x))",message="all serviceCidrs entries must be valid CIDRs"
+	// +kubebuilder:validation:XValidation:rule="size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()",message="serviceCidrs must not contain two CIDRs of the same IP family"
 	ServiceCIDRs []string `json:"serviceCidrs,omitempty"`
 	// CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.
 	// Deprecated: use PodCIDRs instead.
@@ -84,6 +85,7 @@ type NetworkProfileSpec struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=2
 	// +kubebuilder:validation:XValidation:rule="self.all(x, isCIDR(x))",message="all podCidrs entries must be valid CIDRs"
+	// +kubebuilder:validation:XValidation:rule="size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()",message="podCidrs must not contain two CIDRs of the same IP family"
 	PodCIDRs []string `json:"podCidrs,omitempty"`
 	// The DNS Service for internal resolution, it must match the Service CIDR.
 	// In case of an empty value, it is automatically computed according to the Service CIDR, e.g.:
@@ -341,10 +343,17 @@ type AdditionalVolumeMounts struct {
 }
 
 // ControlPlaneExtraArgs allows specifying additional arguments to the Control Plane components.
+// Extra arguments are applied last and override the defaults Kamaji sets.
 type ControlPlaneExtraArgs struct {
-	APIServer         []string `json:"apiServer,omitempty"`
+	APIServer []string `json:"apiServer,omitempty"`
+	// ControllerManager extra args. kube-controller-manager defaults --bind-address to the
+	// IPv6 wildcard "::" (which also serves IPv4 on a dual-stack pod); on hosts with IPv6
+	// disabled in the kernel, override it to "0.0.0.0" here.
 	ControllerManager []string `json:"controllerManager,omitempty"`
-	Scheduler         []string `json:"scheduler,omitempty"`
+	// Scheduler extra args. kube-scheduler defaults --bind-address to the IPv6 wildcard "::"
+	// (which also serves IPv4 on a dual-stack pod); on hosts with IPv6 disabled in the
+	// kernel, override it to "0.0.0.0" here.
+	Scheduler []string `json:"scheduler,omitempty"`
 	// Available only if Kamaji is running using Kine as backing storage.
 	Kine []string `json:"kine,omitempty"`
 }
