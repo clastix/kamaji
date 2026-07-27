@@ -12,8 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	kamajierrors "github.com/clastix/kamaji/internal/errors"
 )
 
 // AssignedControlPlaneAddress returns the announced address and port of a Tenant Control Plane.
@@ -52,31 +50,29 @@ func (in *TenantControlPlane) AdvertisedControlPlaneAddress() (string, int32, er
 	return in.AssignedControlPlaneAddress()
 }
 
-// DeclaredControlPlaneAddress returns the desired Tenant Control Plane address.
-// In case of dynamic allocation, e.g. using a Load Balancer, it queries the API Server looking for the allocated IP.
-// When an IP has not been yet assigned, or it is expected, an error is returned.
+// DeclaredControlPlaneAddress returns the desired Tenant Control Plane address, used as the
+// kube-apiserver advertise address and certificate IP SAN. This must always resolve to a real
+// IP address (or in-cluster DNS name), never PublicAPIServerAddress: kubeadm requires
+// LocalAPIEndpoint.AdvertiseAddress to be a valid IP, and the public hostname is only used
+// externally via PublicControlPlaneAddress (cluster-info ConfigMap, admin/kubeconfig Server).
+// For services, it returns clusterIP if available, otherwise the DNS name.
+// When the address cannot be determined, an error is returned.
 func (in *TenantControlPlane) DeclaredControlPlaneAddress(ctx context.Context, client client.Client) (string, error) {
-	var loadBalancerStatus corev1.LoadBalancerStatus
-
-	svc := &corev1.Service{}
-	err := client.Get(ctx, types.NamespacedName{Namespace: in.GetNamespace(), Name: in.GetName()}, svc)
-	if err != nil {
-		return "", fmt.Errorf("cannot retrieve Service for the TenantControlPlane: %w", err)
-	}
-
 	switch {
 	case len(in.Spec.NetworkProfile.Address) > 0:
 		// Returning the hard-coded value in the specification in case of non LoadBalanced resources
 		return in.Spec.NetworkProfile.Address, nil
-	case svc.Spec.Type == corev1.ServiceTypeClusterIP:
-		return svc.Spec.ClusterIP, nil
-	case svc.Spec.Type == corev1.ServiceTypeLoadBalancer:
-		loadBalancerStatus = svc.Status.LoadBalancer
-		if len(loadBalancerStatus.Ingress) == 0 {
-			return "", kamajierrors.NonExposedLoadBalancerError{}
+	default:
+		// Try to get the service clusterIP, otherwise use DNS name
+		svc := &corev1.Service{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: in.GetNamespace(), Name: in.GetName()}, svc); err != nil {
+			return "", fmt.Errorf("cannot retrieve Service for the TenantControlPlane: %w", err)
 		}
-
-		return getLoadBalancerAddress(loadBalancerStatus.Ingress)
+		if len(svc.Spec.ClusterIP) > 0 {
+			return svc.Spec.ClusterIP, nil
+		}
+		// Fall back to DNS name if clusterIP is not yet assigned
+		return fmt.Sprintf("%s.%s.svc", in.GetName(), in.GetNamespace()), nil
 	}
 
 	return "", kamajierrors.MissingValidIPError{}
