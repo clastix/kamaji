@@ -15,7 +15,15 @@ import (
 
 const (
 	TriggerChannelBufferSize = 10
-	TriggerChannelTimeout    = 30 * time.Second
+	// TriggerChannelTimeout must exceed controller-runtime's CacheSyncTimeout. A receiving
+	// controller may still be waiting for its informer cache to finish its initial sync
+	// before it starts consuming this channel: controller-runtime blocks a controller's
+	// Start() on every registered source, including this one, until all of them have
+	// synced, and defaults CacheSyncTimeout to 2 minutes. Once the buffer is full this
+	// send is a single best-effort attempt with no retry elsewhere for status-only
+	// changes, so its deadline must exceed that cache-sync budget or the event is
+	// silently dropped forever.
+	TriggerChannelTimeout = 3 * time.Minute
 )
 
 func TriggerChannel(ctx context.Context, receiver chan event.GenericEvent, tcp kamajiv1alpha1.TenantControlPlane) {
