@@ -4,6 +4,8 @@
 package e2e
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -56,6 +58,7 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 		})
 
 		It("should create the TenantControlPlane successfully", func() {
+			ctx := context.Background()
 			Expect(k8sClient.Create(ctx, tcp)).To(Succeed())
 
 			// Check that the TCP is created
@@ -71,6 +74,7 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 		})
 
 		It("should generate kubeconfigs with the public address for controller-manager and scheduler", func() {
+			ctx := context.Background()
 			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = "k8s-api.example.com"
 			Expect(k8sClient.Create(ctx, tcp)).To(Succeed())
 
