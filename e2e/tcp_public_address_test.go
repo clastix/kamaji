@@ -76,14 +76,16 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 			ctx := context.Background()
 			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = "k8s-api.example.com"
 			Expect(k8sClient.Create(ctx, tcp)).To(Succeed())
-
 			// Wait for kubeconfig secrets to be created
 			Eventually(func() bool {
+				var err error
+
 				cmSecret := &corev1.Secret{}
-				err := k8sClient.Get(ctx, types.NamespacedName{
+				err = k8sClient.Get(ctx, types.NamespacedName{
 					Name:      tcp.Name + "-controller-manager-kubeconfig",
 					Namespace: tcp.Namespace,
 				}, cmSecret)
+				//nolint:wsl
 				if err != nil {
 					return false
 				}
