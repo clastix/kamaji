@@ -101,9 +101,13 @@ func featureTestMigration(driver string) {
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionMigrating)
 
 		By("waiting for the webhook installation")
+		// The soot sub-manager handling this tenant must finish its informer cache sync
+		// before it can create this webhook; controller-runtime budgets up to 2 minutes
+		// for that by default (see controllers/utils/trigger_channel.go), so this must
+		// tolerate at least as long.
 		Eventually(func() error {
 			return tcpClient.Get(context.Background(), types.NamespacedName{Name: "kamaji-freeze"}, &admissionregistrationv1.ValidatingWebhookConfiguration{})
-		}, time.Minute, time.Second).Should(Succeed())
+		}, 3*time.Minute, time.Second).Should(Succeed())
 
 		By("ensuring changes are not allowed")
 		Consistently(func() error {
