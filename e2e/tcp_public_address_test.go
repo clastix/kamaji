@@ -52,6 +52,10 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = "k8s-api.example.com"
 		})
 
+		JustAfterEach(func() {
+			_ = k8sClient.Delete(context.Background(), tcp)
+		})
+
 		It("should set the public address", func() {
 			Expect(tcp.Spec.ControlPlane.Service.PublicAPIServerAddress).To(Equal("k8s-api.example.com"))
 		})
@@ -74,7 +78,6 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 
 		It("should generate kubeconfigs with the public address for controller-manager and scheduler", func() {
 			ctx := context.Background()
-			tcp.Spec.ControlPlane.Service.PublicAPIServerAddress = "k8s-api.example.com"
 			Expect(k8sClient.Create(ctx, tcp)).To(Succeed())
 			// Wait for kubeconfig secrets to be created
 			Eventually(func() bool {
