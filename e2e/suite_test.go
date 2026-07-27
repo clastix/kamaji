@@ -78,6 +78,7 @@ var _ = BeforeSuite(func() {
 		},
 	}
 	err = k8sClient.Create(context.Background(), gatewayClass)
+
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		Expect(err).NotTo(HaveOccurred())
 	}
