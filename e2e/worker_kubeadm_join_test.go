@@ -77,9 +77,6 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 
 		workerContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: testcontainers.ContainerRequest{
-				ConfigModifier: func(config *container.Config) {
-					config.Tty = true
-				},
 				HostConfigModifier: func(config *container.HostConfig) {
 					config.Mounts = []mount.Mount{
 						{
@@ -87,15 +84,8 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 							Source: "/lib/modules",
 							Target: "/lib/modules",
 						},
-						{
-							Type:   mount.TypeVolume,
-							Target: "/var",
-						},
 					}
 					config.Privileged = true
-					config.SecurityOpt = []string{"seccomp=unconfined", "apparmor=unconfined", "label=disable"}
-					config.CgroupnsMode = container.CgroupnsModePrivate
-					config.Tmpfs = map[string]string{"/run": "", "/tmp": ""}
 				},
 				Name:     fmt.Sprintf("%s-worker-node", tcp.GetName()),
 				Image:    fmt.Sprintf("kindest/node:%s", tcp.Spec.Kubernetes.Version),
@@ -151,11 +141,9 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 		By("enabling br_netfilter", func() {
 			exitCode, stdout, err := workerContainer.Exec(ctx, []string{"modprobe", "br_netfilter"})
 
-			if stdout != nil {
-				out, _ := io.ReadAll(stdout)
-				if len(out) > 0 {
-					_, _ = fmt.Fprintln(GinkgoWriter, "modprobe failed: "+string(out))
-				}
+			out, _ := io.ReadAll(stdout)
+			if len(out) > 0 {
+				_, _ = fmt.Fprintln(GinkgoWriter, "modprobe failed: "+string(out))
 			}
 
 			if exitCode != 0 {
@@ -170,11 +158,9 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 		By("disabling swap", func() {
 			exitCode, stdout, err := workerContainer.Exec(ctx, []string{"swapoff", "-a"})
 
-			if stdout != nil {
-				out, _ := io.ReadAll(stdout)
-				if len(out) > 0 {
-					_, _ = fmt.Fprintln(GinkgoWriter, "swapoff failed: "+string(out))
-				}
+			out, _ := io.ReadAll(stdout)
+			if len(out) > 0 {
+				_, _ = fmt.Fprintln(GinkgoWriter, "swapoff failed: "+string(out))
 			}
 
 			if exitCode != 0 {
@@ -191,11 +177,9 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 
 			exitCode, stdout, err := workerContainer.Exec(ctx, cmds)
 
-			if stdout != nil {
-				out, _ := io.ReadAll(stdout)
-				if len(out) > 0 {
-					_, _ = fmt.Fprintln(GinkgoWriter, "executing failed: "+string(out))
-				}
+			out, _ := io.ReadAll(stdout)
+			if len(out) > 0 {
+				_, _ = fmt.Fprintln(GinkgoWriter, "executing failed: "+string(out))
 			}
 
 			Expect(exitCode).To(Equal(0))
