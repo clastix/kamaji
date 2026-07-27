@@ -9,7 +9,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -77,11 +76,7 @@ var _ = BeforeSuite(func() {
 			ControllerName: "gateway.envoyproxy.io/gatewayclass-controller",
 		},
 	}
-	err = k8sClient.Create(context.Background(), gatewayClass)
-
-	if err != nil && !apierrors.IsAlreadyExists(err) {
-		Expect(err).NotTo(HaveOccurred())
-	}
+	Expect(k8sClient.Create(context.Background(), gatewayClass)).NotTo(HaveOccurred())
 
 	By("creating Gateway with kube-apiserver and konnectivity-server listeners")
 	CreateGatewayWithListeners("test-gateway", "default", "envoy-gw-class", "*.example.com")
