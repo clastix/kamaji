@@ -33,7 +33,7 @@ spec:
 This is useful for:
 - Different database backends (postgresql, mysql, sqlite)
 - Custom kine builds with specific features
-- Air-gapped environments needing custom images
+- More granular control on a `TenantControlPlane` basis
 
 !!! warning "Not for production"
     The default settings are not production grade: the following scripts are just used to test the Kamaji usage of different drivers.
