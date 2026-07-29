@@ -12,6 +12,7 @@ import (
 	pointer "k8s.io/utils/ptr"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/utilities"
 )
 
 func TestControlplaneDeployment(t *testing.T) {
@@ -322,6 +323,70 @@ var _ = Describe("Controlplane Deployment", func() {
 			Expect(podSpec.ServiceAccountName).To(Equal("another-sa"))
 			Expect(podSpec.AutomountServiceAccountToken).ToNot(BeNil())
 			Expect(*podSpec.AutomountServiceAccountToken).To(BeFalse())
+		})
+	})
+
+	Describe("Kine container image override", func() {
+		var tcp kamajiv1alpha1.TenantControlPlane
+		BeforeEach(func() {
+			d.KineContainerImage = "rancher/kine:v0.11.0"
+			d.DataStore = kamajiv1alpha1.DataStore{
+				Spec: kamajiv1alpha1.DataStoreSpec{
+					Driver: kamajiv1alpha1.KinePostgreSQLDriver,
+				},
+			}
+			tcp = kamajiv1alpha1.TenantControlPlane{}
+			tcp.Status.Storage = kamajiv1alpha1.StorageStatus{
+				Config: kamajiv1alpha1.DataStoreConfigStatus{
+					SecretName: "test-secret",
+				},
+			}
+		})
+
+		It("should use default kine image when not overridden", func() {
+			podSpec := &corev1.PodSpec{}
+			tcp.Spec.ControlPlane.Deployment.AdditionalContainers = []corev1.Container{}
+
+			d.setAdditionalContainers(podSpec, tcp)
+			d.buildKine(podSpec, tcp)
+
+			found, index := utilities.HasNamedContainer(podSpec.Containers, "kine")
+			Expect(found).To(BeTrue())
+			Expect(podSpec.Containers[index].Image).To(Equal("rancher/kine:v0.11.0"))
+		})
+
+		It("should use custom kine image when overridden via additionalContainers", func() {
+			podSpec := &corev1.PodSpec{}
+			tcp.Spec.ControlPlane.Deployment.AdditionalContainers = []corev1.Container{
+				{
+					Name:  "kine",
+					Image: "my-custom-kine:v1.0.0",
+				},
+			}
+
+			d.setAdditionalContainers(podSpec, tcp)
+			d.buildKine(podSpec, tcp)
+
+			found, index := utilities.HasNamedContainer(podSpec.Containers, "kine")
+			Expect(found).To(BeTrue())
+			Expect(podSpec.Containers[index].Image).To(Equal("my-custom-kine:v1.0.0"))
+		})
+
+		It("should preserve custom kine container image when set via additionalContainers", func() {
+			podSpec := &corev1.PodSpec{}
+			tcp.Spec.ControlPlane.Deployment.AdditionalContainers = []corev1.Container{
+				{
+					Name:  "kine",
+					Image: "custom-kine:latest",
+				},
+			}
+
+			d.setAdditionalContainers(podSpec, tcp)
+			d.buildKine(podSpec, tcp)
+
+			found, index := utilities.HasNamedContainer(podSpec.Containers, "kine")
+			Expect(found).To(BeTrue())
+			Expect(podSpec.Containers[index].Image).To(Equal("custom-kine:latest"))
 		})
 	})
 })
