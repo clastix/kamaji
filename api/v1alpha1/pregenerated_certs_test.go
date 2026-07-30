@@ -52,16 +52,14 @@ var _ = Describe("PreGeneratedCertificates API", func() {
 
 		It("should support custom certificate and key names", func() {
 			certRef := &kamajiv1alpha1.CertificateReference{
-				SecretName:      "test-secret",
-				CertificateKey:  "custom.crt",
-				PrivateKeyKey:   "custom.key",
-				SecretNamespace: "custom-namespace",
+				SecretName:     "test-secret",
+				CertificateKey: "custom.crt",
+				PrivateKeyKey:  "custom.key",
 			}
 
 			Expect(certRef.SecretName).To(Equal("test-secret"))
 			Expect(certRef.CertificateKey).To(Equal("custom.crt"))
 			Expect(certRef.PrivateKeyKey).To(Equal("custom.key"))
-			Expect(certRef.SecretNamespace).To(Equal("custom-namespace"))
 		})
 	})
 
@@ -75,16 +73,14 @@ var _ = Describe("PreGeneratedCertificates API", func() {
 
 		It("should support custom public and private key names", func() {
 			keyRef := &kamajiv1alpha1.KeyReference{
-				SecretName:      "test-secret",
-				PublicKeyKey:    "custom.pub",
-				PrivateKeyKey:   "custom.key",
-				SecretNamespace: "custom-namespace",
+				SecretName:   "test-secret",
+				PublicKeyKey: "custom.pub",
+				PrivateKeyKey: "custom.key",
 			}
 
 			Expect(keyRef.SecretName).To(Equal("test-secret"))
 			Expect(keyRef.PublicKeyKey).To(Equal("custom.pub"))
 			Expect(keyRef.PrivateKeyKey).To(Equal("custom.key"))
-			Expect(keyRef.SecretNamespace).To(Equal("custom-namespace"))
 		})
 	})
 
@@ -146,22 +142,6 @@ var _ = Describe("PreGeneratedCertificates API", func() {
 			Expect(tcp.Spec.PreGeneratedCertificates.ServiceAccount).To(BeNil())
 		})
 
-		It("should support cross-namespace references", func() {
-			tcp.Spec.PreGeneratedCertificates = &kamajiv1alpha1.PreGeneratedCertificatesSpec{
-				CA: &kamajiv1alpha1.CertificateReference{
-					SecretName:      "ca-cert",
-					SecretNamespace: "cert-manager",
-				},
-				APIServer: &kamajiv1alpha1.CertificateReference{
-					SecretName:      "api-server-cert",
-					SecretNamespace: "kube-system",
-				},
-			}
-
-			Expect(tcp.Spec.PreGeneratedCertificates.CA.SecretNamespace).To(Equal("cert-manager"))
-			Expect(tcp.Spec.PreGeneratedCertificates.APIServer.SecretNamespace).To(Equal("kube-system"))
-		})
-
 		It("should support custom key names", func() {
 			tcp.Spec.PreGeneratedCertificates = &kamajiv1alpha1.PreGeneratedCertificatesSpec{
 				CA: &kamajiv1alpha1.CertificateReference{
@@ -201,10 +181,9 @@ var _ = Describe("PreGeneratedCertificates API", func() {
 					},
 					PreGeneratedCertificates: &kamajiv1alpha1.PreGeneratedCertificatesSpec{
 						CA: &kamajiv1alpha1.CertificateReference{
-							SecretName:      "ca-cert",
-							SecretNamespace: "cert-manager",
-							CertificateKey:  "tls.crt",
-							PrivateKeyKey:   "tls.key",
+							SecretName:    "ca-cert",
+							CertificateKey: "tls.crt",
+							PrivateKeyKey:  "tls.key",
 						},
 					},
 				},
@@ -216,7 +195,6 @@ var _ = Describe("PreGeneratedCertificates API", func() {
 			Expect(copied.Spec.PreGeneratedCertificates).ToNot(BeNil())
 			Expect(copied.Spec.PreGeneratedCertificates.CA).ToNot(BeNil())
 			Expect(copied.Spec.PreGeneratedCertificates.CA.SecretName).To(Equal("ca-cert"))
-			Expect(copied.Spec.PreGeneratedCertificates.CA.SecretNamespace).To(Equal("cert-manager"))
 			Expect(copied.Spec.PreGeneratedCertificates.CA.CertificateKey).To(Equal("tls.crt"))
 			Expect(copied.Spec.PreGeneratedCertificates.CA.PrivateKeyKey).To(Equal("tls.key"))
 		})
