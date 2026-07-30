@@ -9378,6 +9378,25 @@ spec:
                         - enabled
                       type: object
                   type: object
+                bootstrap:
+                  description: Bootstrap contains the status of the bootstrap configuration
+                  properties:
+                    rbac:
+                      description: RBACBootstrapStatus defines the status of RBAC bootstrap configuration.
+                      properties:
+                        clusterRoleBinding:
+                          properties:
+                            lastUpdate:
+                              description: Last time when k8s object was updated
+                              format: date-time
+                              type: string
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          type: object
+                      type: object
+                  type: object
                 certificates:
                   description: |-
                     Certificates contains information about the different certificates
