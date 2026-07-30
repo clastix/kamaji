@@ -1,4 +1,4 @@
-// Copyright 2026 Clastix Labs
+// Copyright 2022 Clastix Labs
 // SPDX-License-Identifier: Apache-2.0
 
 package bootstrap
@@ -24,8 +24,8 @@ import (
 var clusterrolebindingCollector prometheus.Histogram
 
 type RBACBootstrap struct {
-	Client      client.Client
-	resource    *rbacv1.ClusterRoleBinding
+	Client       client.Client
+	resource     *rbacv1.ClusterRoleBinding
 	tenantClient client.Client
 }
 
@@ -121,6 +121,7 @@ func (r *RBACBootstrap) UpdateTenantControlPlaneStatus(_ context.Context, tenant
 
 	if tenantControlPlane.Spec.Bootstrap == nil || tenantControlPlane.Spec.Bootstrap.RBAC == nil || !tenantControlPlane.Spec.Bootstrap.RBAC.Enabled {
 		tenantControlPlane.Status.Bootstrap.RBAC = nil
+
 		return nil
 	}
 
@@ -176,11 +177,12 @@ func (r *RBACBootstrap) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlP
 		r.resource.Subjects = subjects
 
 		// Set the resource name based on the first user or group for identification
-		if len(rbacSpec.AdminUsers) > 0 {
+		switch {
+		case len(rbacSpec.AdminUsers) > 0:
 			r.resource.Name = fmt.Sprintf("kamaji-%s-admin-user", tenantControlPlane.GetName())
-		} else if len(rbacSpec.AdminGroups) > 0 {
+		case len(rbacSpec.AdminGroups) > 0:
 			r.resource.Name = fmt.Sprintf("kamaji-%s-admin-group", tenantControlPlane.GetName())
-		} else {
+		default:
 			r.resource.Name = fmt.Sprintf("kamaji-%s-admin", tenantControlPlane.GetName())
 		}
 
