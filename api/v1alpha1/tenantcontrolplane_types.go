@@ -494,10 +494,6 @@ type CertificateReference struct {
 	// +kubebuilder:validation:MinLength=1
 	SecretName string `json:"secretName"`
 
-	// SecretNamespace is the namespace of the referenced Secret.
-	// If empty, defaults to the TenantControlPlane namespace.
-	SecretNamespace string `json:"secretNamespace,omitempty"`
-
 	// CertificateKey is the key in the Secret containing the certificate.
 	// +kubebuilder:default="tls.crt"
 	CertificateKey string `json:"certificateKey,omitempty"`
@@ -512,10 +508,6 @@ type KeyReference struct {
 	// SecretName references a Secret containing key data
 	// +kubebuilder:validation:MinLength=1
 	SecretName string `json:"secretName"`
-
-	// SecretNamespace is the namespace of the referenced Secret.
-	// If empty, defaults to the TenantControlPlane namespace.
-	SecretNamespace string `json:"secretNamespace,omitempty"`
 
 	// PublicKeyKey is the key in the Secret containing the public key.
 	// +kubebuilder:default="sa.pub"
