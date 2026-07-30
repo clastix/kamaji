@@ -48137,14 +48137,6 @@ The certificate must be signed by the CA specified above or the generated CA.
             <i>Default</i>: tls.key<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b>secretNamespace</b></td>
-        <td>string</td>
-        <td>
-          SecretNamespace is the namespace of the referenced Secret.
-If empty, defaults to the TenantControlPlane namespace.<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -48189,14 +48181,6 @@ If specified, this CA will be used instead of generating a new one.
             <i>Default</i>: tls.key<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b>secretNamespace</b></td>
-        <td>string</td>
-        <td>
-          SecretNamespace is the namespace of the referenced Secret.
-If empty, defaults to the TenantControlPlane namespace.<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -48239,14 +48223,6 @@ If specified, this CA will be used instead of generating a new one.
           PrivateKeyKey is the key in the Secret containing the private key.<br/>
           <br/>
             <i>Default</i>: tls.key<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>secretNamespace</b></td>
-        <td>string</td>
-        <td>
-          SecretNamespace is the namespace of the referenced Secret.
-If empty, defaults to the TenantControlPlane namespace.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -48294,14 +48270,6 @@ The certificate must be signed by the front proxy CA specified above or the gene
             <i>Default</i>: tls.key<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b>secretNamespace</b></td>
-        <td>string</td>
-        <td>
-          SecretNamespace is the namespace of the referenced Secret.
-If empty, defaults to the TenantControlPlane namespace.<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -48347,14 +48315,6 @@ The certificate must be signed by the CA specified above or the generated CA.
             <i>Default</i>: tls.key<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b>secretNamespace</b></td>
-        <td>string</td>
-        <td>
-          SecretNamespace is the namespace of the referenced Secret.
-If empty, defaults to the TenantControlPlane namespace.<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -48397,14 +48357,6 @@ If specified, this key pair will be used instead of generating a new one.
           PublicKeyKey is the key in the Secret containing the public key.<br/>
           <br/>
             <i>Default</i>: sa.pub<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>secretNamespace</b></td>
-        <td>string</td>
-        <td>
-          SecretNamespace is the namespace of the referenced Secret.
-If empty, defaults to the TenantControlPlane namespace.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
