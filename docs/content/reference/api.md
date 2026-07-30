@@ -48527,6 +48527,13 @@ TenantControlPlaneStatus defines the observed state of TenantControlPlane.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusbootstrap">bootstrap</a></b></td>
+        <td>object</td>
+        <td>
+          Bootstrap contains the status of the bootstrap configuration<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#tenantcontrolplanestatuscertificates">certificates</a></b></td>
         <td>object</td>
         <td>
@@ -49774,6 +49781,97 @@ AddonStatus defines the observed state of an Addon.
           <br/>
           <br/>
             <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanestatusbootstrap">`TenantControlPlane.status.bootstrap`</span>
+
+
+Bootstrap contains the status of the bootstrap configuration
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatusbootstraprbac">rbac</a></b></td>
+        <td>object</td>
+        <td>
+          RBACBootstrapStatus defines the status of RBAC bootstrap configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanestatusbootstraprbac">`TenantControlPlane.status.bootstrap.rbac`</span>
+
+
+RBACBootstrapStatus defines the status of RBAC bootstrap configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatusbootstraprbacclusterrolebinding">clusterRoleBinding</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanestatusbootstraprbacclusterrolebinding">`TenantControlPlane.status.bootstrap.rbac.clusterRoleBinding`</span>
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          Last time when k8s object was updated<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
