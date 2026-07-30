@@ -19,9 +19,9 @@ import (
 	builder "github.com/clastix/kamaji/internal/builders/controlplane"
 	"github.com/clastix/kamaji/internal/datastore"
 	"github.com/clastix/kamaji/internal/resources"
+	"github.com/clastix/kamaji/internal/resources/bootstrap"
 	ds "github.com/clastix/kamaji/internal/resources/datastore"
 	"github.com/clastix/kamaji/internal/resources/konnectivity"
-	"github.com/clastix/kamaji/internal/resources/bootstrap"
 )
 
 type GroupResourceBuilderConfiguration struct {
