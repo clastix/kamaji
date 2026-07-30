@@ -73,8 +73,8 @@ var _ = Describe("PreGeneratedCertificates API", func() {
 
 		It("should support custom public and private key names", func() {
 			keyRef := &kamajiv1alpha1.KeyReference{
-				SecretName:   "test-secret",
-				PublicKeyKey: "custom.pub",
+				SecretName:    "test-secret",
+				PublicKeyKey:  "custom.pub",
 				PrivateKeyKey: "custom.key",
 			}
 
@@ -181,7 +181,7 @@ var _ = Describe("PreGeneratedCertificates API", func() {
 					},
 					PreGeneratedCertificates: &kamajiv1alpha1.PreGeneratedCertificatesSpec{
 						CA: &kamajiv1alpha1.CertificateReference{
-							SecretName:    "ca-cert",
+							SecretName:     "ca-cert",
 							CertificateKey: "tls.crt",
 							PrivateKeyKey:  "tls.key",
 						},
