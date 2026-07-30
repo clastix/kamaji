@@ -117,7 +117,7 @@ var _ = Describe("TCP PreGenerated Certs Webhook", func() {
 			Expect(ops).To(BeNil())
 		})
 
-		It("should pass validation with cross-namespace secret reference", func() {
+		It("should fail validation with cross-namespace secret reference", func() {
 			crossNsSecret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "cross-ns-cert",
@@ -135,11 +135,11 @@ var _ = Describe("TCP PreGenerated Certs Webhook", func() {
 			handler.Client = fakeClient
 
 			tcp.Spec.PreGeneratedCertificates.CA.SecretName = "cross-ns-cert"
-			tcp.Spec.PreGeneratedCertificates.CA.SecretNamespace = "cert-manager"
 
 			ops, err := handler.OnCreate(tcp)(ctx, admission.Request{})
 
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to get secret"))
 			Expect(ops).To(BeNil())
 		})
 	})
