@@ -150,17 +150,13 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 func (r *SACertificate) usePreGeneratedSACertificate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	keyRef := tenantControlPlane.Spec.PreGeneratedCertificates.ServiceAccount
 
-	secretNamespace := keyRef.SecretNamespace
-	if secretNamespace == "" {
-		secretNamespace = tenantControlPlane.GetNamespace()
+	// Secrets must be in the same namespace as the TenantControlPlane
+	secretKey := types.NamespacedName{
+		Name:      keyRef.SecretName,
+		Namespace: tenantControlPlane.GetNamespace(),
 	}
 
 	secret := &corev1.Secret{}
-	secretKey := types.NamespacedName{
-		Name:      keyRef.SecretName,
-		Namespace: secretNamespace,
-	}
-
 	if err := r.Client.Get(ctx, secretKey, secret); err != nil {
 		return fmt.Errorf("failed to get secret %s: %w", secretKey, err)
 	}

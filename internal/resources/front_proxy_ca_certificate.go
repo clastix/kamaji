@@ -154,17 +154,13 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 func (r *FrontProxyCACertificate) usePreGeneratedFrontProxyCACertificate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	certRef := tenantControlPlane.Spec.PreGeneratedCertificates.FrontProxyCA
 
-	secretNamespace := certRef.SecretNamespace
-	if secretNamespace == "" {
-		secretNamespace = tenantControlPlane.GetNamespace()
+	// Secrets must be in the same namespace as the TenantControlPlane
+	secretKey := types.NamespacedName{
+		Name:      certRef.SecretName,
+		Namespace: tenantControlPlane.GetNamespace(),
 	}
 
 	secret := &corev1.Secret{}
-	secretKey := types.NamespacedName{
-		Name:      certRef.SecretName,
-		Namespace: secretNamespace,
-	}
-
 	if err := r.Client.Get(ctx, secretKey, secret); err != nil {
 		return fmt.Errorf("failed to get secret %s: %w", secretKey, err)
 	}
