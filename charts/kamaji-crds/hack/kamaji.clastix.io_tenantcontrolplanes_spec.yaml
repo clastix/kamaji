@@ -9072,11 +9072,6 @@ versions:
                         description: SecretName references a Secret containing certificate data
                         minLength: 1
                         type: string
-                      secretNamespace:
-                        description: |-
-                          SecretNamespace is the namespace of the referenced Secret.
-                          If empty, defaults to the TenantControlPlane namespace.
-                        type: string
                     required:
                       - secretName
                     type: object
@@ -9097,11 +9092,6 @@ versions:
                         description: SecretName references a Secret containing certificate data
                         minLength: 1
                         type: string
-                      secretNamespace:
-                        description: |-
-                          SecretNamespace is the namespace of the referenced Secret.
-                          If empty, defaults to the TenantControlPlane namespace.
-                        type: string
                     required:
                       - secretName
                     type: object
@@ -9121,11 +9111,6 @@ versions:
                       secretName:
                         description: SecretName references a Secret containing certificate data
                         minLength: 1
-                        type: string
-                      secretNamespace:
-                        description: |-
-                          SecretNamespace is the namespace of the referenced Secret.
-                          If empty, defaults to the TenantControlPlane namespace.
                         type: string
                     required:
                       - secretName
@@ -9148,11 +9133,6 @@ versions:
                         description: SecretName references a Secret containing certificate data
                         minLength: 1
                         type: string
-                      secretNamespace:
-                        description: |-
-                          SecretNamespace is the namespace of the referenced Secret.
-                          If empty, defaults to the TenantControlPlane namespace.
-                        type: string
                     required:
                       - secretName
                     type: object
@@ -9174,11 +9154,6 @@ versions:
                         description: SecretName references a Secret containing certificate data
                         minLength: 1
                         type: string
-                      secretNamespace:
-                        description: |-
-                          SecretNamespace is the namespace of the referenced Secret.
-                          If empty, defaults to the TenantControlPlane namespace.
-                        type: string
                     required:
                       - secretName
                     type: object
@@ -9198,11 +9173,6 @@ versions:
                       secretName:
                         description: SecretName references a Secret containing key data
                         minLength: 1
-                        type: string
-                      secretNamespace:
-                        description: |-
-                          SecretNamespace is the namespace of the referenced Secret.
-                          If empty, defaults to the TenantControlPlane namespace.
                         type: string
                     required:
                       - secretName
