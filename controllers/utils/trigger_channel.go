@@ -13,8 +13,13 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
+const (
+	TriggerChannelBufferSize = 10
+	TriggerChannelTimeout    = 30 * time.Second
+)
+
 func TriggerChannel(ctx context.Context, receiver chan event.GenericEvent, tcp kamajiv1alpha1.TenantControlPlane) {
-	deadlineCtx, cancelFn := context.WithTimeout(ctx, 30*time.Second)
+	deadlineCtx, cancelFn := context.WithTimeout(ctx, TriggerChannelTimeout)
 	defer cancelFn()
 
 	select {
