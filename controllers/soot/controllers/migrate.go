@@ -187,7 +187,7 @@ func (m *Migrate) createOrUpdate(ctx context.Context) error {
 }
 
 func (m *Migrate) SetupWithManager(mgr manager.Manager) error {
-	m.TriggerChannel = make(chan event.GenericEvent)
+	m.TriggerChannel = make(chan event.GenericEvent, 10)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
 		Named(m.ControllerName).

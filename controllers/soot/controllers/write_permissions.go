@@ -188,7 +188,7 @@ func (r *WritePermissions) cleanup(ctx context.Context) error {
 }
 
 func (r *WritePermissions) SetupWithManager(mgr manager.Manager) error {
-	r.TriggerChannel = make(chan event.GenericEvent)
+	r.TriggerChannel = make(chan event.GenericEvent, 10)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
 		Named(r.ControllerName).

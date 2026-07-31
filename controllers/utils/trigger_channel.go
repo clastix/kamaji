@@ -14,7 +14,7 @@ import (
 )
 
 func TriggerChannel(ctx context.Context, receiver chan event.GenericEvent, tcp kamajiv1alpha1.TenantControlPlane) {
-	deadlineCtx, cancelFn := context.WithTimeout(ctx, 10*time.Second)
+	deadlineCtx, cancelFn := context.WithTimeout(ctx, 30*time.Second)
 	defer cancelFn()
 
 	select {
