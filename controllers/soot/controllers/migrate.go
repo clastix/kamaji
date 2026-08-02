@@ -187,8 +187,6 @@ func (m *Migrate) createOrUpdate(ctx context.Context) error {
 }
 
 func (m *Migrate) SetupWithManager(mgr manager.Manager) error {
-	m.TriggerChannel = make(chan event.GenericEvent)
-
 	return controllerruntime.NewControllerManagedBy(mgr).
 		Named(m.ControllerName).
 		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: pointer.To(true)}).

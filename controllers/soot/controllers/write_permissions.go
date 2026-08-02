@@ -188,8 +188,6 @@ func (r *WritePermissions) cleanup(ctx context.Context) error {
 }
 
 func (r *WritePermissions) SetupWithManager(mgr manager.Manager) error {
-	r.TriggerChannel = make(chan event.GenericEvent)
-
 	return controllerruntime.NewControllerManagedBy(mgr).
 		Named(r.ControllerName).
 		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
