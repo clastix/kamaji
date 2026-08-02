@@ -290,6 +290,8 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			FailureThreshold:    3,
 		}
 
+		podTemplateSpec.Spec.Containers[0].SecurityContext = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.SecurityContext
+
 		switch tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode {
 		case kamajiv1alpha1.KonnectivityAgentModeDaemonSet:
 			r.resource.(*appsv1.DaemonSet).Spec.Template = *podTemplateSpec //nolint:forcetypeassert

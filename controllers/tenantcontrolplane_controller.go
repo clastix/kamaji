@@ -50,18 +50,20 @@ import (
 
 // TenantControlPlaneReconciler reconciles a TenantControlPlane object.
 type TenantControlPlaneReconciler struct {
-	Client                  client.Client
-	APIReader               client.Reader
-	Metrics                 *metrics.Recorder
-	Config                  TenantControlPlaneReconcilerConfig
-	TriggerChan             chan event.GenericEvent
-	KamajiNamespace         string
-	KamajiServiceAccount    string
-	KamajiService           string
-	KamajiMigrateImage      string
-	MaxConcurrentReconciles int
-	ReconcileTimeout        time.Duration
-	DiscoveryClient         discovery.DiscoveryInterface
+	Client                    client.Client
+	APIReader                 client.Reader
+	Metrics                   *metrics.Recorder
+	Config                    TenantControlPlaneReconcilerConfig
+	TriggerChan               chan event.GenericEvent
+	KamajiNamespace           string
+	KamajiServiceAccount      string
+	KamajiService             string
+	KamajiMigrateImage        string
+	MigratePodSecurityContext *corev1.PodSecurityContext
+	MigrateSecurityContext    *corev1.SecurityContext
+	MaxConcurrentReconciles   int
+	ReconcileTimeout          time.Duration
+	DiscoveryClient           discovery.DiscoveryInterface
 	// CertificateChan is the channel used by the CertificateLifecycleController that is checking for
 	// certificates and kubeconfig user certs validity: a generic event for the given TCP will be triggered
 	// once the validity threshold for the given certificate is reached.
@@ -91,6 +93,7 @@ type TenantControlPlaneReconcilerConfig struct {
 //+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=grpcroutes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=tlsroutes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gateways,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=pods,verbs=get
 
 //nolint:maintidx
 func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -238,6 +241,8 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		KamajiServiceAccount:          r.KamajiServiceAccount,
 		KamajiService:                 r.KamajiService,
 		KamajiMigrateImage:            r.KamajiMigrateImage,
+		MigratePodSecurityContext:     r.MigratePodSecurityContext,
+		MigrateSecurityContext:        r.MigrateSecurityContext,
 		DiscoveryClient:               r.DiscoveryClient,
 	}
 	registeredResources := GetResources(ctx, groupResourceBuilderConfiguration)

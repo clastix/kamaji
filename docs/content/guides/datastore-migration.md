@@ -202,3 +202,66 @@ kubectl -n kamaji-system patch serviceaccount kamaji-controller-manager \
 
 This command patches the kamaji-controller-manager service account to include your registry secret, allowing the migration job to pull images from the private registry successfully.
 
+### Running under restricted PodSecurity
+
+If the `kamaji-system` namespace enforces a `restricted` [Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/), three components need a compliant `securityContext`: the datastore migration Job, the kine sidecar (non-etcd datastores), and the Konnectivity agent.
+
+#### Migration Job
+
+The migration Job automatically inherits the pod- and container-level `securityContext` from the Kamaji controller pod. No additional configuration is needed — the Helm chart ships the required `POD_NAME` environment variable and the `pods/get` RBAC permission.
+
+!!! info "Prerequisite"
+    The inherit mechanism reads the controller's own pod at runtime. It requires the controller's `ClusterRole` to grant `pods/get` (cluster-scoped, since Kamaji generates RBAC from controller-gen markers), which the Helm chart ships automatically. Custom RBAC setups must add this permission explicitly.
+
+#### Kine sidecar (non-etcd datastores)
+
+For `MySQL`, `PostgreSQL`, or other non-etcd datastores the control plane pod includes a `kine` sidecar and a `kine-init` chmod init container. Set their security contexts via `spec.controlPlane.deployment.containerSecurityContexts`:
+
+```yaml
+spec:
+  controlPlane:
+    deployment:
+      containerSecurityContexts:
+        kine:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        kineInit:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+```
+
+!!! tip
+    If your datastore image runs as root by default, add an explicit `runAsUser` (e.g. `runAsUser: 1000`) matching a non-root UID in the image.
+
+#### Konnectivity agent
+
+When the Konnectivity addon is enabled, set the agent container's security context via `spec.addons.konnectivity.agent.securityContext`:
+
+```yaml
+spec:
+  addons:
+    konnectivity:
+      agent:
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+```
+
+!!! tip
+    Same note applies: if the `proxy-agent` image runs as root, add `runAsUser` with a non-root UID.
+

@@ -267,6 +267,10 @@ type ControlPlaneContainerSecurityContexts struct {
 	ControllerManager *corev1.SecurityContext `json:"controllerManager,omitempty"`
 	// Scheduler defines the security context for the kube-scheduler container.
 	Scheduler *corev1.SecurityContext `json:"scheduler,omitempty"`
+	// Kine defines the security context for the kine sidecar container (non-etcd datastores only).
+	Kine *corev1.SecurityContext `json:"kine,omitempty"`
+	// KineInit defines the security context for the kine "chmod" init container (non-etcd datastores with TLS only).
+	KineInit *corev1.SecurityContext `json:"kineInit,omitempty"`
 }
 
 type DeploymentSpec struct {
@@ -444,6 +448,8 @@ type KonnectivityAgentSpec struct {
 	// Must be 0 if Mode is DaemonSet.
 	//+kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
+	// SecurityContext defines the SecurityContext for the Konnectivity agent container.
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.

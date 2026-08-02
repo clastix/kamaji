@@ -15,12 +15,14 @@ import (
 	telemetryclient "github.com/clastix/kamaji-telemetry/pkg/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -55,6 +57,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		cacheResyncPeriod             time.Duration
 		datastore                     string
 		managerNamespace              string
+		managerPodName                string
 		managerServiceAccountName     string
 		managerServiceName            string
 		webhookCABundle               []byte
@@ -140,6 +143,24 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
+			var migratePodSC *corev1.PodSecurityContext
+			var migrateContainerSC *corev1.SecurityContext
+			if managerPodName != "" {
+				self := &corev1.Pod{}
+				if getErr := mgr.GetAPIReader().Get(ctx, client.ObjectKey{Namespace: managerNamespace, Name: managerPodName}, self); getErr != nil {
+					setupLog.Error(getErr, "unable to read own Pod for migration-job securityContext inheritance; migration jobs will run without a securityContext")
+				} else {
+					migratePodSC = self.Spec.SecurityContext
+					for i := range self.Spec.Containers {
+						if self.Spec.Containers[i].Name == "manager" {
+							migrateContainerSC = self.Spec.Containers[i].SecurityContext
+
+							break
+						}
+					}
+				}
+			}
+
 			tcpChannel, certChannel := make(chan event.GenericEvent), make(chan event.GenericEvent)
 			metricsRecorder := metrics.DefaultRecorder()
 
@@ -166,15 +187,17 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 					TmpBaseDirectory:        tmpDirectory,
 					CertExpirationThreshold: certificateExpirationDeadline,
 				},
-				ReconcileTimeout:        controllerReconcileTimeout,
-				CertificateChan:         certChannel,
-				TriggerChan:             tcpChannel,
-				KamajiNamespace:         managerNamespace,
-				KamajiServiceAccount:    managerServiceAccountName,
-				KamajiService:           managerServiceName,
-				KamajiMigrateImage:      migrateJobImage,
-				MaxConcurrentReconciles: maxConcurrentReconciles,
-				DiscoveryClient:         discoveryClient,
+				ReconcileTimeout:          controllerReconcileTimeout,
+				CertificateChan:           certChannel,
+				TriggerChan:               tcpChannel,
+				KamajiNamespace:           managerNamespace,
+				KamajiServiceAccount:      managerServiceAccountName,
+				KamajiService:             managerServiceName,
+				KamajiMigrateImage:        migrateJobImage,
+				MigratePodSecurityContext: migratePodSC,
+				MigrateSecurityContext:    migrateContainerSC,
+				MaxConcurrentReconciles:   maxConcurrentReconciles,
+				DiscoveryClient:           discoveryClient,
 			}
 
 			if err = reconciler.SetupWithManager(ctx, mgr); err != nil {
@@ -338,6 +361,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	cmd.Flags().StringVar(&migrateJobImage, "migrate-image", fmt.Sprintf("%s/clastix/kamaji:%s", internal.ContainerRepository, internal.GitTag), "Specify the container image to launch when a TenantControlPlane is migrated to a new datastore.")
 	cmd.Flags().IntVar(&maxConcurrentReconciles, "max-concurrent-tcp-reconciles", 1, "Specify the number of workers for the Tenant Control Plane controller (beware of CPU consumption)")
 	cmd.Flags().StringVar(&managerNamespace, "pod-namespace", os.Getenv("POD_NAMESPACE"), "The Kubernetes Namespace on which the Operator is running in, required for the TenantControlPlane migration jobs.")
+	cmd.Flags().StringVar(&managerPodName, "pod-name", os.Getenv("POD_NAME"), "The name of the Pod the Operator runs in, used to inherit its securityContext onto migration jobs.")
 	cmd.Flags().StringVar(&managerServiceName, "webhook-service-name", "kamaji-webhook-service", "The Kamaji webhook server Service name which is used to get validation webhooks, required for the TenantControlPlane migration jobs.")
 	cmd.Flags().StringVar(&managerServiceAccountName, "serviceaccount-name", os.Getenv("SERVICE_ACCOUNT"), "The Kubernetes Namespace on which the Operator is running in, required for the TenantControlPlane migration jobs.")
 	cmd.Flags().StringVar(&webhookCAPath, "webhook-ca-path", "/tmp/k8s-webhook-server/serving-certs/ca.crt", "Path to the Manager webhook server CA, required for the TenantControlPlane migration jobs.")
