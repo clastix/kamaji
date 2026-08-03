@@ -570,8 +570,9 @@ type PreGeneratedCertificatesSpec struct {
 type RBACBootstrapSpec struct {
 	// Enabled controls whether RBAC bootstrap is performed.
 	// When enabled, creates ClusterRoleBindings for admin users and groups.
+	// Defaults to true when the bootstrap.rbac stanza is present.
 	// +kubebuilder:default=true
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// AdminUsers specifies users that should be granted cluster-admin privileges.
 	// Defaults to ["kubernetes-admin"] which matches the generated kubeconfig user.
 	// +kubebuilder:default={"kubernetes-admin"}
@@ -586,6 +587,22 @@ type RBACBootstrapSpec struct {
 type BootstrapSpec struct {
 	// RBAC configures Role-Based Access Control bootstrap.
 	RBAC *RBACBootstrapSpec `json:"rbac,omitempty"`
+}
+
+// IsRBACBootstrapEnabled reports whether RBAC bootstrap should be reconciled for
+// this Tenant Control Plane. RBAC bootstrap is opt-in: it applies only when the
+// bootstrap.rbac stanza is present and not explicitly disabled.
+//
+// RBACBootstrapSpec.Enabled is a *bool rather than a bool so that an explicit
+// false is distinguishable from an unset field. With a plain bool, omitempty
+// drops false during serialization and the API server re-applies the true
+// default, leaving no way to turn the feature off.
+func (in *TenantControlPlane) IsRBACBootstrapEnabled() bool {
+	if in.Spec.Bootstrap == nil || in.Spec.Bootstrap.RBAC == nil {
+		return false
+	}
+
+	return in.Spec.Bootstrap.RBAC.Enabled == nil || *in.Spec.Bootstrap.RBAC.Enabled
 }
 
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
