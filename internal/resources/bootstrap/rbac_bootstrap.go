@@ -36,7 +36,7 @@ func (r *RBACBootstrap) GetHistogram() prometheus.Histogram {
 }
 
 func (r *RBACBootstrap) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {
-	if tcp.Spec.Bootstrap == nil || tcp.Spec.Bootstrap.RBAC == nil || !tcp.Spec.Bootstrap.RBAC.Enabled {
+	if !tcp.IsRBACBootstrapEnabled() {
 		return false
 	}
 
@@ -47,9 +47,7 @@ func (r *RBACBootstrap) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1al
 
 func (r *RBACBootstrap) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	// Cleanup if RBAC bootstrap is disabled or not configured
-	return tenantControlPlane.Spec.Bootstrap == nil ||
-		tenantControlPlane.Spec.Bootstrap.RBAC == nil ||
-		!tenantControlPlane.Spec.Bootstrap.RBAC.Enabled
+	return !tenantControlPlane.IsRBACBootstrapEnabled()
 }
 
 func (r *RBACBootstrap) CleanUp(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (bool, error) {
@@ -85,10 +83,13 @@ func (r *RBACBootstrap) CleanUp(ctx context.Context, tenantControlPlane *kamajiv
 func (r *RBACBootstrap) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (err error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
-	// Initialize with a placeholder name; actual name is set in mutate
+	// The name must be final before CreateOrUpdate is called: it captures the object
+	// key up-front and rejects a MutateFn that changes it. It must also not depend on
+	// the spec contents, otherwise editing adminUsers/adminGroups would rename the
+	// object and orphan the previously created ClusterRoleBinding in the tenant.
 	r.resource = &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "kamaji-bootstrap-rbac",
+			Name: clusterRoleBindingName(tenantControlPlane),
 		},
 	}
 
@@ -103,7 +104,7 @@ func (r *RBACBootstrap) Define(ctx context.Context, tenantControlPlane *kamajiv1
 
 func (r *RBACBootstrap) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
 	// Skip if RBAC bootstrap is not enabled
-	if tcp.Spec.Bootstrap == nil || tcp.Spec.Bootstrap.RBAC == nil || !tcp.Spec.Bootstrap.RBAC.Enabled {
+	if !tcp.IsRBACBootstrapEnabled() {
 		return controllerutil.OperationResultNone, nil
 	}
 
@@ -119,7 +120,7 @@ func (r *RBACBootstrap) UpdateTenantControlPlaneStatus(_ context.Context, tenant
 		tenantControlPlane.Status.Bootstrap = &kamajiv1alpha1.BootstrapStatus{}
 	}
 
-	if tenantControlPlane.Spec.Bootstrap == nil || tenantControlPlane.Spec.Bootstrap.RBAC == nil || !tenantControlPlane.Spec.Bootstrap.RBAC.Enabled {
+	if !tenantControlPlane.IsRBACBootstrapEnabled() {
 		tenantControlPlane.Status.Bootstrap.RBAC = nil
 
 		return nil
@@ -151,10 +152,10 @@ func (r *RBACBootstrap) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlP
 			Name:     "cluster-admin",
 		}
 
-		// Build subjects from AdminUsers and AdminGroups
-		var subjects []rbacv1.Subject
-
 		rbacSpec := tenantControlPlane.Spec.Bootstrap.RBAC
+
+		// Build subjects from AdminUsers and AdminGroups
+		subjects := make([]rbacv1.Subject, 0, len(rbacSpec.AdminUsers)+len(rbacSpec.AdminGroups))
 
 		// Add users
 		for _, user := range rbacSpec.AdminUsers {
@@ -176,16 +177,13 @@ func (r *RBACBootstrap) mutate(tenantControlPlane *kamajiv1alpha1.TenantControlP
 
 		r.resource.Subjects = subjects
 
-		// Set the resource name based on the first user or group for identification
-		switch {
-		case len(rbacSpec.AdminUsers) > 0:
-			r.resource.Name = fmt.Sprintf("kamaji-%s-admin-user", tenantControlPlane.GetName())
-		case len(rbacSpec.AdminGroups) > 0:
-			r.resource.Name = fmt.Sprintf("kamaji-%s-admin-group", tenantControlPlane.GetName())
-		default:
-			r.resource.Name = fmt.Sprintf("kamaji-%s-admin", tenantControlPlane.GetName())
-		}
-
 		return nil
 	}
+}
+
+// clusterRoleBindingName returns the name of the ClusterRoleBinding created in the
+// tenant cluster. It is derived only from the Tenant Control Plane name so that it
+// remains stable across changes to the configured admin users and groups.
+func clusterRoleBindingName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
+	return fmt.Sprintf("kamaji-%s-admin", tenantControlPlane.GetName())
 }
