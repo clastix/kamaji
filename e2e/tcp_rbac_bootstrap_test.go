@@ -13,11 +13,13 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/clientcmd"
 	pointer "k8s.io/utils/ptr"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/constants"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -38,11 +40,15 @@ var _ = Describe("Deploy a TenantControlPlane with RBAC bootstrap enabled", func
 						Replicas: pointer.To(int32(1)),
 					},
 					Service: kamajiv1alpha1.ServiceSpec{
-						ServiceType: "ClusterIP",
+						ServiceType: "NodePort",
 					},
 				},
+				// NodePort on the kind node address: the tenant API server has to be
+				// reachable from the test process, and a ClusterIP on the default port
+				// would resolve to the management cluster's own API server instead.
 				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
 					Address: GetKindIPAddress(),
+					Port:    int32(rand.Int63nRange(31000, 32000)),
 				},
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
 					Version: kamajiv1alpha1.DefaultKubernetesVersion,
@@ -134,9 +140,13 @@ var _ = Describe("Deploy a TenantControlPlane with RBAC bootstrap enabled", func
 			Name:     "kamaji-e2e-other-admins",
 		}))
 
+		// Scoped to the component label as well: Kamaji creates other ClusterRoleBindings
+		// in the Tenant cluster (kubeadm phases, and the addons when enabled) that carry
+		// the same Tenant Control Plane name label.
 		list := &rbacv1.ClusterRoleBindingList{}
 		Expect(tenantClient.List(context.Background(), list, ctrlclient.MatchingLabels{
-			"kamaji.clastix.io/name": tcp.GetName(),
+			constants.ControlPlaneLabelKey:      tcp.GetName(),
+			constants.ControlPlaneLabelResource: "rbac-bootstrap-clusterrolebinding",
 		})).To(Succeed())
 		Expect(list.Items).To(HaveLen(1))
 
