@@ -47937,7 +47937,8 @@ Defaults to ["kubernetes-admin"] which matches the generated kubeconfig user.<br
         <td>boolean</td>
         <td>
           Enabled controls whether RBAC bootstrap is performed.
-When enabled, creates ClusterRoleBindings for admin users and groups.<br/>
+When enabled, creates ClusterRoleBindings for admin users and groups.
+Defaults to true when the bootstrap.rbac stanza is present.<br/>
           <br/>
             <i>Default</i>: true<br/>
         </td>
