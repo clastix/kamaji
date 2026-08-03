@@ -201,3 +201,107 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 		Expect(svc.Spec.Ports[0].NodePort).To(Equal(seededNodePort))
 	})
 })
+
+var _ = Describe("KubernetesServiceResource IP families", func() {
+	var (
+		ctx context.Context
+		tcp *kamajiv1alpha1.TenantControlPlane
+	)
+
+	const tcpName = "test-tcp-ipfamily"
+
+	// existingClusterIPService mimics an already-reconciled ClusterIP Service.
+	existingClusterIPService := func() *corev1.Service {
+		return &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{Name: tcpName, Namespace: "default"},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeClusterIP,
+				Ports: []corev1.ServicePort{{
+					Name:       "kube-apiserver",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       6443,
+					TargetPort: intstr.FromInt32(6443),
+				}},
+			},
+		}
+	}
+
+	newResource := func(objs ...client.Object) *resources.KubernetesServiceResource {
+		fakeClient := fake.NewClientBuilder().
+			WithScheme(runtimeScheme).
+			WithObjects(objs...).
+			Build()
+
+		return &resources.KubernetesServiceResource{Client: fakeClient}
+	}
+
+	BeforeEach(func() {
+		ctx = context.Background()
+		tcp = &kamajiv1alpha1.TenantControlPlane{
+			ObjectMeta: metav1.ObjectMeta{Name: tcpName, Namespace: "default"},
+			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
+				ControlPlane: kamajiv1alpha1.ControlPlane{
+					Service: kamajiv1alpha1.ServiceSpec{
+						ServiceType: kamajiv1alpha1.ServiceTypeClusterIP,
+					},
+				},
+				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
+					Port: 6443,
+				},
+			},
+		}
+	})
+
+	It("propagates ipFamilyPolicy and ipFamilies verbatim when set", func() {
+		tcp.Spec.ControlPlane.Service.IPFamilyPolicy = ptr.To(corev1.IPFamilyPolicyRequireDualStack)
+		tcp.Spec.ControlPlane.Service.IPFamilies = []corev1.IPFamily{corev1.IPv6Protocol, corev1.IPv4Protocol}
+		resource := newResource(existingClusterIPService())
+
+		Expect(resource.Define(ctx, tcp)).To(Succeed())
+		_, err := resource.CreateOrUpdate(ctx, tcp)
+		Expect(err).NotTo(HaveOccurred())
+
+		svc := &corev1.Service{}
+		Expect(resource.Client.Get(ctx, client.ObjectKey{Name: tcp.Name, Namespace: tcp.Namespace}, svc)).To(Succeed())
+		Expect(svc.Spec.IPFamilyPolicy).NotTo(BeNil())
+		Expect(*svc.Spec.IPFamilyPolicy).To(Equal(corev1.IPFamilyPolicyRequireDualStack))
+		Expect(svc.Spec.IPFamilies).To(Equal([]corev1.IPFamily{corev1.IPv6Protocol, corev1.IPv4Protocol}))
+	})
+
+	It("supports an IPv6-only single-stack service", func() {
+		tcp.Spec.ControlPlane.Service.IPFamilyPolicy = ptr.To(corev1.IPFamilyPolicySingleStack)
+		tcp.Spec.ControlPlane.Service.IPFamilies = []corev1.IPFamily{corev1.IPv6Protocol}
+		resource := newResource(existingClusterIPService())
+
+		Expect(resource.Define(ctx, tcp)).To(Succeed())
+		_, err := resource.CreateOrUpdate(ctx, tcp)
+		Expect(err).NotTo(HaveOccurred())
+
+		svc := &corev1.Service{}
+		Expect(resource.Client.Get(ctx, client.ObjectKey{Name: tcp.Name, Namespace: tcp.Namespace}, svc)).To(Succeed())
+		Expect(svc.Spec.IPFamilyPolicy).NotTo(BeNil())
+		Expect(*svc.Spec.IPFamilyPolicy).To(Equal(corev1.IPFamilyPolicySingleStack))
+		Expect(svc.Spec.IPFamilies).To(Equal([]corev1.IPFamily{corev1.IPv6Protocol}))
+	})
+
+	It("leaves the Service IP-family fields untouched when unset", func() {
+		// Both fields nil/empty on the TCP: the builder must not write them, so the
+		// API-server-defaulted values on the live Service survive (no churn, no fight).
+		tcp.Spec.ControlPlane.Service.IPFamilyPolicy = nil
+		tcp.Spec.ControlPlane.Service.IPFamilies = nil
+		existing := existingClusterIPService()
+		existing.Spec.IPFamilyPolicy = ptr.To(corev1.IPFamilyPolicySingleStack) // as the API server would default
+		existing.Spec.IPFamilies = []corev1.IPFamily{corev1.IPv4Protocol}
+		resource := newResource(existing)
+
+		Expect(resource.Define(ctx, tcp)).To(Succeed())
+		_, err := resource.CreateOrUpdate(ctx, tcp)
+		Expect(err).NotTo(HaveOccurred())
+
+		svc := &corev1.Service{}
+		Expect(resource.Client.Get(ctx, client.ObjectKey{Name: tcp.Name, Namespace: tcp.Namespace}, svc)).To(Succeed())
+		Expect(svc.Spec.IPFamilyPolicy).NotTo(BeNil())
+		Expect(*svc.Spec.IPFamilyPolicy).To(Equal(corev1.IPFamilyPolicySingleStack))
+		Expect(svc.Spec.IPFamilies).To(Equal([]corev1.IPFamily{corev1.IPv4Protocol}))
+	})
+})

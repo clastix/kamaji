@@ -140,7 +140,7 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(ops).To(ContainElement(
-				jsonpatch.Operation{Operation: "add", Path: "/spec/networkProfile/dnsServiceIPs", Value: []interface{}{"10.96.0.10", "fd00::10"}},
+				jsonpatch.Operation{Operation: "add", Path: "/spec/networkProfile/dnsServiceIPs", Value: []interface{}{"10.96.0.10", "fd00::a"}},
 			))
 		})
 	})
