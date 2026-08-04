@@ -316,7 +316,7 @@ func (c *MySQLConnection) RevokePrivileges(ctx context.Context, user, dbName str
 }
 
 func (c *MySQLConnection) check(ctx context.Context, nonFilledStatement string, checker func(*sql.Row) (bool, error), args ...any) (bool, error) {
-	statement, err := c.db.Prepare(nonFilledStatement)
+	statement, err := c.db.PrepareContext(ctx, nonFilledStatement)
 	if err != nil {
 		return false, err
 	}
