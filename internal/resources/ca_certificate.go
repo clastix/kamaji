@@ -63,10 +63,6 @@ func (r *CACertificate) Define(_ context.Context, tenantControlPlane *kamajiv1al
 	return nil
 }
 
-func (r *CACertificate) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
-}
-
 func (r *CACertificate) GetClient() client.Client {
 	return r.Client
 }
