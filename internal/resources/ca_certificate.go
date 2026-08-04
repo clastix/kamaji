@@ -67,6 +67,10 @@ func (r *CACertificate) GetClient() client.Client {
 	return r.Client
 }
 
+func (r *CACertificate) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
+	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
+}
+
 func (r *CACertificate) GetTmpDirectory() string {
 	return r.TmpDirectory
 }

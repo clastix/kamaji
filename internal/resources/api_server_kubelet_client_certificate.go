@@ -69,8 +69,6 @@ func (r *APIServerKubeletClientCertificate) GetClient() client.Client {
 func (r *APIServerKubeletClientCertificate) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
 	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
 }
-	return r.Client
-}
 
 func (r *APIServerKubeletClientCertificate) GetTmpDirectory() string {
 	return r.TmpDirectory
