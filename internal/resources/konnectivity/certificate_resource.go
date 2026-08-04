@@ -51,7 +51,8 @@ func (r *CertificateResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.T
 func (r *CertificateResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
-	if err := r.Client.Delete(ctx, r.resource); err != nil {
+	err := r.Client.Delete(ctx, r.resource)
+	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			logger.Error(err, "cannot delete the required resource")
 
@@ -107,7 +108,8 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 		// this is required to trigger a new generation in case of Certificate Authority rotation.
 		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
 		secretCA := &corev1.Secret{}
-		if err := r.Client.Get(ctx, namespacedName, secretCA); err != nil {
+		err := r.Client.Get(ctx, namespacedName, secretCA)
+		if err != nil {
 			logger.Error(err, "cannot retrieve the CA secret")
 
 			return err
@@ -121,7 +123,8 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 			},
 		))
 
-		if err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
+		err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
+		if err != nil {
 			logger.Error(err, "cannot set controller reference", "resource", r.GetName())
 
 			return err

@@ -63,7 +63,8 @@ func (r *Agent) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.TenantControlPl
 func (r *Agent) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
-	if err := r.tenantClient.Get(ctx, client.ObjectKeyFromObject(r.resource), r.resource); err != nil {
+	err := r.tenantClient.Get(ctx, client.ObjectKeyFromObject(r.resource), r.resource)
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return false, nil
 		}

@@ -102,11 +102,13 @@ func GetKubeadmInitConfigurationFromMap(conf map[string]string) (*Configuration,
 	}
 
 	initConfiguration := kubeadmapi.InitConfiguration{}
-	if err := utilities.DecodeFromJSON(initConfigurationString, &initConfiguration); err != nil {
+	err := utilities.DecodeFromJSON(initConfigurationString, &initConfiguration)
+	if err != nil {
 		return nil, err
 	}
 
-	if err := utilities.DecodeFromJSON(clusterConfigurationString, &initConfiguration.ClusterConfiguration); err != nil {
+	err = utilities.DecodeFromJSON(clusterConfigurationString, &initConfiguration.ClusterConfiguration)
+	if err != nil {
 		return nil, err
 	}
 	// Due to some weird issues with unmarshaling of the ComponentConfigs struct,

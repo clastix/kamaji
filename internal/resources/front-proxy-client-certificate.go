@@ -97,7 +97,8 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 		// this is required to trigger a new generation in case of Certificate Authority rotation.
 		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.FrontProxyCA.SecretName}
 		secretCA := &corev1.Secret{}
-		if err := r.Client.Get(ctx, namespacedName, secretCA); err != nil {
+		err := r.Client.Get(ctx, namespacedName, secretCA)
+		if err != nil {
 			logger.Error(err, "cannot retrieve CA secret")
 
 			return err
@@ -111,7 +112,8 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 			},
 		))
 
-		if err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
+		err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
+		if err != nil {
 			logger.Error(err, "cannot set controller reference", "resource", r.GetName())
 
 			return err

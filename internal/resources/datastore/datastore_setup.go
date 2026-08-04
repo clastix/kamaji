@@ -65,7 +65,8 @@ func (r *Setup) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		Namespace: tenantControlPlane.GetNamespace(),
 		Name:      tenantControlPlane.Status.Storage.Config.SecretName,
 	}
-	if err := r.Client.Get(ctx, namespacedName, secret); err != nil {
+	err := r.Client.Get(ctx, namespacedName, secret)
+	if err != nil {
 		logger.Error(err, "cannot retrieve the DataStore Configuration secret")
 
 		return err
@@ -95,7 +96,8 @@ func (r *Setup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			tcp := &kamajiv1alpha1.TenantControlPlane{}
 
-			if retryErr := r.Client.Get(ctx, types.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.GetName()}, tcp); retryErr != nil {
+			retryErr := r.Client.Get(ctx, types.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.GetName()}, tcp)
+			if retryErr != nil {
 				return retryErr
 			}
 
@@ -145,27 +147,31 @@ func (r *Setup) GetName() string {
 func (r *Setup) Delete(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
-	if err := r.revokeGrantPrivileges(ctx, tenantControlPlane); err != nil {
+	err := r.revokeGrantPrivileges(ctx, tenantControlPlane)
+	if err != nil {
 		logger.Error(err, "unable to revoke privileges")
 
 		return err
 	}
 
-	if err := r.deleteDB(ctx, tenantControlPlane); err != nil {
+	err = r.deleteDB(ctx, tenantControlPlane)
+	if err != nil {
 		logger.Error(err, "unable to delete datastore data")
 
 		return err
 	}
 
-	if err := r.deleteUser(ctx, tenantControlPlane); err != nil {
+	err = r.deleteUser(ctx, tenantControlPlane)
+	if err != nil {
 		logger.Error(err, "unable to delete user")
 
 		return err
 	}
 
-	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		tcp := &kamajiv1alpha1.TenantControlPlane{}
-		if err := r.Client.Get(ctx, types.NamespacedName{Name: tenantControlPlane.GetName(), Namespace: tenantControlPlane.GetNamespace()}, tcp); err != nil {
+		err := r.Client.Get(ctx, types.NamespacedName{Name: tenantControlPlane.GetName(), Namespace: tenantControlPlane.GetNamespace()}, tcp)
+		if err != nil {
 			return err
 		}
 
@@ -199,7 +205,8 @@ func (r *Setup) createDB(ctx context.Context, _ *kamajiv1alpha1.TenantControlPla
 		return controllerutil.OperationResultNone, nil
 	}
 
-	if err := r.Connection.CreateDB(ctx, r.resource.schema); err != nil {
+	err = r.Connection.CreateDB(ctx, r.resource.schema)
+	if err != nil {
 		return controllerutil.OperationResultNone, fmt.Errorf("unable to create the datastore: %w", err)
 	}
 
@@ -216,7 +223,8 @@ func (r *Setup) deleteDB(ctx context.Context, _ *kamajiv1alpha1.TenantControlPla
 		return nil
 	}
 
-	if err := r.Connection.DeleteDB(ctx, r.resource.schema); err != nil {
+	err = r.Connection.DeleteDB(ctx, r.resource.schema)
+	if err != nil {
 		return fmt.Errorf("unable to delete the datastore: %w", err)
 	}
 
@@ -230,14 +238,16 @@ func (r *Setup) createUser(ctx context.Context, _ *kamajiv1alpha1.TenantControlP
 	}
 
 	if exists {
-		if updateErr := r.Connection.UpdateUser(ctx, r.resource.user, r.resource.password); updateErr != nil {
+		updateErr := r.Connection.UpdateUser(ctx, r.resource.user, r.resource.password)
+		if updateErr != nil {
 			return controllerutil.OperationResultNone, fmt.Errorf("unable to update the user to : %w", updateErr)
 		}
 
 		return controllerutil.OperationResultNone, nil
 	}
 
-	if err := r.Connection.CreateUser(ctx, r.resource.user, r.resource.password); err != nil {
+	err = r.Connection.CreateUser(ctx, r.resource.user, r.resource.password)
+	if err != nil {
 		return controllerutil.OperationResultNone, fmt.Errorf("unable to create the user: %w", err)
 	}
 
@@ -254,7 +264,8 @@ func (r *Setup) deleteUser(ctx context.Context, _ *kamajiv1alpha1.TenantControlP
 		return nil
 	}
 
-	if err := r.Connection.DeleteUser(ctx, r.resource.user); err != nil {
+	err = r.Connection.DeleteUser(ctx, r.resource.user)
+	if err != nil {
 		return fmt.Errorf("unable to remove the user: %w", err)
 	}
 
@@ -271,7 +282,8 @@ func (r *Setup) createGrantPrivileges(ctx context.Context, _ *kamajiv1alpha1.Ten
 		return controllerutil.OperationResultNone, nil
 	}
 
-	if err := r.Connection.GrantPrivileges(ctx, r.resource.user, r.resource.schema); err != nil {
+	err = r.Connection.GrantPrivileges(ctx, r.resource.user, r.resource.schema)
+	if err != nil {
 		return controllerutil.OperationResultNone, fmt.Errorf("unable to grant privileges: %w", err)
 	}
 
@@ -288,7 +300,8 @@ func (r *Setup) revokeGrantPrivileges(ctx context.Context, _ *kamajiv1alpha1.Ten
 		return nil
 	}
 
-	if err := r.Connection.RevokePrivileges(ctx, r.resource.user, r.resource.schema); err != nil {
+	err = r.Connection.RevokePrivileges(ctx, r.resource.user, r.resource.schema)
+	if err != nil {
 		return fmt.Errorf("unable to revoke privileges: %w", err)
 	}
 

@@ -49,7 +49,8 @@ func (r *EgressSelectorConfigurationResource) ShouldCleanup(tenantControlPlane *
 func (r *EgressSelectorConfigurationResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
-	if err := r.Client.Delete(ctx, r.resource); err != nil {
+	err := r.Client.Delete(ctx, r.resource)
+	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			logger.Error(err, "cannot delete the requested resource")
 

@@ -18,7 +18,8 @@ import (
 // without enqueuing back the request in order to get the latest changes of the resource.
 func CreateOrUpdateWithConflict(ctx context.Context, client client.Client, resource client.Object, f controllerutil.MutateFn) (res controllerutil.OperationResult, err error) {
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() (scopeErr error) {
-		if scopeErr = client.Get(ctx, k8stypes.NamespacedName{Namespace: resource.GetNamespace(), Name: resource.GetName()}, resource); scopeErr != nil {
+		scopeErr = client.Get(ctx, k8stypes.NamespacedName{Namespace: resource.GetNamespace(), Name: resource.GetName()}, resource)
+		if scopeErr != nil {
 			if !errors.IsNotFound(scopeErr) {
 				return scopeErr
 			}

@@ -176,7 +176,8 @@ func (r *WritePermissions) createOrUpdate(ctx context.Context, writePermissions 
 }
 
 func (r *WritePermissions) cleanup(ctx context.Context) error {
-	if err := r.Client.Delete(ctx, r.object()); err != nil {
+	err := r.Client.Delete(ctx, r.object())
+	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
 		}

@@ -155,7 +155,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	// Retrieving the TenantControlPlane:
 	// in case of deletion, we must be sure to properly remove from the memory the soot manager.
 	tcp := &kamajiv1alpha1.TenantControlPlane{}
-	if err = m.AdminClient.Get(ctx, request.NamespacedName, tcp); err != nil {
+	err = m.AdminClient.Get(ctx, request.NamespacedName, tcp)
+	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, m.cleanup(ctx, request, nil)
 		}

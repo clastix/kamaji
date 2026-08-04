@@ -100,7 +100,8 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		metricCtx, cancelMetricCtx := metrics.NewRefreshContextFrom(c)
 		defer cancelMetricCtx()
 
-		if err := r.refreshTenantControlPlaneMetrics(metricCtx); err != nil {
+		err := r.refreshTenantControlPlaneMetrics(metricCtx)
+		if err != nil {
 			log.WithName("metrics").Error(err, "cannot refresh TenantControlPlane metrics")
 		}
 	}(ctx)
@@ -213,7 +214,8 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 
 		for _, resource := range GetDeletableResources(tenantControlPlane, groupDeletableResourceBuilderConfiguration) {
-			if err = resources.HandleDeletion(ctx, resource, tenantControlPlane); err != nil {
+			err = resources.HandleDeletion(ctx, resource, tenantControlPlane)
+			if err != nil {
 				log.Error(err, "resource deletion failed", "resource", resource.GetName())
 
 				return ctrl.Result{}, err
@@ -260,7 +262,8 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			continue
 		}
 
-		if err = utils.UpdateStatus(ctx, r.Client, tenantControlPlane, resource); err != nil {
+		err = utils.UpdateStatus(ctx, r.Client, tenantControlPlane, resource)
+		if err != nil {
 			if kamajierrors.ShouldReconcileErrorBeIgnored(err) {
 				log.V(1).Info("sentinel error, enqueuing back request", "error", err.Error())
 
@@ -286,15 +289,17 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Set ObservedGeneration only on successful reconciliation completion.
 	// This follows Cluster API conventions where ObservedGeneration indicates
 	// the controller has fully processed the given generation.
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		if getErr := r.Client.Get(ctx, req.NamespacedName, tenantControlPlane); getErr != nil {
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		getErr := r.Client.Get(ctx, req.NamespacedName, tenantControlPlane)
+		if getErr != nil {
 			return getErr
 		}
 
 		tenantControlPlane.Status.ObservedGeneration = tenantControlPlane.Generation
 
 		return r.Client.Status().Update(ctx, tenantControlPlane)
-	}); err != nil {
+	})
+	if err != nil {
 		log.Error(err, "failed to update ObservedGeneration")
 
 		return ctrl.Result{}, err
@@ -317,16 +322,18 @@ func (r *TenantControlPlaneReconciler) mutexSpec(obj client.Object) mutex.Spec {
 func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	r.clock = clock.RealClock{}
 
-	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+	err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
 		metricCtx, cancelMetricCtx := metrics.NewRefreshContextFrom(ctx)
 		defer cancelMetricCtx()
 
-		if err := r.refreshTenantControlPlaneMetrics(metricCtx); err != nil {
+		err := r.refreshTenantControlPlaneMetrics(metricCtx)
+		if err != nil {
 			ctrl.Log.WithName("metrics").Error(err, "cannot initialize TenantControlPlane metrics")
 		}
 
 		return nil
-	})); err != nil {
+	}))
+	if err != nil {
 		return err
 	}
 
@@ -403,7 +410,8 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr
 func (r *TenantControlPlaneReconciler) refreshTenantControlPlaneMetrics(ctx context.Context) error {
 	var tcpList kamajiv1alpha1.TenantControlPlaneList
 
-	if err := r.Client.List(ctx, &tcpList); err != nil {
+	err := r.Client.List(ctx, &tcpList)
+	if err != nil {
 		return err
 	}
 
@@ -490,7 +498,8 @@ func formatHTTPSAddress(host string, port int32) string {
 func (r *TenantControlPlaneReconciler) getTenantControlPlane(ctx context.Context, namespacedName k8stypes.NamespacedName) utils.TenantControlPlaneRetrievalFn {
 	return func() (*kamajiv1alpha1.TenantControlPlane, error) {
 		tcp := &kamajiv1alpha1.TenantControlPlane{}
-		if err := r.APIReader.Get(ctx, namespacedName, tcp); err != nil {
+		err := r.APIReader.Get(ctx, namespacedName, tcp)
+		if err != nil {
 			return nil, err
 		}
 
@@ -518,7 +527,8 @@ func (r *TenantControlPlaneReconciler) dataStore(ctx context.Context, tenantCont
 	}
 
 	var ds kamajiv1alpha1.DataStore
-	if err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: tenantControlPlane.Spec.DataStore}, &ds); err != nil {
+	err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: tenantControlPlane.Spec.DataStore}, &ds)
+	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve *kamajiv1alpha.DataStore object: %w", err)
 	}
 
@@ -530,7 +540,8 @@ func (r *TenantControlPlaneReconciler) dataStoreOverride(ctx context.Context, te
 
 	for _, dso := range tenantControlPlane.Spec.DataStoreOverrides {
 		var ds kamajiv1alpha1.DataStore
-		if err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: dso.DataStore}, &ds); err != nil {
+		err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: dso.DataStore}, &ds)
+		if err != nil {
 			return nil, fmt.Errorf("cannot retrieve *kamajiv1alpha.DataStore object: %w", err)
 		}
 		if ds.Spec.Driver != kamajiv1alpha1.EtcdDriver {

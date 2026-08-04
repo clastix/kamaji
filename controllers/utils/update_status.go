@@ -23,11 +23,13 @@ func UpdateStatus(ctx context.Context, client client.Client, tcp *kamajiv1alpha1
 			}
 		}()
 
-		if err = resource.UpdateTenantControlPlaneStatus(ctx, tcp); err != nil {
+		err = resource.UpdateTenantControlPlaneStatus(ctx, tcp)
+		if err != nil {
 			return fmt.Errorf("error applying TenantcontrolPlane status: %w", err)
 		}
 
-		if err = client.Status().Update(ctx, tcp); err != nil {
+		err = client.Status().Update(ctx, tcp)
+		if err != nil {
 			return fmt.Errorf("error updating tenantControlPlane status: %w", err)
 		}
 

@@ -94,7 +94,8 @@ var _ = Describe("validating kubeconfig", func() {
 
 				By("ensuring port change is defined in the TCP status", func() {
 					Eventually(func() int32 {
-						if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.GetName()}, tcp); err != nil {
+						err := k8sClient.Get(ctx, types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.GetName()}, tcp)
+						if err != nil {
 							_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: cannot retrieve TCP:", err.Error())
 
 							return 0
@@ -106,7 +107,8 @@ var _ = Describe("validating kubeconfig", func() {
 
 				By("ensuring downloading the updated kubeconfig", func() {
 					Eventually(func() (err error) {
-						if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.GetName()}, tcp); err != nil {
+						err = k8sClient.Get(ctx, types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.GetName()}, tcp)
+						if err != nil {
 							_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: cannot retrieve TCP:", err.Error())
 
 							return err

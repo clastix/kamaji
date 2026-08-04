@@ -24,7 +24,8 @@ func DecodeKubeconfig(secret corev1.Secret, key string) (*clientcmdapiv1.Config,
 
 func DecodeKubeconfigYAML(bytes []byte) (*clientcmdapiv1.Config, error) {
 	kubeconfig := &clientcmdapiv1.Config{}
-	if err := DecodeFromYAML(string(bytes), kubeconfig); err != nil {
+	err := DecodeFromYAML(string(bytes), kubeconfig)
+	if err != nil {
 		return nil, err
 	}
 

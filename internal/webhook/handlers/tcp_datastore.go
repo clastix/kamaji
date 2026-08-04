@@ -51,7 +51,8 @@ func (t TenantControlPlaneDataStore) OnUpdate(object runtime.Object, _ runtime.O
 }
 
 func (t TenantControlPlaneDataStore) check(ctx context.Context, dataStoreName string) error {
-	if err := t.Client.Get(ctx, types.NamespacedName{Name: dataStoreName}, &kamajiv1alpha1.DataStore{}); err != nil {
+	err := t.Client.Get(ctx, types.NamespacedName{Name: dataStoreName}, &kamajiv1alpha1.DataStore{})
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return fmt.Errorf("%s DataStore does not exist", dataStoreName)
 		}
@@ -70,7 +71,8 @@ func (t TenantControlPlaneDataStore) checkDataStoreOverrides(ctx context.Context
 		} else {
 			return fmt.Errorf("duplicate resource override in Spec.DataStoreOverrides")
 		}
-		if err := t.check(ctx, ds.DataStore); err != nil {
+		err := t.check(ctx, ds.DataStore)
+		if err != nil {
 			return err
 		}
 	}

@@ -30,13 +30,15 @@ const (
 func AddCoreDNS(client kubernetes.Interface, config *Configuration) ([]byte, error) {
 	// We're passing the values from the parameters here because they wouldn't be hashed by the YAML encoder:
 	// the struct kubeadm.ClusterConfiguration hasn't struct tags, and it wouldn't be hashed properly.
-	if opts := config.Parameters.CoreDNSOptions; opts != nil {
+	opts := config.Parameters.CoreDNSOptions
+	if opts != nil {
 		config.InitConfiguration.DNS.ImageRepository = opts.Repository
 		config.InitConfiguration.DNS.ImageTag = opts.Tag
 	}
 
 	b := bytes.NewBuffer([]byte{})
-	if err := dns.EnsureDNSAddon(&config.InitConfiguration.ClusterConfiguration, client, "", b, true); err != nil {
+	err := dns.EnsureDNSAddon(&config.InitConfiguration.ClusterConfiguration, client, "", b, true)
+	if err != nil {
 		return nil, err
 	}
 
@@ -50,7 +52,8 @@ func AddKubeProxy(client kubernetes.Interface, config *Configuration) ([]byte, e
 	config.InitConfiguration.KubernetesVersion = config.Parameters.KubeProxyOptions.Tag
 
 	b := bytes.NewBuffer([]byte{})
-	if err := proxy.EnsureProxyAddon(&config.InitConfiguration.ClusterConfiguration, &config.InitConfiguration.LocalAPIEndpoint, client, b, true); err != nil {
+	err := proxy.EnsureProxyAddon(&config.InitConfiguration.ClusterConfiguration, &config.InitConfiguration.LocalAPIEndpoint, client, b, true)
+	if err != nil {
 		return nil, err
 	}
 

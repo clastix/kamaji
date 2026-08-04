@@ -50,13 +50,15 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 		metricCtx, cancelMetricCtx := metrics.NewRefreshContextFrom(c)
 		defer cancelMetricCtx()
 
-		if gaugeErr := r.refreshDatastoreMetrics(metricCtx); gaugeErr != nil {
+		gaugeErr := r.refreshDatastoreMetrics(metricCtx)
+		if gaugeErr != nil {
 			logger.WithName("metrics").Error(gaugeErr, "cannot refresh DataStore metrics")
 		}
 	}(ctx)
 
 	var ds kamajiv1alpha1.DataStore
-	if dsErr := r.Client.Get(ctx, request.NamespacedName, &ds); dsErr != nil {
+	dsErr := r.Client.Get(ctx, request.NamespacedName, &ds)
+	if dsErr != nil {
 		if k8serrors.IsNotFound(dsErr) {
 			logger.Info("resource may have been deleted, skipping")
 
@@ -78,7 +80,8 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 		logger.Info("missing finalizer, adding it")
 
 		ds.SetFinalizers(append(ds.GetFinalizers(), kamajiv1alpha1.DataStoreTCPFinalizer))
-		if uErr := r.Client.Update(ctx, &ds); uErr != nil {
+		uErr := r.Client.Update(ctx, &ds)
+		if uErr != nil {
 			return reconcile.Result{}, uErr
 		}
 
@@ -89,9 +92,10 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	// that would be required, such as changing TLS Configuration, or Basic Auth.
 	var tcpList kamajiv1alpha1.TenantControlPlaneList
 
-	if lErr := r.Client.List(ctx, &tcpList, client.MatchingFieldsSelector{
+	lErr := r.Client.List(ctx, &tcpList, client.MatchingFieldsSelector{
 		Selector: fields.OneTermEqualSelector(kamajiv1alpha1.TenantControlPlaneUsedDataStoreKey, ds.GetName()),
-	}); lErr != nil {
+	})
+	if lErr != nil {
 		return reconcile.Result{}, fmt.Errorf("cannot retrieve list of the Tenant Control Plane using the following instance: %w", lErr)
 	}
 
@@ -110,7 +114,8 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 			logger.Info("removing finalizer upon true condition")
 
 			controllerutil.RemoveFinalizer(&ds, kamajiv1alpha1.DataStoreTCPFinalizer)
-			if uErr := r.Client.Update(ctx, &ds); uErr != nil {
+			uErr := r.Client.Update(ctx, &ds)
+			if uErr != nil {
 				logger.Error(uErr, "cannot update object")
 
 				return
@@ -124,7 +129,8 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 		ds.Status.ObservedGeneration = ds.Generation
 		ds.Status.Ready = meta.IsStatusConditionTrue(ds.Status.Conditions, kamajiv1alpha1.DataStoreConditionValidType)
 
-		if err = r.Client.Status().Update(ctx, &ds); err != nil {
+		err = r.Client.Status().Update(ctx, &ds)
+		if err != nil {
 			logger.Error(err, "cannot update the status for the given instance")
 
 			return
@@ -175,7 +181,8 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 		return reconcile.Result{}, nil
 	}
 
-	if exists := meta.FindStatusCondition(ds.Status.Conditions, kamajiv1alpha1.DataStoreConditionValidType); exists == nil {
+	exists := meta.FindStatusCondition(ds.Status.Conditions, kamajiv1alpha1.DataStoreConditionValidType)
+	if exists == nil {
 		logger.Info("missing starting condition")
 
 		meta.SetStatusCondition(&ds.Status.Conditions, metav1.Condition{
@@ -186,7 +193,8 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 			Message:            "Controller will process the validation.",
 		})
 
-		if sErr := r.Client.Status().Update(ctx, &ds); sErr != nil {
+		sErr := r.Client.Status().Update(ctx, &ds)
+		if sErr != nil {
 			return reconcile.Result{}, fmt.Errorf("cannot update the status for the given instance: %w", sErr)
 		}
 
@@ -196,7 +204,8 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	if ds.Spec.BasicAuth != nil {
 		logger.Info("validating basic authentication")
 
-		if vErr := r.validateBasicAuth(ctx, ds); vErr != nil {
+		vErr := r.validateBasicAuth(ctx, ds)
+		if vErr != nil {
 			meta.SetStatusCondition(&ds.Status.Conditions, metav1.Condition{
 				Type:               kamajiv1alpha1.DataStoreConditionValidType,
 				Status:             metav1.ConditionFalse,
@@ -215,7 +224,8 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 
 	logger.Info("validating TLS configuration")
 
-	if vErr := r.validateTLSConfig(ctx, ds); vErr != nil {
+	vErr := r.validateTLSConfig(ctx, ds)
+	if vErr != nil {
 		meta.SetStatusCondition(&ds.Status.Conditions, metav1.Condition{
 			Type:               kamajiv1alpha1.DataStoreConditionValidType,
 			Status:             metav1.ConditionFalse,
@@ -273,16 +283,18 @@ func (r *DataStore) triggerTenantControlPlanes(ctx context.Context, tcpList kama
 }
 
 func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
-	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+	err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
 		metricCtx, cancelMetricCtx := metrics.NewRefreshContextFrom(ctx)
 		defer cancelMetricCtx()
 
-		if err := r.refreshDatastoreMetrics(metricCtx); err != nil {
+		err := r.refreshDatastoreMetrics(metricCtx)
+		if err != nil {
 			controllerruntime.Log.WithName("metrics").Error(err, "cannot initialize DataStore metrics")
 		}
 
 		return nil
-	})); err != nil {
+	}))
+	if err != nil {
 		return err
 	}
 
@@ -312,7 +324,8 @@ func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
 		}).
 		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object client.Object) []reconcile.Request {
 			var dsList kamajiv1alpha1.DataStoreList
-			if err := r.Client.List(ctx, &dsList, client.MatchingFieldsSelector{Selector: fields.OneTermEqualSelector(kamajiv1alpha1.DatastoreUsedSecretNamespacedNameKey, fmt.Sprintf("%s/%s", object.GetNamespace(), object.GetName()))}); err != nil {
+			err := r.Client.List(ctx, &dsList, client.MatchingFieldsSelector{Selector: fields.OneTermEqualSelector(kamajiv1alpha1.DatastoreUsedSecretNamespacedNameKey, fmt.Sprintf("%s/%s", object.GetNamespace(), object.GetName()))})
+			if err != nil {
 				return nil
 			}
 
@@ -331,7 +344,8 @@ func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
 func (r *DataStore) refreshDatastoreMetrics(ctx context.Context) error {
 	var dataStoreList kamajiv1alpha1.DataStoreList
 
-	if err := r.Client.List(ctx, &dataStoreList); err != nil {
+	err := r.Client.List(ctx, &dataStoreList)
+	if err != nil {
 		return err
 	}
 
@@ -388,11 +402,13 @@ func classifyDataStoreStatusLabel(ds *kamajiv1alpha1.DataStore) string {
 }
 
 func (r *DataStore) validateBasicAuth(ctx context.Context, ds kamajiv1alpha1.DataStore) error {
-	if err := r.validateContentReference(ctx, ds.Spec.BasicAuth.Password); err != nil {
+	err := r.validateContentReference(ctx, ds.Spec.BasicAuth.Password)
+	if err != nil {
 		return fmt.Errorf("basic-auth password is not valid, %w", err)
 	}
 
-	if err := r.validateContentReference(ctx, ds.Spec.BasicAuth.Username); err != nil {
+	err = r.validateContentReference(ctx, ds.Spec.BasicAuth.Username)
+	if err != nil {
 		return fmt.Errorf("basic-auth username is not valid, %w", err)
 	}
 
@@ -404,7 +420,8 @@ func (r *DataStore) validateTLSConfig(ctx context.Context, ds kamajiv1alpha1.Dat
 		return nil
 	}
 
-	if err := r.validateContentReference(ctx, ds.Spec.TLSConfig.CertificateAuthority.Certificate); err != nil {
+	err := r.validateContentReference(ctx, ds.Spec.TLSConfig.CertificateAuthority.Certificate)
+	if err != nil {
 		return fmt.Errorf("CA certificate is not valid, %w", err)
 	}
 
@@ -419,17 +436,20 @@ func (r *DataStore) validateTLSConfig(ctx context.Context, ds kamajiv1alpha1.Dat
 	}
 
 	if ds.Spec.TLSConfig.CertificateAuthority.PrivateKey != nil {
-		if err := r.validateContentReference(ctx, *ds.Spec.TLSConfig.CertificateAuthority.PrivateKey); err != nil {
+		err := r.validateContentReference(ctx, *ds.Spec.TLSConfig.CertificateAuthority.PrivateKey)
+		if err != nil {
 			return fmt.Errorf("CA private key is not valid, %w", err)
 		}
 	}
 
 	if ds.Spec.TLSConfig.ClientCertificate != nil {
-		if err := r.validateContentReference(ctx, ds.Spec.TLSConfig.ClientCertificate.Certificate); err != nil {
+		err := r.validateContentReference(ctx, ds.Spec.TLSConfig.ClientCertificate.Certificate)
+		if err != nil {
 			return fmt.Errorf("client certificate is not valid, %w", err)
 		}
 
-		if err := r.validateContentReference(ctx, ds.Spec.TLSConfig.ClientCertificate.PrivateKey); err != nil {
+		err = r.validateContentReference(ctx, ds.Spec.TLSConfig.ClientCertificate.PrivateKey)
+		if err != nil {
 			return fmt.Errorf("client private key is not valid, %w", err)
 		}
 	}
@@ -449,7 +469,8 @@ func (r *DataStore) validateContentReference(ctx context.Context, ref kamajiv1al
 		return fmt.Errorf("the Secret reference namespace is mandatory")
 	}
 
-	if err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: ref.SecretRef.SecretReference.Name, Namespace: ref.SecretRef.SecretReference.Namespace}, &corev1.Secret{}); err != nil {
+	err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: ref.SecretRef.SecretReference.Name, Namespace: ref.SecretRef.SecretReference.Namespace}, &corev1.Secret{})
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return fmt.Errorf("secret %s/%s is not found", ref.SecretRef.SecretReference.Namespace, ref.SecretRef.SecretReference.Name)
 		}

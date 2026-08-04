@@ -53,7 +53,8 @@ func GetKubeadmManifestDeps(ctx context.Context, client client.Client, tenantCon
 		TenantControlPlaneCGroupDriver: tenantControlPlane.Spec.Kubernetes.Kubelet.CGroupFS.String(), //nolint:staticcheck
 	}
 	// If CoreDNS addon is enabled and with an override, adding these to the kubeadm init configuration
-	if coreDNS := tenantControlPlane.Spec.Addons.CoreDNS; coreDNS != nil {
+	coreDNS := tenantControlPlane.Spec.Addons.CoreDNS
+	if coreDNS != nil {
 		config.Parameters.CoreDNSOptions = &kubeadm.AddonOptions{}
 
 		if len(coreDNS.ImageRepository) > 0 {
@@ -65,7 +66,8 @@ func GetKubeadmManifestDeps(ctx context.Context, client client.Client, tenantCon
 		}
 	}
 	// If the kube-proxy addon is enabled and with overrides, adding it to the kubeadm parameters
-	if kubeProxy := tenantControlPlane.Spec.Addons.KubeProxy; kubeProxy != nil {
+	kubeProxy := tenantControlPlane.Spec.Addons.KubeProxy
+	if kubeProxy != nil {
 		config.Parameters.KubeProxyOptions = &kubeadm.AddonOptions{}
 
 		if len(kubeProxy.ImageRepository) > 0 {
@@ -100,7 +102,8 @@ func KubeadmBootstrap(ctx context.Context, r KubeadmPhaseResource, logger logr.L
 	}
 
 	var clusterInfo corev1.ConfigMap
-	if cmErr := tntClient.Get(ctx, types.NamespacedName{Name: bootstrapapi.ConfigMapClusterInfo, Namespace: metav1.NamespacePublic}, &clusterInfo); cmErr != nil {
+	cmErr := tntClient.Get(ctx, types.NamespacedName{Name: bootstrapapi.ConfigMapClusterInfo, Namespace: metav1.NamespacePublic}, &clusterInfo)
+	if cmErr != nil {
 		if !k8serrors.IsNotFound(cmErr) {
 			logger.Error(cmErr, "cannot retrieve cluster-info ConfigMap")
 		}
@@ -153,7 +156,8 @@ func KubeadmBootstrap(ctx context.Context, r KubeadmPhaseResource, logger logr.L
 		return controllerutil.OperationResultNone, err
 	}
 
-	if _, err = fun(client, config); err != nil {
+	_, err = fun(client, config)
+	if err != nil {
 		logger.Error(err, "kubeadm function failed")
 
 		return controllerutil.OperationResultNone, err
@@ -242,7 +246,8 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr
 
 		return controllerutil.OperationResultNone, err
 	}
-	if _, err = fun(client, config); err != nil {
+	_, err = fun(client, config)
+	if err != nil {
 		logger.Error(err, "kubeadm function failed")
 
 		return controllerutil.OperationResultNone, err

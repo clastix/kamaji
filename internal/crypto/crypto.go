@@ -56,7 +56,8 @@ func CheckCertificateNamesAndIPs(certificateBytes []byte, entries []string) (boo
 	dns := sets.New[string](crt.DNSNames...)
 
 	for _, e := range entries {
-		if ip := net.ParseIP(e); ip != nil {
+		ip := net.ParseIP(e)
+		if ip != nil {
 			if !ips.Has(ip.String()) {
 				return false, nil
 			}
@@ -231,20 +232,22 @@ func generateCertificateKeyPairBytes(template *x509.Certificate, caCert *x509.Ce
 	}
 
 	certPEM := &bytes.Buffer{}
-	if err = pem.Encode(certPEM, &pem.Block{
+	err = pem.Encode(certPEM, &pem.Block{
 		Type:    "CERTIFICATE",
 		Headers: nil,
 		Bytes:   certBytes,
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, nil, fmt.Errorf("cannot encode the generate certificate bytes: %w", err)
 	}
 
 	certPrivKeyPEM := &bytes.Buffer{}
-	if err = pem.Encode(certPrivKeyPEM, &pem.Block{
+	err = pem.Encode(certPrivKeyPEM, &pem.Block{
 		Type:    "RSA PRIVATE KEY",
 		Headers: nil,
 		Bytes:   x509.MarshalPKCS1PrivateKey(certPrivKey),
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, nil, fmt.Errorf("cannot encode private key: %w", err)
 	}
 
