@@ -156,6 +156,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		}
 
 		caSecretNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
+
 		caCertificatesSecret := &corev1.Secret{}
 		if err = r.Client.Get(ctx, caSecretNamespacedName, caCertificatesSecret); err != nil {
 			logger.Error(err, "cannot retrieve the CA")
@@ -233,6 +234,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 				key := strings.ReplaceAll(r.KubeConfigFileName, ".conf", ".svc")
 
 				config.InitConfiguration.ControlPlaneEndpoint = fmt.Sprintf("%s.%s.svc:%d", tenantControlPlane.Name, tenantControlPlane.Namespace, tenantControlPlane.Spec.NetworkProfile.Port)
+
 				kubeconfig, kcErr = kubeadm.CreateKubeconfig(r.KubeConfigFileName, crtKeyPair, config)
 				if kcErr != nil {
 					logger.Error(kcErr, "cannot create a valid kubeconfig")

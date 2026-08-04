@@ -180,6 +180,7 @@ func (r *KubeconfigGeneratorReconciler) process(ctx context.Context, generator *
 	}
 
 	var user string
+
 	groups := sets.New[string]()
 
 	for _, group := range generator.Spec.Groups {
@@ -310,6 +311,7 @@ func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator 
 	for name := range tmpl.AuthInfos {
 		tmpl.AuthInfos[name].Name = contextUserName
 		tmpl.AuthInfos[name].AuthInfo.ClientCertificateData = pkiutil.EncodeCertPEM(clientCert)
+
 		tmpl.AuthInfos[name].AuthInfo.ClientKeyData, err = keyutil.MarshalPrivateKeyToPEM(clientKey)
 		if err != nil {
 			return fmt.Errorf("cannot marshal private key to PEM: %w", err)
@@ -391,6 +393,7 @@ func (r *KubeconfigGeneratorReconciler) isValid(secret *corev1.Secret, tmpl *cli
 		if vErr != nil {
 			return false, vErr
 		}
+
 		if !valid {
 			return false, nil
 		}

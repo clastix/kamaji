@@ -32,6 +32,7 @@ func TestCertificateRefreshMetrics(t *testing.T) {
 	if err := kamajiv1alpha1.AddToScheme(scheme); err != nil {
 		t.Fatalf("failed adding kamaji scheme: %v", err)
 	}
+
 	if err := corev1.AddToScheme(scheme); err != nil {
 		t.Fatalf("failed adding corev1 scheme: %v", err)
 	}
@@ -40,6 +41,7 @@ func TestCertificateRefreshMetrics(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed generating valid cert: %v", err)
 	}
+
 	expiringCertPEM, err := testCertificatePEM(time.Now().Add(30 * time.Minute))
 	if err != nil {
 		t.Fatalf("failed generating expiring cert: %v", err)
@@ -99,12 +101,15 @@ func TestCertificateRefreshMetrics(t *testing.T) {
 	if got := gaugeValueByLabels(t, family, map[string]string{"tcp_namespace": "default", "tcp_name": "tcp-a", "status": metrics.CertificateStatusValid, "strategy": metrics.CertificateStrategyX509}); got != 1 {
 		t.Fatalf("expected valid/x509 certificates gauge to be 1, got %v", got)
 	}
+
 	if got := gaugeValueByLabels(t, family, map[string]string{"tcp_namespace": "default", "tcp_name": "tcp-a", "status": metrics.CertificateStatusExpiring, "strategy": metrics.CertificateStrategyX509}); got != 1 {
 		t.Fatalf("expected expiring/x509 certificates gauge to be 1, got %v", got)
 	}
+
 	if got := gaugeValueByLabels(t, family, map[string]string{"tcp_namespace": "default", "tcp_name": "tcp-a", "status": metrics.CertificateStatusInvalid, "strategy": metrics.CertificateStrategyX509}); got != 1 {
 		t.Fatalf("expected invalid/x509 certificates gauge to be 1, got %v", got)
 	}
+
 	if got := gaugeValueByLabels(t, family, map[string]string{"tcp_namespace": "default", "tcp_name": "tcp-a", "status": metrics.CertificateStatusValid, "strategy": metrics.CertificateStrategyKubeconfig}); got != 0 {
 		t.Fatalf("expected valid/kubeconfig certificates gauge to be 0, got %v", got)
 	}

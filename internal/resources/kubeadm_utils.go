@@ -242,6 +242,7 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr
 
 		return controllerutil.OperationResultNone, err
 	}
+
 	if _, err = fun(client, config); err != nil {
 		logger.Error(err, "kubeadm function failed")
 

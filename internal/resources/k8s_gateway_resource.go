@@ -104,21 +104,26 @@ func (r *KubernetesGatewayResource) UpdateTenantControlPlaneStatus(ctx context.C
 	if len(routeStatuses.Parents) == 0 {
 		return fmt.Errorf("no gateway attached to the route")
 	}
+
 	if len(routeStatuses.Parents) > 1 {
 		return fmt.Errorf("too many gateway attached to the route")
 	}
+
 	if len(r.resource.Spec.Hostnames) == 0 {
 		return fmt.Errorf("no hostname in the route")
 	}
+
 	if len(r.resource.Spec.Hostnames) > 1 {
 		return fmt.Errorf("too many hostnames in the route")
 	}
 
 	logger.V(1).Info("updating TenantControlPlane status for Gateway routes")
+
 	accessPoints, err := BuildGatewayAccessPointsStatus(ctx, r.Client, r.resource, routeStatuses)
 	if err != nil {
 		return err
 	}
+
 	tcp.Status.Kubernetes.Gateway.AccessPoints = accessPoints
 
 	return nil

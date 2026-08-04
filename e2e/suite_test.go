@@ -46,6 +46,7 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	By("bootstrapping test environment")
+
 	testEnv = &envtest.Environment{
 		UseExistingCluster: pointer.To(true),
 	}
@@ -68,6 +69,7 @@ var _ = BeforeSuite(func() {
 	Expect(k8sClient).NotTo(BeNil())
 
 	By("creating GatewayClass for Gateway API tests")
+
 	gatewayClass := &gatewayv1.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "envoy-gw-class",
@@ -84,6 +86,7 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	By("deleting Gateway resources")
+
 	gateway := &gatewayv1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-gateway",
@@ -100,6 +103,7 @@ var _ = AfterSuite(func() {
 	_ = k8sClient.Delete(context.Background(), gatewayClass)
 
 	By("tearing down the test environment")
+
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })

@@ -90,6 +90,7 @@ func IsTLSRouteAvailableViaClient(ctx context.Context, c client.Client) bool {
 	}
 
 	restMapper := c.RESTMapper()
+
 	_, err := restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
 		if meta.IsNoMatchError(err) {

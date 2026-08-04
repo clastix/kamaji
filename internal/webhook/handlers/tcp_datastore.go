@@ -70,6 +70,7 @@ func (t TenantControlPlaneDataStore) checkDataStoreOverrides(ctx context.Context
 		} else {
 			return fmt.Errorf("duplicate resource override in Spec.DataStoreOverrides")
 		}
+
 		if err := t.check(ctx, ds.DataStore); err != nil {
 			return err
 		}

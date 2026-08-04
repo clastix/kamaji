@@ -57,6 +57,7 @@ func (r *KubernetesServiceResource) UpdateTenantControlPlaneStatus(ctx context.C
 	if err != nil {
 		return err
 	}
+
 	tenantControlPlane.Status.ControlPlaneEndpoint = net.JoinHostPort(address, strconv.FormatInt(int64(tenantControlPlane.Spec.NetworkProfile.Port), 10))
 
 	return nil
@@ -103,6 +104,7 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 		}
 
 		var ports []corev1.ServicePort
+
 		for i, port := range r.resource.Spec.Ports {
 			switch {
 			case i == 0:

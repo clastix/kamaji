@@ -102,6 +102,7 @@ func (r *FrontProxyCACertificate) mutate(ctx context.Context, tenantControlPlane
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.FrontProxyCACertAndKeyBaseName, err.Error()))
 			}
+
 			if isValid {
 				return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 			}

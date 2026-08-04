@@ -108,6 +108,7 @@ var _ = Describe("Deploy a TenantControlPlane resource with security contexts", 
 		// This construction prevents "the object has been modified; please apply your changes to the latest version and try again"
 		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			tcp := &kamajiv1alpha1.TenantControlPlane{}
+
 			err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      "tcp-clusterip-security-contexts",
 				Namespace: "default",

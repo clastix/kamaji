@@ -114,21 +114,26 @@ func (r *KubernetesKonnectivityGatewayResource) UpdateTenantControlPlaneStatus(c
 	if len(routeStatuses.Parents) == 0 {
 		return fmt.Errorf("no gateway attached to the konnectivity route")
 	}
+
 	if len(routeStatuses.Parents) > 1 {
 		return fmt.Errorf("too many gateways attached to the konnectivity route")
 	}
+
 	if len(r.resource.Spec.Hostnames) == 0 {
 		return fmt.Errorf("no hostname in the konnectivity route")
 	}
+
 	if len(r.resource.Spec.Hostnames) > 1 {
 		return fmt.Errorf("too many hostnames in the konnectivity route")
 	}
 
 	logger.V(1).Info("updating TenantControlPlane status for Konnectivity Gateway routes")
+
 	accessPoints, err := resources.BuildGatewayAccessPointsStatus(ctx, r.Client, r.resource, routeStatuses)
 	if err != nil {
 		return err
 	}
+
 	tcp.Status.Addons.Konnectivity.Gateway.AccessPoints = accessPoints
 
 	return nil
@@ -181,6 +186,7 @@ func (r *KubernetesKonnectivityGatewayResource) mutate(tcp *kamajiv1alpha1.Tenan
 		if tcp.Spec.ControlPlane.Gateway.GatewayParentRefs == nil {
 			return fmt.Errorf("control plane gateway parentRefs are not specified")
 		}
+
 		r.resource.Spec.ParentRefs = newParentRefsSpecWithPortAndSection(tcp.Spec.ControlPlane.Gateway.GatewayParentRefs, servicePort, "konnectivity-server")
 
 		rule := gatewayv1.TLSRouteRule{
@@ -234,6 +240,7 @@ func (r *KubernetesKonnectivityGatewayResource) GetName() string {
 func newParentRefsSpecWithPortAndSection(parentRefs []gatewayv1.ParentReference, port int32, sectionName string) []gatewayv1.ParentReference {
 	result := make([]gatewayv1.ParentReference, len(parentRefs))
 	sectionNamePtr := gatewayv1.SectionName(sectionName)
+
 	for i, parentRef := range parentRefs {
 		result[i] = *parentRef.DeepCopy()
 		result[i].Port = &port

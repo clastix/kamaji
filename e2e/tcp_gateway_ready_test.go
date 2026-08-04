@@ -101,18 +101,23 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 			}, route); err != nil {
 				return err
 			}
+
 			if len(route.Spec.ParentRefs) == 0 {
 				return fmt.Errorf("parentRefs is empty")
 			}
+
 			if route.Spec.ParentRefs[0].SectionName == nil {
 				return fmt.Errorf("sectionName is nil")
 			}
+
 			if *route.Spec.ParentRefs[0].SectionName != gatewayv1.SectionName("cp-listener") {
 				return fmt.Errorf("expected sectionName 'cp-listener', got '%s'", *route.Spec.ParentRefs[0].SectionName)
 			}
+
 			if route.Spec.ParentRefs[0].Port == nil {
 				return fmt.Errorf("port is nil")
 			}
+
 			if *route.Spec.ParentRefs[0].Port != gatewayv1.PortNumber(6443) {
 				return fmt.Errorf("expected port 6443, got '%d'", *route.Spec.ParentRefs[0].Port)
 			}

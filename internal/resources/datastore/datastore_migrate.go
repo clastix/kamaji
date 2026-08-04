@@ -112,10 +112,12 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 
 		d.job.Spec.Template.ObjectMeta.Labels = utilities.MergeMaps(d.job.Spec.Template.ObjectMeta.Labels, d.job.Spec.Template.ObjectMeta.Labels)
 		d.job.Spec.Template.Spec.ServiceAccountName = d.KamajiServiceAccount
+
 		d.job.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 		if len(d.job.Spec.Template.Spec.Containers) == 0 {
 			d.job.Spec.Template.Spec.Containers = append(d.job.Spec.Template.Spec.Containers, corev1.Container{})
 		}
+
 		d.job.Spec.Template.Spec.Containers[0].Name = "migrate"
 		d.job.Spec.Template.Spec.Containers[0].Image = d.MigrateImage
 		d.job.Spec.Template.Spec.Containers[0].Args = []string{
@@ -154,7 +156,6 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 
 		return resources.OperationResultEnqueueBack, nil
 	case controllerutil.OperationResultNone:
-
 		// Note: job.Status.Conditions can contain more than one condition on Kubernetes versions greater than v1.30
 		for _, condition := range d.job.Status.Conditions {
 			if condition.Type == batchv1.JobComplete && condition.Status == corev1.ConditionTrue {
