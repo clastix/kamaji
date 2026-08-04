@@ -31023,6 +31023,13 @@ such as the number of Pod replicas, the Service resource, or the Ingress.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#tenantcontrolplanespecbootstrap">bootstrap</a></b></td>
+        <td>object</td>
+        <td>
+          Bootstrap configures initial cluster setup including RBAC and essential components.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>dataStore</b></td>
         <td>string</td>
         <td>
@@ -47831,6 +47838,80 @@ In case this value is set, kubeadm does not change automatically the version of 
 </table>
 
 
+<span id="tenantcontrolplanespecbootstrap">`TenantControlPlane.spec.bootstrap`</span>
+
+
+Bootstrap configures initial cluster setup including RBAC and essential components.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespecbootstraprbac">rbac</a></b></td>
+        <td>object</td>
+        <td>
+          RBAC configures Role-Based Access Control bootstrap.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecbootstraprbac">`TenantControlPlane.spec.bootstrap.rbac`</span>
+
+
+RBAC configures Role-Based Access Control bootstrap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>adminGroups</b></td>
+        <td>[]string</td>
+        <td>
+          AdminGroups specifies groups that should be granted cluster-admin privileges.
+Defaults to ["system:masters"] which is the traditional K8s admin group.<br/>
+          <br/>
+            <i>Default</i>: [system:masters]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>adminUsers</b></td>
+        <td>[]string</td>
+        <td>
+          AdminUsers specifies users that should be granted cluster-admin privileges.
+Defaults to ["kubernetes-admin"] which matches the generated kubeconfig user.<br/>
+          <br/>
+            <i>Default</i>: [kubernetes-admin]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled controls whether RBAC bootstrap is performed.
+When enabled, creates ClusterRoleBindings for admin users and groups.
+Defaults to true when the bootstrap.rbac stanza is present.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 <span id="tenantcontrolplanespecdatastoreoverridesindex">`TenantControlPlane.spec.dataStoreOverrides[index]`</span>
 
 
@@ -48072,6 +48153,13 @@ TenantControlPlaneStatus defines the observed state of TenantControlPlane.
         <td>object</td>
         <td>
           Addons contains the status of the different Addons<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#tenantcontrolplanestatusbootstrap">bootstrap</a></b></td>
+        <td>object</td>
+        <td>
+          Bootstrap contains the status of the bootstrap configuration<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -49322,6 +49410,97 @@ AddonStatus defines the observed state of an Addon.
           <br/>
           <br/>
             <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanestatusbootstrap">`TenantControlPlane.status.bootstrap`</span>
+
+
+Bootstrap contains the status of the bootstrap configuration
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatusbootstraprbac">rbac</a></b></td>
+        <td>object</td>
+        <td>
+          RBACBootstrapStatus defines the status of RBAC bootstrap configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanestatusbootstraprbac">`TenantControlPlane.status.bootstrap.rbac`</span>
+
+
+RBACBootstrapStatus defines the status of RBAC bootstrap configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanestatusbootstraprbacclusterrolebinding">clusterRoleBinding</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanestatusbootstraprbacclusterrolebinding">`TenantControlPlane.status.bootstrap.rbac.clusterRoleBinding`</span>
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>lastUpdate</b></td>
+        <td>string</td>
+        <td>
+          Last time when k8s object was updated<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
