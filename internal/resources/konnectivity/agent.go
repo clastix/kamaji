@@ -6,7 +6,6 @@ package konnectivity
 import (
 	"context"
 	"fmt"
-	"maps"
 
 	"github.com/blang/semver"
 	"github.com/prometheus/client_golang/prometheus"
@@ -15,6 +14,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -74,13 +74,11 @@ func (r *Agent) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlan
 		return false, err
 	}
 
-	labels := r.resource.GetLabels()
-	if labels == nil || labels[constants.ProjectNameLabelKey] != constants.ProjectNameLabelValue {
+	if labels := r.resource.GetLabels(); labels == nil || labels[constants.ProjectNameLabelKey] != constants.ProjectNameLabelValue {
 		return false, nil
 	}
 
-	err = r.tenantClient.Delete(ctx, r.resource)
-	if err != nil {
+	if err := r.tenantClient.Delete(ctx, r.resource); err != nil {
 		if k8serrors.IsNotFound(err) {
 			return false, nil
 		}
@@ -110,8 +108,7 @@ func (r *Agent) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 	r.resource.SetNamespace(AgentNamespace)
 	r.resource.SetName(AgentName)
 
-	r.tenantClient, err = utilities.GetTenantClient(ctx, r.Client, tenantControlPlane)
-	if err != nil {
+	if r.tenantClient, err = utilities.GetTenantClient(ctx, r.Client, tenantControlPlane); err != nil {
 		logger.Error(err, "unable to retrieve the Tenant Control Plane client")
 
 		return err
@@ -134,8 +131,7 @@ func (r *Agent) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 			obj.SetName(r.resource.GetName())
 			obj.SetNamespace(r.resource.GetNamespace())
 
-			cleanupErr := r.tenantClient.Delete(ctx, &obj)
-			if cleanupErr != nil && !k8serrors.IsNotFound(cleanupErr) {
+			if cleanupErr := r.tenantClient.Delete(ctx, &obj); cleanupErr != nil && !k8serrors.IsNotFound(cleanupErr) {
 				log.FromContext(ctx, "resource", r.GetName()).Error(cleanupErr, "cannot cleanup older appsv1.Deployment")
 			}
 		case tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode == kamajiv1alpha1.KonnectivityAgentModeDeployment &&
@@ -144,8 +140,7 @@ func (r *Agent) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 			obj.SetName(r.resource.GetName())
 			obj.SetNamespace(r.resource.GetNamespace())
 
-			cleanupErr := r.tenantClient.Delete(ctx, &obj)
-			if cleanupErr != nil && !k8serrors.IsNotFound(cleanupErr) {
+			if cleanupErr := r.tenantClient.Delete(ctx, &obj); cleanupErr != nil && !k8serrors.IsNotFound(cleanupErr) {
 				log.FromContext(ctx, "resource", r.GetName()).Error(cleanupErr, "cannot cleanup older appsv1.DaemonSet")
 			}
 		}
@@ -240,11 +235,11 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 								ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 									Path:              agentTokenName,
 									Audience:          tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Name,
-									ExpirationSeconds: new(int64(3600)),
+									ExpirationSeconds: pointer.To(int64(3600)),
 								},
 							},
 						},
-						DefaultMode: new(int32(420)),
+						DefaultMode: pointer.To(int32(420)),
 					},
 				},
 			},
@@ -270,7 +265,9 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 
 		extraArgs := utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.ExtraArgs)
 
-		maps.Copy(args, extraArgs)
+		for k, v := range extraArgs {
+			args[k] = v
+		}
 
 		podTemplateSpec.Spec.Containers[0].Args = utilities.ArgsFromMapToSlice(args)
 		podTemplateSpec.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{

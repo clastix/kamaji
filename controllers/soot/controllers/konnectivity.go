@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -73,8 +74,7 @@ func (k *KonnectivityAgent) Reconcile(ctx context.Context, _ reconcile.Request) 
 			continue
 		}
 
-		err = utils.UpdateStatus(ctx, k.AdminClient, tcp, resource)
-		if err != nil {
+		if err = utils.UpdateStatus(ctx, k.AdminClient, tcp, resource); err != nil {
 			k.Logger.Error(err, "update status failed", "resource", resource.GetName())
 
 			return reconcile.Result{}, err
@@ -89,7 +89,7 @@ func (k *KonnectivityAgent) Reconcile(ctx context.Context, _ reconcile.Request) 
 func (k *KonnectivityAgent) SetupWithManager(mgr manager.Manager) error {
 	return controllerruntime.NewControllerManagedBy(mgr).
 		Named(k.ControllerName).
-		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: new(true)}).
+		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
 		For(&appsv1.DaemonSet{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == konnectivity.AgentName && object.GetNamespace() == konnectivity.AgentNamespace
 		}))).

@@ -17,6 +17,8 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	pointer "k8s.io/utils/ptr"
+
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
@@ -37,7 +39,7 @@ var _ = Describe("validating kubeconfig", func() {
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					Deployment: kamajiv1alpha1.DeploymentSpec{
-						Replicas: new(int32(1)),
+						Replicas: pointer.To(int32(1)),
 					},
 					Service: kamajiv1alpha1.ServiceSpec{
 						ServiceType: "NodePort",
@@ -78,8 +80,7 @@ var _ = Describe("validating kubeconfig", func() {
 			Eventually(func() string {
 				By(fmt.Sprintf("ensuring TCP port is set to %d", port), func() {
 					Eventually(func() (err error) {
-						err = k8sClient.Get(ctx, types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.GetName()}, tcp)
-						if err != nil {
+						if err = k8sClient.Get(ctx, types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.GetName()}, tcp); err != nil {
 							_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: cannot retrieve TCP:", err.Error())
 
 							return err
@@ -115,8 +116,7 @@ var _ = Describe("validating kubeconfig", func() {
 
 						secret := &corev1.Secret{}
 
-						err = k8sClient.Get(ctx, types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.Status.KubeConfig.Admin.SecretName}, secret)
-						if err != nil {
+						if err = k8sClient.Get(ctx, types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.Status.KubeConfig.Admin.SecretName}, secret); err != nil {
 							_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: cannot retrieve kubeconfig secret name:", err.Error())
 
 							return err

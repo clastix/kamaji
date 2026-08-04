@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/clientcmd"
+	pointer "k8s.io/utils/ptr"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -36,7 +37,7 @@ func featureTestMigration(driver string) {
 				DataStore: fmt.Sprintf("%s-bronze", driver),
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					Deployment: kamajiv1alpha1.DeploymentSpec{
-						Replicas: new(int32(1)),
+						Replicas: pointer.To(int32(1)),
 					},
 					Service: kamajiv1alpha1.ServiceSpec{
 						ServiceType: "NodePort",
