@@ -73,17 +73,20 @@ func NewConnectionConfig(ctx context.Context, client client.Client, ds kamajiv1a
 	}
 
 	var user, password string
+
 	if auth := ds.Spec.BasicAuth; auth != nil {
 		u, err := auth.Username.GetContent(ctx, client)
 		if err != nil {
 			return nil, err
 		}
+
 		user = string(u)
 
 		p, err := auth.Password.GetContent(ctx, client)
 		if err != nil {
 			return nil, err
 		}
+
 		password = string(p)
 	}
 

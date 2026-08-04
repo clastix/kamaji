@@ -31,6 +31,7 @@ func TestParsePrivateKeyBytes(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to generate RSA key: %v", err)
 				}
+
 				keyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
 
 				return pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: keyBytes})
@@ -45,6 +46,7 @@ func TestParsePrivateKeyBytes(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to generate RSA key: %v", err)
 				}
+
 				pkcs8Bytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
 				if err != nil {
 					t.Fatalf("failed to marshal PKCS8: %v", err)
@@ -62,6 +64,7 @@ func TestParsePrivateKeyBytes(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to generate EC key: %v", err)
 				}
+
 				ecBytes, err := x509.MarshalECPrivateKey(privateKey)
 				if err != nil {
 					t.Fatalf("failed to marshal EC: %v", err)
@@ -84,6 +87,7 @@ func TestParsePrivateKeyBytes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			keyBytes := tt.keyGen()
+
 			_, err := ParsePrivateKeyBytes(keyBytes)
 			if (err != nil) != tt.wantError {
 				t.Errorf("ParsePrivateKeyBytes() error = %v, wantError %v", err, tt.wantError)

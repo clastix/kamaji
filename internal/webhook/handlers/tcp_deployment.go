@@ -65,6 +65,7 @@ func (t TenantControlPlaneDeployment) OnUpdate(newObject runtime.Object, oldObje
 		if err := t.Client.Get(ctx, types.NamespacedName{Name: tcp.Spec.DataStore}, &ds); err != nil {
 			return nil, err
 		}
+
 		t.DeploymentBuilder.DataStore = ds
 
 		dataStoreOverrides := make([]controlplane.DataStoreOverrides, 0, len(tcp.Spec.DataStoreOverrides))
@@ -74,11 +75,13 @@ func (t TenantControlPlaneDeployment) OnUpdate(newObject runtime.Object, oldObje
 			if err := t.Client.Get(ctx, types.NamespacedName{Name: dso.DataStore}, &ds); err != nil {
 				return nil, err
 			}
+
 			dataStoreOverrides = append(dataStoreOverrides, controlplane.DataStoreOverrides{
 				Resource:  dso.Resource,
 				DataStore: ds,
 			})
 		}
+
 		t.DeploymentBuilder.DataStoreOverrides = dataStoreOverrides
 
 		deployment := appsv1.Deployment{}

@@ -100,6 +100,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 
 					return err
 				}
+
 				if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 					setupLog.Error(err, "unable to set up ready check")
 
@@ -108,6 +109,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			}
 
 			certController := &controllers.CertificateLifecycle{Channel: triggerChan, Deadline: certificateExpirationDeadline, Metrics: metricsRecorder}
+
 			certController.EnqueueFn = certController.EnqueueForKubeconfigGenerator
 			if err = certController.SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "CertificateLifecycle")
@@ -135,6 +137,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			}
 
 			setupLog.Info("starting manager")
+
 			if err = mgr.Start(ctx); err != nil {
 				setupLog.Error(err, "problem running manager")
 

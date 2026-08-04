@@ -160,6 +160,7 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 				if patchErr != nil {
 					return nil, fmt.Errorf("cannot encode JSON Patches to JSON: %w", patchErr)
 				}
+
 				if patch, patchErr = jsonpatchv5.DecodePatch(jsonP); patchErr != nil {
 					return nil, fmt.Errorf("cannot decode JSON Patches: %w", patchErr)
 				}

@@ -99,7 +99,6 @@ var _ = Describe("DatastoreStorageConfig", func() {
 	When("TCP has dataStoreSchema and dataStoreUsername set in status, but not in spec", func() {
 		// this test case ensures that existing TCPs (created in a CRD version without
 		// the dataStoreSchema field) correctly adopt the spec field from the status.
-
 		It("should create the datastore secret with the correct schema name and update the TCP spec", func() {
 			By("updating the TCP status")
 			Expect(fakeClient.Get(ctx, client.ObjectKeyFromObject(tcp), tcp)).To(Succeed())
@@ -108,11 +107,13 @@ var _ = Describe("DatastoreStorageConfig", func() {
 			Expect(fakeClient.Status().Update(ctx, tcp)).To(Succeed())
 
 			By("handling the resource")
+
 			op, err := resources.Handle(ctx, dsc, tcp)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(op).To(Equal(controllerutil.OperationResultCreated))
 
 			By("checking the secret")
+
 			secrets := &corev1.SecretList{}
 			Expect(fakeClient.List(ctx, secrets)).To(Succeed())
 			Expect(secrets.Items).To(HaveLen(1))

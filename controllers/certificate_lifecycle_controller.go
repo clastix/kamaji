@@ -80,8 +80,10 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 		return reconcile.Result{}, nil
 	}
 
-	var crt *x509.Certificate
-	var err error
+	var (
+		crt *x509.Certificate
+		err error
+	)
 
 	switch checkType {
 	case utilities.CertificateX509Label:
@@ -147,8 +149,10 @@ func (s *CertificateLifecycle) EnqueueForKubeconfigGenerator(secret *corev1.Secr
 }
 
 func (s *CertificateLifecycle) extractCertificateFromBareSecret(secret corev1.Secret) (*x509.Certificate, error) {
-	var crt *x509.Certificate
-	var err error
+	var (
+		crt *x509.Certificate
+		err error
+	)
 
 	for _, v := range secret.Data {
 		if crt, err = crypto.ParseCertificateBytes(v); err == nil {
@@ -164,8 +168,10 @@ func (s *CertificateLifecycle) extractCertificateFromBareSecret(secret corev1.Se
 }
 
 func (s *CertificateLifecycle) extractCertificateFromKubeconfig(secret corev1.Secret) (*x509.Certificate, error) {
-	var kc *clientcmdapiv1.Config
-	var err error
+	var (
+		kc  *clientcmdapiv1.Config
+		err error
+	)
 
 	for k := range secret.Data {
 		if kc, err = utilities.DecodeKubeconfig(secret, k); err == nil {
@@ -247,6 +253,7 @@ func (s *CertificateLifecycle) refreshCertificatesMetrics(ctx context.Context) e
 
 	for i := range secretList.Items {
 		secret := secretList.Items[i]
+
 		labels := secret.GetLabels()
 		if labels == nil {
 			continue

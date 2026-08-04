@@ -164,6 +164,7 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 
 						return err
 					}
+
 					key = bytes.NewBuffer(keyBytes)
 				}
 			default:

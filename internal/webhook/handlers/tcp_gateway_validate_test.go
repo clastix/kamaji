@@ -35,6 +35,7 @@ func (m *mockDiscoveryClient) ServerResourcesForGroupVersion(groupVersion string
 	if err, exists := m.serverResourcesError[groupVersion]; exists {
 		return nil, err
 	}
+
 	if resources, exists := m.serverResources[groupVersion]; exists {
 		return resources, nil
 	}

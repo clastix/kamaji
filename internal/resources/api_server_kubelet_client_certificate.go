@@ -96,6 +96,7 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 		// Retrieving the TenantControlPlane CA:
 		// this is required to trigger a new generation in case of Certificate Authority rotation.
 		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
+
 		secretCA := &corev1.Secret{}
 		if err := r.Client.Get(ctx, namespacedName, secretCA); err != nil {
 			logger.Error(err, "cannot retrieve CA secret")
@@ -151,6 +152,7 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 			Certificate: secretCA.Data[kubeadmconstants.CACertName],
 			PrivateKey:  secretCA.Data[kubeadmconstants.CAKeyName],
 		}
+
 		certificateKeyPair, err := kubeadm.GenerateCertificatePrivateKeyPair(kubeadmconstants.APIServerKubeletClientCertAndKeyBaseName, config, ca)
 		if err != nil {
 			logger.Error(err, "cannot generate certificate and private key")

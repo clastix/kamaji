@@ -106,6 +106,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}(ctx)
 
 	var cancelFn context.CancelFunc
+
 	ctx, cancelFn = context.WithTimeout(ctx, r.ReconcileTimeout)
 	defer cancelFn()
 
@@ -115,6 +116,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 		return reconcile.Result{}, nil
 	}
+
 	if err != nil {
 		log.Error(err, "cannot retrieve the required resource")
 
@@ -187,6 +189,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 		return ctrl.Result{}, err
 	}
+
 	dsoConnections := make(map[string]datastore.Connection, len(dso))
 	for _, ds := range dso {
 		dsoConnection, err := datastore.NewStorageConnection(ctx, r.Client, ds.DataStore)
@@ -533,6 +536,7 @@ func (r *TenantControlPlaneReconciler) dataStoreOverride(ctx context.Context, te
 		if err := r.Client.Get(ctx, k8stypes.NamespacedName{Name: dso.DataStore}, &ds); err != nil {
 			return nil, fmt.Errorf("cannot retrieve *kamajiv1alpha.DataStore object: %w", err)
 		}
+
 		if ds.Spec.Driver != kamajiv1alpha1.EtcdDriver {
 			return nil, errors.New("DataStoreOverrides can only use ETCD driver")
 		}

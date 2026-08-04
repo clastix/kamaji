@@ -135,10 +135,12 @@ func readCertificateFiles(name string, directory string, extensions ...string) (
 	for _, extension := range extensions {
 		fileName := fmt.Sprintf("%s.%s", name, extension)
 		path := filepath.Join(directory, fileName)
+
 		content, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
+
 		result = append(result, content)
 	}
 

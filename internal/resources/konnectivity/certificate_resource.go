@@ -106,6 +106,7 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 		// Retrieving the TenantControlPlane CA:
 		// this is required to trigger a new generation in case of Certificate Authority rotation.
 		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
+
 		secretCA := &corev1.Secret{}
 		if err := r.Client.Get(ctx, namespacedName, secretCA); err != nil {
 			logger.Error(err, "cannot retrieve the CA secret")
@@ -139,6 +140,7 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", konnectivityCertAndKeyBaseName, err.Error()))
 			}
+
 			if isCAValid && isValid {
 				return nil
 			}

@@ -19,6 +19,7 @@ func testRecorder() *Recorder {
 
 func TestKamajiMetricRegistration(t *testing.T) {
 	t.Helper()
+
 	recorder := testRecorder()
 
 	recorder.ResetDatastoresReadyAndDriverCounts()
@@ -48,6 +49,7 @@ func TestKamajiMetricRegistration(t *testing.T) {
 	}
 
 	seen := map[string]struct{}{}
+
 	for _, family := range families {
 		if _, ok := wanted[family.GetName()]; ok {
 			seen[family.GetName()] = struct{}{}
@@ -79,6 +81,7 @@ func TestNewRecorderWithCustomRegistry(t *testing.T) {
 
 func TestTenantControlPlanesCountGaugeByStatus(t *testing.T) {
 	t.Helper()
+
 	recorder := testRecorder()
 
 	recorder.SetTenantControlPlanesReadyCounts(map[string]int{
@@ -102,6 +105,7 @@ func TestTenantControlPlanesCountGaugeByStatus(t *testing.T) {
 
 func TestDatastoresCountGaugeByStatus(t *testing.T) {
 	t.Helper()
+
 	recorder := testRecorder()
 
 	recorder.ResetDatastoresReadyAndDriverCounts()
@@ -150,6 +154,7 @@ func TestDatastoresCountGaugeByStatus(t *testing.T) {
 
 func TestDataStoreInfoMetric(t *testing.T) {
 	t.Helper()
+
 	recorder := testRecorder()
 
 	recorder.ResetDataStoreInfo()
@@ -175,6 +180,7 @@ func TestDataStoreInfoMetric(t *testing.T) {
 
 func TestDataStoreStatusMetric(t *testing.T) {
 	t.Helper()
+
 	recorder := testRecorder()
 
 	recorder.ResetDataStoreStatus()
@@ -211,6 +217,7 @@ func TestBuildInfoMetricHasSingleSample(t *testing.T) {
 
 func TestTenantControlPlaneInfoMetric(t *testing.T) {
 	t.Helper()
+
 	recorder := testRecorder()
 
 	recorder.ResetTenantControlPlaneInfo()
@@ -240,6 +247,7 @@ func TestTenantControlPlaneInfoMetric(t *testing.T) {
 
 func TestTenantControlPlaneStatusMetric(t *testing.T) {
 	t.Helper()
+
 	recorder := testRecorder()
 
 	recorder.ResetTenantControlPlaneStatus()
@@ -267,6 +275,7 @@ func TestTenantControlPlaneStatusMetric(t *testing.T) {
 
 func TestCertificatesCountGaugeByStatusAndStrategy(t *testing.T) {
 	t.Helper()
+
 	recorder := testRecorder()
 
 	recorder.ResetCertificatesStatusCounts()
@@ -371,8 +380,10 @@ func gaugeValueByLabels(t *testing.T, family *io_prometheus_client.MetricFamily,
 
 	for _, metric := range family.GetMetric() {
 		allMatch := true
+
 		for name, value := range labels {
 			matched := false
+
 			for _, label := range metric.GetLabel() {
 				if label.GetName() == name && label.GetValue() == value {
 					matched = true

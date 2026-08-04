@@ -62,6 +62,7 @@ func (r *ServiceResource) ShouldStatusBeUpdated(_ context.Context, tenantControl
 		}
 
 		resourcePorts := resourceIngresses[i].Ports
+
 		statusPorts := statusIngresses[i].Ports
 		for j := range resourcePorts {
 			if resourcePorts[j].Port != statusPorts[j].Port ||
@@ -150,6 +151,7 @@ func (r *ServiceResource) mutate(_ context.Context, tenantControlPlane *kamajiv1
 		r.resource.Spec.Ports[1].Name = "konnectivity-server"
 		r.resource.Spec.Ports[1].Protocol = corev1.ProtocolTCP
 		r.resource.Spec.Ports[1].Port = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port
+
 		r.resource.Spec.Ports[1].TargetPort = intstr.FromInt32(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port)
 		if tenantControlPlane.Spec.ControlPlane.Service.ServiceType == kamajiv1alpha1.ServiceTypeNodePort {
 			r.resource.Spec.Ports[1].NodePort = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port

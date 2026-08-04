@@ -21,6 +21,7 @@ import (
 
 func GetTenantClient(ctx context.Context, c client.Client, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (client.Client, error) {
 	options := client.Options{}
+
 	config, err := GetRESTClientConfig(ctx, c, tenantControlPlane)
 	if err != nil {
 		return nil, err
@@ -45,6 +46,7 @@ func GetTenantKubeconfig(ctx context.Context, client client.Client, tenantContro
 	}
 
 	secretKey := kubeadmconstants.SuperAdminKubeConfigFileName
+
 	v, ok := tenantControlPlane.GetAnnotations()[kamajiv1alpha1.KubeconfigSecretKeyAnnotation]
 	if ok && v != "" {
 		secretKey = v

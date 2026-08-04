@@ -59,6 +59,7 @@ func TestDataStoreRefreshMetrics(t *testing.T) {
 	if got := gaugeValueByLabels(t, countFamily, map[string]string{"datastore_name": "primary", "ready": metrics.ReadyLabelTrue, "driver": string(kamajiv1alpha1.EtcdDriver)}); got != 1 {
 		t.Fatalf("expected primary ready/etcd count to be 1, got %v", got)
 	}
+
 	if got := gaugeValueByLabels(t, countFamily, map[string]string{"datastore_name": "secondary", "ready": metrics.ReadyLabelFalse, "driver": metrics.DataStoreDriverUnknown}); got != 1 {
 		t.Fatalf("expected secondary not-ready/unknown count to be 1, got %v", got)
 	}
@@ -67,6 +68,7 @@ func TestDataStoreRefreshMetrics(t *testing.T) {
 	if got := gaugeValueByLabels(t, statusFamily, map[string]string{"datastore_name": "primary", "status": metrics.DataStoreStatusTrue, "ready": metrics.ReadyLabelTrue}); got != 1 {
 		t.Fatalf("expected primary status metric to be 1, got %v", got)
 	}
+
 	if got := gaugeValueByLabels(t, statusFamily, map[string]string{"datastore_name": "secondary", "status": metrics.DataStoreStatusUnknown, "ready": metrics.ReadyLabelFalse}); got != 1 {
 		t.Fatalf("expected secondary status metric to be 1, got %v", got)
 	}
@@ -96,8 +98,10 @@ func gaugeValueByLabels(t *testing.T, family *io_prometheus_client.MetricFamily,
 
 	for _, metric := range family.GetMetric() {
 		allMatch := true
+
 		for name, value := range labels {
 			matched := false
+
 			for _, label := range metric.GetLabel() {
 				if label.GetName() == name && label.GetValue() == value {
 					matched = true

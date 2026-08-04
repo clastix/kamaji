@@ -78,6 +78,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 		logger.Info("missing finalizer, adding it")
 
 		ds.SetFinalizers(append(ds.GetFinalizers(), kamajiv1alpha1.DataStoreTCPFinalizer))
+
 		if uErr := r.Client.Update(ctx, &ds); uErr != nil {
 			return reconcile.Result{}, uErr
 		}
@@ -110,6 +111,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 			logger.Info("removing finalizer upon true condition")
 
 			controllerutil.RemoveFinalizer(&ds, kamajiv1alpha1.DataStoreTCPFinalizer)
+
 			if uErr := r.Client.Update(ctx, &ds); uErr != nil {
 				logger.Error(uErr, "cannot update object")
 
@@ -343,6 +345,7 @@ func (r *DataStore) refreshDatastoreMetrics(ctx context.Context) error {
 	for i := range dataStoreList.Items {
 		ds := &dataStoreList.Items[i]
 		driver := metrics.NormalizeDataStoreDriverLabel(ds.Spec.Driver)
+
 		ready := metrics.ReadyLabelFalse
 		if ds.Status.Ready {
 			ready = metrics.ReadyLabelTrue

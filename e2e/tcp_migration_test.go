@@ -67,6 +67,7 @@ func featureTestMigration(driver string) {
 		time.Sleep(10 * time.Second)
 
 		By("getting TCP rest.Config")
+
 		config, err := utilities.GetTenantKubeconfig(context.Background(), k8sClient, tcp)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -131,6 +132,7 @@ func featureTestMigration(driver string) {
 		By("checking the changes are newly allowed")
 		Eventually(func() error {
 			var writeNamespace corev1.Namespace
+
 			writeNamespace.Name = fmt.Sprintf("write-%s-%s", rand.String(5), driver)
 
 			return tcpClient.Create(context.Background(), &writeNamespace)

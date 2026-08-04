@@ -59,6 +59,7 @@ func FindMatchingListener(listeners []gatewayv1.Listener, ref gatewayv1.ParentRe
 	if ref.SectionName == nil {
 		return gatewayv1.Listener{}, fmt.Errorf("missing sectionName")
 	}
+
 	name := *ref.SectionName
 	for _, listener := range listeners {
 		if listener.Name == name {
@@ -213,6 +214,7 @@ func BuildGatewayAccessPointsStatus(ctx context.Context, c client.Client, route 
 		for _, listener := range listeners {
 			for _, hostname := range route.Spec.Hostnames {
 				rawURL := fmt.Sprintf("https://%s:%d", hostname, listener.Port)
+
 				parsedURL, err := url.Parse(rawURL)
 				if err != nil {
 					return nil, fmt.Errorf("invalid url: %w", err)
@@ -276,6 +278,7 @@ func resolveMatchingListeners(ctx context.Context, c client.Client, ref gatewayv
 
 	// SectionName unset: resolve the Gateway by namespace/name.
 	gateway := &gatewayv1.Gateway{}
+
 	key := k8stypes.NamespacedName{Namespace: string(*ref.Namespace), Name: string(ref.Name)}
 	if err := c.Get(ctx, key, gateway); err != nil {
 		if k8serrors.IsNotFound(err) {

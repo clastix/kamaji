@@ -116,6 +116,7 @@ func createOrUpdate(ctx context.Context, resource Resource, tenantControlPlane *
 
 func getStoredKubeadmConfiguration(ctx context.Context, client client.Client, tmpDirectory string, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*kubeadm.Configuration, error) {
 	var configmap corev1.ConfigMap
+
 	namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.KubeadmConfig.ConfigmapName}
 	if err := client.Get(ctx, namespacedName, &configmap); err != nil {
 		return nil, err

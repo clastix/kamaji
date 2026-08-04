@@ -35,15 +35,19 @@ func TestStripLoadBalancerPortsFromServiceStatus(t *testing.T) {
 			},
 			assert: func(t *testing.T, orig, got corev1.ServiceStatus) {
 				t.Helper()
+
 				if got.LoadBalancer.Ingress[0].Ports != nil {
 					t.Fatalf("expected ports stripped, got %#v", got.LoadBalancer.Ingress[0].Ports)
 				}
+
 				if got.LoadBalancer.Ingress[0].IP != "172.18.0.3" {
 					t.Fatalf("IP not preserved")
 				}
+
 				if got.LoadBalancer.Ingress[0].IPMode == nil || *got.LoadBalancer.Ingress[0].IPMode != ipModeProxy {
 					t.Fatalf("IPMode not preserved")
 				}
+
 				if orig.LoadBalancer.Ingress[0].Ports == nil {
 					t.Fatalf("original ports mutated")
 				}
@@ -65,9 +69,11 @@ func TestStripLoadBalancerPortsFromServiceStatus(t *testing.T) {
 			},
 			assert: func(t *testing.T, orig, got corev1.ServiceStatus) {
 				t.Helper()
+
 				if got.LoadBalancer.Ingress[0].Ports != nil {
 					t.Fatalf("expected ports stripped")
 				}
+
 				if got.LoadBalancer.Ingress[0].Hostname != "example.local" {
 					t.Fatalf("hostname not preserved")
 				}
@@ -78,6 +84,7 @@ func TestStripLoadBalancerPortsFromServiceStatus(t *testing.T) {
 			input: corev1.ServiceStatus{},
 			assert: func(t *testing.T, _, got corev1.ServiceStatus) {
 				t.Helper()
+
 				if len(got.LoadBalancer.Ingress) != 0 {
 					t.Fatalf("expected no ingress")
 				}
@@ -94,6 +101,7 @@ func TestStripLoadBalancerPortsFromServiceStatus(t *testing.T) {
 			},
 			assert: func(t *testing.T, _, got corev1.ServiceStatus) {
 				t.Helper()
+
 				if got.LoadBalancer.Ingress[0].Ports != nil {
 					t.Fatalf("expected ports to stay nil")
 				}

@@ -22,6 +22,7 @@ func TestControlplaneDeployment(t *testing.T) {
 
 var _ = Describe("Controlplane Deployment", func() {
 	var d Deployment
+
 	BeforeEach(func() {
 		d = Deployment{
 			DataStoreOverrides: []DataStoreOverrides{{
@@ -125,6 +126,7 @@ var _ = Describe("Controlplane Deployment", func() {
 
 		It("should not panic when probe is nil", func() {
 			spec := &kamajiv1alpha1.ProbeSpec{PeriodSeconds: pointer.To(int32(20))}
+
 			Expect(func() { applyProbeOverrides(nil, spec) }).ToNot(Panic())
 		})
 	})
@@ -215,6 +217,7 @@ var _ = Describe("Controlplane Deployment", func() {
 					return c
 				}
 			}
+
 			Fail("container not found: " + name)
 
 			return corev1.Container{}
@@ -328,6 +331,7 @@ var _ = Describe("Controlplane Deployment", func() {
 
 	Describe("Kine container image override", func() {
 		var tcp kamajiv1alpha1.TenantControlPlane
+
 		BeforeEach(func() {
 			d.KineContainerImage = "rancher/kine:v0.11.0"
 			d.DataStore = kamajiv1alpha1.DataStore{

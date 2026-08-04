@@ -157,6 +157,7 @@ func (c *CoreDNS) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tenant
 
 		return controllerutil.OperationResultNone, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 	// Deployment
 	operationResult, err = c.mutateDeployment(ctx, tenantClient)
@@ -165,6 +166,7 @@ func (c *CoreDNS) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tenant
 
 		return controllerutil.OperationResultNone, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 	// ConfigMap
 	operationResult, err = c.mutateConfigMap(ctx, tenantClient)
@@ -173,6 +175,7 @@ func (c *CoreDNS) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tenant
 
 		return controllerutil.OperationResultNone, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 	// Service
 	operationResult, err = c.mutateService(ctx, tenantClient)
@@ -181,6 +184,7 @@ func (c *CoreDNS) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tenant
 
 		return controllerutil.OperationResultNone, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 	// ClusterRole
 	operationResult, err = c.mutateClusterRole(ctx, tenantClient)
@@ -189,6 +193,7 @@ func (c *CoreDNS) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tenant
 
 		return controllerutil.OperationResultNone, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 	// ServiceAccount
 	operationResult, err = c.mutateServiceAccount(ctx, tenantClient)
@@ -197,6 +202,7 @@ func (c *CoreDNS) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tenant
 
 		return controllerutil.OperationResultNone, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 
 	return reconciliationResult, nil
@@ -267,31 +273,37 @@ func (c *CoreDNS) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Tenan
 	if err = utilities.DecodeFromYAML(string(parts[1]), c.deployment); err != nil {
 		return fmt.Errorf("unable to decode Deployment manifest: %w", err)
 	}
+
 	addons_utils.SetKamajiManagedLabels(c.deployment)
 
 	if err = utilities.DecodeFromYAML(string(parts[2]), c.configMap); err != nil {
 		return fmt.Errorf("unable to decode ConfigMap manifest: %w", err)
 	}
+
 	addons_utils.SetKamajiManagedLabels(c.configMap)
 
 	if err = utilities.DecodeFromYAML(string(parts[3]), c.service); err != nil {
 		return fmt.Errorf("unable to decode Service manifest: %w", err)
 	}
+
 	addons_utils.SetKamajiManagedLabels(c.service)
 
 	if err = utilities.DecodeFromYAML(string(parts[4]), c.clusterRole); err != nil {
 		return fmt.Errorf("unable to decode ClusterRole manifest: %w", err)
 	}
+
 	addons_utils.SetKamajiManagedLabels(c.clusterRole)
 
 	if err = utilities.DecodeFromYAML(string(parts[5]), c.clusterRoleBinding); err != nil {
 		return fmt.Errorf("unable to decode ClusterRoleBinding manifest: %w", err)
 	}
+
 	addons_utils.SetKamajiManagedLabels(c.clusterRoleBinding)
 
 	if err = utilities.DecodeFromYAML(string(parts[6]), c.serviceAccount); err != nil {
 		return fmt.Errorf("unable to decode ServiceAccount manifest: %w", err)
 	}
+
 	addons_utils.SetKamajiManagedLabels(c.serviceAccount)
 
 	return nil
@@ -317,6 +329,7 @@ func (c *CoreDNS) mutateClusterRoleBinding(ctx context.Context, tenantClient cli
 
 func (c *CoreDNS) mutateDeployment(ctx context.Context, tenantClient client.Client) (controllerutil.OperationResult, error) {
 	var deployment appsv1.Deployment
+
 	deployment.Name = c.deployment.Name
 	deployment.Namespace = c.deployment.Namespace
 
@@ -353,6 +366,7 @@ func (c *CoreDNS) mutateConfigMap(ctx context.Context, tenantClient client.Clien
 
 func (c *CoreDNS) mutateService(ctx context.Context, tenantClient client.Client) (controllerutil.OperationResult, error) {
 	var svc corev1.Service
+
 	svc.Name = c.service.Name
 	svc.Namespace = c.service.Namespace
 

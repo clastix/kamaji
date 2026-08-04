@@ -59,6 +59,7 @@ func (in *TenantControlPlane) DeclaredControlPlaneAddress(ctx context.Context, c
 	var loadBalancerStatus corev1.LoadBalancerStatus
 
 	svc := &corev1.Service{}
+
 	err := client.Get(ctx, types.NamespacedName{Namespace: in.GetNamespace(), Name: in.GetName()}, svc)
 	if err != nil {
 		return "", fmt.Errorf("cannot retrieve Service for the TenantControlPlane: %w", err)
@@ -103,6 +104,7 @@ func getLoadBalancerAddress(ingress []corev1.LoadBalancerIngress) (string, error
 		if ip := lb.IP; len(ip) > 0 {
 			return ip, nil
 		}
+
 		if hostname := lb.Hostname; len(hostname) > 0 {
 			return "", fmt.Errorf("hostname not supported for LoadBalancer ingress: use static IP instead")
 		}
