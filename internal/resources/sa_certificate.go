@@ -59,12 +59,12 @@ func (r *SACertificate) Define(_ context.Context, tenantControlPlane *kamajiv1al
 	return nil
 }
 
-func (r *SACertificate) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
-	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
-}
-
 func (r *SACertificate) GetClient() client.Client {
 	return r.Client
+}
+
+func (r *SACertificate) getPrefixedName(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) string {
+	return utilities.AddTenantPrefix(r.GetName(), tenantControlPlane)
 }
 
 func (r *SACertificate) GetTmpDirectory() string {
