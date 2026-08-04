@@ -105,10 +105,10 @@ func (r *WritePermissions) createOrUpdate(ctx context.Context, writePermissions 
 				NamespaceSelector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{
 						{
-							Key:      "kubernetes.io/metadata.name",
+							Key:      "kubernetes.io/metadata.name", //nolint:goconst
 							Operator: metav1.LabelSelectorOpIn,
 							Values: []string{
-								"kube-node-lease",
+								"kube-node-lease", //nolint:goconst
 							},
 						},
 					},
@@ -154,11 +154,11 @@ func (r *WritePermissions) createOrUpdate(ctx context.Context, writePermissions 
 				NamespaceSelector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{
 						{
-							Key:      "kubernetes.io/metadata.name",
+							Key:      "kubernetes.io/metadata.name", //nolint:goconst
 							Operator: metav1.LabelSelectorOpNotIn,
 							Values: []string{
 								"kube-system",
-								"kube-node-lease",
+								"kube-node-lease", //nolint:goconst
 							},
 						},
 					},
