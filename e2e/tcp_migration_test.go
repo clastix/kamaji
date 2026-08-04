@@ -101,9 +101,17 @@ func featureTestMigration(driver string) {
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionMigrating)
 
 		By("waiting for the webhook installation")
+		// Measured directly in CI (GitHub Actions run 30307341733): the whole manager
+		// process - the host-side tenantcontrolplane controller across every TCP in the
+		// suite, plus this tenant's own soot sub-manager - went completely silent for
+		// 2m16s (21:45:45 to 21:48:01 UTC) with no errors logged, consistent with the
+		// process being starved of CPU on the 2-vCPU runner rather than any Kamaji-side
+		// bug: many tenant control planes, datastores, and their apiservers all compete
+		// for the same two cores. One minute sits well inside that observed stall, so
+		// the wait is widened to five for headroom above it.
 		Eventually(func() error {
 			return tcpClient.Get(context.Background(), types.NamespacedName{Name: "kamaji-freeze"}, &admissionregistrationv1.ValidatingWebhookConfiguration{})
-		}, time.Minute, time.Second).Should(Succeed())
+		}, 5*time.Minute, time.Second).Should(Succeed())
 
 		By("ensuring changes are not allowed")
 		Consistently(func() error {
