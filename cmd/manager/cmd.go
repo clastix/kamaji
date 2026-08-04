@@ -31,7 +31,6 @@ import (
 	cmdutils "github.com/clastix/kamaji/cmd/utils"
 	"github.com/clastix/kamaji/controllers"
 	"github.com/clastix/kamaji/controllers/soot"
-	"github.com/clastix/kamaji/controllers/utils"
 	"github.com/clastix/kamaji/internal"
 	"github.com/clastix/kamaji/internal/builders/controlplane"
 	"github.com/clastix/kamaji/internal/metrics"
@@ -62,8 +61,6 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 		maxConcurrentReconciles       int
 		disableTelemetry              bool
 		certificateExpirationDeadline time.Duration
-		triggerChannelBufferSize      int
-		triggerChannelTimeout         time.Duration
 
 		webhookCAPath string
 	)
@@ -140,6 +137,10 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
+			// Both channels are unbuffered: their consumer is a controller-runtime goroutine parked on
+			// them, so every send is a direct hand-off, and a buffer would only ever hold events in the
+			// window where that goroutine hasn't started yet. Both senders wait for the consumer instead
+			// of dropping, which covers that window without a buffer size to pick.
 			tcpChannel, certChannel := make(chan event.GenericEvent), make(chan event.GenericEvent)
 			metricsRecorder := metrics.DefaultRecorder()
 
@@ -285,12 +286,10 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			}
 
 			if err = (&soot.Manager{
-				MigrateCABundle:          webhookCABundle,
-				MigrateServiceName:       managerServiceName,
-				MigrateServiceNamespace:  managerNamespace,
-				AdminClient:              mgr.GetClient(),
-				TriggerChannelBufferSize: triggerChannelBufferSize,
-				TriggerChannelTimeout:    triggerChannelTimeout,
+				MigrateCABundle:         webhookCABundle,
+				MigrateServiceName:      managerServiceName,
+				MigrateServiceNamespace: managerNamespace,
+				AdminClient:             mgr.GetClient(),
 			}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to set up soot manager")
 
@@ -345,8 +344,6 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	cmd.Flags().DurationVar(&cacheResyncPeriod, "cache-resync-period", 10*time.Hour, "The controller-runtime.Manager cache resync period.")
 	cmd.Flags().BoolVar(&disableTelemetry, "disable-telemetry", false, "Disable the analytics traces collection.")
 	cmd.Flags().DurationVar(&certificateExpirationDeadline, "certificate-expiration-deadline", 24*time.Hour, "Define the deadline upon certificate expiration to start the renewal process, cannot be less than a 24 hours.")
-	cmd.Flags().IntVar(&triggerChannelBufferSize, "trigger-channel-buffer-size", utils.TriggerChannelBufferSize, "The buffer size of the trigger channels used by the soot manager controllers.")
-	cmd.Flags().DurationVar(&triggerChannelTimeout, "trigger-channel-timeout", utils.TriggerChannelTimeout, "The timeout for the trigger channels used by the soot manager controllers.")
 
 	cobra.OnInitialize(func() {
 		viper.AutomaticEnv()
