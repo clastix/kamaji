@@ -43,8 +43,8 @@ func PrintTenantControlPlaneInfo() {
 
 	tcp := tcpList.Items[0]
 
-	kubectlExec := func(args ...string) {
-		cmd := exec.Command("kubectl")
+	kubectlExec := func(ctx context.Context, args ...string) {
+		cmd := exec.CommandContext(ctx, "kubectl")
 
 		var out bytes.Buffer
 		cmd.Stdout = &out
@@ -65,20 +65,23 @@ func PrintTenantControlPlaneInfo() {
 	if CurrentSpecReport().Failed() {
 		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: Tenant Control Plane definition")
 		kubectlExec(
-			fmt.Sprintf("--namespace=%s", tcp.GetNamespace()),
+			context.Background(),
+			"--namespace="+tcp.GetNamespace(),
 			"get",
 			"tcp",
 			tcp.GetName(),
 		)
 		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: Tenant Control Plane resources")
 		kubectlExec(
-			fmt.Sprintf("--namespace=%s", tcp.GetNamespace()),
+			context.Background(),
+			"--namespace="+tcp.GetNamespace(),
 			"get",
 			"svc,deployment,pods,ep,configmap,secrets",
 		)
 		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: Tenant Control Plane pods")
 		kubectlExec(
-			fmt.Sprintf("--namespace=%s", tcp.GetNamespace()),
+			context.Background(),
+			"--namespace="+tcp.GetNamespace(),
 			"describe",
 			"pods",
 		)
