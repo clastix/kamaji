@@ -62,7 +62,8 @@ func (t TenantControlPlaneDeployment) OnUpdate(newObject runtime.Object, oldObje
 		}
 
 		ds := kamajiv1alpha1.DataStore{}
-		if err := t.Client.Get(ctx, types.NamespacedName{Name: tcp.Spec.DataStore}, &ds); err != nil {
+		err := t.Client.Get(ctx, types.NamespacedName{Name: tcp.Spec.DataStore}, &ds)
+		if err != nil {
 			return nil, err
 		}
 		t.DeploymentBuilder.DataStore = ds
@@ -71,7 +72,8 @@ func (t TenantControlPlaneDeployment) OnUpdate(newObject runtime.Object, oldObje
 
 		for _, dso := range tcp.Spec.DataStoreOverrides {
 			ds := kamajiv1alpha1.DataStore{}
-			if err := t.Client.Get(ctx, types.NamespacedName{Name: dso.DataStore}, &ds); err != nil {
+			err := t.Client.Get(ctx, types.NamespacedName{Name: dso.DataStore}, &ds)
+			if err != nil {
 				return nil, err
 			}
 			dataStoreOverrides = append(dataStoreOverrides, controlplane.DataStoreOverrides{
@@ -85,7 +87,7 @@ func (t TenantControlPlaneDeployment) OnUpdate(newObject runtime.Object, oldObje
 		deployment.Name = tcp.Name
 		deployment.Namespace = tcp.Namespace
 
-		err := t.Client.Get(ctx, types.NamespacedName{Name: tcp.Name, Namespace: tcp.Namespace}, &deployment)
+		err = t.Client.Get(ctx, types.NamespacedName{Name: tcp.Name, Namespace: tcp.Namespace}, &deployment)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return nil, nil
 		}

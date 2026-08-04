@@ -20,7 +20,8 @@ func TestDataStoreRefreshMetrics(t *testing.T) {
 	t.Parallel()
 
 	scheme := runtime.NewScheme()
-	if err := kamajiv1alpha1.AddToScheme(scheme); err != nil {
+	err := kamajiv1alpha1.AddToScheme(scheme)
+	if err != nil {
 		t.Fatalf("failed adding kamaji scheme: %v", err)
 	}
 
@@ -51,7 +52,8 @@ func TestDataStoreRefreshMetrics(t *testing.T) {
 		Metrics: recorder,
 	}
 
-	if err := r.refreshDatastoreMetrics(t.Context()); err != nil {
+	err = r.refreshDatastoreMetrics(t.Context())
+	if err != nil {
 		t.Fatalf("refreshDatastoreMetrics returned error: %v", err)
 	}
 

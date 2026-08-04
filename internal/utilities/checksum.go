@@ -7,6 +7,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"sort"
+	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -43,11 +44,13 @@ func SetObjectChecksum(obj client.Object, data any) {
 func CalculateStringSliceChecksum(data []string) (string, error) {
 	h := md5.New()
 	for _, s := range data {
-		if _, err := h.Write([]byte(s)); err != nil {
+		_, err := h.Write([]byte(s))
+		if err != nil {
 			return "", err
 		}
 		// Add separator to avoid collisions (e.g., ["ab", "c"] vs ["a", "bc"])
-		if _, err := h.Write([]byte{0}); err != nil {
+		_, err = h.Write([]byte{0})
+		if err != nil {
 			return "", err
 		}
 	}
@@ -76,13 +79,13 @@ func calculateMapStringString(data map[string]string) string {
 
 	sort.Strings(keys)
 
-	var checksum string
+	var checksum strings.Builder
 
 	for _, key := range keys {
-		checksum += data[key]
+		checksum.WriteString(data[key])
 	}
 
-	return md5Checksum([]byte(checksum))
+	return md5Checksum([]byte(checksum.String()))
 }
 
 func calculateMapStringByte(data map[string][]byte) string {
@@ -93,13 +96,13 @@ func calculateMapStringByte(data map[string][]byte) string {
 
 	sort.Strings(keys)
 
-	var checksum string
+	var checksum strings.Builder
 
 	for _, key := range keys {
-		checksum += string(data[key])
+		checksum.WriteString(string(data[key]))
 	}
 
-	return md5Checksum([]byte(checksum))
+	return md5Checksum([]byte(checksum.String()))
 }
 
 func md5Checksum(value []byte) string {

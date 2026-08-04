@@ -103,17 +103,20 @@ func (c *CoreDNS) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantControl
 	for _, obj := range []client.Object{c.serviceAccount, c.clusterRoleBinding, c.clusterRole, c.service, c.configMap, c.deployment} {
 		objectKey := client.ObjectKeyFromObject(obj)
 
-		if err = tenantClient.Get(ctx, objectKey, obj); err != nil {
+		err = tenantClient.Get(ctx, objectKey, obj)
+		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				continue
 			}
 		}
 		// Don't delete resource if it is not managed by Kamaji
-		if labels := obj.GetLabels(); labels == nil || labels[constants.ProjectNameLabelKey] != constants.ProjectNameLabelValue {
+		labels := obj.GetLabels()
+		if labels == nil || labels[constants.ProjectNameLabelKey] != constants.ProjectNameLabelValue {
 			continue
 		}
 
-		if err = tenantClient.Delete(ctx, obj); err != nil {
+		err = tenantClient.Delete(ctx, obj)
+		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				continue
 			}
@@ -141,7 +144,8 @@ func (c *CoreDNS) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tenant
 		return controllerutil.OperationResultNone, err
 	}
 
-	if err = c.decodeManifests(ctx, tcp); err != nil {
+	err = c.decodeManifests(ctx, tcp)
+	if err != nil {
 		logger.Error(err, "manifest decoding failed")
 
 		return controllerutil.OperationResultNone, err
@@ -264,32 +268,38 @@ func (c *CoreDNS) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Tenan
 
 	parts := bytes.Split(manifests, []byte("---"))
 
-	if err = utilities.DecodeFromYAML(string(parts[1]), c.deployment); err != nil {
+	err = utilities.DecodeFromYAML(string(parts[1]), c.deployment)
+	if err != nil {
 		return fmt.Errorf("unable to decode Deployment manifest: %w", err)
 	}
 	addons_utils.SetKamajiManagedLabels(c.deployment)
 
-	if err = utilities.DecodeFromYAML(string(parts[2]), c.configMap); err != nil {
+	err = utilities.DecodeFromYAML(string(parts[2]), c.configMap)
+	if err != nil {
 		return fmt.Errorf("unable to decode ConfigMap manifest: %w", err)
 	}
 	addons_utils.SetKamajiManagedLabels(c.configMap)
 
-	if err = utilities.DecodeFromYAML(string(parts[3]), c.service); err != nil {
+	err = utilities.DecodeFromYAML(string(parts[3]), c.service)
+	if err != nil {
 		return fmt.Errorf("unable to decode Service manifest: %w", err)
 	}
 	addons_utils.SetKamajiManagedLabels(c.service)
 
-	if err = utilities.DecodeFromYAML(string(parts[4]), c.clusterRole); err != nil {
+	err = utilities.DecodeFromYAML(string(parts[4]), c.clusterRole)
+	if err != nil {
 		return fmt.Errorf("unable to decode ClusterRole manifest: %w", err)
 	}
 	addons_utils.SetKamajiManagedLabels(c.clusterRole)
 
-	if err = utilities.DecodeFromYAML(string(parts[5]), c.clusterRoleBinding); err != nil {
+	err = utilities.DecodeFromYAML(string(parts[5]), c.clusterRoleBinding)
+	if err != nil {
 		return fmt.Errorf("unable to decode ClusterRoleBinding manifest: %w", err)
 	}
 	addons_utils.SetKamajiManagedLabels(c.clusterRoleBinding)
 
-	if err = utilities.DecodeFromYAML(string(parts[6]), c.serviceAccount); err != nil {
+	err = utilities.DecodeFromYAML(string(parts[6]), c.serviceAccount)
+	if err != nil {
 		return fmt.Errorf("unable to decode ServiceAccount manifest: %w", err)
 	}
 	addons_utils.SetKamajiManagedLabels(c.serviceAccount)
@@ -320,7 +330,8 @@ func (c *CoreDNS) mutateDeployment(ctx context.Context, tenantClient client.Clie
 	deployment.Name = c.deployment.Name
 	deployment.Namespace = c.deployment.Namespace
 
-	if err := tenantClient.Get(ctx, client.ObjectKeyFromObject(&deployment), &deployment); err != nil {
+	err := tenantClient.Get(ctx, client.ObjectKeyFromObject(&deployment), &deployment)
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, c.deployment, func() error {
 				return controllerutil.SetControllerReference(c.clusterRoleBinding, c.deployment, tenantClient.Scheme())
@@ -330,7 +341,8 @@ func (c *CoreDNS) mutateDeployment(ctx context.Context, tenantClient client.Clie
 		return controllerutil.OperationResultNone, err
 	}
 
-	if err := controllerutil.SetControllerReference(c.clusterRoleBinding, c.deployment, tenantClient.Scheme()); err != nil {
+	err = controllerutil.SetControllerReference(c.clusterRoleBinding, c.deployment, tenantClient.Scheme())
+	if err != nil {
 		return controllerutil.OperationResultNone, err
 	}
 	//nolint:staticcheck
@@ -356,7 +368,8 @@ func (c *CoreDNS) mutateService(ctx context.Context, tenantClient client.Client)
 	svc.Name = c.service.Name
 	svc.Namespace = c.service.Namespace
 
-	if err := tenantClient.Get(ctx, client.ObjectKeyFromObject(&svc), &svc); err != nil {
+	err := tenantClient.Get(ctx, client.ObjectKeyFromObject(&svc), &svc)
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, c.service, func() error {
 				return controllerutil.SetControllerReference(c.clusterRoleBinding, c.service, tenantClient.Scheme())
@@ -366,7 +379,8 @@ func (c *CoreDNS) mutateService(ctx context.Context, tenantClient client.Client)
 		return controllerutil.OperationResultNone, err
 	}
 
-	if err := controllerutil.SetControllerReference(c.clusterRoleBinding, c.service, tenantClient.Scheme()); err != nil {
+	err = controllerutil.SetControllerReference(c.clusterRoleBinding, c.service, tenantClient.Scheme())
+	if err != nil {
 		return controllerutil.OperationResultNone, err
 	}
 	//nolint:staticcheck

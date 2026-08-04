@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/util/retry"
-	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -31,7 +30,7 @@ var _ = Describe("When the datastore-config Secret is corrupted for a PostgreSQL
 			DataStore: "postgresql-bronze",
 			ControlPlane: kamajiv1alpha1.ControlPlane{
 				Deployment: kamajiv1alpha1.DeploymentSpec{
-					Replicas: pointer.To(int32(1)),
+					Replicas: new(int32(1)),
 				},
 				Service: kamajiv1alpha1.ServiceSpec{
 					ServiceType: "ClusterIP",
@@ -57,10 +56,11 @@ var _ = Describe("When the datastore-config Secret is corrupted for a PostgreSQL
 		initialPodUIDs := sets.New[types.UID]()
 		Eventually(func() int {
 			podList := &corev1.PodList{}
-			if err := k8sClient.List(context.Background(), podList,
+			err := k8sClient.List(context.Background(), podList,
 				client.InNamespace(tcp.GetNamespace()),
 				client.MatchingLabels{"kamaji.clastix.io/name": tcp.GetName()},
-			); err != nil {
+			)
+			if err != nil {
 				return 0
 			}
 
@@ -83,7 +83,8 @@ var _ = Describe("When the datastore-config Secret is corrupted for a PostgreSQL
 
 		By("corrupting the DB_PASSWORD in the datastore-config Secret")
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			if err := k8sClient.Get(context.Background(), client.ObjectKeyFromObject(&secret), &secret); err != nil {
+			err := k8sClient.Get(context.Background(), client.ObjectKeyFromObject(&secret), &secret)
+			if err != nil {
 				return err
 			}
 
@@ -95,7 +96,8 @@ var _ = Describe("When the datastore-config Secret is corrupted for a PostgreSQL
 
 		By("waiting for the controller to detect the corruption and regenerate the Secret with a new checksum")
 		Eventually(func() string {
-			if err := k8sClient.Get(context.Background(), client.ObjectKeyFromObject(&secret), &secret); err != nil {
+			err := k8sClient.Get(context.Background(), client.ObjectKeyFromObject(&secret), &secret)
+			if err != nil {
 				return ""
 			}
 
@@ -105,10 +107,11 @@ var _ = Describe("When the datastore-config Secret is corrupted for a PostgreSQL
 		By("waiting for at least one new TenantControlPlane pod to replace the pre-existing ones")
 		Eventually(func() bool {
 			var podList corev1.PodList
-			if err := k8sClient.List(context.Background(), &podList,
+			err := k8sClient.List(context.Background(), &podList,
 				client.InNamespace(tcp.GetNamespace()),
 				client.MatchingLabels{"kamaji.clastix.io/name": tcp.GetName()},
-			); err != nil {
+			)
+			if err != nil {
 				return false
 			}
 			for _, pod := range podList.Items {

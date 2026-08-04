@@ -30,7 +30,8 @@ var _ = Describe("Datastores validation test", func() {
 	})
 
 	AfterEach(func() {
-		if err := k8sClient.Delete(ctx, ds); err != nil && !apierrors.IsNotFound(err) {
+		err := k8sClient.Delete(ctx, ds)
+		if err != nil && !apierrors.IsNotFound(err) {
 			Expect(err).NotTo(HaveOccurred())
 		}
 	})

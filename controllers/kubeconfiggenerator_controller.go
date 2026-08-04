@@ -61,7 +61,8 @@ func (r *KubeconfigGeneratorReconciler) Reconcile(ctx context.Context, req ctrl.
 	logger.Info("reconciling resource")
 
 	var generator kamajiv1alpha1.KubeconfigGenerator
-	if err := r.Client.Get(ctx, req.NamespacedName, &generator); err != nil {
+	err := r.Client.Get(ctx, req.NamespacedName, &generator)
+	if err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info("resource may have been deleted, skipping")
 
@@ -89,7 +90,8 @@ func (r *KubeconfigGeneratorReconciler) Reconcile(ctx context.Context, req ctrl.
 	generator.Status = status
 	generator.Status.ObservedGeneration = generator.Generation
 
-	if statusErr := r.Client.Status().Update(ctx, &generator); statusErr != nil {
+	statusErr := r.Client.Status().Update(ctx, &generator)
+	if statusErr != nil {
 		logger.Error(statusErr, "cannot update resource status")
 
 		return ctrl.Result{}, statusErr
@@ -107,7 +109,8 @@ func (r *KubeconfigGeneratorReconciler) handle(ctx context.Context, generator *k
 	}
 
 	var namespaceList corev1.NamespaceList
-	if err := r.Client.List(ctx, &namespaceList, &client.ListOptions{LabelSelector: nsSelector}); err != nil {
+	err := r.Client.List(ctx, &namespaceList, &client.ListOptions{LabelSelector: nsSelector})
+	if err != nil {
 		return kamajiv1alpha1.KubeconfigGeneratorStatus{}, fmt.Errorf("cannot filter Namespace objects using provided selector: %w", err)
 	}
 
@@ -120,7 +123,8 @@ func (r *KubeconfigGeneratorReconciler) handle(ctx context.Context, generator *k
 		}
 
 		var tcpList kamajiv1alpha1.TenantControlPlaneList
-		if err := r.Client.List(ctx, &tcpList, &client.ListOptions{Namespace: ns.GetName(), LabelSelector: tcpSelector}); err != nil {
+		err := r.Client.List(ctx, &tcpList, &client.ListOptions{Namespace: ns.GetName(), LabelSelector: tcpSelector})
+		if err != nil {
 			return kamajiv1alpha1.KubeconfigGeneratorStatus{}, fmt.Errorf("cannot filter TenantControlPlane objects using provided selector: %w", err)
 		}
 
@@ -137,7 +141,8 @@ func (r *KubeconfigGeneratorReconciler) handle(ctx context.Context, generator *k
 	}
 
 	for _, tcp := range targets {
-		if err := r.process(ctx, generator, tcp); err != nil {
+		err := r.process(ctx, generator, tcp)
+		if err != nil {
 			status.Errors = append(status.Errors, *err)
 			status.AvailableResources--
 		}
@@ -159,7 +164,8 @@ func (r *KubeconfigGeneratorReconciler) process(ctx context.Context, generator *
 		return &statusErr
 	}
 
-	if err := r.Client.Get(ctx, types.NamespacedName{Name: tcp.Status.KubeConfig.Admin.SecretName, Namespace: tcp.GetNamespace()}, &adminSecret); err != nil {
+	err := r.Client.Get(ctx, types.NamespacedName{Name: tcp.Status.KubeConfig.Admin.SecretName, Namespace: tcp.GetNamespace()}, &adminSecret)
+	if err != nil {
 		statusErr.Message = fmt.Sprintf("an error occurred retrieving the admin Kubeconfig: %s", err.Error())
 
 		return &statusErr
@@ -237,14 +243,16 @@ func (r *KubeconfigGeneratorReconciler) process(ctx context.Context, generator *
 
 	objectKey := client.ObjectKeyFromObject(&resultSecret)
 
-	if err := r.Client.Get(ctx, objectKey, &resultSecret); err != nil {
+	err = r.Client.Get(ctx, objectKey, &resultSecret)
+	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			statusErr.Message = fmt.Sprintf("the secret %q cannot be generated", objectKey.String())
 
 			return &statusErr
 		}
 
-		if generateErr := r.generate(ctx, generator, &resultSecret, kubeconfigTmpl, &tcp, groups, user); generateErr != nil {
+		generateErr := r.generate(ctx, generator, &resultSecret, kubeconfigTmpl, &tcp, groups, user)
+		if generateErr != nil {
 			statusErr.Message = fmt.Sprintf("an error occurred generating the %q Secret: %s", objectKey.String(), generateErr.Error())
 
 			return &statusErr
@@ -256,7 +264,8 @@ func (r *KubeconfigGeneratorReconciler) process(ctx context.Context, generator *
 	isValid, validateErr := r.isValid(&resultSecret, kubeconfigTmpl, groups, user)
 	switch {
 	case !isValid:
-		if generateErr := r.generate(ctx, generator, &resultSecret, kubeconfigTmpl, &tcp, groups, user); generateErr != nil {
+		generateErr := r.generate(ctx, generator, &resultSecret, kubeconfigTmpl, &tcp, groups, user)
+		if generateErr != nil {
 			statusErr.Message = fmt.Sprintf("an error occurred regenerating the %q Secret: %s", objectKey.String(), generateErr.Error())
 
 			return &statusErr
@@ -289,7 +298,8 @@ func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator 
 	}
 
 	var caSecret corev1.Secret
-	if caErr := r.Client.Get(ctx, types.NamespacedName{Namespace: tcp.Namespace, Name: tcp.Status.Certificates.CA.SecretName}, &caSecret); caErr != nil {
+	caErr := r.Client.Get(ctx, types.NamespacedName{Namespace: tcp.Namespace, Name: tcp.Status.Certificates.CA.SecretName}, &caSecret)
+	if caErr != nil {
 		return fmt.Errorf("cannot retrieve Certificate Authority: %w", caErr)
 	}
 
@@ -348,7 +358,8 @@ func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator 
 			utilities.SetLastRotationTimestamp(secret)
 		}
 
-		if orErr := controllerutil.SetOwnerReference(tcp, secret, r.Client.Scheme()); orErr != nil {
+		orErr := controllerutil.SetOwnerReference(tcp, secret, r.Client.Scheme())
+		if orErr != nil {
 			return orErr
 		}
 

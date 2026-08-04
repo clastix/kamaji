@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 var _ = Describe("Cluster controller", func() {
@@ -31,7 +30,8 @@ var _ = Describe("Cluster controller", func() {
 	})
 
 	AfterEach(func() {
-		if err := k8sClient.Delete(ctx, tcp); err != nil && !apierrors.IsNotFound(err) {
+		err := k8sClient.Delete(ctx, tcp)
+		if err != nil && !apierrors.IsNotFound(err) {
 			Expect(err).NotTo(HaveOccurred())
 		}
 	})
@@ -123,7 +123,7 @@ var _ = Describe("Cluster controller", func() {
 	Context("AllocateLoadBalancerNodePorts", func() {
 		It("allows the field when service type is LoadBalancer", func() {
 			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeLoadBalancer
-			tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = ptr.To(false)
+			tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = new(false)
 
 			err := k8sClient.Create(ctx, tcp)
 			Expect(err).NotTo(HaveOccurred())
@@ -138,7 +138,7 @@ var _ = Describe("Cluster controller", func() {
 
 		It("denies the field when service type is not LoadBalancer", func() {
 			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
-			tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = ptr.To(false)
+			tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = new(false)
 
 			err := k8sClient.Create(ctx, tcp)
 			Expect(err).To(HaveOccurred())

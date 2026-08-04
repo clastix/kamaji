@@ -24,7 +24,8 @@ func GenerateCACertificatePrivateKeyPair(baseName string, config *Configuration)
 		return nil, err
 	}
 
-	if _, _, err = initPhaseAsCA(kubeadmCert, config); err != nil {
+	_, _, err = initPhaseAsCA(kubeadmCert, config)
+	if err != nil {
 		return nil, err
 	}
 
@@ -59,7 +60,8 @@ func GenerateCertificatePrivateKeyPair(baseName string, config *Configuration, c
 		return nil, fmt.Errorf("failed to get kubeadm cert: %w", err)
 	}
 
-	if err = initPhaseFromCA(kubeadmCert, config, certificate, signer); err != nil {
+	err = initPhaseFromCA(kubeadmCert, config, certificate, signer)
+	if err != nil {
 		return nil, fmt.Errorf("failed to initialize phase from CA: %w", err)
 	}
 
@@ -100,7 +102,8 @@ func getKubeadmCert(baseName string) (*certs.KubeadmCert, error) {
 func GeneratePublicKeyPrivateKeyPair(baseName string, config *Configuration) (*PublicKeyPrivateKeyPair, error) {
 	defer deleteCertificateDirectory(config.InitConfiguration.CertificatesDir)
 
-	if err := initPhaseCertsSA(config); err != nil {
+	err := initPhaseCertsSA(config)
+	if err != nil {
 		return nil, err
 	}
 
@@ -146,7 +149,8 @@ func readCertificateFiles(name string, directory string, extensions ...string) (
 }
 
 func deleteCertificateDirectory(certificateDirectory string) {
-	if err := os.RemoveAll(certificateDirectory); err != nil {
+	err := os.RemoveAll(certificateDirectory)
+	if err != nil {
 		// TODO(prometherion): we should log rather than printing to stdout
 		fmt.Printf("Error removing %s: %s", certificateDirectory, err.Error()) //nolint:forbidigo
 	}

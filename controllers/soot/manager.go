@@ -68,7 +68,8 @@ func (m *Manager) retrieveTenantControlPlane(ctx context.Context, request reconc
 	return func() (*kamajiv1alpha1.TenantControlPlane, error) {
 		tcp := &kamajiv1alpha1.TenantControlPlane{}
 
-		if err := m.AdminClient.Get(ctx, request.NamespacedName, tcp); err != nil {
+		err := m.AdminClient.Get(ctx, request.NamespacedName, tcp)
+		if err != nil {
 			return nil, err
 		}
 
@@ -155,7 +156,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	// Retrieving the TenantControlPlane:
 	// in case of deletion, we must be sure to properly remove from the memory the soot manager.
 	tcp := &kamajiv1alpha1.TenantControlPlane{}
-	if err = m.AdminClient.Get(ctx, request.NamespacedName, tcp); err != nil {
+	err = m.AdminClient.Get(ctx, request.NamespacedName, tcp)
+	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, m.cleanup(ctx, request, nil)
 		}
@@ -279,7 +281,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		TriggerChannel:            make(chan event.GenericEvent, utils.CoalesceTriggerChannelBufferSize),
 		ControllerName:            fmt.Sprintf("%s-writepermissions", controllerNamePrefix),
 	}
-	if err = writePermissions.SetupWithManager(mgr); err != nil {
+	err = writePermissions.SetupWithManager(mgr)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -293,7 +296,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		TriggerChannel:            make(chan event.GenericEvent, utils.CoalesceTriggerChannelBufferSize),
 		ControllerName:            fmt.Sprintf("%s-migrate", controllerNamePrefix),
 	}
-	if err = migrate.SetupWithManager(mgr); err != nil {
+	err = migrate.SetupWithManager(mgr)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -304,7 +308,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		TriggerChannel:            make(chan event.GenericEvent, utils.CoalesceTriggerChannelBufferSize),
 		ControllerName:            fmt.Sprintf("%s-konnectivity", controllerNamePrefix),
 	}
-	if err = konnectivityAgent.SetupWithManager(mgr); err != nil {
+	err = konnectivityAgent.SetupWithManager(mgr)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -315,7 +320,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		TriggerChannel:            make(chan event.GenericEvent, utils.CoalesceTriggerChannelBufferSize),
 		ControllerName:            fmt.Sprintf("%s-kubeproxy", controllerNamePrefix),
 	}
-	if err = kubeProxy.SetupWithManager(mgr); err != nil {
+	err = kubeProxy.SetupWithManager(mgr)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -326,7 +332,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		TriggerChannel:            make(chan event.GenericEvent, utils.CoalesceTriggerChannelBufferSize),
 		ControllerName:            fmt.Sprintf("%s-coredns", controllerNamePrefix),
 	}
-	if err = coreDNS.SetupWithManager(mgr); err != nil {
+	err = coreDNS.SetupWithManager(mgr)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -339,7 +346,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		TriggerChannel: make(chan event.GenericEvent, utils.CoalesceTriggerChannelBufferSize),
 		ControllerName: fmt.Sprintf("%s-kubeadmconfig", controllerNamePrefix),
 	}
-	if err = uploadKubeadmConfig.SetupWithManager(mgr); err != nil {
+	err = uploadKubeadmConfig.SetupWithManager(mgr)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -352,7 +360,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		TriggerChannel: make(chan event.GenericEvent, utils.CoalesceTriggerChannelBufferSize),
 		ControllerName: fmt.Sprintf("%s-kubeletconfig", controllerNamePrefix),
 	}
-	if err = uploadKubeletConfig.SetupWithManager(mgr); err != nil {
+	err = uploadKubeletConfig.SetupWithManager(mgr)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -365,7 +374,8 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		TriggerChannel: make(chan event.GenericEvent, utils.CoalesceTriggerChannelBufferSize),
 		ControllerName: fmt.Sprintf("%s-bootstraptoken", controllerNamePrefix),
 	}
-	if err = bootstrapToken.SetupWithManager(mgr); err != nil {
+	err = bootstrapToken.SetupWithManager(mgr)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -378,13 +388,15 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 		TriggerChannel: make(chan event.GenericEvent, utils.CoalesceTriggerChannelBufferSize),
 		ControllerName: fmt.Sprintf("%s-kubeadmrbac", controllerNamePrefix),
 	}
-	if err = kubeadmRbac.SetupWithManager(mgr); err != nil {
+	err = kubeadmRbac.SetupWithManager(mgr)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 	completedCh := make(chan struct{})
 	// Starting the manager
 	go func() {
-		if err = mgr.Start(tcpCtx); err != nil {
+		err = mgr.Start(tcpCtx)
+		if err != nil {
 			logger.Error(err, "unable to start soot manager")
 			// The sootManagerAnnotation is used to propagate the error between reconciliations with its state:
 			// this is required to avoid mutex and prevent concurrent read/write on the soot map
@@ -432,7 +444,7 @@ func (m *Manager) SetupWithManager(mgr manager.Manager) error {
 	m.sootMap = make(map[string]sootItem)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
-		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
+		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: new(true)}).
 		WatchesRawSource(source.Channel(m.sootManagerErrChan, &handler.EnqueueRequestForObject{})).
 		For(&kamajiv1alpha1.TenantControlPlane{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			obj := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert

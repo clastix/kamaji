@@ -95,12 +95,14 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 
 			setupLog.Info("setting probes")
 			{
-				if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+				err = mgr.AddHealthzCheck("healthz", healthz.Ping)
+				if err != nil {
 					setupLog.Error(err, "unable to set up health check")
 
 					return err
 				}
-				if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+				err = mgr.AddReadyzCheck("readyz", healthz.Ping)
+				if err != nil {
 					setupLog.Error(err, "unable to set up ready check")
 
 					return err
@@ -109,33 +111,37 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 
 			certController := &controllers.CertificateLifecycle{Channel: triggerChan, Deadline: certificateExpirationDeadline, Metrics: metricsRecorder}
 			certController.EnqueueFn = certController.EnqueueForKubeconfigGenerator
-			if err = certController.SetupWithManager(mgr); err != nil {
+			err = certController.SetupWithManager(mgr)
+			if err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "CertificateLifecycle")
 
 				return err
 			}
 
-			if err = (&controllers.KubeconfigGeneratorWatcher{
+			err = (&controllers.KubeconfigGeneratorWatcher{
 				Client:        mgr.GetClient(),
 				GeneratorChan: triggerChan,
-			}).SetupWithManager(mgr); err != nil {
+			}).SetupWithManager(mgr)
+			if err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "KubeconfigGeneratorWatcher")
 
 				return err
 			}
 
-			if err = (&controllers.KubeconfigGeneratorReconciler{
+			err = (&controllers.KubeconfigGeneratorReconciler{
 				Client:            mgr.GetClient(),
 				NotValidThreshold: certificateExpirationDeadline,
 				CertificateChan:   triggerChan,
-			}).SetupWithManager(mgr); err != nil {
+			}).SetupWithManager(mgr)
+			if err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "KubeconfigGenerator")
 
 				return err
 			}
 
 			setupLog.Info("starting manager")
-			if err = mgr.Start(ctx); err != nil {
+			err = mgr.Start(ctx)
+			if err != nil {
 				setupLog.Error(err, "problem running manager")
 
 				return err

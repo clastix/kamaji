@@ -6,6 +6,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"go.etcd.io/etcd/api/v3/authpb"
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
@@ -42,7 +43,8 @@ type EtcdClient struct {
 }
 
 func (e *EtcdClient) CreateUser(ctx context.Context, user, password string) error {
-	if _, err := e.Client.Auth.UserAddWithOptions(ctx, user, password, &etcdclient.UserAddOptions{NoPassword: true}); err != nil {
+	_, err := e.Client.Auth.UserAddWithOptions(ctx, user, password, &etcdclient.UserAddOptions{NoPassword: true})
+	if err != nil {
 		return dserrors.NewCreateUserError(err)
 	}
 
@@ -58,18 +60,21 @@ func (e *EtcdClient) CreateDB(context.Context, string) error {
 }
 
 func (e *EtcdClient) GrantPrivileges(ctx context.Context, user, dbName string) error {
-	if _, err := e.Client.Auth.RoleAdd(ctx, dbName); err != nil {
+	_, err := e.Client.Auth.RoleAdd(ctx, dbName)
+	if err != nil {
 		return dserrors.NewGrantPrivilegesError(err)
 	}
 
 	permission := etcdclient.PermissionType(authpb.READWRITE)
 	key := e.buildKey(dbName)
 
-	if _, err := e.Client.RoleGrantPermission(ctx, dbName, key, etcdclient.GetPrefixRangeEnd(key), permission); err != nil {
+	_, err = e.Client.RoleGrantPermission(ctx, dbName, key, etcdclient.GetPrefixRangeEnd(key), permission)
+	if err != nil {
 		return dserrors.NewGrantPrivilegesError(err)
 	}
 
-	if _, err := e.Client.UserGrantRole(ctx, user, dbName); err != nil {
+	_, err = e.Client.UserGrantRole(ctx, user, dbName)
+	if err != nil {
 		return dserrors.NewGrantPrivilegesError(err)
 	}
 
@@ -77,7 +82,8 @@ func (e *EtcdClient) GrantPrivileges(ctx context.Context, user, dbName string) e
 }
 
 func (e *EtcdClient) UserExists(ctx context.Context, user string) (bool, error) {
-	if _, err := e.Client.UserGet(ctx, user); err != nil {
+	_, err := e.Client.UserGet(ctx, user)
+	if err != nil {
 		// Convert gRPC error to comparable EtcdError using rpctypes.Error(),
 		// then compare against the client-side error constant.
 		// The == comparison is correct here as rpctypes.Error() normalizes
@@ -115,17 +121,16 @@ func (e *EtcdClient) GrantPrivilegesExists(ctx context.Context, username, dbName
 		return false, dserrors.NewCheckGrantExistsError(err)
 	}
 
-	for _, i := range user.Roles {
-		if i == dbName {
-			return true, nil
-		}
+	if slices.Contains(user.Roles, dbName) {
+		return true, nil
 	}
 
 	return false, nil
 }
 
 func (e *EtcdClient) DeleteUser(ctx context.Context, user string) error {
-	if _, err := e.Client.Auth.UserDelete(ctx, user); err != nil {
+	_, err := e.Client.Auth.UserDelete(ctx, user)
+	if err != nil {
 		return dserrors.NewDeleteUserError(err)
 	}
 
@@ -134,7 +139,8 @@ func (e *EtcdClient) DeleteUser(ctx context.Context, user string) error {
 
 func (e *EtcdClient) DeleteDB(ctx context.Context, dbName string) error {
 	prefix := e.buildKey(dbName)
-	if _, err := e.Client.Delete(ctx, prefix, etcdclient.WithPrefix()); err != nil {
+	_, err := e.Client.Delete(ctx, prefix, etcdclient.WithPrefix())
+	if err != nil {
 		return dserrors.NewCannotDeleteDatabaseError(err)
 	}
 
@@ -142,7 +148,8 @@ func (e *EtcdClient) DeleteDB(ctx context.Context, dbName string) error {
 }
 
 func (e *EtcdClient) RevokePrivileges(ctx context.Context, _, dbName string) error {
-	if _, err := e.Client.Auth.RoleDelete(ctx, dbName); err != nil {
+	_, err := e.Client.Auth.RoleDelete(ctx, dbName)
+	if err != nil {
 		return dserrors.NewRevokePrivilegesError(err)
 	}
 
@@ -156,7 +163,8 @@ func (e *EtcdClient) GetConnectionString() string {
 }
 
 func (e *EtcdClient) Close() error {
-	if err := e.Client.Close(); err != nil {
+	err := e.Client.Close()
+	if err != nil {
 		return dserrors.NewCloseConnectionError(err)
 	}
 
@@ -164,7 +172,8 @@ func (e *EtcdClient) Close() error {
 }
 
 func (e *EtcdClient) Check(ctx context.Context) error {
-	if _, err := e.Client.AuthStatus(ctx); err != nil {
+	_, err := e.Client.AuthStatus(ctx)
+	if err != nil {
 		return dserrors.NewCheckConnectionError(err)
 	}
 
@@ -189,7 +198,8 @@ func (e *EtcdClient) buildKey(key string) string {
 func (e *EtcdClient) Migrate(ctx context.Context, tcp kamajiv1alpha1.TenantControlPlane, target Connection) error {
 	targetClient := target.(*EtcdClient) //nolint:forcetypeassert
 
-	if err := target.Check(ctx); err != nil {
+	err := target.Check(ctx)
+	if err != nil {
 		return err
 	}
 
@@ -199,7 +209,8 @@ func (e *EtcdClient) Migrate(ctx context.Context, tcp kamajiv1alpha1.TenantContr
 	}
 
 	for _, kv := range response.Kvs {
-		if _, err = targetClient.Client.Put(ctx, string(kv.Key), string(kv.Value)); err != nil {
+		_, err = targetClient.Client.Put(ctx, string(kv.Key), string(kv.Value))
+		if err != nil {
 			return err
 		}
 	}

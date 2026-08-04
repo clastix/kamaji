@@ -77,7 +77,8 @@ func (r *Config) Delete(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlan
 	secret := r.resource.DeepCopy()
 
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		if err := r.Client.Get(ctx, types.NamespacedName{Name: r.resource.Name, Namespace: r.resource.Namespace}, secret); err != nil {
+		err := r.Client.Get(ctx, types.NamespacedName{Name: r.resource.Name, Namespace: r.resource.Namespace}, secret)
+		if err != nil {
 			if kubeerrors.IsNotFound(err) {
 				return nil
 			}
@@ -87,7 +88,8 @@ func (r *Config) Delete(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlan
 
 		secret.SetFinalizers(nil)
 
-		if err := r.Client.Update(ctx, secret); err != nil {
+		err = r.Client.Update(ctx, secret)
+		if err != nil {
 			if kubeerrors.IsNotFound(err) {
 				return nil
 			}

@@ -11,8 +11,6 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	pointer "k8s.io/utils/ptr"
-
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
@@ -26,7 +24,7 @@ var _ = Describe("Deploy a TenantControlPlane resource", func() {
 		Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 			ControlPlane: kamajiv1alpha1.ControlPlane{
 				Deployment: kamajiv1alpha1.DeploymentSpec{
-					Replicas: pointer.To(int32(1)),
+					Replicas: new(int32(1)),
 				},
 				Service: kamajiv1alpha1.ServiceSpec{
 					ServiceType: "ClusterIP",
@@ -64,7 +62,8 @@ var _ = Describe("Deploy a TenantControlPlane resource", func() {
 		// ObservedGeneration is set at the end of successful reconciliation,
 		// after status becomes Ready, so we need to wait for it.
 		Eventually(func() int64 {
-			if err := k8sClient.Get(context.Background(), types.NamespacedName{Name: tcp.GetName(), Namespace: tcp.GetNamespace()}, tcp); err != nil {
+			err := k8sClient.Get(context.Background(), types.NamespacedName{Name: tcp.GetName(), Namespace: tcp.GetNamespace()}, tcp)
+			if err != nil {
 				return -1
 			}
 

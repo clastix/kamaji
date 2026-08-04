@@ -83,7 +83,7 @@ func (r *WritePermissions) createOrUpdate(ctx context.Context, writePermissions 
 			{
 				Name: "leases.write-permissions.kamaji.clastix.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					URL:      ptr.To(fmt.Sprintf("https://%s.%s.svc:443/write-permission", r.WebhookServiceName, r.WebhookNamespace)),
+					URL:      new(fmt.Sprintf("https://%s.%s.svc:443/write-permission", r.WebhookServiceName, r.WebhookNamespace)),
 					CABundle: r.WebhookCABundle,
 				},
 				Rules: []admissionregistrationv1.RuleWithOperations{
@@ -119,7 +119,7 @@ func (r *WritePermissions) createOrUpdate(ctx context.Context, writePermissions 
 			{
 				Name: "catchall.write-permissions.kamaji.clastix.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					URL:      ptr.To(fmt.Sprintf("https://%s.%s.svc:443/write-permission", r.WebhookServiceName, r.WebhookNamespace)),
+					URL:      new(fmt.Sprintf("https://%s.%s.svc:443/write-permission", r.WebhookServiceName, r.WebhookNamespace)),
 					CABundle: r.WebhookCABundle,
 				},
 				Rules: []admissionregistrationv1.RuleWithOperations{
@@ -176,7 +176,8 @@ func (r *WritePermissions) createOrUpdate(ctx context.Context, writePermissions 
 }
 
 func (r *WritePermissions) cleanup(ctx context.Context) error {
-	if err := r.Client.Delete(ctx, r.object()); err != nil {
+	err := r.Client.Delete(ctx, r.object())
+	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
@@ -190,7 +191,7 @@ func (r *WritePermissions) cleanup(ctx context.Context) error {
 func (r *WritePermissions) SetupWithManager(mgr manager.Manager) error {
 	return controllerruntime.NewControllerManagedBy(mgr).
 		Named(r.ControllerName).
-		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
+		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: new(true)}).
 		For(&admissionregistrationv1.ValidatingWebhookConfiguration{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == r.object().GetName()
 		}))).

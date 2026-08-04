@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"maps"
 	"path"
 	"sort"
 	"strings"
@@ -293,7 +294,7 @@ func (d Deployment) buildPKIVolume(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.T
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Projected: &corev1.ProjectedVolumeSource{
 			Sources:     sources,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 }
@@ -309,7 +310,7 @@ func (d Deployment) buildCAVolume(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Te
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.Certificates.CA.SecretName,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 }
@@ -325,7 +326,7 @@ func (d Deployment) buildShareCAVolume(podSpec *corev1.PodSpec, tcp kamajiv1alph
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.Certificates.CA.SecretName,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 }
@@ -341,7 +342,7 @@ func (d Deployment) buildLocalShareCAVolume(podSpec *corev1.PodSpec, tcp kamajiv
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.Certificates.CA.SecretName,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 }
@@ -357,7 +358,7 @@ func (d Deployment) buildSchedulerVolume(podSpec *corev1.PodSpec, tcp kamajiv1al
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.KubeConfig.Scheduler.SecretName,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 }
@@ -373,7 +374,7 @@ func (d Deployment) buildControllerManagerVolume(podSpec *corev1.PodSpec, tcp ka
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.KubeConfig.ControllerManager.SecretName,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 }
@@ -420,11 +421,13 @@ func (d Deployment) buildScheduler(podSpec *corev1.PodSpec, tenantControlPlane k
 	podSpec.Containers[index].ReadinessProbe = defaultProbe("/healthz", 10259)
 	podSpec.Containers[index].StartupProbe = defaultProbe("/healthz", 10259)
 
-	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
+	probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes
+	if probes != nil {
 		applyProbeSetOverrides(&podSpec.Containers[index], probes, probes.Scheduler)
 	}
 
-	if containerSecurityContexts := tenantControlPlane.Spec.ControlPlane.Deployment.ContainerSecurityContexts; containerSecurityContexts != nil {
+	containerSecurityContexts := tenantControlPlane.Spec.ControlPlane.Deployment.ContainerSecurityContexts
+	if containerSecurityContexts != nil {
 		podSpec.Containers[index].SecurityContext = containerSecurityContexts.Scheduler
 	} else {
 		podSpec.Containers[index].SecurityContext = nil
@@ -441,7 +444,8 @@ func (d Deployment) buildScheduler(podSpec *corev1.PodSpec, tenantControlPlane k
 	// Volume mounts
 	var extraVolumeMounts []corev1.VolumeMount
 
-	if additionalVolumeMounts := tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalVolumeMounts; additionalVolumeMounts != nil {
+	additionalVolumeMounts := tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalVolumeMounts
+	if additionalVolumeMounts != nil {
 		extraVolumeMounts = append(extraVolumeMounts, additionalVolumeMounts.Scheduler...)
 	}
 
@@ -489,7 +493,8 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		"--use-service-account-credentials":  "true",
 	}
 
-	if extraArgs := tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs; extraArgs != nil && len(extraArgs.ControllerManager) > 0 {
+	extraArgs := tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs
+	if extraArgs != nil && len(extraArgs.ControllerManager) > 0 {
 		args = utilities.MergeMaps(args, utilities.ArgsFromSliceToMap(extraArgs.ControllerManager))
 	}
 
@@ -501,11 +506,13 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 	podSpec.Containers[index].ReadinessProbe = defaultProbe("/healthz", 10257)
 	podSpec.Containers[index].StartupProbe = defaultProbe("/healthz", 10257)
 
-	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
+	probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes
+	if probes != nil {
 		applyProbeSetOverrides(&podSpec.Containers[index], probes, probes.ControllerManager)
 	}
 
-	if containerSecurityContexts := tenantControlPlane.Spec.ControlPlane.Deployment.ContainerSecurityContexts; containerSecurityContexts != nil {
+	containerSecurityContexts := tenantControlPlane.Spec.ControlPlane.Deployment.ContainerSecurityContexts
+	if containerSecurityContexts != nil {
 		podSpec.Containers[index].SecurityContext = containerSecurityContexts.ControllerManager
 	} else {
 		podSpec.Containers[index].SecurityContext = nil
@@ -522,7 +529,8 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 	// Volume mounts
 	var extraVolumeMounts []corev1.VolumeMount
 
-	if additionalVolumeMounts := tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalVolumeMounts; additionalVolumeMounts != nil {
+	additionalVolumeMounts := tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalVolumeMounts
+	if additionalVolumeMounts != nil {
 		extraVolumeMounts = append(extraVolumeMounts, additionalVolumeMounts.ControllerManager...)
 	}
 
@@ -604,11 +612,13 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 	podSpec.Containers[index].ReadinessProbe = defaultProbe("/readyz", tenantControlPlane.Spec.NetworkProfile.Port)
 	podSpec.Containers[index].StartupProbe = defaultProbe("/livez", tenantControlPlane.Spec.NetworkProfile.Port)
 
-	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
+	probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes
+	if probes != nil {
 		applyProbeSetOverrides(&podSpec.Containers[index], probes, probes.APIServer)
 	}
 
-	if containerSecurityContexts := tenantControlPlane.Spec.ControlPlane.Deployment.ContainerSecurityContexts; containerSecurityContexts != nil {
+	containerSecurityContexts := tenantControlPlane.Spec.ControlPlane.Deployment.ContainerSecurityContexts
+	if containerSecurityContexts != nil {
 		podSpec.Containers[index].SecurityContext = containerSecurityContexts.APIServer
 	} else {
 		podSpec.Containers[index].SecurityContext = nil
@@ -618,7 +628,8 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 	// Volume mounts
 	var extraVolumeMounts []corev1.VolumeMount
 
-	if additionalVolumeMounts := tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalVolumeMounts; additionalVolumeMounts != nil {
+	additionalVolumeMounts := tenantControlPlane.Spec.ControlPlane.Deployment.AdditionalVolumeMounts
+	if additionalVolumeMounts != nil {
 		extraVolumeMounts = append(extraVolumeMounts, additionalVolumeMounts.APIServer...)
 	}
 
@@ -896,7 +907,7 @@ func (d Deployment) buildKineVolume(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.Storage.Certificate.SecretName,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 	// Adding the volume to read Kine certificates:
@@ -1006,9 +1017,7 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 		utilArgs := utilities.ArgsFromSliceToMap(tcp.Spec.ControlPlane.Deployment.ExtraArgs.Kine)
 
 		// Merging the user-space arguments with the Kamaji ones.
-		for k, v := range utilArgs {
-			args[k] = v
-		}
+		maps.Copy(args, utilArgs)
 	}
 
 	switch d.DataStore.Spec.Driver {
@@ -1087,7 +1096,7 @@ func (d Deployment) setReplicas(deploymentSpec *appsv1.DeploymentSpec, tcp kamaj
 
 func (d Deployment) setRuntimeClass(spec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
 	if len(tcp.Spec.ControlPlane.Deployment.RuntimeClassName) > 0 {
-		spec.RuntimeClassName = pointer.To(tcp.Spec.ControlPlane.Deployment.RuntimeClassName)
+		spec.RuntimeClassName = new(tcp.Spec.ControlPlane.Deployment.RuntimeClassName)
 
 		return
 	}
@@ -1122,7 +1131,8 @@ func (d Deployment) templateLabels(ctx context.Context, tenantControlPlane *kama
 // secretHashValue function returns the md5 value for the secret of the given name and namespace.
 func (d Deployment) secretHashValue(ctx context.Context, client client.Client, namespace, name string) (string, error) {
 	secret := &corev1.Secret{}
-	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, secret); err != nil {
+	err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, secret)
+	if err != nil {
 		return "", fmt.Errorf("cannot retrieve *corev1.Secret for resource version retrieval: %w", err)
 	}
 

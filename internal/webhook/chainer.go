@@ -32,11 +32,13 @@ func (h handlersChainer) Handler(object runtime.Object, routeHandlers ...handler
 			case admissionv1.Delete:
 				// When deleting the OldObject struct field contains the object being deleted:
 				// https://github.com/kubernetes/kubernetes/pull/76346
-				if err := h.decoder.DecodeRaw(req.OldObject, decodedObj); err != nil {
+				err := h.decoder.DecodeRaw(req.OldObject, decodedObj)
+				if err != nil {
 					return admission.Errored(http.StatusInternalServerError, fmt.Errorf("unable to decode deleted object into %T: %w", object, err))
 				}
 			default:
-				if err := h.decoder.Decode(req, decodedObj); err != nil {
+				err := h.decoder.Decode(req, decodedObj)
+				if err != nil {
 					return admission.Errored(http.StatusInternalServerError, fmt.Errorf("unable to decode into %T: %w", object, err))
 				}
 			}
@@ -68,7 +70,8 @@ func (h handlersChainer) Handler(object runtime.Object, routeHandlers ...handler
 				patches = append(patches, handlerPatches...)
 			}
 		case admissionv1.Update:
-			if err := h.decoder.DecodeRaw(req.OldObject, oldDecodedObj); err != nil {
+			err := h.decoder.DecodeRaw(req.OldObject, oldDecodedObj)
+			if err != nil {
 				return admission.Errored(http.StatusInternalServerError, fmt.Errorf("unable to decode old object into %T: %w", object, err))
 			}
 

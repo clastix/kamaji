@@ -26,7 +26,8 @@ func (in *ContentRef) GetContent(ctx context.Context, client client.Client) ([]b
 	}
 
 	secret, namespacedName := &corev1.Secret{}, types.NamespacedName{Name: secretRef.Name, Namespace: secretRef.Namespace}
-	if err := client.Get(ctx, namespacedName, secret); err != nil {
+	err := client.Get(ctx, namespacedName, secret)
+	if err != nil {
 		return nil, err
 	}
 

@@ -20,27 +20,33 @@ import (
 func BootstrapToken(client kubernetes.Interface, config *Configuration) error {
 	initConfiguration := config.InitConfiguration
 
-	if err := node.UpdateOrCreateTokens(client, false, initConfiguration.BootstrapTokens); err != nil {
+	err := node.UpdateOrCreateTokens(client, false, initConfiguration.BootstrapTokens)
+	if err != nil {
 		return fmt.Errorf("error updating or creating token: %w", err)
 	}
 
-	if err := node.AllowBootstrapTokensToGetNodes(client); err != nil {
+	err = node.AllowBootstrapTokensToGetNodes(client)
+	if err != nil {
 		return fmt.Errorf("error allowing bootstrap tokens to get Nodes: %w", err)
 	}
 
-	if err := node.AllowBootstrapTokensToPostCSRs(client); err != nil {
+	err = node.AllowBootstrapTokensToPostCSRs(client)
+	if err != nil {
 		return fmt.Errorf("error allowing bootstrap tokens to post CSRs: %w", err)
 	}
 
-	if err := node.AutoApproveNodeBootstrapTokens(client); err != nil {
+	err = node.AutoApproveNodeBootstrapTokens(client)
+	if err != nil {
 		return fmt.Errorf("error auto-approving node bootstrap tokens: %w", err)
 	}
 
-	if err := node.AutoApproveNodeCertificateRotation(client); err != nil {
+	err = node.AutoApproveNodeCertificateRotation(client)
+	if err != nil {
 		return err
 	}
 
-	if err := node.AllowAPIServerToAccessKubeletAPI(client); err != nil {
+	err = node.AllowAPIServerToAccessKubeletAPI(client)
+	if err != nil {
 		return fmt.Errorf("error allowing API server kubelet client to access the kubelet API: %w", err)
 	}
 
@@ -70,7 +76,8 @@ func BootstrapToken(client kubernetes.Interface, config *Configuration) error {
 		return err
 	}
 
-	if err := clusterinfo.CreateClusterInfoRBACRules(client); err != nil {
+	err = clusterinfo.CreateClusterInfoRBACRules(client)
+	if err != nil {
 		return fmt.Errorf("error creating clusterinfo RBAC rules: %w", err)
 	}
 

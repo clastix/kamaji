@@ -55,21 +55,24 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			log.Info("retrieving the TenantControlPlane")
 
 			tcp := &kamajiv1alpha1.TenantControlPlane{}
-			if err = client.Get(ctx, types.NamespacedName{Namespace: parts[0], Name: parts[1]}, tcp); err != nil {
+			err = client.Get(ctx, types.NamespacedName{Namespace: parts[0], Name: parts[1]}, tcp)
+			if err != nil {
 				return err
 			}
 
 			log.Info("retrieving the TenantControlPlane used DataStore")
 
 			originDs := &kamajiv1alpha1.DataStore{}
-			if err = client.Get(ctx, types.NamespacedName{Name: tcp.Status.Storage.DataStoreName}, originDs); err != nil {
+			err = client.Get(ctx, types.NamespacedName{Name: tcp.Status.Storage.DataStoreName}, originDs)
+			if err != nil {
 				return err
 			}
 
 			log.Info("retrieving the target DataStore")
 
 			targetDs := &kamajiv1alpha1.DataStore{}
-			if err = client.Get(ctx, types.NamespacedName{Name: targetDataStore}, targetDs); err != nil {
+			err = client.Get(ctx, types.NamespacedName{Name: targetDataStore}, targetDs)
+			if err != nil {
 				return err
 			}
 
@@ -103,7 +106,8 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				if exists, _ := targetConnection.DBExists(ctx, tcp.Status.Storage.Setup.Schema); exists {
 					log.Info("A colliding schema on target DataStore is present, cleaning up")
 
-					if dErr := targetConnection.DeleteDB(ctx, tcp.Status.Storage.Setup.Schema); dErr != nil {
+					dErr := targetConnection.DeleteDB(ctx, tcp.Status.Storage.Setup.Schema)
+					if dErr != nil {
 						return fmt.Errorf("error cleaning up prior migration: %s", dErr.Error())
 					}
 
@@ -113,7 +117,8 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			// Start migrating from the old Datastore to the new one
 			log.Info("migration from origin to target started")
 
-			if err = originConnection.Migrate(ctx, *tcp, targetConnection); err != nil {
+			err = originConnection.Migrate(ctx, *tcp, targetConnection)
+			if err != nil {
 				return fmt.Errorf("unable to migrate data from %s to %s: %w", originDs.GetName(), targetDs.GetName(), err)
 			}
 

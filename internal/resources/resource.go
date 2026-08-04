@@ -72,7 +72,8 @@ func Handle(ctx context.Context, resource Resource, tenantControlPlane *kamajiv1
 		resource.GetHistogram().Observe(time.Since(startTime).Seconds())
 	}()
 
-	if err := resource.Define(ctx, tenantControlPlane); err != nil {
+	err := resource.Define(ctx, tenantControlPlane)
+	if err != nil {
 		return "", err
 	}
 
@@ -94,7 +95,8 @@ func Handle(ctx context.Context, resource Resource, tenantControlPlane *kamajiv1
 
 // HandleDeletion handles the deletion of the given resource.
 func HandleDeletion(ctx context.Context, resource DeletableResource, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
-	if err := resource.Define(ctx, tenantControlPlane); err != nil {
+	err := resource.Define(ctx, tenantControlPlane)
+	if err != nil {
 		return err
 	}
 
@@ -117,7 +119,8 @@ func createOrUpdate(ctx context.Context, resource Resource, tenantControlPlane *
 func getStoredKubeadmConfiguration(ctx context.Context, client client.Client, tmpDirectory string, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (*kubeadm.Configuration, error) {
 	var configmap corev1.ConfigMap
 	namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.KubeadmConfig.ConfigmapName}
-	if err := client.Get(ctx, namespacedName, &configmap); err != nil {
+	err := client.Get(ctx, namespacedName, &configmap)
+	if err != nil {
 		return nil, err
 	}
 

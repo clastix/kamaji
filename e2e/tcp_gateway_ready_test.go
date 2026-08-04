@@ -30,7 +30,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					Deployment: kamajiv1alpha1.DeploymentSpec{
-						Replicas: pointer.To(int32(1)),
+						Replicas: new(int32(1)),
 					},
 					Service: kamajiv1alpha1.ServiceSpec{
 						ServiceType: "ClusterIP",
@@ -95,10 +95,11 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 		Eventually(func() error {
 			route := &gatewayv1.TLSRoute{}
 			// TODO: Check ownership.
-			if err := k8sClient.Get(context.Background(), types.NamespacedName{
+			err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name,
 				Namespace: tcp.Namespace,
-			}, route); err != nil {
+			}, route)
+			if err != nil {
 				return err
 			}
 			if len(route.Spec.ParentRefs) == 0 {

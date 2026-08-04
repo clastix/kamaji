@@ -162,7 +162,8 @@ func (nc *NATSConnection) Migrate(ctx context.Context, tcp kamajiv1alpha1.Tenant
 		return err
 	}
 
-	if err := target.Check(ctx); err != nil {
+	err = target.Check(ctx)
+	if err != nil {
 		return err
 	}
 

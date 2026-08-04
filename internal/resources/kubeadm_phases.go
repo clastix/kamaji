@@ -160,7 +160,8 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 				if patchErr != nil {
 					return nil, fmt.Errorf("cannot encode JSON Patches to JSON: %w", patchErr)
 				}
-				if patch, patchErr = jsonpatchv5.DecodePatch(jsonP); patchErr != nil {
+				patch, patchErr = jsonpatchv5.DecodePatch(jsonP)
+				if patchErr != nil {
 					return nil, fmt.Errorf("cannot decode JSON Patches: %w", patchErr)
 				}
 			}
@@ -183,7 +184,8 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 			defer func() { _ = os.Remove(tmp) }()
 
 			var caSecret corev1.Secret
-			if err = r.Client.Get(ctx, types.NamespacedName{Name: tcp.Status.Certificates.CA.SecretName, Namespace: tcp.Namespace}, &caSecret); err != nil {
+			err = r.Client.Get(ctx, types.NamespacedName{Name: tcp.Status.Certificates.CA.SecretName, Namespace: tcp.Namespace}, &caSecret)
+			if err != nil {
 				return nil, err
 			}
 
@@ -208,9 +210,10 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 				BindPort:         tcp.Spec.NetworkProfile.Port,
 			}
 
-			if _, err = kubeconfig.EnsureAdminClusterRoleBinding(tmp, &localAPIEndpoint, func(_ context.Context, _ clientset.Interface, _ clientset.Interface, retryInterval time.Duration, retryTimeout time.Duration) (clientset.Interface, error) {
+			_, err = kubeconfig.EnsureAdminClusterRoleBinding(tmp, &localAPIEndpoint, func(_ context.Context, _ clientset.Interface, _ clientset.Interface, retryInterval time.Duration, retryTimeout time.Duration) (clientset.Interface, error) {
 				return kubeconfig.EnsureAdminClusterRoleBindingImpl(ctx, c, c, retryInterval, retryTimeout)
-			}); err != nil {
+			})
+			if err != nil {
 				return nil, err
 			}
 
