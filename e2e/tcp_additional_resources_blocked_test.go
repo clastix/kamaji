@@ -7,14 +7,12 @@ import (
 	"context"
 	"time"
 
+	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	pointer "k8s.io/utils/ptr"
-
-	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
 var _ = Describe("Deploy a TenantControlPlane resource with additional resources", func() {
@@ -27,7 +25,7 @@ var _ = Describe("Deploy a TenantControlPlane resource with additional resources
 		Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 			ControlPlane: kamajiv1alpha1.ControlPlane{
 				Deployment: kamajiv1alpha1.DeploymentSpec{
-					Replicas: pointer.To(int32(1)),
+					Replicas: new(int32(1)),
 					AdditionalInitContainers: []corev1.Container{{
 						Name:  initContainerName,
 						Image: initContainerImage,

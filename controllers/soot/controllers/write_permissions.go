@@ -8,6 +8,10 @@ import (
 	"fmt"
 	"time"
 
+	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	sooterrors "github.com/clastix/kamaji/controllers/soot/controllers/errors"
+	"github.com/clastix/kamaji/controllers/utils"
+	"github.com/clastix/kamaji/internal/utilities"
 	"github.com/go-logr/logr"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -24,11 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	sooterrors "github.com/clastix/kamaji/controllers/soot/controllers/errors"
-	"github.com/clastix/kamaji/controllers/utils"
-	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type WritePermissions struct {
@@ -83,7 +82,7 @@ func (r *WritePermissions) createOrUpdate(ctx context.Context, writePermissions 
 			{
 				Name: "leases.write-permissions.kamaji.clastix.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					URL:      ptr.To(fmt.Sprintf("https://%s.%s.svc:443/write-permission", r.WebhookServiceName, r.WebhookNamespace)),
+					URL:      new(fmt.Sprintf("https://%s.%s.svc:443/write-permission", r.WebhookServiceName, r.WebhookNamespace)),
 					CABundle: r.WebhookCABundle,
 				},
 				Rules: []admissionregistrationv1.RuleWithOperations{
@@ -119,7 +118,7 @@ func (r *WritePermissions) createOrUpdate(ctx context.Context, writePermissions 
 			{
 				Name: "catchall.write-permissions.kamaji.clastix.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					URL:      ptr.To(fmt.Sprintf("https://%s.%s.svc:443/write-permission", r.WebhookServiceName, r.WebhookNamespace)),
+					URL:      new(fmt.Sprintf("https://%s.%s.svc:443/write-permission", r.WebhookServiceName, r.WebhookNamespace)),
 					CABundle: r.WebhookCABundle,
 				},
 				Rules: []admissionregistrationv1.RuleWithOperations{

@@ -6,29 +6,27 @@ package e2e
 import (
 	"context"
 
+	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	pointer "k8s.io/utils/ptr"
-
-	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
 var _ = Describe("Deploy a TenantControlPlane resource with security contexts", func() {
 	// Contexts are chosen without overlap to allow to verify that context is set on the desired container
 	apiServerSecurityContext := &corev1.SecurityContext{
-		ReadOnlyRootFilesystem: pointer.To(true),
+		ReadOnlyRootFilesystem: new(true),
 	}
 
 	controllerManagerSecurityContext := &corev1.SecurityContext{
-		AllowPrivilegeEscalation: pointer.To(false),
+		AllowPrivilegeEscalation: new(false),
 	}
 
 	schedulerSecurityContext := &corev1.SecurityContext{
-		Privileged: pointer.To(false),
+		Privileged: new(false),
 	}
 
 	konnectivitySecurityContext := &corev1.SecurityContext{
@@ -52,7 +50,7 @@ var _ = Describe("Deploy a TenantControlPlane resource with security contexts", 
 		Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 			ControlPlane: kamajiv1alpha1.ControlPlane{
 				Deployment: kamajiv1alpha1.DeploymentSpec{
-					Replicas: pointer.To(int32(1)),
+					Replicas: new(int32(1)),
 					ContainerSecurityContexts: &kamajiv1alpha1.ControlPlaneContainerSecurityContexts{
 						APIServer:         apiServerSecurityContext,
 						ControllerManager: controllerManagerSecurityContext,
