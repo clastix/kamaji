@@ -432,7 +432,7 @@ func (m *Manager) SetupWithManager(mgr manager.Manager) error {
 	m.sootMap = make(map[string]sootItem)
 
 	return controllerruntime.NewControllerManagedBy(mgr).
-		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
+		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: new(true)}).
 		WatchesRawSource(source.Channel(m.sootManagerErrChan, &handler.EnqueueRequestForObject{})).
 		For(&kamajiv1alpha1.TenantControlPlane{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			obj := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert

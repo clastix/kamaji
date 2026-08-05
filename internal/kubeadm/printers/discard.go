@@ -15,19 +15,19 @@ func (d Discard) PrintObj(runtime.Object, io.Writer) error {
 	return nil
 }
 
-func (d Discard) Fprintf(io.Writer, string, ...interface{}) (n int, err error) {
+func (d Discard) Fprintf(io.Writer, string, ...any) (n int, err error) {
 	return
 }
 
-func (d Discard) Fprintln(io.Writer, ...interface{}) (n int, err error) {
+func (d Discard) Fprintln(io.Writer, ...any) (n int, err error) {
 	return
 }
 
-func (d Discard) Printf(string, ...interface{}) (n int, err error) {
+func (d Discard) Printf(string, ...any) (n int, err error) {
 	return
 }
 
-func (d Discard) Println(...interface{}) (n int, err error) {
+func (d Discard) Println(...any) (n int, err error) {
 	return
 }
 

@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	pointer "k8s.io/utils/ptr"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -78,7 +77,7 @@ var _ = Describe("Controlplane Deployment", func() {
 
 		It("should override only FailureThreshold when only it is set", func() {
 			spec := &kamajiv1alpha1.ProbeSpec{
-				FailureThreshold: pointer.To(int32(30)),
+				FailureThreshold: new(int32(30)),
 			}
 			applyProbeOverrides(probe, spec)
 			Expect(probe.FailureThreshold).To(Equal(int32(30)))
@@ -90,11 +89,11 @@ var _ = Describe("Controlplane Deployment", func() {
 
 		It("should override all fields when all are set", func() {
 			spec := &kamajiv1alpha1.ProbeSpec{
-				InitialDelaySeconds: pointer.To(int32(15)),
-				TimeoutSeconds:      pointer.To(int32(5)),
-				PeriodSeconds:       pointer.To(int32(30)),
-				SuccessThreshold:    pointer.To(int32(2)),
-				FailureThreshold:    pointer.To(int32(10)),
+				InitialDelaySeconds: new(int32(15)),
+				TimeoutSeconds:      new(int32(5)),
+				PeriodSeconds:       new(int32(30)),
+				SuccessThreshold:    new(int32(2)),
+				FailureThreshold:    new(int32(10)),
 			}
 			applyProbeOverrides(probe, spec)
 			Expect(probe.InitialDelaySeconds).To(Equal(int32(15)))
@@ -106,13 +105,13 @@ var _ = Describe("Controlplane Deployment", func() {
 
 		It("should cascade global then component overrides", func() {
 			global := &kamajiv1alpha1.ProbeSpec{
-				FailureThreshold: pointer.To(int32(10)),
-				PeriodSeconds:    pointer.To(int32(20)),
+				FailureThreshold: new(int32(10)),
+				PeriodSeconds:    new(int32(20)),
 			}
 			applyProbeOverrides(probe, global)
 
 			component := &kamajiv1alpha1.ProbeSpec{
-				FailureThreshold: pointer.To(int32(60)),
+				FailureThreshold: new(int32(60)),
 			}
 			applyProbeOverrides(probe, component)
 
@@ -124,7 +123,7 @@ var _ = Describe("Controlplane Deployment", func() {
 		})
 
 		It("should not panic when probe is nil", func() {
-			spec := &kamajiv1alpha1.ProbeSpec{PeriodSeconds: pointer.To(int32(20))}
+			spec := &kamajiv1alpha1.ProbeSpec{PeriodSeconds: new(int32(20))}
 			Expect(func() { applyProbeOverrides(nil, spec) }).ToNot(Panic())
 		})
 	})
@@ -246,9 +245,9 @@ var _ = Describe("Controlplane Deployment", func() {
 		It("cascades global then component readiness overrides onto the scheduler", func() {
 			tcp := kamajiv1alpha1.TenantControlPlane{}
 			tcp.Spec.ControlPlane.Deployment.Probes = &kamajiv1alpha1.ControlPlaneProbes{
-				Readiness: &kamajiv1alpha1.ProbeSpec{PeriodSeconds: pointer.To(int32(20))},
+				Readiness: &kamajiv1alpha1.ProbeSpec{PeriodSeconds: new(int32(20))},
 				Scheduler: &kamajiv1alpha1.ProbeSet{
-					Readiness: &kamajiv1alpha1.ProbeSpec{PeriodSeconds: pointer.To(int32(30))},
+					Readiness: &kamajiv1alpha1.ProbeSpec{PeriodSeconds: new(int32(30))},
 				},
 			}
 
@@ -262,7 +261,7 @@ var _ = Describe("Controlplane Deployment", func() {
 		It("applies a global-only readiness override to the scheduler", func() {
 			tcp := kamajiv1alpha1.TenantControlPlane{}
 			tcp.Spec.ControlPlane.Deployment.Probes = &kamajiv1alpha1.ControlPlaneProbes{
-				Readiness: &kamajiv1alpha1.ProbeSpec{PeriodSeconds: pointer.To(int32(20))},
+				Readiness: &kamajiv1alpha1.ProbeSpec{PeriodSeconds: new(int32(20))},
 			}
 
 			podSpec := &corev1.PodSpec{}
@@ -307,7 +306,7 @@ var _ = Describe("Controlplane Deployment", func() {
 		It("should enable automount when AutomountServiceAccountToken is true", func() {
 			podSpec := &corev1.PodSpec{}
 			tcp := kamajiv1alpha1.TenantControlPlane{}
-			tcp.Spec.ControlPlane.Deployment.AutomountServiceAccountToken = pointer.To(true)
+			tcp.Spec.ControlPlane.Deployment.AutomountServiceAccountToken = new(true)
 			d.setServiceAccount(podSpec, tcp)
 			Expect(podSpec.ServiceAccountName).To(Equal("default"))
 			Expect(podSpec.AutomountServiceAccountToken).ToNot(BeNil())
@@ -317,7 +316,7 @@ var _ = Describe("Controlplane Deployment", func() {
 		It("should disable automount when AutomountServiceAccountToken is false", func() {
 			podSpec := &corev1.PodSpec{}
 			tcp := kamajiv1alpha1.TenantControlPlane{}
-			tcp.Spec.ControlPlane.Deployment.AutomountServiceAccountToken = pointer.To(false)
+			tcp.Spec.ControlPlane.Deployment.AutomountServiceAccountToken = new(false)
 			tcp.Spec.ControlPlane.Deployment.ServiceAccountName = "another-sa"
 			d.setServiceAccount(podSpec, tcp)
 			Expect(podSpec.ServiceAccountName).To(Equal("another-sa"))

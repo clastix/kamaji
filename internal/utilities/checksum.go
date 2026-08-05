@@ -7,6 +7,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"sort"
+	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -76,13 +77,12 @@ func calculateMapStringString(data map[string]string) string {
 
 	sort.Strings(keys)
 
-	var checksum string
-
+	var sb strings.Builder
 	for _, key := range keys {
-		checksum += data[key]
+		sb.WriteString(data[key])
 	}
 
-	return md5Checksum([]byte(checksum))
+	return md5Checksum([]byte(sb.String()))
 }
 
 func calculateMapStringByte(data map[string][]byte) string {
@@ -93,13 +93,12 @@ func calculateMapStringByte(data map[string][]byte) string {
 
 	sort.Strings(keys)
 
-	var checksum string
-
+	var sb strings.Builder
 	for _, key := range keys {
-		checksum += string(data[key])
+		sb.Write(data[key])
 	}
 
-	return md5Checksum([]byte(checksum))
+	return md5Checksum([]byte(sb.String()))
 }
 
 func md5Checksum(value []byte) string {

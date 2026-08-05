@@ -6,13 +6,11 @@ package e2e
 import (
 	"context"
 
+	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	pointer "k8s.io/utils/ptr"
-
-	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
 var _ = Describe("Deploy a TenantControlPlane with resource with custom service account", func() {
@@ -32,7 +30,7 @@ var _ = Describe("Deploy a TenantControlPlane with resource with custom service 
 		Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 			ControlPlane: kamajiv1alpha1.ControlPlane{
 				Deployment: kamajiv1alpha1.DeploymentSpec{
-					Replicas:           pointer.To(int32(1)),
+					Replicas:           new(int32(1)),
 					ServiceAccountName: sa.GetName(),
 				},
 				Service: kamajiv1alpha1.ServiceSpec{

@@ -151,7 +151,7 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 			}
 
 			if tenantControlPlane.Spec.NetworkProfile.LoadBalancerClass != nil {
-				r.resource.Spec.LoadBalancerClass = ptr.To(*tenantControlPlane.Spec.NetworkProfile.LoadBalancerClass)
+				r.resource.Spec.LoadBalancerClass = new(*tenantControlPlane.Spec.NetworkProfile.LoadBalancerClass)
 			}
 
 			if len(tenantControlPlane.Spec.NetworkProfile.LoadBalancerSourceRanges) > 0 {
