@@ -11,7 +11,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/utils/ptr"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,7 +69,8 @@ func (k *KubeProxy) Reconcile(ctx context.Context, _ reconcile.Request) (reconci
 		return reconcile.Result{}, nil
 	}
 
-	if err = utils.UpdateStatus(ctx, k.AdminClient, tcp, resource); err != nil {
+	err = utils.UpdateStatus(ctx, k.AdminClient, tcp, resource)
+	if err != nil {
 		k.Logger.Error(err, "update status failed")
 
 		return reconcile.Result{}, err
@@ -84,7 +84,7 @@ func (k *KubeProxy) Reconcile(ctx context.Context, _ reconcile.Request) (reconci
 func (k *KubeProxy) SetupWithManager(mgr manager.Manager) error {
 	return controllerruntime.NewControllerManagedBy(mgr).
 		Named(k.ControllerName).
-		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
+		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: new(true)}).
 		For(&rbacv1.ClusterRoleBinding{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			return object.GetName() == kubeadm.KubeProxyClusterRoleBindingName
 		}))).

@@ -9,6 +9,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/clastix/kamaji/api/v1alpha1"
+	sooterrors "github.com/clastix/kamaji/controllers/soot/controllers/errors"
+	"github.com/clastix/kamaji/controllers/utils"
+	"github.com/clastix/kamaji/internal/utilities"
 	"github.com/go-logr/logr"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -24,11 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	"github.com/clastix/kamaji/api/v1alpha1"
-	sooterrors "github.com/clastix/kamaji/controllers/soot/controllers/errors"
-	"github.com/clastix/kamaji/controllers/utils"
-	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type Migrate struct {
@@ -94,7 +93,7 @@ func (m *Migrate) createOrUpdate(ctx context.Context) error {
 			{
 				Name: "leases.migrate.kamaji.clastix.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					URL:      pointer.To(fmt.Sprintf("https://%s.%s.svc:443/migrate", m.WebhookServiceName, m.WebhookNamespace)),
+					URL:      new(fmt.Sprintf("https://%s.%s.svc:443/migrate", m.WebhookServiceName, m.WebhookNamespace)),
 					CABundle: m.WebhookCABundle,
 				},
 				Rules: []admissionregistrationv1.RuleWithOperations{
@@ -138,7 +137,7 @@ func (m *Migrate) createOrUpdate(ctx context.Context) error {
 			{
 				Name: "catchall.migrate.kamaji.clastix.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					URL:      pointer.To(fmt.Sprintf("https://%s.%s.svc:443/migrate", m.WebhookServiceName, m.WebhookNamespace)),
+					URL:      new(fmt.Sprintf("https://%s.%s.svc:443/migrate", m.WebhookServiceName, m.WebhookNamespace)),
 					CABundle: m.WebhookCABundle,
 				},
 				Rules: []admissionregistrationv1.RuleWithOperations{

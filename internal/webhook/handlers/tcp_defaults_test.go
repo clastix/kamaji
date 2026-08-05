@@ -11,7 +11,6 @@ import (
 	"gomodules.xyz/jsonpatch/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -79,7 +78,7 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 			tcp.Spec.DataStore = "etcd"
 			tcp.Spec.DataStoreSchema = "my_tcp"
 			tcp.Spec.DataStoreUsername = "my_tcp"
-			tcp.Spec.ControlPlane.Deployment.Replicas = ptr.To(int32(2))
+			tcp.Spec.ControlPlane.Deployment.Replicas = new(int32(2))
 			tcp.Spec.NetworkProfile.ServiceCIDRs = []string{"10.96.0.0/12"}
 		})
 
@@ -103,11 +102,11 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(ops).To(ContainElement(
-				jsonpatch.Operation{Operation: "add", Path: "/spec/networkProfile/serviceCidrs", Value: []interface{}{"10.96.0.0/12"}},
+				jsonpatch.Operation{Operation: "add", Path: "/spec/networkProfile/serviceCidrs", Value: []any{"10.96.0.0/12"}},
 			))
 
 			Expect(ops).To(ContainElement(
-				jsonpatch.Operation{Operation: "add", Path: "/spec/networkProfile/podCidrs", Value: []interface{}{"10.244.0.0/16"}},
+				jsonpatch.Operation{Operation: "add", Path: "/spec/networkProfile/podCidrs", Value: []any{"10.244.0.0/16"}},
 			))
 		})
 
@@ -140,7 +139,7 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(ops).To(ContainElement(
-				jsonpatch.Operation{Operation: "add", Path: "/spec/networkProfile/dnsServiceIPs", Value: []interface{}{"10.96.0.10", "fd00::a"}},
+				jsonpatch.Operation{Operation: "add", Path: "/spec/networkProfile/dnsServiceIPs", Value: []any{"10.96.0.10", "fd00::10"}},
 			))
 		})
 	})

@@ -119,7 +119,7 @@ func PrintKamajiLogs() {
 
 		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: retrieving Kamaji Pod logs")
 
-		for _, line := range bytes.Split(podBytes, []byte("\n")) {
+		for line := range bytes.SplitSeq(podBytes, []byte("\n")) {
 			_, _ = fmt.Fprintln(GinkgoWriter, ">>> ", string(line))
 		}
 

@@ -6,6 +6,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"go.etcd.io/etcd/api/v3/authpb"
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
@@ -115,13 +116,7 @@ func (e *EtcdClient) GrantPrivilegesExists(ctx context.Context, username, dbName
 		return false, dserrors.NewCheckGrantExistsError(err)
 	}
 
-	for _, i := range user.Roles {
-		if i == dbName {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return slices.Contains(user.Roles, dbName), nil
 }
 
 func (e *EtcdClient) DeleteUser(ctx context.Context, user string) error {

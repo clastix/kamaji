@@ -7,13 +7,11 @@ import (
 	"context"
 	"time"
 
+	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	pointer "k8s.io/utils/ptr"
-
-	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
 var _ = Describe("downgrade of a TenantControlPlane Kubernetes version", func() {
@@ -26,7 +24,7 @@ var _ = Describe("downgrade of a TenantControlPlane Kubernetes version", func() 
 		Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 			ControlPlane: kamajiv1alpha1.ControlPlane{
 				Deployment: kamajiv1alpha1.DeploymentSpec{
-					Replicas: pointer.To(int32(1)),
+					Replicas: new(int32(1)),
 				},
 				Service: kamajiv1alpha1.ServiceSpec{
 					ServiceType: "ClusterIP",

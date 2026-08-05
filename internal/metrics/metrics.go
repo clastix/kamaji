@@ -5,6 +5,7 @@ package metrics
 
 import (
 	"context"
+	"slices"
 	"sync"
 	"time"
 
@@ -310,10 +311,8 @@ func NormalizeTenantControlPlaneStatusLabel(status *kamajiv1alpha1.KubernetesVer
 	}
 
 	value := string(*status)
-	for _, allowedStatus := range tenantControlPlaneStatuses {
-		if value == allowedStatus {
-			return value
-		}
+	if slices.Contains(tenantControlPlaneStatuses, value) {
+		return value
 	}
 
 	return string(kamajiv1alpha1.VersionUnknown)
@@ -332,10 +331,8 @@ func (r *Recorder) SetDatastoresReadyAndDriverCounts(datastoreName string, count
 }
 
 func NormalizeDataStoreDriverLabel(driver kamajiv1alpha1.Driver) string {
-	for _, knownDriver := range datastoreDrivers {
-		if string(driver) == knownDriver {
-			return string(driver)
-		}
+	if slices.Contains(datastoreDrivers, string(driver)) {
+		return string(driver)
 	}
 
 	return DataStoreDriverUnknown
