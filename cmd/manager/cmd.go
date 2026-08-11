@@ -24,7 +24,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -45,6 +44,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	// CLI flags
 	var (
 		metricsBindAddress            string
+		metricsSecure                 bool
 		healthProbeBindAddress        string
 		pprofBindAddress              string
 		leaderElect                   bool
@@ -111,10 +111,8 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			}
 
 			ctrlOpts := ctrl.Options{
-				Scheme: scheme,
-				Metrics: metricsserver.Options{
-					BindAddress: metricsBindAddress,
-				},
+				Scheme:           scheme,
+				Metrics:          cmdutils.MetricsServerOptions(metricsBindAddress, metricsSecure),
 				PprofBindAddress: pprofBindAddress,
 				WebhookServer: ctrlwebhook.NewServer(ctrlwebhook.Options{
 					Port: 9443,
@@ -328,6 +326,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	// Setting CLI flags
 	cmd.Flags().StringVar(&metricsBindAddress, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	cmd.Flags().BoolVar(&metricsSecure, "metrics-secure", false, "If set, the metrics endpoint is served over HTTPS and requires a bearer token authorized against the manager's kamaji-metrics-reader ClusterRole, instead of being served in plaintext without authentication.")
 	cmd.Flags().StringVar(&healthProbeBindAddress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	cmd.Flags().StringVar(&pprofBindAddress, "pprof-bind-address", "", "The address the pprof profiler binds to.")
 	cmd.Flags().BoolVar(&leaderElect, "leader-elect", true, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
