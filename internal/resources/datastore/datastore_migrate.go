@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -113,10 +114,20 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 		d.job.Spec.Template.ObjectMeta.Labels = utilities.MergeMaps(d.job.Spec.Template.ObjectMeta.Labels, d.job.Spec.Template.ObjectMeta.Labels)
 		d.job.Spec.Template.Spec.ServiceAccountName = d.KamajiServiceAccount
 		d.job.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
+		// The Job only copies datastore data, so a fixed securityContext keeps it
+		// admissible under the "restricted" Pod Security Standard.
+		d.job.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+			RunAsNonRoot:   ptr.To(true),
+			SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+		}
 		if len(d.job.Spec.Template.Spec.Containers) == 0 {
 			d.job.Spec.Template.Spec.Containers = append(d.job.Spec.Template.Spec.Containers, corev1.Container{})
 		}
 		d.job.Spec.Template.Spec.Containers[0].Name = "migrate"
+		d.job.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
+			AllowPrivilegeEscalation: ptr.To(false),
+			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
+		}
 		d.job.Spec.Template.Spec.Containers[0].Image = d.MigrateImage
 		d.job.Spec.Template.Spec.Containers[0].Args = []string{
 			"migrate",
