@@ -27,7 +27,7 @@ func NewNATSConnection(config ConnectionConfig) (*NATSConnection, error) {
 
 	if len(config.Endpoints) > 1 {
 		// comma separated list of endpoints
-		var ep []string
+		ep := make([]string, 0, len(config.Endpoints))
 		for _, e := range config.Endpoints {
 			ep = append(ep, fmt.Sprintf("nats://%s", e.String()))
 		}
