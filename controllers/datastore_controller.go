@@ -138,14 +138,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 
 		logger.Info("triggering cascading reconciliation for TenantControlPlanes")
 
-		for _, tcp := range tcpList.Items {
-			var shrunkTCP kamajiv1alpha1.TenantControlPlane
-
-			shrunkTCP.Name = tcp.Name
-			shrunkTCP.Namespace = tcp.Namespace
-
-			go utils.TriggerChannel(ctx, r.TenantControlPlaneTrigger, shrunkTCP)
-		}
+		r.triggerTenantControlPlanes(ctx, tcpList)
 	}()
 
 	if ds.GetDeletionTimestamp() != nil {
@@ -247,6 +240,36 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	})
 
 	return reconcile.Result{}, err
+}
+
+// triggerTenantControlPlanes enqueues a reconciliation for every TenantControlPlane referencing the
+// DataStore, propagating changes that don't surface on the DataStore object itself, such as the
+// content of the Secret objects backing its TLS configuration.
+//
+// TenantControlPlaneTrigger is shared by all of them, so each event carries a distinct workqueue key
+// and dropping one would lose a reconciliation: unlike the coalescing sends of the soot manager,
+// these wait for the consumer to catch up, and only bail out once the manager is shutting down.
+//
+// The whole fan-out runs on a single goroutine rather than one per TenantControlPlane. The receiving
+// end is a controller-runtime goroutine parked on the channel, so each send is a direct hand-off to
+// it and sending sequentially costs the same as sending concurrently, minus the scheduling of one
+// goroutine per item. It also bounds what a fleet-wide trigger allocates while the consumer isn't
+// running yet: one parked sender instead of one per TenantControlPlane.
+func (r *DataStore) triggerTenantControlPlanes(ctx context.Context, tcpList kamajiv1alpha1.TenantControlPlaneList) {
+	go func() {
+		for _, tcp := range tcpList.Items {
+			var shrunkTCP kamajiv1alpha1.TenantControlPlane
+
+			shrunkTCP.Name = tcp.Name
+			shrunkTCP.Namespace = tcp.Namespace
+
+			select {
+			case r.TenantControlPlaneTrigger <- event.GenericEvent{Object: &shrunkTCP}:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 }
 
 func (r *DataStore) SetupWithManager(mgr controllerruntime.Manager) error {
