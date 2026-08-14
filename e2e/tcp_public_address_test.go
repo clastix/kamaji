@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -53,7 +54,16 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 		})
 
 		JustAfterEach(func() {
-			_ = k8sClient.Delete(context.Background(), tcp)
+			ctx := context.Background()
+			_ = k8sClient.Delete(ctx, tcp)
+			// Deletion is not instantaneous: the TCP carries finalizers that the
+			// controller removes only after tearing down the control plane.
+			// Wait for the object to be fully gone before the next spec runs.
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: tcp.Name, Namespace: tcp.Namespace}, &kamajiv1alpha1.TenantControlPlane{})
+
+				return apierrors.IsNotFound(err)
+			}, 120, 1).Should(BeTrue())
 		})
 
 		It("should set the public address", func() {
@@ -74,6 +84,8 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(address).To(Equal("k8s-api.example.com"))
 			Expect(port).To(Equal(int32(6443)))
+
+			StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
 		})
 
 		It("should generate kubeconfigs with the public address for controller-manager and scheduler", func() {
