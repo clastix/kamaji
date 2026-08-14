@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -31,6 +32,10 @@ type Migrate struct {
 	KamajiServiceName    string
 	ShouldCleanUp        bool
 	MigrateImage         string
+	// WebhookCABundle is the CA bundle for the manager's admission webhook server, required to
+	// install the tenant-side "kamaji-freeze" ValidatingWebhookConfiguration prior to starting
+	// the migration Job: see ensureFreezeWebhook for why this must happen synchronously here.
+	WebhookCABundle []byte
 
 	actualDatastore  *kamajiv1alpha1.DataStore
 	desiredDatastore *kamajiv1alpha1.DataStore
@@ -101,6 +106,12 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 
 	if d.actualDatastore.GetName() == d.desiredDatastore.GetName() {
 		return controllerutil.OperationResultNone, nil
+	}
+
+	// The freeze webhook must be active in the tenant cluster before the migration Job is allowed
+	// to start copying data: see ensureFreezeWebhook for why this has to be synchronous.
+	if err := d.ensureFreezeWebhook(ctx, tenantControlPlane); err != nil {
+		return controllerutil.OperationResultNone, fmt.Errorf("unable to install freeze webhook prior to migration: %w", err)
 	}
 
 	res, err := utilities.CreateOrUpdateWithConflict(ctx, d.Client, d.job, func() error {
@@ -184,4 +195,36 @@ func (d *Migrate) UpdateTenantControlPlaneStatus(_ context.Context, tenantContro
 	}
 
 	return nil
+}
+
+// ensureFreezeWebhook installs the tenant-side "kamaji-freeze" ValidatingWebhookConfiguration
+// and waits for it to be persisted before the caller is allowed to start the migration Job.
+//
+// The soot Migrate controller also reacts to VersionMigrating and installs the same webhook,
+// but it is level-triggered: it always reads the TenantControlPlane's *current* status rather
+// than the status at the time its trigger fired. If the migration Job runs to completion (status
+// flips Migrating -> Ready) faster than that controller's first reconcile after the transition,
+// it observes Ready directly and never installs the webhook at all - the migration then runs
+// with no write protection on the source datastore. Installing it here, synchronously and
+// before the Job (and therefore before VersionMigrating is ever observable by any watcher),
+// closes that race: by the time anything can see VersionMigrating, the webhook already exists.
+func (d *Migrate) ensureFreezeWebhook(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	tenantClient, err := utilities.GetTenantClient(ctx, d.Client, tenantControlPlane)
+	if err != nil {
+		return fmt.Errorf("unable to build tenant client: %w", err)
+	}
+
+	webhook := &admissionregistrationv1.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: FreezeWebhookName,
+		},
+	}
+
+	_, err = utilities.CreateOrUpdateWithConflict(ctx, tenantClient, webhook, func() error {
+		webhook.Webhooks = BuildFreezeValidatingWebhookConfiguration(d.KamajiNamespace, d.KamajiServiceName, d.WebhookCABundle)
+
+		return nil
+	})
+
+	return err
 }
