@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"net"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -273,9 +274,7 @@ func (c *CoreDNS) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Tenan
 
 	extraEnvVars := utilities.EnvarsFromSliceToMap(tcp.Spec.Addons.CoreDNS.ExtraEnvs)
 
-	for k, v := range extraEnvVars {
-		envVars[k] = v
-	}
+	maps.Copy(envVars, extraEnvVars)
 
 	c.deployment.Spec.Template.Spec.Containers[0].Env = utilities.EnvarsFromMapToSlice(envVars)
 

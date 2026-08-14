@@ -406,7 +406,7 @@ type KonnectivityServerSpec struct {
 	ExtraArgs ExtraArgs                    `json:"extraArgs,omitempty"`
 	// SecurityContext defines the SecurityContext for the Konnectivity server container.
 	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
-	ExtraEnvs []corev1.EnvVar              `json:"extraEnvs,omitempty"`
+	ExtraEnvs       []corev1.EnvVar         `json:"extraEnvs,omitempty"`
 }
 
 type KonnectivityAgentMode string

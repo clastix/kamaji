@@ -6,6 +6,7 @@ package konnectivity
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/blang/semver"
 	"github.com/prometheus/client_golang/prometheus"
@@ -274,9 +275,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 
 		extraEnvs := utilities.EnvarsFromSliceToMap((tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.ExtraEnvs))
 
-		for k, v := range extraEnvs {
-			envVars[k] = v
-		}
+		maps.Copy(envVars, extraEnvs)
 
 		podTemplateSpec.Spec.Containers[0].Env = utilities.EnvarsFromMapToSlice(envVars)
 
