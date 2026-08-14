@@ -16,6 +16,12 @@ type TestData struct {
 	Map   map[string]corev1.EnvVar
 }
 
+var (
+	testVar0 = corev1.EnvVar{Name: "var_0", Value: "value_0"}
+	testVar1 = corev1.EnvVar{Name: "var_1", Value: "value_1"}
+	testVar2 = corev1.EnvVar{Name: "var_2", Value: "value_2"}
+)
+
 var testData map[string]TestData
 
 func init() {
@@ -26,33 +32,11 @@ func init() {
 		},
 
 		"regular slice": {
-			Slice: []corev1.EnvVar{
-				{
-					Name:  "var_0",
-					Value: "value_0",
-				},
-				{
-					Name:  "var_1",
-					Value: "value_1",
-				},
-				{
-					Name:  "var_2",
-					Value: "value_2",
-				},
-			},
+			Slice: []corev1.EnvVar{testVar0, testVar1, testVar2},
 			Map: map[string]corev1.EnvVar{
-				"var_2": {
-					Name:  "var_2",
-					Value: "value_2",
-				},
-				"var_0": {
-					Name:  "var_0",
-					Value: "value_0",
-				},
-				"var_1": {
-					Name:  "var_1",
-					Value: "value_1",
-				},
+				"var_2": testVar2,
+				"var_0": testVar0,
+				"var_1": testVar1,
 			},
 		},
 	}

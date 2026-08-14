@@ -17,11 +17,18 @@ import (
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
+const (
+	extraEnvVarName  = "MY_VAR"
+	extraEnvVarValue = "MY_VALUE"
+)
+
 var _ = Describe("Deploy TenantControlPlane addons with custom env vars", func() {
 	ctx := context.Background()
 
-	var kubeconfigFile *os.File
-	var tcp *kamajiv1alpha1.TenantControlPlane
+	var (
+		kubeconfigFile *os.File
+		tcp            *kamajiv1alpha1.TenantControlPlane
+	)
 
 	// Delete the TenantControlPlane resource after test is finished
 	JustAfterEach(func() {
@@ -48,7 +55,7 @@ var _ = Describe("Deploy TenantControlPlane addons with custom env vars", func()
 			CheckTemplateContainerEnvVars(clientset, "Deployment", "kube-system", "coredns", "coredns", []corev1.EnvVar{}, true)
 		})
 
-		extraVars := []corev1.EnvVar{{Name: "MY_VAR", Value: "MY_VALUE"}}
+		extraVars := []corev1.EnvVar{{Name: extraEnvVarName, Value: extraEnvVarValue}}
 
 		By("adding extra env vars for CoreDNS", func() {
 			updatedTCP := &kamajiv1alpha1.TenantControlPlane{}
@@ -97,7 +104,7 @@ var _ = Describe("Deploy TenantControlPlane addons with custom env vars", func()
 			CheckTCPContainerEnvVars(k8sClient, *tcp, "konnectivity-server", []corev1.EnvVar{}, true)
 		})
 
-		extraVars := []corev1.EnvVar{{Name: "MY_VAR", Value: "MY_VALUE"}}
+		extraVars := []corev1.EnvVar{{Name: extraEnvVarName, Value: extraEnvVarValue}}
 
 		By("adding extra env vars for Konnectivy server", func() {
 			updatedTCP := &kamajiv1alpha1.TenantControlPlane{}
@@ -186,7 +193,7 @@ var _ = Describe("Deploy TenantControlPlane addons with custom env vars", func()
 			CheckTemplateContainerEnvVars(clientset, "DaemonSet", "kube-system", "kube-proxy", "kube-proxy", defaultVars, true)
 		})
 
-		extraVars := []corev1.EnvVar{{Name: "MY_VAR", Value: "MY_VALUE"}}
+		extraVars := []corev1.EnvVar{{Name: extraEnvVarName, Value: extraEnvVarValue}}
 
 		By("adding extra env vars for KubeProxy", func() {
 			updatedTCP := &kamajiv1alpha1.TenantControlPlane{}

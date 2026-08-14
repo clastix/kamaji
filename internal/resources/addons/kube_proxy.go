@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/prometheus/client_golang/prometheus"
 	appsv1 "k8s.io/api/apps/v1"
@@ -379,9 +380,7 @@ func (k *KubeProxy) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Ten
 
 	extraEnvVars := utilities.EnvarsFromSliceToMap(tcp.Spec.Addons.KubeProxy.ExtraEnvs)
 
-	for k, v := range extraEnvVars {
-		envVars[k] = v
-	}
+	maps.Copy(envVars, extraEnvVars)
 
 	k.daemonSet.Spec.Template.Spec.Containers[0].Env = utilities.EnvarsFromMapToSlice(envVars)
 

@@ -5,6 +5,7 @@ package controlplane
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 
 	"github.com/blang/semver"
@@ -81,9 +82,7 @@ func (k Konnectivity) buildKonnectivityContainer(tcpVersion string, addon *kamaj
 
 	extraEnvVars := utilities.EnvarsFromSliceToMap(addon.KonnectivityServerSpec.ExtraEnvs)
 
-	for k, v := range extraEnvVars {
-		envVars[k] = v
-	}
+	maps.Copy(envVars, extraEnvVars)
 
 	podSpec.Containers[index].Env = utilities.EnvarsFromMapToSlice(envVars)
 

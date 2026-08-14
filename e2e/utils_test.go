@@ -38,6 +38,15 @@ func GetKindIPAddress() string {
 	return ep.Endpoints[0].Addresses[0]
 }
 
+const (
+	// kindCGroupDriver is the cgroup driver used by the kind nodes running the e2e suite.
+	kindCGroupDriver = "cgroupfs"
+	// admissionControllerLimitRanger and admissionControllerResourceQuota are the admission
+	// controllers enabled on TenantControlPlanes created by the e2e suite helpers.
+	admissionControllerLimitRanger   = "LimitRanger"
+	admissionControllerResourceQuota = "ResourceQuota"
+)
+
 func CreateKindTCPWithAddons(tcpNamespace string, tcpName string, addons kamajiv1alpha1.AddonsSpec) *kamajiv1alpha1.TenantControlPlane {
 	return &kamajiv1alpha1.TenantControlPlane{
 		ObjectMeta: metav1.ObjectMeta{
@@ -47,10 +56,10 @@ func CreateKindTCPWithAddons(tcpNamespace string, tcpName string, addons kamajiv
 		Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 			ControlPlane: kamajiv1alpha1.ControlPlane{
 				Deployment: kamajiv1alpha1.DeploymentSpec{
-					Replicas: pointer.To(int32(1)),
+					Replicas: new(int32(1)),
 				},
 				Service: kamajiv1alpha1.ServiceSpec{
-					ServiceType: "NodePort",
+					ServiceType: kamajiv1alpha1.ServiceTypeNodePort,
 				},
 			},
 			NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
@@ -61,11 +70,11 @@ func CreateKindTCPWithAddons(tcpNamespace string, tcpName string, addons kamajiv
 			Kubernetes: kamajiv1alpha1.KubernetesSpec{
 				Version: "v1.28.0",
 				Kubelet: kamajiv1alpha1.KubeletSpec{
-					CGroupFS: "cgroupfs",
+					CGroupFS: kindCGroupDriver,
 				},
 				AdmissionControllers: kamajiv1alpha1.AdmissionControllers{
-					"LimitRanger",
-					"ResourceQuota",
+					admissionControllerLimitRanger,
+					admissionControllerResourceQuota,
 				},
 			},
 			Addons: addons,
@@ -420,13 +429,15 @@ func GetTenantClientSet(tcp *kamajiv1alpha1.TenantControlPlane) (*kubernetes.Cli
 	GinkgoHelper()
 
 	var clientset *kubernetes.Clientset
+
 	ctx := context.Background()
 
 	kubeconfigFile, err := os.CreateTemp("", fmt.Sprintf("tcp-clientset-%s", string(tcp.ObjectMeta.UID)))
 	Expect(err).ToNot(HaveOccurred())
 
 	Eventually(func() (err error) {
-		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.GetName()}, tcp); err != nil {
+		err = k8sClient.Get(ctx, types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.GetName()}, tcp)
+		if err != nil {
 			_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: cannot retrieve TCP:", err.Error())
 
 			return err
@@ -434,7 +445,8 @@ func GetTenantClientSet(tcp *kamajiv1alpha1.TenantControlPlane) (*kubernetes.Cli
 
 		secret := &corev1.Secret{}
 
-		if err = k8sClient.Get(ctx, types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.Status.KubeConfig.Admin.SecretName}, secret); err != nil {
+		err = k8sClient.Get(ctx, types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.Status.KubeConfig.Admin.SecretName}, secret)
+		if err != nil {
 			_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: cannot retrieve kubeconfig secret name:", err.Error())
 
 			return err
@@ -456,6 +468,7 @@ func GetTenantClientSet(tcp *kamajiv1alpha1.TenantControlPlane) (*kubernetes.Cli
 
 func GetDaemonSetContainers(clientset *kubernetes.Clientset, namespace string, name string) []corev1.Container {
 	var daemonSet *appsv1.DaemonSet
+
 	var err error
 
 	Eventually(func() error {
@@ -469,6 +482,7 @@ func GetDaemonSetContainers(clientset *kubernetes.Clientset, namespace string, n
 
 func GetDeploymentContainers(clientset *kubernetes.Clientset, namespace string, name string) []corev1.Container {
 	var deployment *appsv1.Deployment
+
 	var err error
 
 	Eventually(func() error {
