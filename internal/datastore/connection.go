@@ -20,7 +20,6 @@ func NewStorageConnection(ctx context.Context, client client.Client, ds kamajiv1
 
 	switch ds.Spec.Driver {
 	case kamajiv1alpha1.KineMySQLDriver:
-
 		if ds.Spec.TLSConfig != nil {
 			cc.TLSConfig.ServerName = cc.Endpoints[0].Host
 		}

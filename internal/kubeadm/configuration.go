@@ -115,6 +115,7 @@ func GetKubeadmInitConfigurationFromMap(conf map[string]string) (*Configuration,
 	if err != nil {
 		return nil, err
 	}
+
 	initConfiguration.ClusterConfiguration.ComponentConfigs = defaults.ComponentConfigs
 
 	return &Configuration{InitConfiguration: initConfiguration}, nil

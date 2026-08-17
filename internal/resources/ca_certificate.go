@@ -86,6 +86,7 @@ func (r *CACertificate) GetName() string {
 func (r *CACertificate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	tenantControlPlane.Status.Certificates.CA.LastUpdate = metav1.Now()
 	tenantControlPlane.Status.Certificates.CA.SecretName = r.resource.GetName()
+
 	tenantControlPlane.Status.Certificates.CA.Checksum = utilities.GetObjectChecksum(r.resource)
 	if r.isRotatingCA {
 		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionCARotating

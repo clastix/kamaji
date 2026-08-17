@@ -301,6 +301,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 
 				return err
 			}
+
 			if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 				setupLog.Error(err, "unable to set up ready check")
 
@@ -308,6 +309,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			}
 
 			setupLog.Info("starting manager")
+
 			if err = mgr.Start(ctx); err != nil {
 				setupLog.Error(err, "problem running manager")
 

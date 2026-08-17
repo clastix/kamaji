@@ -61,6 +61,7 @@ func (r *Setup) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
 	secret := &corev1.Secret{}
+
 	namespacedName := types.NamespacedName{
 		Namespace: tenantControlPlane.GetNamespace(),
 		Name:      tenantControlPlane.Status.Storage.Config.SecretName,
@@ -109,6 +110,7 @@ func (r *Setup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 	}()
 
 	reconciliationResult = controllerutil.OperationResultNone
+
 	var operationResult controllerutil.OperationResult
 
 	operationResult, err = r.createDB(ctx, tenantControlPlane)
@@ -117,6 +119,7 @@ func (r *Setup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 
 		return reconciliationResult, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 
 	operationResult, err = r.createUser(ctx, tenantControlPlane)
@@ -125,6 +128,7 @@ func (r *Setup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 
 		return reconciliationResult, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 
 	operationResult, err = r.createGrantPrivileges(ctx, tenantControlPlane)
@@ -133,6 +137,7 @@ func (r *Setup) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamajiv1
 
 		return reconciliationResult, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 
 	return reconciliationResult, nil

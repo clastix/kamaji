@@ -143,6 +143,7 @@ func NewMySQLConnection(config ConnectionConfig) (Connection, error) {
 		if err = mysql.RegisterTLSConfig(tlsKey, config.TLSConfig); err != nil {
 			return nil, err
 		}
+
 		mysqlConfig.TLSConfig = tlsKey
 	}
 
@@ -169,6 +170,7 @@ func (c *MySQLConnection) multiStatementConn() (*sql.DB, error) {
 	if cfg.Params == nil {
 		cfg.Params = map[string]string{}
 	}
+
 	cfg.Params["multiStatements"] = "true"
 
 	db, err := sql.Open("mysql", cfg.FormatDSN())

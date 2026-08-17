@@ -52,6 +52,7 @@ func BootstrapToken(client kubernetes.Interface, config *Configuration) error {
 			},
 		},
 	}
+
 	bootstrapBytes, err := clientcmd.Write(*bootstrapConfig)
 	if err != nil {
 		return err

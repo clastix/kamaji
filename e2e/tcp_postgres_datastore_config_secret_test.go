@@ -54,7 +54,9 @@ var _ = Describe("When the datastore-config Secret is corrupted for a PostgreSQL
 
 	It("Should regenerate the Secret and restart the TCP pods successfully", func() {
 		By("recording the UIDs of the currently running TenantControlPlane pods")
+
 		initialPodUIDs := sets.New[types.UID]()
+
 		Eventually(func() int {
 			podList := &corev1.PodList{}
 			if err := k8sClient.List(context.Background(), podList,
@@ -65,6 +67,7 @@ var _ = Describe("When the datastore-config Secret is corrupted for a PostgreSQL
 			}
 
 			initialPodUIDs.Clear()
+
 			for _, pod := range podList.Items {
 				initialPodUIDs.Insert(pod.GetUID())
 			}
@@ -73,6 +76,7 @@ var _ = Describe("When the datastore-config Secret is corrupted for a PostgreSQL
 		}, time.Minute, time.Second).Should(Not(BeZero()))
 
 		By("retrieving the current datastore-config Secret and its checksum")
+
 		secretName := fmt.Sprintf("%s-datastore-config", tcp.GetName())
 
 		var secret corev1.Secret
@@ -82,6 +86,7 @@ var _ = Describe("When the datastore-config Secret is corrupted for a PostgreSQL
 		Expect(originalChecksum).NotTo(BeEmpty(), "expected datastore-config Secret to carry a checksum annotation")
 
 		By("corrupting the DB_PASSWORD in the datastore-config Secret")
+
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			if err := k8sClient.Get(context.Background(), client.ObjectKeyFromObject(&secret), &secret); err != nil {
 				return err
@@ -111,6 +116,7 @@ var _ = Describe("When the datastore-config Secret is corrupted for a PostgreSQL
 			); err != nil {
 				return false
 			}
+
 			for _, pod := range podList.Items {
 				if !initialPodUIDs.Has(pod.GetUID()) {
 					return true

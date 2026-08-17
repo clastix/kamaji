@@ -28,6 +28,7 @@ func TestAPIs(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	By("bootstrapping test environment")
+
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "..", "charts", "kamaji", "crds"),
@@ -36,6 +37,7 @@ var _ = BeforeSuite(func() {
 	}
 
 	var err error
+
 	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
@@ -50,6 +52,7 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
+
 	err := testEnv.Stop()
 	Expect(err).ToNot(HaveOccurred())
 })

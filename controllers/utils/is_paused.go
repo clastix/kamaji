@@ -13,6 +13,7 @@ func IsPaused(obj client.Object) bool {
 	if obj.GetAnnotations() == nil {
 		return false
 	}
+
 	_, paused := obj.GetAnnotations()[v1alpha1.PausedReconciliationAnnotation]
 
 	return paused

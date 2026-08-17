@@ -37,9 +37,11 @@ func NewNATSConnection(config ConnectionConfig) (*NATSConnection, error) {
 		endpoints = fmt.Sprintf("nats://%s", config.Endpoints[0].String())
 	}
 
-	var conn *nats.Conn
-	var err error
-	var natsOpts []nats.Option
+	var (
+		conn     *nats.Conn
+		err      error
+		natsOpts []nats.Option
+	)
 
 	if config.TLSConfig != nil {
 		natsOpts = append(natsOpts, nats.Secure(config.TLSConfig))

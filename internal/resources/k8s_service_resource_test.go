@@ -118,10 +118,12 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 		// Both the kube-apiserver port and the additional port must be present with their
 		// NodePort cleared — the clearing loop covers every port, not just the first one.
 		Expect(svc.Spec.Ports).To(HaveLen(2))
+
 		byName := map[string]corev1.ServicePort{}
 		for _, p := range svc.Spec.Ports {
 			byName[p.Name] = p
 		}
+
 		Expect(byName).To(HaveKey("kube-apiserver"))
 		Expect(byName).To(HaveKey("metrics"))
 		Expect(byName["kube-apiserver"].NodePort).To(BeZero())

@@ -230,6 +230,7 @@ var _ = Describe("Deploy a TenantControlPlane resource with additional options",
 
 		By("removing the additional resources", func() {
 			var containerName string
+
 			volumeNames, volumeMounts := sets.New[string](), tcp.Spec.ControlPlane.Deployment.AdditionalVolumeMounts
 
 			Eventually(func() error {

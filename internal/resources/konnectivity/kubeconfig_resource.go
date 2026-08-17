@@ -117,6 +117,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		isRotationRequested := utilities.IsRotationRequested(r.resource)
 
 		caNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
+
 		secretCA := &corev1.Secret{}
 		if err := r.Client.Get(ctx, caNamespacedName, secretCA); err != nil {
 			logger.Error(err, "cannot retrieve the CA secret")
@@ -131,6 +132,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		}
 
 		certificateNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Addons.Konnectivity.Certificate.SecretName}
+
 		secretCertificate := &corev1.Secret{}
 		if err := r.Client.Get(ctx, certificateNamespacedName, secretCertificate); err != nil {
 			logger.Error(err, "cannot retrieve the Konnectivity Certificate secret")

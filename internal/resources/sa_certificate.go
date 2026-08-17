@@ -98,6 +98,7 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s public_key-private_key pair is not valid: %s", kubeadmconstants.ServiceAccountKeyBaseName, err.Error()))
 			}
+
 			if isValid {
 				return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 			}

@@ -162,6 +162,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 
 		return reconcile.Result{}, err
 	}
+
 	tcpStatus := ptr.Deref(tcp.Status.Kubernetes.Version.Status, kamajiv1alpha1.VersionProvisioning)
 	// Handling finalizer if the TenantControlPlane is marked for deletion or scaled to zero:
 	// the clean-up function is already taking care to stop the manager, if this exists.
@@ -241,6 +242,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	}
 
 	tcpCtx, tcpCancelFn := context.WithCancel(ctx)
+
 	defer func() {
 		// If the reconciliation fails, we don't need to get a potential dangling goroutine.
 		if err != nil {
@@ -381,6 +383,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	if err = kubeadmRbac.SetupWithManager(mgr); err != nil {
 		return reconcile.Result{}, err
 	}
+
 	completedCh := make(chan struct{})
 	// Starting the manager
 	go func() {
@@ -404,6 +407,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 
 			m.sootManagerErrChan <- event.GenericEvent{Object: &shrunkTCP}
 		}
+
 		close(completedCh)
 	}()
 

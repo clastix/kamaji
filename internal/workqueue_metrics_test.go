@@ -81,6 +81,7 @@ func TestWorkqueueMetricsRegistration(t *testing.T) {
 	require.NoError(t, err, "gathering metrics")
 	// Collect all workqueue metrics
 	workqueueMetrics := make(map[string]*dto.MetricFamily)
+
 	for _, mf := range metricFamilies {
 		name := mf.GetName()
 		if len(name) > 10 && name[:10] == "workqueue_" {
@@ -95,6 +96,7 @@ func TestWorkqueueMetricsRegistration(t *testing.T) {
 	require.NotEmpty(t, workqueueMetrics, "workqueueMetrics should not be empty")
 	// List all found workqueue metrics
 	t.Log("Found workqueue metrics:")
+
 	for name := range workqueueMetrics {
 		t.Logf("  - %s", name)
 	}
@@ -111,11 +113,13 @@ func TestWorkqueueMetricsRegistration(t *testing.T) {
 	}
 
 	var missingMetrics []string
+
 	for _, expected := range expectedMetrics {
 		if _, found := workqueueMetrics[expected]; !found {
 			missingMetrics = append(missingMetrics, expected)
 		}
 	}
+
 	require.Empty(t, missingMetrics, "missing expected workqueue metrics", "values", missingMetrics)
 
 	t.Log("✅ SUCCESS: All expected workqueue metrics are present!")
@@ -133,10 +137,12 @@ func checkBasicMetrics(t *testing.T) {
 
 	// Count workqueue metrics
 	workqueueCount := 0
+
 	for _, mf := range metricFamilies {
 		name := mf.GetName()
 		if len(name) > 10 && name[:10] == "workqueue_" {
 			workqueueCount++
+
 			t.Logf("Found: %s", name)
 		}
 	}

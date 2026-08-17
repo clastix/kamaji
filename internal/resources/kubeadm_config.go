@@ -132,6 +132,7 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
 		endpoint := net.JoinHostPort(advAddress, strconv.FormatInt(int64(port), 10))
+
 		spec := tenantControlPlane.Spec.ControlPlane
 		if spec.Gateway != nil {
 			if len(spec.Gateway.Hostname) > 0 {
@@ -139,6 +140,7 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 				endpoint = net.JoinHostPort(gaddr, strconv.FormatInt(int64(gport), 10))
 			}
 		}
+
 		if spec.Ingress != nil {
 			if len(spec.Ingress.Hostname) > 0 {
 				iaddr, iport := utilities.GetControlPlaneAddressAndPortFromHostname(spec.Ingress.Hostname, port)
@@ -198,6 +200,7 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 		if err != nil {
 			return err
 		}
+
 		if r.resource.Data, err = kubeadm.GetKubeadmInitConfigurationMap(*config); err != nil {
 			logger.Error(err, "cannot retrieve kubeadm init configuration")
 

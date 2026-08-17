@@ -157,6 +157,7 @@ func (k *KubeProxy) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tena
 
 		return controllerutil.OperationResultNone, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 	// DaemonSet
 	operationResult, err = k.mutateDaemonSet(ctx, tenantClient)
@@ -165,6 +166,7 @@ func (k *KubeProxy) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tena
 
 		return controllerutil.OperationResultNone, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 	// ConfigMap
 	operationResult, err = k.mutateConfigMap(ctx, tenantClient)
@@ -173,6 +175,7 @@ func (k *KubeProxy) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tena
 
 		return controllerutil.OperationResultNone, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 	// RoleBinding
 	operationResult, err = k.mutateRoleBinding(ctx, tenantClient)
@@ -181,6 +184,7 @@ func (k *KubeProxy) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tena
 
 		return controllerutil.OperationResultNone, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 	// Role
 	operationResult, err = k.mutateRole(ctx, tenantClient)
@@ -189,6 +193,7 @@ func (k *KubeProxy) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tena
 
 		return controllerutil.OperationResultNone, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 	// ServiceAccount
 	operationResult, err = k.mutateServiceAccount(ctx, tenantClient)
@@ -197,6 +202,7 @@ func (k *KubeProxy) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tena
 
 		return controllerutil.OperationResultNone, err
 	}
+
 	reconciliationResult = utils.UpdateOperationResult(reconciliationResult, operationResult)
 
 	return reconciliationResult, nil
@@ -270,9 +276,11 @@ func (k *KubeProxy) mutateRoleBinding(ctx context.Context, tenantClient client.C
 	return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, rb, func() error {
 		rb.SetLabels(utilities.MergeMaps(rb.GetLabels(), k.roleBinding.GetLabels()))
 		rb.SetAnnotations(utilities.MergeMaps(rb.GetAnnotations(), k.roleBinding.GetAnnotations()))
+
 		if len(rb.Subjects) == 0 {
 			rb.Subjects = make([]rbacv1.Subject, 1)
 		}
+
 		rb.Subjects[0].Kind = k.roleBinding.Subjects[0].Kind
 		rb.Subjects[0].APIGroup = rbacv1.GroupName
 		rb.Subjects[0].Name = k.roleBinding.Subjects[0].Name
@@ -298,6 +306,7 @@ func (k *KubeProxy) mutateConfigMap(ctx context.Context, tenantClient client.Cli
 
 func (k *KubeProxy) mutateDaemonSet(ctx context.Context, tenantClient client.Client) (controllerutil.OperationResult, error) {
 	var ds appsv1.DaemonSet
+
 	ds.Name = k.daemonSet.Name
 	ds.Namespace = k.daemonSet.Namespace
 
@@ -348,31 +357,37 @@ func (k *KubeProxy) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Ten
 	if err = utilities.DecodeFromYAML(string(parts[1]), k.serviceAccount); err != nil {
 		return fmt.Errorf("unable to decode ServiceAccount manifest: %w", err)
 	}
+
 	addon_utils.SetKamajiManagedLabels(k.serviceAccount)
 
 	if err = utilities.DecodeFromYAML(string(parts[2]), k.clusterRoleBinding); err != nil {
 		return fmt.Errorf("unable to decode ClusterRoleBinding manifest: %w", err)
 	}
+
 	addon_utils.SetKamajiManagedLabels(k.clusterRoleBinding)
 
 	if err = utilities.DecodeFromYAML(string(parts[3]), k.role); err != nil {
 		return fmt.Errorf("unable to decode Role manifest: %w", err)
 	}
+
 	addon_utils.SetKamajiManagedLabels(k.role)
 
 	if err = utilities.DecodeFromYAML(string(parts[4]), k.roleBinding); err != nil {
 		return fmt.Errorf("unable to decode RoleBinding manifest: %w", err)
 	}
+
 	addon_utils.SetKamajiManagedLabels(k.roleBinding)
 
 	if err = utilities.DecodeFromYAML(string(parts[5]), k.configMap); err != nil {
 		return fmt.Errorf("unable to decode ConfigMap manifest: %w", err)
 	}
+
 	addon_utils.SetKamajiManagedLabels(k.configMap)
 
 	if err = utilities.DecodeFromYAML(string(parts[6]), k.daemonSet); err != nil {
 		return fmt.Errorf("unable to decode DaemonSet manifest: %w", err)
 	}
+
 	addon_utils.SetKamajiManagedLabels(k.daemonSet)
 
 	return nil

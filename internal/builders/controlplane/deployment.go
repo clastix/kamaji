@@ -771,6 +771,7 @@ func mergeAPIServerArgs(current, userExtras []string, safeDefaults, managed map[
 		}
 
 		userFlags.Insert(flag)
+
 		sanitizedExtras = append(sanitizedExtras, arg)
 	}
 
@@ -831,6 +832,7 @@ func (d Deployment) etcdServersOverrides() string {
 		for _, ep := range dso.DataStore.Spec.Endpoints {
 			httpsEndpoints = append(httpsEndpoints, fmt.Sprintf("https://%s", ep))
 		}
+
 		dataStoreOverridesEndpoints = append(dataStoreOverridesEndpoints, fmt.Sprintf("%s#%s", dso.Resource, strings.Join(httpsEndpoints, ";")))
 	}
 
@@ -923,6 +925,7 @@ func (d Deployment) removeKineContainers(podSpec *corev1.PodSpec) {
 
 		podSpec.Containers = containers
 	}
+
 	d.removeKineInitContainers(podSpec)
 }
 
@@ -963,6 +966,7 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 		if podSpec.InitContainers[index].Image == "" {
 			podSpec.InitContainers[index].Image = d.KineContainerImage
 		}
+
 		podSpec.InitContainers[index].Command = []string{"sh"}
 
 		podSpec.InitContainers[index].Args = []string{
@@ -1024,6 +1028,7 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 	if podSpec.Containers[index].Image == "" {
 		podSpec.Containers[index].Image = d.KineContainerImage
 	}
+
 	podSpec.Containers[index].Command = []string{"/bin/kine"}
 	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
 	podSpec.Containers[index].VolumeMounts = []corev1.VolumeMount{
@@ -1194,6 +1199,7 @@ func (d Deployment) resetKubeAPIServerFlags(resource *appsv1.Deployment, tcp kam
 	// retrieving the previous hash for the apiserver args:
 	// in case of non-matching values, removing all the args in order to perform a full reconciliation from a clean start.
 	previousHash := resource.GetAnnotations()[apiServerFlagsAnnotation]
+
 	currentHash, err := utilities.CalculateStringSliceChecksum(tcp.Spec.ControlPlane.Deployment.ExtraArgs.APIServer)
 	if err != nil {
 		return

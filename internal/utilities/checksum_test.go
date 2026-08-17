@@ -40,6 +40,7 @@ func TestCalculateStringSliceChecksum(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
+
 			if got != tt.expected {
 				t.Errorf("CalculateStringSliceChecksum(%v) = %q, want %q", tt.data, got, tt.expected)
 			}

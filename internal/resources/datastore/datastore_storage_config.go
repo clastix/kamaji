@@ -116,8 +116,10 @@ func (r *Config) UpdateTenantControlPlaneStatus(_ context.Context, tenantControl
 
 func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		var password []byte
-		var username []byte
+		var (
+			password []byte
+			username []byte
+		)
 
 		hash := utilities.GetObjectChecksum(r.resource)
 		switch {
@@ -170,6 +172,7 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 		}
 
 		var dataStoreSchema string
+
 		switch {
 		case len(tenantControlPlane.Status.Storage.Setup.Schema) > 0:
 			// for existing TCPs, the dataStoreSchema will be adopted from the status,

@@ -96,6 +96,7 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 		// Retrieving the TenantControlPlane CA:
 		// this is required to trigger a new generation in case of Certificate Authority rotation.
 		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.FrontProxyCA.SecretName}
+
 		secretCA := &corev1.Secret{}
 		if err := r.Client.Get(ctx, namespacedName, secretCA); err != nil {
 			logger.Error(err, "cannot retrieve CA secret")
@@ -151,6 +152,7 @@ func (r *FrontProxyClientCertificate) mutate(ctx context.Context, tenantControlP
 			Certificate: secretCA.Data[kubeadmconstants.FrontProxyCACertName],
 			PrivateKey:  secretCA.Data[kubeadmconstants.FrontProxyCAKeyName],
 		}
+
 		certificateKeyPair, err := kubeadm.GenerateCertificatePrivateKeyPair(kubeadmconstants.FrontProxyClientCertAndKeyBaseName, config, ca)
 		if err != nil {
 			logger.Error(err, "cannot generate certificate and private key")

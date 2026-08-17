@@ -47,6 +47,7 @@ func PrintTenantControlPlaneInfo() {
 		cmd := exec.CommandContext(ctx, "kubectl")
 
 		var out bytes.Buffer
+
 		cmd.Stdout = &out
 		cmd.Args = args
 
@@ -64,6 +65,7 @@ func PrintTenantControlPlaneInfo() {
 
 	if CurrentSpecReport().Failed() {
 		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: Tenant Control Plane definition")
+
 		kubectlExec(
 			context.Background(),
 			"--namespace="+tcp.GetNamespace(),
@@ -71,14 +73,18 @@ func PrintTenantControlPlaneInfo() {
 			"tcp",
 			tcp.GetName(),
 		)
+
 		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: Tenant Control Plane resources")
+
 		kubectlExec(
 			context.Background(),
 			"--namespace="+tcp.GetNamespace(),
 			"get",
 			"svc,deployment,pods,ep,configmap,secrets",
 		)
+
 		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: Tenant Control Plane pods")
+
 		kubectlExec(
 			context.Background(),
 			"--namespace="+tcp.GetNamespace(),
@@ -150,6 +156,7 @@ func AllPodsLabelMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, label strin
 		if err != nil {
 			return false
 		}
+
 		for _, pod := range tcpPods.Items {
 			if pod.Labels[label] != value {
 				return false
@@ -167,6 +174,7 @@ func AllPodsAnnotationMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, annota
 		if err != nil {
 			return false
 		}
+
 		for _, pod := range tcpPods.Items {
 			if pod.Annotations[annotation] != value {
 				return false
@@ -179,12 +187,15 @@ func AllPodsAnnotationMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, annota
 
 func PodsServiceAccountMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, sa *corev1.ServiceAccount) {
 	GinkgoHelper()
+
 	saName := sa.GetName()
+
 	Eventually(func() bool {
 		tcpPods, err := getControlPlanePods(tcp)
 		if err != nil {
 			return false
 		}
+
 		for _, pod := range tcpPods.Items {
 			if pod.Spec.ServiceAccountName != saName {
 				return false
@@ -197,6 +208,7 @@ func PodsServiceAccountMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, sa *c
 
 func ScaleTenantControlPlane(tcp *kamajiv1alpha1.TenantControlPlane, replicas int32) {
 	GinkgoHelper()
+
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		Expect(k8sClient.Get(context.Background(), client.ObjectKeyFromObject(tcp), tcp)).To(Succeed())
 		tcp.Spec.ControlPlane.Deployment.Replicas = &replicas
@@ -209,6 +221,7 @@ func ScaleTenantControlPlane(tcp *kamajiv1alpha1.TenantControlPlane, replicas in
 // CreateGatewayWithListeners creates a Gateway with control plane and konnectivity-server listeners.
 func CreateGatewayWithListeners(gatewayName, namespace, gatewayClassName, hostname string) {
 	GinkgoHelper()
+
 	gateway := &gatewayv1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gatewayName,
@@ -266,6 +279,7 @@ func CreateGatewayWithListeners(gatewayName, namespace, gatewayClassName, hostna
 // containerSecurityContextMustEqualTo verifies if the container with the given containerName in the control plane pods has the given security context.
 func containerSecurityContextMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, containerName string, containerSecurityContext *corev1.SecurityContext) {
 	GinkgoHelper()
+
 	tcpPods, err := getControlPlanePods(tcp)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(tcpPods.Items).ToNot(BeEmpty())
@@ -273,14 +287,17 @@ func containerSecurityContextMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane,
 	for _, pod := range tcpPods.Items {
 		// containerFound tracks if the container with the given containerName is actually present
 		containerFound := false
+
 		for _, container := range pod.Spec.Containers {
 			if container.Name == containerName {
 				containerFound = true
+
 				Expect(container.SecurityContext).To(Equal(containerSecurityContext), fmt.Sprintf("securityContext for container %s does not match expected value", containerName))
 			} else {
 				continue
 			}
 		}
+
 		Expect(containerFound).To(BeTrue(), fmt.Sprintf("pod does not container a container with name '%s'", containerName))
 	}
 }
@@ -288,6 +305,7 @@ func containerSecurityContextMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane,
 // podSecurityContextMustEqualTo verifies if the control plane pods have the given security context.
 func podSecurityContextMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, podSecurityContext *corev1.PodSecurityContext) {
 	GinkgoHelper()
+
 	tcpPods, err := getControlPlanePods(tcp)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(tcpPods.Items).ToNot(BeEmpty())
@@ -318,6 +336,7 @@ func waitUntilControlPlaneReconciliationIsFinished(tcp *kamajiv1alpha1.TenantCon
 			if pod.Labels["pod-template-hash"] != firstPodTemplateHash {
 				return false
 			}
+
 			if !isPodReady(&pod) {
 				return false
 			}
@@ -343,6 +362,7 @@ func waitUntilControlPlaneReconciliationIsFinished(tcp *kamajiv1alpha1.TenantCon
 			if pod.Labels["pod-template-hash"] != firstPodTemplateHash {
 				return false
 			}
+
 			if !isPodReady(&pod) {
 				return false
 			}
@@ -355,6 +375,7 @@ func waitUntilControlPlaneReconciliationIsFinished(tcp *kamajiv1alpha1.TenantCon
 // getControlPlanePods returns all pods that belong to the given tenant control plane.
 func getControlPlanePods(tcp *kamajiv1alpha1.TenantControlPlane) (*corev1.PodList, error) {
 	tcpPods := &corev1.PodList{}
+
 	err := k8sClient.List(context.Background(), tcpPods, client.MatchingLabels{
 		"kamaji.clastix.io/name": tcp.GetName(),
 	})
