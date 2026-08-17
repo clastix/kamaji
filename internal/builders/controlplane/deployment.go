@@ -410,7 +410,7 @@ func (d Deployment) buildScheduler(podSpec *corev1.PodSpec, tenantControlPlane k
 	args["--authorization-kubeconfig"] = kubeconfig
 	args["--bind-address"] = "0.0.0.0"
 	args["--kubeconfig"] = kubeconfig
-	args["--leader-elect"] = "true"
+	args["--leader-elect"] = "true" //nolint:goconst
 
 	podSpec.Containers[index].Name = schedulerContainerName
 	podSpec.Containers[index].Image = tenantControlPlane.Spec.ControlPlane.Deployment.RegistrySettings.KubeSchedulerImage(tenantControlPlane.Spec.Kubernetes.Version)
@@ -481,7 +481,7 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		"--controllers":                      "*,bootstrapsigner,tokencleaner",
 		"--kubeconfig":                       kubeconfig,
 		"--leader-elect":                     "true",
-		"--service-cluster-ip-range":         strings.Join(serviceCIDRs, ","),
+		"--service-cluster-ip-range":         strings.Join(serviceCIDRs, ","), //nolint:goconst
 		"--cluster-cidr":                     strings.Join(podCIDRs, ","),
 		"--requestheader-client-ca-file":     path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyCACertName),
 		"--root-ca-file":                     path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),

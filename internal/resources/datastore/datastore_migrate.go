@@ -107,7 +107,7 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 		d.job.SetLabels(map[string]string{
 			"tcp.kamaji.clastix.io/name":      tenantControlPlane.GetName(),
 			"tcp.kamaji.clastix.io/namespace": tenantControlPlane.GetNamespace(),
-			"kamaji.clastix.io/component":     "migrate",
+			"kamaji.clastix.io/component":     "migrate", //nolint:goconst
 		})
 
 		d.job.Spec.Template.ObjectMeta.Labels = utilities.MergeMaps(d.job.Spec.Template.ObjectMeta.Labels, d.job.Spec.Template.ObjectMeta.Labels)

@@ -232,7 +232,7 @@ func generateCertificateKeyPairBytes(template *x509.Certificate, caCert *x509.Ce
 
 	certPEM := &bytes.Buffer{}
 	if err = pem.Encode(certPEM, &pem.Block{
-		Type:    "CERTIFICATE",
+		Type:    "CERTIFICATE", //nolint:goconst
 		Headers: nil,
 		Bytes:   certBytes,
 	}); err != nil {
@@ -241,7 +241,7 @@ func generateCertificateKeyPairBytes(template *x509.Certificate, caCert *x509.Ce
 
 	certPrivKeyPEM := &bytes.Buffer{}
 	if err = pem.Encode(certPrivKeyPEM, &pem.Block{
-		Type:    "RSA PRIVATE KEY",
+		Type:    "RSA PRIVATE KEY", //nolint:goconst
 		Headers: nil,
 		Bytes:   x509.MarshalPKCS1PrivateKey(certPrivKey),
 	}); err != nil {
