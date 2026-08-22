@@ -1,3 +1,4 @@
+{{- $issuerRef := (.Values.certManager | default dict).issuerRef | default dict }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -11,6 +12,7 @@ spec:
     - {{ include "kamaji.webhookServiceName" . }}.{{ .Release.Namespace }}.svc
     - {{ include "kamaji.webhookServiceName" . }}.{{ .Release.Namespace }}.svc.cluster.local
   issuerRef:
-    kind: Issuer
-    name: kamaji-selfsigned-issuer
+    kind: {{ $issuerRef.kind | default "Issuer" | quote }}
+    name: {{ $issuerRef.name | default "kamaji-selfsigned-issuer" | quote }}
+    group: {{ $issuerRef.group | default "cert-manager.io" | quote }}
   secretName: {{ include "kamaji.webhookSecretName" . }}
