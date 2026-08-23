@@ -107,6 +107,7 @@ func mergeCertSANs(managementAddress string, certSANs, additional []string) []st
 		}
 
 		seen[key] = struct{}{}
+
 		certSANs = append(certSANs, ip)
 	}
 
@@ -138,6 +139,7 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
 
 		endpoint := net.JoinHostPort(advAddress, strconv.FormatInt(int64(port), 10))
+
 		spec := tenantControlPlane.Spec.ControlPlane
 		switch {
 		case spec.Gateway != nil && len(spec.Gateway.Hostname) > 0:
