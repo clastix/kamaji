@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -80,7 +81,7 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 	})
 
 	It("disables allocation and clears an existing NodePort when set to false", func() {
-		tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = new(false)
+		tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = ptr.To(false)
 		resource := newResource(existingService())
 
 		Expect(resource.Define(ctx, tcp)).To(Succeed())
@@ -96,7 +97,7 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 	})
 
 	It("clears NodePorts on every port, including additional ports, when set to false", func() {
-		tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = new(false)
+		tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = ptr.To(false)
 		tcp.Spec.ControlPlane.Service.AdditionalPorts = []kamajiv1alpha1.AdditionalPort{{
 			Name:       "metrics",
 			Protocol:   corev1.ProtocolTCP,
@@ -152,7 +153,7 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 		// produces no diff on DeepEqual, preventing perpetual reconcile churn.
 		tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = nil
 		existing := existingService()
-		existing.Spec.AllocateLoadBalancerNodePorts = new(true) // API server default on a live LB Service
+		existing.Spec.AllocateLoadBalancerNodePorts = ptr.To(true) // API server default on a live LB Service
 		resource := newResource(existing)
 
 		Expect(resource.Define(ctx, tcp)).To(Succeed())
@@ -170,7 +171,7 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 		// revert to the Kubernetes LoadBalancer default (true).
 		tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = nil
 		existing := existingService()
-		existing.Spec.AllocateLoadBalancerNodePorts = new(false) // previously disabled
+		existing.Spec.AllocateLoadBalancerNodePorts = ptr.To(false) // previously disabled
 		resource := newResource(existing)
 
 		Expect(resource.Define(ctx, tcp)).To(Succeed())
@@ -185,7 +186,7 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 	})
 
 	It("propagates an explicit true and leaves the NodePort untouched", func() {
-		tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = new(true)
+		tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = ptr.To(true)
 		resource := newResource(existingService())
 
 		Expect(resource.Define(ctx, tcp)).To(Succeed())
