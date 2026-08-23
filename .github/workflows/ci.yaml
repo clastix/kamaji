@@ -15,11 +15,6 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-      - name: Cache kubebuilder binaries
-        uses: actions/cache@v4
-        with:
-          path: bin/k8s
-          key: kubebuilder-${{ runner.os }}-1.31.0
       - run: make test
   golangci:
     name: lint
