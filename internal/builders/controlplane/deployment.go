@@ -1085,7 +1085,7 @@ func (d Deployment) setReplicas(deploymentSpec *appsv1.DeploymentSpec, tcp kamaj
 
 func (d Deployment) setRuntimeClass(spec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
 	if len(tcp.Spec.ControlPlane.Deployment.RuntimeClassName) > 0 {
-		spec.RuntimeClassName = pointer.To(tcp.Spec.ControlPlane.Deployment.RuntimeClassName)
+		spec.RuntimeClassName = pointer.To(tcp.Spec.ControlPlane.Deployment.RuntimeClassName) //nolint:modernize
 
 		return
 	}
