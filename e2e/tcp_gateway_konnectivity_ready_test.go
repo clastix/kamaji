@@ -29,7 +29,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API and Konnectivity"
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					Deployment: kamajiv1alpha1.DeploymentSpec{
-						Replicas: pointer.To(int32(1)),
+						Replicas: pointer.To(int32(1)), //nolint:modernize
 					},
 					Service: kamajiv1alpha1.ServiceSpec{
 						ServiceType: "ClusterIP",

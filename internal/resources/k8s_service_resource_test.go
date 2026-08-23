@@ -171,7 +171,7 @@ var _ = Describe("KubernetesServiceResource AllocateLoadBalancerNodePorts", func
 		// revert to the Kubernetes LoadBalancer default (true).
 		tcp.Spec.ControlPlane.Service.AllocateLoadBalancerNodePorts = nil
 		existing := existingService()
-		existing.Spec.AllocateLoadBalancerNodePorts = ptr.To(false) // previously disabled
+		existing.Spec.AllocateLoadBalancerNodePorts = ptr.To(false) //nolint:modernize // previously disabled
 		resource := newResource(existing)
 
 		Expect(resource.Define(ctx, tcp)).To(Succeed())

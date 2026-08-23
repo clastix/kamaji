@@ -188,7 +188,7 @@ func (m *Migrate) createOrUpdate(ctx context.Context) error {
 func (m *Migrate) SetupWithManager(mgr manager.Manager) error {
 	return controllerruntime.NewControllerManagedBy(mgr).
 		Named(m.ControllerName).
-		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: pointer.To(true)}).
+		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: pointer.To(true)}). //nolint:modernize
 		For(&admissionregistrationv1.ValidatingWebhookConfiguration{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			vwc := m.object()
 

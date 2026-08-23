@@ -30,7 +30,7 @@ var _ = Describe("When the datastore-config Secret is corrupted for a PostgreSQL
 			DataStore: "postgresql-bronze",
 			ControlPlane: kamajiv1alpha1.ControlPlane{
 				Deployment: kamajiv1alpha1.DeploymentSpec{
-					Replicas: pointer.To(int32(1)),
+					Replicas: pointer.To(int32(1)), //nolint:modernize
 				},
 				Service: kamajiv1alpha1.ServiceSpec{
 					ServiceType: "ClusterIP",

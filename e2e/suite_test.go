@@ -47,7 +47,7 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		UseExistingCluster: ptr.To(true),
+		UseExistingCluster: ptr.To(true), //nolint:modernize
 	}
 
 	var err error
