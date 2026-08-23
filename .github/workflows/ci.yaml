@@ -20,6 +20,8 @@ jobs:
         with:
           path: bin/k8s
           key: kubebuilder-${{ runner.os }}-1.31.0
+      - name: Download kubebuilder binaries if not cached
+        run: make envtest
       - run: make test
   golangci:
     name: lint
