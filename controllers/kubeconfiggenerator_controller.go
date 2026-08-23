@@ -304,6 +304,9 @@ func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator 
 	}
 
 	clientCert, clientKey, err := pkiutil.NewCertAndKey(caCert, caKey, &clientCertConfig)
+	if err != nil {
+		return fmt.Errorf("cannot generate client certificate and key: %w", err)
+	}
 
 	contextUserName := generator.Name
 
