@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	pointer "k8s.io/utils/ptr"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -131,7 +130,8 @@ func (k Konnectivity) buildKonnectivityContainer(tcpVersion string, addon *kamaj
 		Requests: nil,
 	}
 
-	if resources := addon.KonnectivityServerSpec.Resources; resources != nil {
+	resources := addon.KonnectivityServerSpec.Resources
+	if resources != nil {
 		podSpec.Containers[index].Resources.Limits = resources.Limits
 		podSpec.Containers[index].Resources.Requests = resources.Requests
 	}
@@ -276,7 +276,7 @@ func (k Konnectivity) buildVolumes(status kamajiv1alpha1.KonnectivityStatus, pod
 			LocalObjectReference: corev1.LocalObjectReference{
 				Name: status.ConfigMap.Name,
 			},
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 	// Defining volume for the Konnectivity kubeconfig
@@ -290,7 +290,7 @@ func (k Konnectivity) buildVolumes(status kamajiv1alpha1.KonnectivityStatus, pod
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  status.Kubeconfig.SecretName,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 }

@@ -119,7 +119,7 @@ func PrintKamajiLogs() {
 
 		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: retrieving Kamaji Pod logs")
 
-		for _, line := range bytes.Split(podBytes, []byte("\n")) {
+		for line := range bytes.SplitSeq(podBytes, []byte("\n")) {
 			_, _ = fmt.Fprintln(GinkgoWriter, ">>> ", string(line))
 		}
 
@@ -221,7 +221,7 @@ func CreateGatewayWithListeners(gatewayName, namespace, gatewayClassName, hostna
 					Name:     "cp-listener",
 					Port:     6443,
 					Protocol: gatewayv1.TLSProtocolType,
-					Hostname: pointer.To(gatewayv1.Hostname(hostname)),
+					Hostname: pointer.To(gatewayv1.Hostname(hostname)), //nolint:modernize
 					TLS: &gatewayv1.ListenerTLSConfig{
 						Mode: pointer.To(gatewayv1.TLSModeType("Passthrough")),
 					},
@@ -241,7 +241,7 @@ func CreateGatewayWithListeners(gatewayName, namespace, gatewayClassName, hostna
 					Name:     "konnectivity-server",
 					Port:     8132,
 					Protocol: gatewayv1.TLSProtocolType,
-					Hostname: pointer.To(gatewayv1.Hostname(hostname)),
+					Hostname: pointer.To(gatewayv1.Hostname(hostname)), //nolint:modernize
 					TLS: &gatewayv1.ListenerTLSConfig{
 						Mode: pointer.To(gatewayv1.TLSModeType("Passthrough")),
 					},

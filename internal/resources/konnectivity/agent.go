@@ -6,6 +6,7 @@ package konnectivity
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/blang/semver"
 	"github.com/prometheus/client_golang/prometheus"
@@ -14,7 +15,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -234,11 +234,11 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 								ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 									Path:              agentTokenName,
 									Audience:          tenantControlPlane.Status.Addons.Konnectivity.ClusterRoleBinding.Name,
-									ExpirationSeconds: pointer.To(int64(3600)),
+									ExpirationSeconds: new(int64(3600)),
 								},
 							},
 						},
-						DefaultMode: pointer.To(int32(420)),
+						DefaultMode: new(int32(420)),
 					},
 				},
 			},
@@ -264,9 +264,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 
 		extraArgs := utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.ExtraArgs)
 
-		for k, v := range extraArgs {
-			args[k] = v
-		}
+		maps.Copy(args, extraArgs)
 
 		podTemplateSpec.Spec.Containers[0].Args = utilities.ArgsFromMapToSlice(args)
 		podTemplateSpec.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{

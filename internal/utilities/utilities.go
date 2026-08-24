@@ -6,6 +6,7 @@ package utilities
 import (
 	"bytes"
 	"fmt"
+	"maps"
 	"sort"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,13 +29,11 @@ func KamajiLabels(tcpName, resourceName string) map[string]string {
 	}
 }
 
-func MergeMaps(maps ...map[string]string) map[string]string {
+func MergeMaps(mapSlice ...map[string]string) map[string]string {
 	result := map[string]string{}
 
-	for _, m := range maps {
-		for k, v := range m {
-			result[k] = v
-		}
+	for _, m := range mapSlice {
+		maps.Copy(result, m)
 	}
 
 	return result

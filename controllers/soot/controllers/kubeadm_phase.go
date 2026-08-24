@@ -8,7 +8,6 @@ import (
 	"errors"
 
 	"github.com/go-logr/logr"
-	"k8s.io/utils/ptr"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -61,7 +60,8 @@ func (k *KubeadmPhase) Reconcile(ctx context.Context, _ reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	if err = utils.UpdateStatus(ctx, k.Phase.GetClient(), tcp, k.Phase); err != nil {
+	err = utils.UpdateStatus(ctx, k.Phase.GetClient(), tcp, k.Phase)
+	if err != nil {
 		k.logger.Error(err, "update status failed")
 
 		return reconcile.Result{}, err
@@ -77,7 +77,7 @@ func (k *KubeadmPhase) SetupWithManager(mgr manager.Manager) error {
 
 	return controllerruntime.NewControllerManagedBy(mgr).
 		Named(k.ControllerName).
-		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: ptr.To(true)}).
+		WithOptions(controller.TypedOptions[reconcile.Request]{SkipNameValidation: new(true)}).
 		For(k.Phase.GetWatchedObject(), builder.WithPredicates(predicate.NewPredicateFuncs(k.Phase.GetPredicateFunc()))).
 		WatchesRawSource(source.Channel(k.TriggerChannel, &handler.EnqueueRequestForObject{})).
 		Complete(k)

@@ -7,10 +7,13 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"maps"
 	"path"
 	"sort"
 	"strings"
 
+	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/utilities"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,9 +24,6 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/utilities"
 )
 
 // Volume names.
@@ -293,7 +293,7 @@ func (d Deployment) buildPKIVolume(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.T
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Projected: &corev1.ProjectedVolumeSource{
 			Sources:     sources,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 }
@@ -309,7 +309,7 @@ func (d Deployment) buildCAVolume(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Te
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.Certificates.CA.SecretName,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 }
@@ -325,7 +325,7 @@ func (d Deployment) buildShareCAVolume(podSpec *corev1.PodSpec, tcp kamajiv1alph
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.Certificates.CA.SecretName,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 }
@@ -341,7 +341,7 @@ func (d Deployment) buildLocalShareCAVolume(podSpec *corev1.PodSpec, tcp kamajiv
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.Certificates.CA.SecretName,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 }
@@ -357,7 +357,7 @@ func (d Deployment) buildSchedulerVolume(podSpec *corev1.PodSpec, tcp kamajiv1al
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.KubeConfig.Scheduler.SecretName,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 }
@@ -373,7 +373,7 @@ func (d Deployment) buildControllerManagerVolume(podSpec *corev1.PodSpec, tcp ka
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.KubeConfig.ControllerManager.SecretName,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 }
@@ -896,7 +896,7 @@ func (d Deployment) buildKineVolume(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.
 	podSpec.Volumes[index].VolumeSource = corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
 			SecretName:  tcp.Status.Storage.Certificate.SecretName,
-			DefaultMode: pointer.To(int32(420)),
+			DefaultMode: new(int32(420)),
 		},
 	}
 	// Adding the volume to read Kine certificates:
@@ -1006,9 +1006,7 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 		utilArgs := utilities.ArgsFromSliceToMap(tcp.Spec.ControlPlane.Deployment.ExtraArgs.Kine)
 
 		// Merging the user-space arguments with the Kamaji ones.
-		for k, v := range utilArgs {
-			args[k] = v
-		}
+		maps.Copy(args, utilArgs)
 	}
 
 	switch d.DataStore.Spec.Driver {
@@ -1087,7 +1085,7 @@ func (d Deployment) setReplicas(deploymentSpec *appsv1.DeploymentSpec, tcp kamaj
 
 func (d Deployment) setRuntimeClass(spec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
 	if len(tcp.Spec.ControlPlane.Deployment.RuntimeClassName) > 0 {
-		spec.RuntimeClassName = pointer.To(tcp.Spec.ControlPlane.Deployment.RuntimeClassName)
+		spec.RuntimeClassName = pointer.To(tcp.Spec.ControlPlane.Deployment.RuntimeClassName) //nolint:modernize
 
 		return
 	}

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -17,8 +18,6 @@ import (
 	"k8s.io/client-go/util/retry"
 	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
 var _ = Describe("When the datastore-config Secret is corrupted for a PostgreSQL-backed TenantControlPlane", func() {
@@ -31,7 +30,7 @@ var _ = Describe("When the datastore-config Secret is corrupted for a PostgreSQL
 			DataStore: "postgresql-bronze",
 			ControlPlane: kamajiv1alpha1.ControlPlane{
 				Deployment: kamajiv1alpha1.DeploymentSpec{
-					Replicas: pointer.To(int32(1)),
+					Replicas: pointer.To(int32(1)), //nolint:modernize
 				},
 				Service: kamajiv1alpha1.ServiceSpec{
 					ServiceType: "ClusterIP",

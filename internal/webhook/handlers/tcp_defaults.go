@@ -10,7 +10,6 @@ import (
 
 	"gomodules.xyz/jsonpatch/v2"
 	"k8s.io/apimachinery/pkg/runtime"
-	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -82,7 +81,7 @@ func (t TenantControlPlaneDefaults) defaultUnsetFields(tcp *kamajiv1alpha1.Tenan
 	}
 
 	if tcp.Spec.ControlPlane.Deployment.Replicas == nil {
-		tcp.Spec.ControlPlane.Deployment.Replicas = pointer.To(int32(2))
+		tcp.Spec.ControlPlane.Deployment.Replicas = new(int32(2))
 	}
 
 	if len(tcp.Spec.DataStoreSchema) == 0 {
