@@ -59,6 +59,10 @@ func GetRESTClientConfig(ctx context.Context, client client.Client, tenantContro
 		return nil, err
 	}
 
+	if len(kubeconfig.Clusters) == 0 || len(kubeconfig.AuthInfos) == 0 {
+		return nil, fmt.Errorf("kubeconfig is missing cluster or user entries")
+	}
+
 	config := &restclient.Config{
 		Host: fmt.Sprintf("https://%s.%s.svc:%d", tenantControlPlane.GetName(), tenantControlPlane.GetNamespace(), tenantControlPlane.Spec.NetworkProfile.Port),
 		TLSClientConfig: restclient.TLSClientConfig{

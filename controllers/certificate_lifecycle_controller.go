@@ -177,6 +177,10 @@ func (s *CertificateLifecycle) extractCertificateFromKubeconfig(secret corev1.Se
 		return nil, fmt.Errorf("none of the provided keys is containing a valid kubeconfig")
 	}
 
+	if len(kc.AuthInfos) == 0 {
+		return nil, fmt.Errorf("kubeconfig does not contain any user entries")
+	}
+
 	crt, err := crypto.ParseCertificateBytes(kc.AuthInfos[0].AuthInfo.ClientCertificateData)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse kubeconfig certificate bytes: %w", err)
