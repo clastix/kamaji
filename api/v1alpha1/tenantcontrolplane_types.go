@@ -367,6 +367,24 @@ type ServiceSpec struct {
 	// rejected by validation.
 	//+optional
 	AllocateLoadBalancerNodePorts *bool `json:"allocateLoadBalancerNodePorts,omitempty"`
+	// IPFamilyPolicy maps directly to the generated Service's spec.ipFamilyPolicy.
+	// When nil, the management cluster default applies, preserving existing behaviour.
+	// PreferDualStack and RequireDualStack describe a dual-stack Service and expect
+	// two entries in ipFamilies; a RequireDualStack policy that cannot be satisfied
+	// (for example with a single family) is rejected by the API server and surfaces
+	// as a reconcile error.
+	//+optional
+	//+kubebuilder:validation:Enum=SingleStack;PreferDualStack;RequireDualStack
+	IPFamilyPolicy *corev1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`
+	// IPFamilies maps directly to the generated Service's spec.ipFamilies. Order is
+	// significant: the first entry is the primary family. When empty, the management
+	// cluster default applies. A Service's IP families cannot be reduced or swapped
+	// after creation (only a single-stack Service may be upgraded to dual-stack);
+	// forbidden transitions are rejected by the API server and surface as a reconcile error.
+	//+optional
+	//+kubebuilder:validation:MaxItems=2
+	//+kubebuilder:validation:items:Enum=IPv4;IPv6
+	IPFamilies []corev1.IPFamily `json:"ipFamilies,omitempty"`
 }
 
 // AddonSpec defines the spec for every addon.
@@ -535,6 +553,8 @@ func (in *TenantControlPlane) IsRBACBootstrapEnabled() bool {
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == 'LoadBalancer'", message="LoadBalancerClass is supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="!has(self.controlPlane.service.allocateLoadBalancerNodePorts) || self.controlPlane.service.serviceType == 'LoadBalancer'", message="allocateLoadBalancerNodePorts is supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)",message="LoadBalancerClass cannot be set or unset at runtime"
+// +kubebuilder:validation:XValidation:rule="!has(self.controlPlane.service.ipFamilyPolicy) || self.controlPlane.service.ipFamilyPolicy != 'SingleStack' || !has(self.controlPlane.service.ipFamilies) || size(self.controlPlane.service.ipFamilies) <= 1", message="ipFamilies must contain at most one entry when ipFamilyPolicy is SingleStack"
+// +kubebuilder:validation:XValidation:rule="!has(self.controlPlane.service.ipFamilies) || size(self.controlPlane.service.ipFamilies) < 2 || self.controlPlane.service.ipFamilies[0] != self.controlPlane.service.ipFamilies[1]", message="ipFamilies entries must be unique"
 
 type TenantControlPlaneSpec struct {
 	// WritePermissions allows to select which operations (create, delete, update) must be blocked:

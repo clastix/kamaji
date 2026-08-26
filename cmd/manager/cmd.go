@@ -174,6 +174,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				KamajiServiceAccount:    managerServiceAccountName,
 				KamajiService:           managerServiceName,
 				KamajiMigrateImage:      migrateJobImage,
+				KamajiMigrateCABundle:   webhookCABundle,
 				MaxConcurrentReconciles: maxConcurrentReconciles,
 				DiscoveryClient:         discoveryClient,
 			}

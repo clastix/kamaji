@@ -46,12 +46,11 @@ func (t TenantControlPlaneDefaults) OnCreate(object runtime.Object) AdmissionRes
 					return nil, fmt.Errorf("cannot define resulting DNS Service IP: %w", err)
 				}
 
-				switch {
-				case ip.To4() != nil:
-					ip[len(ip)-1] += 10
-				case ip.To16() != nil:
-					ip[len(ip)-1] += 16
-				}
+				// Match kubeadm's DNS IP convention (the 10th address of the service
+				// subnet) for both families: 10.96.0.0/16 -> 10.96.0.10 and
+				// fd00::/120 -> fd00::a. Using a different offset for IPv6 would make
+				// the kubelet's cluster DNS disagree with the CoreDNS Service ClusterIP.
+				ip[len(ip)-1] += 10
 
 				dnsIPs = append(dnsIPs, ip.String())
 			}

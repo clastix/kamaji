@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+	"k8s.io/kubernetes/cmd/kubeadm/app/componentconfigs"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/config"
 
@@ -109,13 +110,14 @@ func GetKubeadmInitConfigurationFromMap(conf map[string]string) (*Configuration,
 	if err := utilities.DecodeFromJSON(clusterConfigurationString, &initConfiguration.ClusterConfiguration); err != nil {
 		return nil, err
 	}
-	// Due to some weird issues with unmarshaling of the ComponentConfigs struct,
-	// we have to extract the default value and assign it directly.
-	defaults, err := config.DefaultedStaticInitConfiguration()
-	if err != nil {
-		return nil, err
-	}
-	initConfiguration.ClusterConfiguration.ComponentConfigs = defaults.ComponentConfigs
+	// ComponentConfigs are omitted from storage because their interface values cannot be unmarshaled.
+	// Recreate them after the decoder loads the cluster configuration.
+	// This sequence applies the configured network settings.
+	componentconfigs.Default(
+		&initConfiguration.ClusterConfiguration,
+		&initConfiguration.LocalAPIEndpoint,
+		&initConfiguration.NodeRegistration,
+	)
 
 	return &Configuration{InitConfiguration: initConfiguration}, nil
 }

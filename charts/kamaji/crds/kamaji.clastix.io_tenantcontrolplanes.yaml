@@ -8393,6 +8393,36 @@ spec:
                             valid when serviceType is LoadBalancer; setting it with any other serviceType is
                             rejected by validation.
                           type: boolean
+                        ipFamilies:
+                          description: |-
+                            IPFamilies maps directly to the generated Service's spec.ipFamilies. Order is
+                            significant: the first entry is the primary family. When empty, the management
+                            cluster default applies. A Service's IP families cannot be reduced or swapped
+                            after creation (only a single-stack Service may be upgraded to dual-stack);
+                            forbidden transitions are rejected by the API server and surface as a reconcile error.
+                          items:
+                            description: |-
+                              IPFamily represents the IP Family (IPv4 or IPv6). This type is used
+                              to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).
+                            enum:
+                              - IPv4
+                              - IPv6
+                            type: string
+                          maxItems: 2
+                          type: array
+                        ipFamilyPolicy:
+                          description: |-
+                            IPFamilyPolicy maps directly to the generated Service's spec.ipFamilyPolicy.
+                            When nil, the management cluster default applies, preserving existing behaviour.
+                            PreferDualStack and RequireDualStack describe a dual-stack Service and expect
+                            two entries in ipFamilies; a RequireDualStack policy that cannot be satisfied
+                            (for example with a single family) is rejected by the API server and surfaces
+                            as a reconcile error.
+                          enum:
+                            - SingleStack
+                            - PreferDualStack
+                            - RequireDualStack
+                          type: string
                         serviceType:
                           description: ServiceType allows specifying how to expose the Tenant Control Plane.
                           enum:
@@ -8753,6 +8783,10 @@ spec:
                   rule: '!has(self.controlPlane.service.allocateLoadBalancerNodePorts) || self.controlPlane.service.serviceType == ''LoadBalancer'''
                 - message: LoadBalancerClass cannot be set or unset at runtime
                   rule: self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)
+                - message: ipFamilies must contain at most one entry when ipFamilyPolicy is SingleStack
+                  rule: '!has(self.controlPlane.service.ipFamilyPolicy) || self.controlPlane.service.ipFamilyPolicy != ''SingleStack'' || !has(self.controlPlane.service.ipFamilies) || size(self.controlPlane.service.ipFamilies) <= 1'
+                - message: ipFamilies entries must be unique
+                  rule: '!has(self.controlPlane.service.ipFamilies) || size(self.controlPlane.service.ipFamilies) < 2 || self.controlPlane.service.ipFamilies[0] != self.controlPlane.service.ipFamilies[1]'
             status:
               description: TenantControlPlaneStatus defines the observed state of TenantControlPlane.
               properties:
