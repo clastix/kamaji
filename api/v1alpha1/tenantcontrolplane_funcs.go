@@ -12,6 +12,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/clastix/kamaji/internal/errors"
 )
 
 // AssignedControlPlaneAddress returns the announced address and port of a Tenant Control Plane.
@@ -75,7 +77,7 @@ func (in *TenantControlPlane) DeclaredControlPlaneAddress(ctx context.Context, c
 		return fmt.Sprintf("%s.%s.svc", in.GetName(), in.GetNamespace()), nil
 	}
 
-	return "", kamajierrors.MissingValidIPError{}
+	return "", errors.MissingValidIPError{}
 }
 
 // ControlPlaneServiceIPs returns every IP address the Tenant Control Plane Service
@@ -143,7 +145,7 @@ func getLoadBalancerAddress(ingress []corev1.LoadBalancerIngress) (string, error
 		}
 	}
 
-	return "", kamajierrors.MissingValidIPError{}
+	return "", errors.MissingValidIPError{}
 }
 
 func (in *TenantControlPlane) GetDefaultDatastoreUsername() string {
