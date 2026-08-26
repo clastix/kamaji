@@ -31190,6 +31190,33 @@ valid when serviceType is LoadBalancer; setting it with any other serviceType is
 rejected by validation.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>ipFamilies</b></td>
+        <td>[]enum</td>
+        <td>
+          IPFamilies maps directly to the generated Service's spec.ipFamilies. Order is
+significant: the first entry is the primary family. When empty, the management
+cluster default applies. A Service's IP families cannot be reduced or swapped
+after creation (only a single-stack Service may be upgraded to dual-stack);
+forbidden transitions are rejected by the API server and surface as a reconcile error.<br/>
+          <br/>
+            <i>Enum</i>: IPv4, IPv6<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ipFamilyPolicy</b></td>
+        <td>enum</td>
+        <td>
+          IPFamilyPolicy maps directly to the generated Service's spec.ipFamilyPolicy.
+When nil, the management cluster default applies, preserving existing behaviour.
+PreferDualStack and RequireDualStack describe a dual-stack Service and expect
+two entries in ipFamilies; a RequireDualStack policy that cannot be satisfied
+(for example with a single family) is rejected by the API server and surfaces
+as a reconcile error.<br/>
+          <br/>
+            <i>Enum</i>: SingleStack, PreferDualStack, RequireDualStack<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
