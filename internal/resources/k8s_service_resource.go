@@ -130,6 +130,17 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 
 		r.resource.Spec.Ports = ports
 
+		// IP families are a pure passthrough to the native Service fields. Only
+		// write them when the user set them, so an unset spec leaves the
+		// API-server-defaulted values in place (no reconcile churn).
+		if policy := tenantControlPlane.Spec.ControlPlane.Service.IPFamilyPolicy; policy != nil {
+			r.resource.Spec.IPFamilyPolicy = policy
+		}
+
+		if families := tenantControlPlane.Spec.ControlPlane.Service.IPFamilies; len(families) > 0 {
+			r.resource.Spec.IPFamilies = families
+		}
+
 		switch tenantControlPlane.Spec.ControlPlane.Service.ServiceType {
 		case kamajiv1alpha1.ServiceTypeLoadBalancer:
 			r.resource.Spec.Type = corev1.ServiceTypeLoadBalancer

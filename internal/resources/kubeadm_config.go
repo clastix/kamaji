@@ -77,6 +77,41 @@ func (r *KubeadmConfigResource) UpdateTenantControlPlaneStatus(_ context.Context
 	return nil
 }
 
+// canonicalSAN normalises an IP SAN to its canonical net.IP string form so that
+// the same address in different textual forms (notably IPv6) collapses to one key;
+// non-IP entries (DNS names) pass through unchanged.
+func canonicalSAN(s string) string {
+	if ip := net.ParseIP(s); ip != nil {
+		return ip.String()
+	}
+
+	return s
+}
+
+// mergeCertSANs appends the additional IPs (typically the control-plane Service IPs)
+// to the existing cert SANs, skipping any whose canonical IP form already appears as
+// the management address or among the existing SANs. This keeps a single-stack Service
+// a no-op (its only IP equals the management address) and prevents duplicate SANs that
+// would otherwise churn the certificate.
+func mergeCertSANs(managementAddress string, certSANs, additional []string) []string {
+	seen := map[string]struct{}{canonicalSAN(managementAddress): {}}
+	for _, san := range certSANs {
+		seen[canonicalSAN(san)] = struct{}{}
+	}
+
+	for _, ip := range additional {
+		key := canonicalSAN(ip)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+
+		seen[key] = struct{}{}
+		certSANs = append(certSANs, ip)
+	}
+
+	return certSANs
+}
+
 func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
 		logger := log.FromContext(ctx, "resource", r.GetName())
@@ -111,11 +146,26 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 			}
 		}
 
-		// Add advertise address to cert SANs if different from management address
-		certSANs := tenantControlPlane.Spec.NetworkProfile.CertSANs
+		// Add advertise address to cert SANs if different from management address.
+		// Copy the spec slice so appends below never mutate the user's CertSANs backing array.
+		certSANs := append([]string{}, tenantControlPlane.Spec.NetworkProfile.CertSANs...)
 		if advAddress != address {
-			certSANs = append(append([]string{}, certSANs...), advAddress)
+			certSANs = append(certSANs, advAddress)
 		}
+
+		// Add every IP the control-plane Service answers on (all ClusterIPs of a
+		// dual-stack Service and any LoadBalancer ingress IPs) so the API server
+		// certificate is valid over both families. Deduplicate against the management
+		// address and the SANs already present so a single-stack Service adds nothing
+		// and the certificate does not churn.
+		serviceIPs, svcErr := tenantControlPlane.ControlPlaneServiceIPs(ctx, r.Client)
+		if svcErr != nil {
+			logger.Error(svcErr, "cannot retrieve control plane Service IPs for cert SANs")
+
+			return svcErr
+		}
+
+		certSANs = mergeCertSANs(address, certSANs, serviceIPs)
 
 		// Backward compatibility for deprecated CIDR fields
 		if tenantControlPlane.Spec.NetworkProfile.ServiceCIDR != "" {
