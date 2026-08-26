@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"net"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -268,6 +269,14 @@ func (c *CoreDNS) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Tenan
 		return fmt.Errorf("unable to decode Deployment manifest: %w", err)
 	}
 	addons_utils.SetKamajiManagedLabels(c.deployment)
+
+	envVars := utilities.EnvarsFromSliceToMap(c.deployment.Spec.Template.Spec.Containers[0].Env)
+
+	extraEnvVars := utilities.EnvarsFromSliceToMap(tcp.Spec.Addons.CoreDNS.ExtraEnvs)
+
+	maps.Copy(envVars, extraEnvVars)
+
+	c.deployment.Spec.Template.Spec.Containers[0].Env = utilities.EnvarsFromMapToSlice(envVars)
 
 	if err = utilities.DecodeFromYAML(string(parts[2]), c.configMap); err != nil {
 		return fmt.Errorf("unable to decode ConfigMap manifest: %w", err)

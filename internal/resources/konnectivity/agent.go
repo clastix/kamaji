@@ -6,6 +6,7 @@ package konnectivity
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/blang/semver"
 	"github.com/prometheus/client_golang/prometheus"
@@ -269,6 +270,15 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		}
 
 		podTemplateSpec.Spec.Containers[0].Args = utilities.ArgsFromMapToSlice(args)
+
+		envVars := make(map[string]corev1.EnvVar)
+
+		extraEnvs := utilities.EnvarsFromSliceToMap((tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.ExtraEnvs))
+
+		maps.Copy(envVars, extraEnvs)
+
+		podTemplateSpec.Spec.Containers[0].Env = utilities.EnvarsFromMapToSlice(envVars)
+
 		podTemplateSpec.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
 			{
 				MountPath: "/var/run/secrets/tokens",
