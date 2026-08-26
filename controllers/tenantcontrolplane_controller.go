@@ -59,6 +59,7 @@ type TenantControlPlaneReconciler struct {
 	KamajiServiceAccount    string
 	KamajiService           string
 	KamajiMigrateImage      string
+	KamajiMigrateCABundle   []byte
 	MaxConcurrentReconciles int
 	ReconcileTimeout        time.Duration
 	DiscoveryClient         discovery.DiscoveryInterface
@@ -238,6 +239,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		KamajiServiceAccount:          r.KamajiServiceAccount,
 		KamajiService:                 r.KamajiService,
 		KamajiMigrateImage:            r.KamajiMigrateImage,
+		KamajiMigrateCABundle:         r.KamajiMigrateCABundle,
 		DiscoveryClient:               r.DiscoveryClient,
 	}
 	registeredResources := GetResources(ctx, groupResourceBuilderConfiguration)

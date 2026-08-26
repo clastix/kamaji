@@ -28,6 +28,7 @@ import (
 	"github.com/clastix/kamaji/api/v1alpha1"
 	sooterrors "github.com/clastix/kamaji/controllers/soot/controllers/errors"
 	"github.com/clastix/kamaji/controllers/utils"
+	ds "github.com/clastix/kamaji/internal/resources/datastore"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -90,95 +91,7 @@ func (m *Migrate) createOrUpdate(ctx context.Context) error {
 	obj := m.object()
 
 	_, err := utilities.CreateOrUpdateWithConflict(ctx, m.Client, obj, func() error {
-		obj.Webhooks = []admissionregistrationv1.ValidatingWebhook{
-			{
-				Name: "leases.migrate.kamaji.clastix.io",
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					URL:      pointer.To(fmt.Sprintf("https://%s.%s.svc:443/migrate", m.WebhookServiceName, m.WebhookNamespace)),
-					CABundle: m.WebhookCABundle,
-				},
-				Rules: []admissionregistrationv1.RuleWithOperations{
-					{
-						Operations: []admissionregistrationv1.OperationType{
-							admissionregistrationv1.Create,
-							admissionregistrationv1.Delete,
-						},
-						Rule: admissionregistrationv1.Rule{
-							APIGroups:   []string{"*"},
-							APIVersions: []string{"*"},
-							Resources:   []string{"*"},
-							Scope: func(v admissionregistrationv1.ScopeType) *admissionregistrationv1.ScopeType {
-								return &v
-							}(admissionregistrationv1.NamespacedScope),
-						},
-					},
-				},
-				FailurePolicy: func(v admissionregistrationv1.FailurePolicyType) *admissionregistrationv1.FailurePolicyType {
-					return &v
-				}(admissionregistrationv1.Fail),
-				MatchPolicy: func(v admissionregistrationv1.MatchPolicyType) *admissionregistrationv1.MatchPolicyType {
-					return &v
-				}(admissionregistrationv1.Equivalent),
-				NamespaceSelector: &metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{
-						{
-							Key:      "kubernetes.io/metadata.name",
-							Operator: metav1.LabelSelectorOpIn,
-							Values: []string{
-								"kube-node-lease",
-							},
-						},
-					},
-				},
-				SideEffects: func(v admissionregistrationv1.SideEffectClass) *admissionregistrationv1.SideEffectClass {
-					return &v
-				}(admissionregistrationv1.SideEffectClassNoneOnDryRun),
-				AdmissionReviewVersions: []string{"v1"},
-			},
-			{
-				Name: "catchall.migrate.kamaji.clastix.io",
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					URL:      pointer.To(fmt.Sprintf("https://%s.%s.svc:443/migrate", m.WebhookServiceName, m.WebhookNamespace)),
-					CABundle: m.WebhookCABundle,
-				},
-				Rules: []admissionregistrationv1.RuleWithOperations{
-					{
-						Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.OperationAll},
-						Rule: admissionregistrationv1.Rule{
-							APIGroups:   []string{"*"},
-							APIVersions: []string{"*"},
-							Resources:   []string{"*"},
-							Scope: func(v admissionregistrationv1.ScopeType) *admissionregistrationv1.ScopeType {
-								return &v
-							}(admissionregistrationv1.AllScopes),
-						},
-					},
-				},
-				FailurePolicy: func(v admissionregistrationv1.FailurePolicyType) *admissionregistrationv1.FailurePolicyType {
-					return &v
-				}(admissionregistrationv1.Fail),
-				MatchPolicy: func(v admissionregistrationv1.MatchPolicyType) *admissionregistrationv1.MatchPolicyType {
-					return &v
-				}(admissionregistrationv1.Equivalent),
-				NamespaceSelector: &metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{
-						{
-							Key:      "kubernetes.io/metadata.name",
-							Operator: metav1.LabelSelectorOpNotIn,
-							Values: []string{
-								"kube-system",
-								"kube-node-lease",
-							},
-						},
-					},
-				},
-				SideEffects: func(v admissionregistrationv1.SideEffectClass) *admissionregistrationv1.SideEffectClass {
-					return &v
-				}(admissionregistrationv1.SideEffectClassNoneOnDryRun),
-				TimeoutSeconds:          nil,
-				AdmissionReviewVersions: []string{"v1"},
-			},
-		}
+		obj.Webhooks = ds.BuildFreezeValidatingWebhookConfiguration(m.WebhookNamespace, m.WebhookServiceName, m.WebhookCABundle)
 
 		return nil
 	})
@@ -202,7 +115,7 @@ func (m *Migrate) SetupWithManager(mgr manager.Manager) error {
 func (m *Migrate) object() *admissionregistrationv1.ValidatingWebhookConfiguration {
 	return &admissionregistrationv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "kamaji-freeze",
+			Name: ds.FreezeWebhookName,
 		},
 	}
 }

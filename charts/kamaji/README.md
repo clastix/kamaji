@@ -74,6 +74,7 @@ Here the values you can override:
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | Kubernetes affinity rules to apply to Kamaji controller pods |
+| certManager.issuerRef | object | `{}` | Reference to an existing cert-manager issuer that signs the webhook serving certificate. When `name` is empty the chart creates a self-signed `Issuer` named `kamaji-selfsigned-issuer` and uses that. Set this to chain the webhook certificate to a certificate authority you own. `kind` defaults to `Issuer` and `group` to `cert-manager.io`. Note that the `kamaji-etcd` subchart has its own `kamaji-etcd.certManager.issuerRef`, which defaults to `kamaji-selfsigned-issuer` and has to be updated as well when the etcd certificates are issued by cert-manager. |
 | defaultDatastoreName | string | `"default"` | If specified, all the Kamaji instances with an unassigned DataStore will inherit this default value. |
 | extraArgs | list | `[]` | A list of extra arguments to add to the kamaji controller default ones |
 | fullnameOverride | string | `""` |  |
