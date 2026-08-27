@@ -385,6 +385,11 @@ type ServiceSpec struct {
 	//+kubebuilder:validation:MaxItems=2
 	//+kubebuilder:validation:items:Enum=IPv4;IPv6
 	IPFamilies []corev1.IPFamily `json:"ipFamilies,omitempty"`
+	// PublicAPIServerAddress allows specifying a custom hostname for the API server.
+	// If set, this address will be used in cluster-info ConfigMaps and kubeconfigs
+	// instead of the LoadBalancer IP, enabling the use of DNS names that match certificate SANs.
+	// +optional
+	PublicAPIServerAddress string `json:"publicAPIServerAddress,omitempty"`
 }
 
 // AddonSpec defines the spec for every addon.
@@ -566,6 +571,45 @@ type PreGeneratedCertificatesSpec struct {
 	ServiceAccount *KeyReference `json:"serviceAccount,omitempty"`
 }
 
+// RBACBootstrapSpec defines the RBAC bootstrap configuration.
+type RBACBootstrapSpec struct {
+	// Enabled controls whether RBAC bootstrap is performed.
+	// When enabled, creates ClusterRoleBindings for admin users and groups.
+	// Defaults to true when the bootstrap.rbac stanza is present.
+	// +kubebuilder:default=true
+	Enabled *bool `json:"enabled,omitempty"`
+	// AdminUsers specifies users that should be granted cluster-admin privileges.
+	// Defaults to ["kubernetes-admin"] which matches the generated kubeconfig user.
+	// +kubebuilder:default={"kubernetes-admin"}
+	AdminUsers []string `json:"adminUsers,omitempty"`
+	// AdminGroups specifies groups that should be granted cluster-admin privileges.
+	// Defaults to ["system:masters"] which is the traditional K8s admin group.
+	// +kubebuilder:default={"system:masters"}
+	AdminGroups []string `json:"adminGroups,omitempty"`
+}
+
+// BootstrapSpec defines the bootstrap configuration for tenant control plane clusters.
+type BootstrapSpec struct {
+	// RBAC configures Role-Based Access Control bootstrap.
+	RBAC *RBACBootstrapSpec `json:"rbac,omitempty"`
+}
+
+// IsRBACBootstrapEnabled reports whether RBAC bootstrap should be reconciled for
+// this Tenant Control Plane. RBAC bootstrap is opt-in: it applies only when the
+// bootstrap.rbac stanza is present and not explicitly disabled.
+//
+// RBACBootstrapSpec.Enabled is a *bool rather than a bool so that an explicit
+// false is distinguishable from an unset field. With a plain bool, omitempty
+// drops false during serialization and the API server re-applies the true
+// default, leaving no way to turn the feature off.
+func (in *TenantControlPlane) IsRBACBootstrapEnabled() bool {
+	if in.Spec.Bootstrap == nil || in.Spec.Bootstrap.RBAC == nil {
+		return false
+	}
+
+	return in.Spec.Bootstrap.RBAC.Enabled == nil || *in.Spec.Bootstrap.RBAC.Enabled
+}
+
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStore) || has(self.dataStore)", message="unsetting the dataStore is not supported"
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"
@@ -614,6 +658,8 @@ type TenantControlPlaneSpec struct {
 	// PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
 	// This field is immutable after creation.
 	PreGeneratedCertificates *PreGeneratedCertificatesSpec `json:"preGeneratedCertificates,omitempty"`
+	// Bootstrap configures initial cluster setup including RBAC and essential components.
+	Bootstrap *BootstrapSpec `json:"bootstrap,omitempty"`
 	// Addons contain which addons are enabled
 	Addons AddonsSpec `json:"addons,omitempty"`
 }
