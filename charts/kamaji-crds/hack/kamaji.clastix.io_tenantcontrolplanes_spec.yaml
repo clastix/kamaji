@@ -473,6 +473,39 @@ versions:
                         type: string
                     type: object
                 type: object
+              bootstrap:
+                description: Bootstrap configures initial cluster setup including RBAC and essential components.
+                properties:
+                  rbac:
+                    description: RBAC configures Role-Based Access Control bootstrap.
+                    properties:
+                      adminGroups:
+                        default:
+                          - system:masters
+                        description: |-
+                          AdminGroups specifies groups that should be granted cluster-admin privileges.
+                          Defaults to ["system:masters"] which is the traditional K8s admin group.
+                        items:
+                          type: string
+                        type: array
+                      adminUsers:
+                        default:
+                          - kubernetes-admin
+                        description: |-
+                          AdminUsers specifies users that should be granted cluster-admin privileges.
+                          Defaults to ["kubernetes-admin"] which matches the generated kubeconfig user.
+                        items:
+                          type: string
+                        type: array
+                      enabled:
+                        default: true
+                        description: |-
+                          Enabled controls whether RBAC bootstrap is performed.
+                          When enabled, creates ClusterRoleBindings for admin users and groups.
+                          Defaults to true when the bootstrap.rbac stanza is present.
+                        type: boolean
+                    type: object
+                type: object
               controlPlane:
                 description: |-
                   ControlPlane defines how the Tenant Control Plane Kubernetes resources must be created in the Admin Cluster,
@@ -8382,6 +8415,12 @@ versions:
                           - PreferDualStack
                           - RequireDualStack
                         type: string
+                      publicAPIServerAddress:
+                        description: |-
+                          PublicAPIServerAddress allows specifying a custom hostname for the API server.
+                          If set, this address will be used in cluster-info ConfigMaps and kubeconfigs
+                          instead of the LoadBalancer IP, enabling the use of DNS names that match certificate SANs.
+                        type: string
                       serviceType:
                         description: ServiceType allows specifying how to expose the Tenant Control Plane.
                         enum:
@@ -8706,6 +8745,135 @@ versions:
                     x-kubernetes-validations:
                       - message: all serviceCidrs entries must be valid CIDRs
                         rule: self.all(x, isCIDR(x))
+                type: object
+              preGeneratedCertificates:
+                description: |-
+                  PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
+                  This field is immutable after creation.
+                properties:
+                  apiServer:
+                    description: |-
+                      API Server certificate and key from existing Secret.
+                      If specified, this certificate will be used instead of generating a new one.
+                      The certificate must be signed by the CA specified above or the generated CA.
+                    properties:
+                      certificateKey:
+                        default: tls.crt
+                        description: CertificateKey is the key in the Secret containing the certificate.
+                        type: string
+                      privateKeyKey:
+                        default: tls.key
+                        description: PrivateKeyKey is the key in the Secret containing the private key.
+                        type: string
+                      secretName:
+                        description: SecretName references a Secret containing certificate data
+                        minLength: 1
+                        type: string
+                    required:
+                      - secretName
+                    type: object
+                  ca:
+                    description: |-
+                      CA certificate and key from existing Secret.
+                      If specified, this CA will be used instead of generating a new one.
+                    properties:
+                      certificateKey:
+                        default: tls.crt
+                        description: CertificateKey is the key in the Secret containing the certificate.
+                        type: string
+                      privateKeyKey:
+                        default: tls.key
+                        description: PrivateKeyKey is the key in the Secret containing the private key.
+                        type: string
+                      secretName:
+                        description: SecretName references a Secret containing certificate data
+                        minLength: 1
+                        type: string
+                    required:
+                      - secretName
+                    type: object
+                  frontProxyCA:
+                    description: |-
+                      Front proxy CA certificate and key from existing Secret.
+                      If specified, this CA will be used instead of generating a new one.
+                    properties:
+                      certificateKey:
+                        default: tls.crt
+                        description: CertificateKey is the key in the Secret containing the certificate.
+                        type: string
+                      privateKeyKey:
+                        default: tls.key
+                        description: PrivateKeyKey is the key in the Secret containing the private key.
+                        type: string
+                      secretName:
+                        description: SecretName references a Secret containing certificate data
+                        minLength: 1
+                        type: string
+                    required:
+                      - secretName
+                    type: object
+                  frontProxyClient:
+                    description: |-
+                      Front proxy client certificate and key from existing Secret.
+                      If specified, this certificate will be used instead of generating a new one.
+                      The certificate must be signed by the front proxy CA specified above or the generated front proxy CA.
+                    properties:
+                      certificateKey:
+                        default: tls.crt
+                        description: CertificateKey is the key in the Secret containing the certificate.
+                        type: string
+                      privateKeyKey:
+                        default: tls.key
+                        description: PrivateKeyKey is the key in the Secret containing the private key.
+                        type: string
+                      secretName:
+                        description: SecretName references a Secret containing certificate data
+                        minLength: 1
+                        type: string
+                    required:
+                      - secretName
+                    type: object
+                  kubeletClient:
+                    description: |-
+                      Kubelet client certificate and key from existing Secret.
+                      If specified, this certificate will be used instead of generating a new one.
+                      The certificate must be signed by the CA specified above or the generated CA.
+                    properties:
+                      certificateKey:
+                        default: tls.crt
+                        description: CertificateKey is the key in the Secret containing the certificate.
+                        type: string
+                      privateKeyKey:
+                        default: tls.key
+                        description: PrivateKeyKey is the key in the Secret containing the private key.
+                        type: string
+                      secretName:
+                        description: SecretName references a Secret containing certificate data
+                        minLength: 1
+                        type: string
+                    required:
+                      - secretName
+                    type: object
+                  serviceAccount:
+                    description: |-
+                      Service account key pair from existing Secret.
+                      If specified, this key pair will be used instead of generating a new one.
+                    properties:
+                      privateKeyKey:
+                        default: sa.key
+                        description: PrivateKeyKey is the key in the Secret containing the private key.
+                        type: string
+                      publicKeyKey:
+                        default: sa.pub
+                        description: PublicKeyKey is the key in the Secret containing the public key.
+                        type: string
+                      secretName:
+                        description: SecretName references a Secret containing key data
+                        minLength: 1
+                        type: string
+                    required:
+                      - secretName
+                    type: object
                 type: object
               writePermissions:
                 description: |-
@@ -9370,6 +9538,25 @@ versions:
                         type: string
                     required:
                       - enabled
+                    type: object
+                type: object
+              bootstrap:
+                description: Bootstrap contains the status of the bootstrap configuration
+                properties:
+                  rbac:
+                    description: RBACBootstrapStatus defines the status of RBAC bootstrap configuration.
+                    properties:
+                      clusterRoleBinding:
+                        properties:
+                          lastUpdate:
+                            description: Last time when k8s object was updated
+                            format: date-time
+                            type: string
+                          name:
+                            type: string
+                          namespace:
+                            type: string
+                        type: object
                     type: object
                 type: object
               certificates:
