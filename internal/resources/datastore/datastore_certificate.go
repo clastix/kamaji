@@ -113,7 +113,8 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 				},
 			))
 
-			if err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
+			err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
+			if err != nil {
 				logger.Error(err, "cannot set controller reference", "resource", r.GetName())
 
 				return err
@@ -134,13 +135,15 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 				var privateKey []byte
 				// When dealing with the etcd storage we cannot use the basic authentication, thus the generation of a
 				// certificate used for authentication is mandatory, along with the CA private key.
-				if privateKey, err = r.DataStore.Spec.TLSConfig.CertificateAuthority.PrivateKey.GetContent(ctx, r.Client); err != nil {
+				privateKey, err = r.DataStore.Spec.TLSConfig.CertificateAuthority.PrivateKey.GetContent(ctx, r.Client)
+				if err != nil {
 					logger.Error(err, "unable to retrieve CA private key content")
 
 					return err
 				}
 
-				if crt, key, err = crypto.GenerateCertificatePrivateKeyPair(crypto.NewCertificateTemplate(tenantControlPlane.Status.Storage.Setup.User), ca, privateKey); err != nil {
+				crt, key, err = crypto.GenerateCertificatePrivateKeyPair(crypto.NewCertificateTemplate(tenantControlPlane.Status.Storage.Setup.User), ca, privateKey)
+				if err != nil {
 					logger.Error(err, "unable to generate certificate and private key")
 
 					return err
@@ -151,7 +154,8 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 				// to connect to the desired schema and database.
 
 				if r.DataStore.Spec.TLSConfig.ClientCertificate != nil {
-					if crtBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, r.Client); err != nil {
+					crtBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.Certificate.GetContent(ctx, r.Client)
+					if err != nil {
 						logger.Error(err, "unable to retrieve certificate content")
 
 						return err
@@ -159,7 +163,8 @@ func (r *Certificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1al
 
 					crt = bytes.NewBuffer(crtBytes)
 
-					if keyBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, r.Client); err != nil {
+					keyBytes, err = r.DataStore.Spec.TLSConfig.ClientCertificate.PrivateKey.GetContent(ctx, r.Client)
+					if err != nil {
 						logger.Error(err, "unable to retrieve private key content")
 
 						return err

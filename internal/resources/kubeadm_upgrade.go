@@ -68,7 +68,8 @@ func (k *KubernetesUpgrade) CreateOrUpdate(ctx context.Context, tenantControlPla
 		return controllerutil.OperationResultNone, nil
 	}
 	// An upgrade is in progress, let it go
-	if status := tenantControlPlane.Status.Kubernetes.Version.Status; status != nil && *status == kamajiv1alpha1.VersionUpgrading {
+	status := tenantControlPlane.Status.Kubernetes.Version.Status
+	if status != nil && *status == kamajiv1alpha1.VersionUpgrading {
 		return controllerutil.OperationResultNone, nil
 	}
 	// Checking if the upgrade is allowed, or not
@@ -84,11 +85,13 @@ func (k *KubernetesUpgrade) CreateOrUpdate(ctx context.Context, tenantControlPla
 
 	versionGetter := kamajiupgrade.NewKamajiKubeVersionGetter(clientSet, tenantControlPlane.Status.Kubernetes.Version.Version, coreDNSVersion, tenantControlPlane.Status.Kubernetes.Version.Status)
 
-	if _, err = upgrade.GetAvailableUpgrades(versionGetter, false, false, &printers.Discard{}); err != nil {
+	_, err = upgrade.GetAvailableUpgrades(versionGetter, false, false, &printers.Discard{})
+	if err != nil {
 		return controllerutil.OperationResultNone, fmt.Errorf("cannot retrieve available Upgrades for Kubernetes upgrade plan: %w", err)
 	}
 
-	if err = k.isUpgradable(); err != nil {
+	err = k.isUpgradable()
+	if err != nil {
 		return controllerutil.OperationResultNone, fmt.Errorf("the required upgrade plan is not available")
 	}
 

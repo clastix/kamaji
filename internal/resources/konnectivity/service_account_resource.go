@@ -45,7 +45,8 @@ func (r *ServiceAccountResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha
 func (r *ServiceAccountResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
-	if err := r.tenantClient.Get(ctx, client.ObjectKeyFromObject(r.resource), r.resource); err != nil {
+	err := r.tenantClient.Get(ctx, client.ObjectKeyFromObject(r.resource), r.resource)
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return false, nil
 		}
@@ -55,11 +56,13 @@ func (r *ServiceAccountResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.
 		return false, err
 	}
 
-	if labels := r.resource.GetLabels(); labels == nil || labels[constants.ProjectNameLabelKey] != constants.ProjectNameLabelValue {
+	labels := r.resource.GetLabels()
+	if labels == nil || labels[constants.ProjectNameLabelKey] != constants.ProjectNameLabelValue {
 		return false, nil
 	}
 
-	if err := r.tenantClient.Delete(ctx, r.resource); err != nil {
+	err = r.tenantClient.Delete(ctx, r.resource)
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return false, nil
 		}
@@ -82,7 +85,8 @@ func (r *ServiceAccountResource) Define(ctx context.Context, tenantControlPlane 
 		},
 	}
 
-	if r.tenantClient, err = utilities.GetTenantClient(ctx, r.Client, tenantControlPlane); err != nil {
+	r.tenantClient, err = utilities.GetTenantClient(ctx, r.Client, tenantControlPlane)
+	if err != nil {
 		logger.Error(err, "cannot generate tenant client")
 
 		return err

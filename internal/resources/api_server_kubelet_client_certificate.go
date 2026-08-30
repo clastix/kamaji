@@ -97,7 +97,8 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 		// this is required to trigger a new generation in case of Certificate Authority rotation.
 		namespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
 		secretCA := &corev1.Secret{}
-		if err := r.Client.Get(ctx, namespacedName, secretCA); err != nil {
+		err := r.Client.Get(ctx, namespacedName, secretCA)
+		if err != nil {
 			logger.Error(err, "cannot retrieve CA secret")
 
 			return err
@@ -111,7 +112,8 @@ func (r *APIServerKubeletClientCertificate) mutate(ctx context.Context, tenantCo
 			},
 		))
 
-		if err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
+		err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
+		if err != nil {
 			logger.Error(err, "cannot set controller reference", "resource", r.GetName())
 
 			return err

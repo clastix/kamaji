@@ -75,7 +75,8 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			klog.SetOutput(io.Discard)
 			klog.LogToStderr(false)
 
-			if err = cmdutils.CheckFlags(cmd.Flags(), []string{"kine-image", "migrate-image", "tmp-directory", "pod-namespace", "webhook-service-name", "serviceaccount-name", "webhook-ca-path"}...); err != nil {
+			err = cmdutils.CheckFlags(cmd.Flags(), []string{"kine-image", "migrate-image", "tmp-directory", "pod-namespace", "webhook-service-name", "serviceaccount-name", "webhook-ca-path"}...)
+			if err != nil {
 				return err
 			}
 
@@ -83,7 +84,8 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return fmt.Errorf("certificate expiration deadline must be at least 24 hours")
 			}
 
-			if webhookCABundle, err = os.ReadFile(webhookCAPath); err != nil {
+			webhookCABundle, err = os.ReadFile(webhookCAPath)
+			if err != nil {
 				return fmt.Errorf("unable to read webhook CA: %w", err)
 			}
 
@@ -144,7 +146,8 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			tcpChannel, certChannel := make(chan event.GenericEvent), make(chan event.GenericEvent)
 			metricsRecorder := metrics.DefaultRecorder()
 
-			if err = (&controllers.DataStore{Client: mgr.GetClient(), Metrics: metricsRecorder, TenantControlPlaneTrigger: tcpChannel}).SetupWithManager(mgr); err != nil {
+			err = (&controllers.DataStore{Client: mgr.GetClient(), Metrics: metricsRecorder, TenantControlPlaneTrigger: tcpChannel}).SetupWithManager(mgr)
+			if err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "DataStore")
 
 				return err
@@ -179,7 +182,8 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				DiscoveryClient:         discoveryClient,
 			}
 
-			if err = reconciler.SetupWithManager(ctx, mgr); err != nil {
+			err = reconciler.SetupWithManager(ctx, mgr)
+			if err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Namespace")
 
 				return err
@@ -211,19 +215,22 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			certController := &controllers.CertificateLifecycle{Channel: certChannel, Deadline: certificateExpirationDeadline, Metrics: metricsRecorder}
 			certController.EnqueueFn = certController.EnqueueForTenantControlPlane
 
-			if err = certController.SetupWithManager(mgr); err != nil {
+			err = certController.SetupWithManager(mgr)
+			if err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "CertificateLifecycle")
 
 				return err
 			}
 
-			if err = (&kamajiv1alpha1.DatastoreUsedSecret{}).SetupWithManager(ctx, mgr); err != nil {
+			err = (&kamajiv1alpha1.DatastoreUsedSecret{}).SetupWithManager(ctx, mgr)
+			if err != nil {
 				setupLog.Error(err, "unable to create indexer", "indexer", "DatastoreUsedSecret")
 
 				return err
 			}
 
-			if err = (&kamajiv1alpha1.TenantControlPlaneStatusDataStore{}).SetupWithManager(ctx, mgr); err != nil {
+			err = (&kamajiv1alpha1.TenantControlPlaneStatusDataStore{}).SetupWithManager(ctx, mgr)
+			if err != nil {
 				setupLog.Error(err, "unable to create indexer", "indexer", "TenantControlPlaneStatusDataStore")
 
 				return err
@@ -231,7 +238,8 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 
 			// Only requires to look for the core api group.
 			if utilities.AreGatewayResourcesAvailable(ctx, mgr.GetClient(), discoveryClient) {
-				if err = (&kamajiv1alpha1.GatewayListener{}).SetupWithManager(ctx, mgr); err != nil {
+				err = (&kamajiv1alpha1.GatewayListener{}).SetupWithManager(ctx, mgr)
+				if err != nil {
 					setupLog.Error(err, "unable to create indexer", "indexer", "GatewayListener")
 
 					return err
@@ -286,30 +294,34 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
-			if err = (&soot.Manager{
+			err = (&soot.Manager{
 				MigrateCABundle:         webhookCABundle,
 				MigrateServiceName:      managerServiceName,
 				MigrateServiceNamespace: managerNamespace,
 				AdminClient:             mgr.GetClient(),
-			}).SetupWithManager(mgr); err != nil {
+			}).SetupWithManager(mgr)
+			if err != nil {
 				setupLog.Error(err, "unable to set up soot manager")
 
 				return err
 			}
 
-			if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+			err = mgr.AddHealthzCheck("healthz", healthz.Ping)
+			if err != nil {
 				setupLog.Error(err, "unable to set up health check")
 
 				return err
 			}
-			if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+			err = mgr.AddReadyzCheck("readyz", healthz.Ping)
+			if err != nil {
 				setupLog.Error(err, "unable to set up ready check")
 
 				return err
 			}
 
 			setupLog.Info("starting manager")
-			if err = mgr.Start(ctx); err != nil {
+			err = mgr.Start(ctx)
+			if err != nil {
 				setupLog.Error(err, "problem running manager")
 
 				return err

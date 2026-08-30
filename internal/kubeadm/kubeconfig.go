@@ -18,12 +18,14 @@ import (
 )
 
 func buildCertificateDirectoryWithCA(ca CertificatePrivateKeyPair, directory string) error {
-	if err := os.MkdirAll(directory, os.FileMode(0o755)); err != nil {
+	err := os.MkdirAll(directory, os.FileMode(0o755))
+	if err != nil {
 		return err
 	}
 
 	certPath := path.Join(directory, kubeadmconstants.CACertName)
-	if err := os.WriteFile(certPath, ca.Certificate, os.FileMode(0o600)); err != nil {
+	err = os.WriteFile(certPath, ca.Certificate, os.FileMode(0o600))
+	if err != nil {
 		return err
 	}
 
@@ -33,13 +35,15 @@ func buildCertificateDirectoryWithCA(ca CertificatePrivateKeyPair, directory str
 }
 
 func CreateKubeconfig(kubeconfigName string, ca CertificatePrivateKeyPair, config *Configuration) ([]byte, error) {
-	if err := buildCertificateDirectoryWithCA(ca, config.InitConfiguration.CertificatesDir); err != nil {
+	err := buildCertificateDirectoryWithCA(ca, config.InitConfiguration.CertificatesDir)
+	if err != nil {
 		return nil, err
 	}
 
 	defer deleteCertificateDirectory(config.InitConfiguration.CertificatesDir)
 
-	if err := kubeconfig.CreateKubeConfigFile(kubeconfigName, config.InitConfiguration.CertificatesDir, &config.InitConfiguration); err != nil {
+	err = kubeconfig.CreateKubeConfigFile(kubeconfigName, config.InitConfiguration.CertificatesDir, &config.InitConfiguration)
+	if err != nil {
 		return nil, err
 	}
 

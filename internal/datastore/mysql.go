@@ -59,12 +59,14 @@ type MySQLConnection struct {
 
 func (c *MySQLConnection) Migrate(ctx context.Context, tcp kamajiv1alpha1.TenantControlPlane, target Connection) error {
 	// Ensuring the connection is working as expected
-	if err := target.Check(ctx); err != nil {
+	err := target.Check(ctx)
+	if err != nil {
 		return err
 	}
 	// Creating the target schema if it doesn't exist
 	if ok, _ := target.DBExists(ctx, tcp.Status.Storage.Setup.Schema); !ok {
-		if err := target.CreateDB(ctx, tcp.Status.Storage.Setup.Schema); err != nil {
+		err := target.CreateDB(ctx, tcp.Status.Storage.Setup.Schema)
+		if err != nil {
 			return err
 		}
 	}
@@ -75,7 +77,8 @@ func (c *MySQLConnection) Migrate(ctx context.Context, tcp kamajiv1alpha1.Tenant
 	}
 	defer os.RemoveAll(dir)
 
-	if _, err = c.db.ExecContext(ctx, fmt.Sprintf("USE %s", quoteMySQLIdentifier(tcp.Status.Storage.Setup.Schema))); err != nil {
+	_, err = c.db.ExecContext(ctx, fmt.Sprintf("USE %s", quoteMySQLIdentifier(tcp.Status.Storage.Setup.Schema)))
+	if err != nil {
 		return fmt.Errorf("unable to switch DB for MySQL migration: %w", err)
 	}
 
@@ -107,11 +110,13 @@ func (c *MySQLConnection) Migrate(ctx context.Context, tcp kamajiv1alpha1.Tenant
 	}
 	defer importDB.Close()
 
-	if _, err = importDB.ExecContext(ctx, fmt.Sprintf("USE %s", quoteMySQLIdentifier(tcp.Status.Storage.Setup.Schema))); err != nil {
+	_, err = importDB.ExecContext(ctx, fmt.Sprintf("USE %s", quoteMySQLIdentifier(tcp.Status.Storage.Setup.Schema)))
+	if err != nil {
 		return fmt.Errorf("unable to switch DB for MySQL migration: %w", err)
 	}
 
-	if _, err = importDB.ExecContext(ctx, string(statements)); err != nil {
+	_, err = importDB.ExecContext(ctx, string(statements))
+	if err != nil {
 		return fmt.Errorf("cannot execute dump statements for MySQL: %w", err)
 	}
 
@@ -140,7 +145,8 @@ func NewMySQLConnection(config ConnectionConfig) (Connection, error) {
 	tlsKey := "mysql"
 
 	if config.TLSConfig != nil {
-		if err = mysql.RegisterTLSConfig(tlsKey, config.TLSConfig); err != nil {
+		err = mysql.RegisterTLSConfig(tlsKey, config.TLSConfig)
+		if err != nil {
 			return nil, err
 		}
 		mysqlConfig.TLSConfig = tlsKey
@@ -186,7 +192,8 @@ func (c *MySQLConnection) GetConnectionString() string {
 }
 
 func (c *MySQLConnection) Close() error {
-	if err := c.db.Close(); err != nil {
+	err := c.db.Close()
+	if err != nil {
 		return errors.NewCloseConnectionError(err)
 	}
 
@@ -194,7 +201,8 @@ func (c *MySQLConnection) Close() error {
 }
 
 func (c *MySQLConnection) Check(ctx context.Context) error {
-	if err := c.db.PingContext(ctx); err != nil {
+	err := c.db.PingContext(ctx)
+	if err != nil {
 		return errors.NewCheckConnectionError(err)
 	}
 
@@ -202,7 +210,8 @@ func (c *MySQLConnection) Check(ctx context.Context) error {
 }
 
 func (c *MySQLConnection) CreateUser(ctx context.Context, user, password string) error {
-	if err := c.mutate(ctx, mysqlCreateUserStatement, quoteMySQLIdentifier(user), escapeMySQLString(password)); err != nil {
+	err := c.mutate(ctx, mysqlCreateUserStatement, quoteMySQLIdentifier(user), escapeMySQLString(password))
+	if err != nil {
 		return errors.NewCreateUserError(err)
 	}
 
@@ -210,7 +219,8 @@ func (c *MySQLConnection) CreateUser(ctx context.Context, user, password string)
 }
 
 func (c *MySQLConnection) UpdateUser(ctx context.Context, user, password string) error {
-	if err := c.mutate(ctx, mysqlUpdateUserStatement, quoteMySQLIdentifier(user), escapeMySQLString(password)); err != nil {
+	err := c.mutate(ctx, mysqlUpdateUserStatement, quoteMySQLIdentifier(user), escapeMySQLString(password))
+	if err != nil {
 		return errors.NewUpdateUserError(err)
 	}
 
@@ -218,7 +228,8 @@ func (c *MySQLConnection) UpdateUser(ctx context.Context, user, password string)
 }
 
 func (c *MySQLConnection) CreateDB(ctx context.Context, dbName string) error {
-	if err := c.mutate(ctx, mysqlCreateDBStatement, quoteMySQLIdentifier(dbName)); err != nil {
+	err := c.mutate(ctx, mysqlCreateDBStatement, quoteMySQLIdentifier(dbName))
+	if err != nil {
 		return errors.NewCreateDBError(err)
 	}
 
@@ -226,7 +237,8 @@ func (c *MySQLConnection) CreateDB(ctx context.Context, dbName string) error {
 }
 
 func (c *MySQLConnection) GrantPrivileges(ctx context.Context, user, dbName string) error {
-	if err := c.mutate(ctx, mysqlGrantPrivilegesStatement, quoteMySQLIdentifier(dbName), quoteMySQLIdentifier(user)); err != nil {
+	err := c.mutate(ctx, mysqlGrantPrivilegesStatement, quoteMySQLIdentifier(dbName), quoteMySQLIdentifier(user))
+	if err != nil {
 		return errors.NewGrantPrivilegesError(err)
 	}
 
@@ -236,7 +248,8 @@ func (c *MySQLConnection) GrantPrivileges(ctx context.Context, user, dbName stri
 func (c *MySQLConnection) UserExists(ctx context.Context, user string) (bool, error) {
 	checker := func(row *sql.Row) (bool, error) {
 		var name string
-		if err := row.Scan(&name); err != nil {
+		err := row.Scan(&name)
+		if err != nil {
 			if c.checkEmptyQueryResult(err) {
 				return false, nil
 			}
@@ -258,7 +271,8 @@ func (c *MySQLConnection) UserExists(ctx context.Context, user string) (bool, er
 func (c *MySQLConnection) DBExists(ctx context.Context, dbName string) (bool, error) {
 	checker := func(row *sql.Row) (bool, error) {
 		var name string
-		if err := row.Scan(&name); err != nil {
+		err := row.Scan(&name)
+		if err != nil {
 			if c.checkEmptyQueryResult(err) {
 				return false, nil
 			}
@@ -280,7 +294,8 @@ func (c *MySQLConnection) DBExists(ctx context.Context, dbName string) (bool, er
 func (c *MySQLConnection) GrantPrivilegesExists(ctx context.Context, user, dbName string) (bool, error) {
 	var exists int
 
-	if err := c.db.QueryRowContext(ctx, mysqlCheckGrantsStatement, user, dbName).Scan(&exists); err != nil {
+	err := c.db.QueryRowContext(ctx, mysqlCheckGrantsStatement, user, dbName).Scan(&exists)
+	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
 		}
@@ -292,7 +307,8 @@ func (c *MySQLConnection) GrantPrivilegesExists(ctx context.Context, user, dbNam
 }
 
 func (c *MySQLConnection) DeleteUser(ctx context.Context, user string) error {
-	if err := c.mutate(ctx, mysqlDropUserStatement, quoteMySQLIdentifier(user)); err != nil {
+	err := c.mutate(ctx, mysqlDropUserStatement, quoteMySQLIdentifier(user))
+	if err != nil {
 		return errors.NewDeleteUserError(err)
 	}
 
@@ -300,7 +316,8 @@ func (c *MySQLConnection) DeleteUser(ctx context.Context, user string) error {
 }
 
 func (c *MySQLConnection) DeleteDB(ctx context.Context, dbName string) error {
-	if err := c.mutate(ctx, mysqlDropDBStatement, quoteMySQLIdentifier(dbName)); err != nil {
+	err := c.mutate(ctx, mysqlDropDBStatement, quoteMySQLIdentifier(dbName))
+	if err != nil {
 		return errors.NewCannotDeleteDatabaseError(err)
 	}
 
@@ -308,7 +325,8 @@ func (c *MySQLConnection) DeleteDB(ctx context.Context, dbName string) error {
 }
 
 func (c *MySQLConnection) RevokePrivileges(ctx context.Context, user, dbName string) error {
-	if err := c.mutate(ctx, mysqlRevokePrivilegesStatement, quoteMySQLIdentifier(dbName), quoteMySQLIdentifier(user)); err != nil {
+	err := c.mutate(ctx, mysqlRevokePrivilegesStatement, quoteMySQLIdentifier(dbName), quoteMySQLIdentifier(user))
+	if err != nil {
 		return errors.NewRevokePrivilegesError(err)
 	}
 
@@ -329,7 +347,8 @@ func (c *MySQLConnection) check(ctx context.Context, nonFilledStatement string, 
 
 func (c *MySQLConnection) mutate(ctx context.Context, nonFilledStatement string, args ...any) error {
 	statement := fmt.Sprintf(nonFilledStatement, args...)
-	if _, err := c.db.ExecContext(ctx, statement); err != nil {
+	_, err := c.db.ExecContext(ctx, statement)
+	if err != nil {
 		return err
 	}
 

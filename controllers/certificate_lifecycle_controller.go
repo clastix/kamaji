@@ -47,7 +47,8 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 		metricCtx, cancelMetricCtx := metrics.NewRefreshContextFrom(c)
 		defer cancelMetricCtx()
 
-		if err := s.refreshCertificatesMetrics(metricCtx); err != nil {
+		err := s.refreshCertificatesMetrics(metricCtx)
+		if err != nil {
 			logger.WithName("metrics").Error(err, "cannot refresh certificate status gauges")
 		}
 	}(ctx)
@@ -55,7 +56,8 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 	logger.Info("starting CertificateLifecycle handling")
 
 	var secret corev1.Secret
-	if err := s.client.Get(ctx, request.NamespacedName, &secret); err != nil {
+	err := s.client.Get(ctx, request.NamespacedName, &secret)
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			logger.Info("resource may have been deleted, skipping")
 
@@ -81,7 +83,6 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	var crt *x509.Certificate
-	var err error
 
 	switch checkType {
 	case utilities.CertificateX509Label:
@@ -151,7 +152,8 @@ func (s *CertificateLifecycle) extractCertificateFromBareSecret(secret corev1.Se
 	var err error
 
 	for _, v := range secret.Data {
-		if crt, err = crypto.ParseCertificateBytes(v); err == nil {
+		crt, err = crypto.ParseCertificateBytes(v)
+		if err == nil {
 			break
 		}
 	}
@@ -168,7 +170,8 @@ func (s *CertificateLifecycle) extractCertificateFromKubeconfig(secret corev1.Se
 	var err error
 
 	for k := range secret.Data {
-		if kc, err = utilities.DecodeKubeconfig(secret, k); err == nil {
+		kc, err = utilities.DecodeKubeconfig(secret, k)
+		if err == nil {
 			break
 		}
 	}
@@ -188,16 +191,18 @@ func (s *CertificateLifecycle) extractCertificateFromKubeconfig(secret corev1.Se
 func (s *CertificateLifecycle) SetupWithManager(mgr controllerruntime.Manager) error {
 	s.client = mgr.GetClient()
 
-	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+	err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
 		metricCtx, cancelMetricCtx := metrics.NewRefreshContextFrom(ctx)
 		defer cancelMetricCtx()
 
-		if err := s.refreshCertificatesMetrics(metricCtx); err != nil {
+		err := s.refreshCertificatesMetrics(metricCtx)
+		if err != nil {
 			controllerruntime.Log.WithName("metrics").Error(err, "cannot initialize certificate status gauges")
 		}
 
 		return nil
-	})); err != nil {
+	}))
+	if err != nil {
 		return err
 	}
 
@@ -228,7 +233,8 @@ func (s *CertificateLifecycle) refreshCertificatesMetrics(ctx context.Context) e
 	countsByTenantControlPlane := map[k8stypes.NamespacedName]map[string]map[string]int{}
 
 	var tenantControlPlaneList kamajiv1alpha1.TenantControlPlaneList
-	if err := s.client.List(ctx, &tenantControlPlaneList); err != nil {
+	err := s.client.List(ctx, &tenantControlPlaneList)
+	if err != nil {
 		return err
 	}
 
@@ -239,7 +245,8 @@ func (s *CertificateLifecycle) refreshCertificatesMetrics(ctx context.Context) e
 	}
 
 	var secretList corev1.SecretList
-	if err := s.client.List(ctx, &secretList); err != nil {
+	err = s.client.List(ctx, &secretList)
+	if err != nil {
 		return err
 	}
 

@@ -34,7 +34,8 @@ func (t TenantControlPlaneDNS) validate(object runtime.Object) AdmissionResponse
 	return func(context.Context, admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		tcp := object.(*kamajiv1alpha1.TenantControlPlane) //nolint:forcetypeassert
 
-		if err := validateDNSServiceIPs(tcp); err != nil {
+		err := validateDNSServiceIPs(tcp)
+		if err != nil {
 			return nil, err
 		}
 

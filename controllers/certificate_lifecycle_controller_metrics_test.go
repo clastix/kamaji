@@ -29,10 +29,12 @@ func TestCertificateRefreshMetrics(t *testing.T) {
 	t.Parallel()
 
 	scheme := runtime.NewScheme()
-	if err := kamajiv1alpha1.AddToScheme(scheme); err != nil {
+	err := kamajiv1alpha1.AddToScheme(scheme)
+	if err != nil {
 		t.Fatalf("failed adding kamaji scheme: %v", err)
 	}
-	if err := corev1.AddToScheme(scheme); err != nil {
+	err = corev1.AddToScheme(scheme)
+	if err != nil {
 		t.Fatalf("failed adding corev1 scheme: %v", err)
 	}
 
@@ -91,7 +93,8 @@ func TestCertificateRefreshMetrics(t *testing.T) {
 		Metrics:  recorder,
 	}
 
-	if err := s.refreshCertificatesMetrics(t.Context()); err != nil {
+	err = s.refreshCertificatesMetrics(t.Context())
+	if err != nil {
 		t.Fatalf("refreshCertificatesMetrics returned error: %v", err)
 	}
 

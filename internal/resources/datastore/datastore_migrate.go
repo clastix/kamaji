@@ -66,14 +66,16 @@ func (d *Migrate) Define(ctx context.Context, tenantControlPlane *kamajiv1alpha1
 		return nil
 	}
 
-	if err := d.Client.Get(ctx, types.NamespacedName{Name: d.job.GetName(), Namespace: d.job.GetNamespace()}, d.job); err != nil {
+	err := d.Client.Get(ctx, types.NamespacedName{Name: d.job.GetName(), Namespace: d.job.GetNamespace()}, d.job)
+	if err != nil {
 		if !errors.IsNotFound(err) {
 			return err
 		}
 	}
 
 	d.actualDatastore = &kamajiv1alpha1.DataStore{}
-	if err := d.Client.Get(ctx, types.NamespacedName{Name: tenantControlPlane.Status.Storage.DataStoreName}, d.actualDatastore); err != nil {
+	err = d.Client.Get(ctx, types.NamespacedName{Name: tenantControlPlane.Status.Storage.DataStoreName}, d.actualDatastore)
+	if err != nil {
 		return err
 	}
 
@@ -135,11 +137,13 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 			fmt.Sprintf("--target-datastore=%s", tenantControlPlane.Spec.DataStore),
 		}
 
-		if annotations := tenantControlPlane.GetAnnotations(); annotations != nil {
+		annotations := tenantControlPlane.GetAnnotations()
+		if annotations != nil {
 			v, _ := strconv.ParseBool(annotations["kamaji.clastix.io/cleanup-prior-migration"])
 			d.job.Spec.Template.Spec.Containers[0].Args = append(d.job.Spec.Template.Spec.Containers[0].Args, fmt.Sprintf("--cleanup-prior-migration=%t", v))
 
-			if timeout, tErr := time.ParseDuration(annotations["kamaji.clastix.io/migration-timeout"]); tErr == nil {
+			timeout, tErr := time.ParseDuration(annotations["kamaji.clastix.io/migration-timeout"])
+			if tErr == nil {
 				d.job.Spec.Template.Spec.Containers[0].Args = append(d.job.Spec.Template.Spec.Containers[0].Args, fmt.Sprintf("--timeout=%s", timeout.String()))
 			}
 		}

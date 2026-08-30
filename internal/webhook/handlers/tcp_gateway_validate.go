@@ -33,7 +33,8 @@ func (t TenantControlPlaneGatewayValidation) OnCreate(object runtime.Object) Adm
 		if tcp.Spec.ControlPlane.Gateway != nil {
 			// NOTE: Do we actually want to deny here if Gateway API is not available or a warning?
 			// Seems sensible to deny to avoid anything.
-			if err := t.validateGatewayAPIAvailability(ctx); err != nil {
+			err := t.validateGatewayAPIAvailability(ctx)
+			if err != nil {
 				return nil, err
 			}
 		}
@@ -50,7 +51,8 @@ func (t TenantControlPlaneGatewayValidation) OnUpdate(object runtime.Object, _ r
 		}
 
 		if tcp.Spec.ControlPlane.Gateway != nil {
-			if err := t.validateGatewayAPIAvailability(ctx); err != nil {
+			err := t.validateGatewayAPIAvailability(ctx)
+			if err != nil {
 				return nil, err
 			}
 		}

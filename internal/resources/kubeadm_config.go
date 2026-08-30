@@ -198,7 +198,8 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 		if err != nil {
 			return err
 		}
-		if r.resource.Data, err = kubeadm.GetKubeadmInitConfigurationMap(*config); err != nil {
+		r.resource.Data, err = kubeadm.GetKubeadmInitConfigurationMap(*config)
+		if err != nil {
 			logger.Error(err, "cannot retrieve kubeadm init configuration")
 
 			return err

@@ -45,7 +45,8 @@ var _ = Describe("NetworkProfile validation", func() {
 		if tcp.Name == "" {
 			return
 		}
-		if err := k8sClient.Delete(ctx, tcp); err != nil && !apierrors.IsNotFound(err) {
+		err := k8sClient.Delete(ctx, tcp)
+		if err != nil && !apierrors.IsNotFound(err) {
 			Expect(err).NotTo(HaveOccurred())
 		}
 	})

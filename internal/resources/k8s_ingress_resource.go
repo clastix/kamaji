@@ -90,10 +90,11 @@ func (r *KubernetesIngressResource) CleanUp(ctx context.Context, tcp *kamajiv1al
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
 	var ingress networkingv1.Ingress
-	if err := r.Client.Get(ctx, client.ObjectKey{
+	err := r.Client.Get(ctx, client.ObjectKey{
 		Namespace: r.resource.GetNamespace(),
 		Name:      r.resource.GetName(),
-	}, &ingress); err != nil {
+	}, &ingress)
+	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			logger.Error(err, "failed to get ingress resource before cleanup")
 
@@ -109,7 +110,8 @@ func (r *KubernetesIngressResource) CleanUp(ctx context.Context, tcp *kamajiv1al
 		return false, nil
 	}
 
-	if err := r.Client.Delete(ctx, &ingress); err != nil {
+	err = r.Client.Delete(ctx, &ingress)
+	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			logger.Error(err, "cannot cleanup resource")
 

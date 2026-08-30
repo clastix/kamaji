@@ -37,7 +37,8 @@ func (d DataStoreSecretValidation) OnUpdate(object runtime.Object, _ runtime.Obj
 
 		dsList := &kamajiv1alpha1.DataStoreList{}
 
-		if err := d.Client.List(ctx, dsList, client.MatchingFieldsSelector{Selector: fields.OneTermEqualSelector(kamajiv1alpha1.DatastoreUsedSecretNamespacedNameKey, fmt.Sprintf("%s/%s", secret.GetNamespace(), secret.GetName()))}); err != nil {
+		err := d.Client.List(ctx, dsList, client.MatchingFieldsSelector{Selector: fields.OneTermEqualSelector(kamajiv1alpha1.DatastoreUsedSecretNamespacedNameKey, fmt.Sprintf("%s/%s", secret.GetNamespace(), secret.GetName()))})
+		if err != nil {
 			return nil, fmt.Errorf("cannot list Tenant Control Plane using the provided Secret: %w", err)
 		}
 

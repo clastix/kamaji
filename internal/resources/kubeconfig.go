@@ -149,7 +149,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
-		if err = r.customizeConfig(config); err != nil {
+		err = r.customizeConfig(config)
+		if err != nil {
 			logger.Error(err, "cannot customize the configuration")
 
 			return err
@@ -157,7 +158,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 		caSecretNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
 		caCertificatesSecret := &corev1.Secret{}
-		if err = r.Client.Get(ctx, caSecretNamespacedName, caCertificatesSecret); err != nil {
+		err = r.Client.Get(ctx, caSecretNamespacedName, caCertificatesSecret)
+		if err != nil {
 			logger.Error(err, "cannot retrieve the CA")
 
 			return err
@@ -181,7 +183,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		))
 		r.resource.SetAnnotations(utilities.MergeMaps(r.resource.GetAnnotations(), map[string]string{constants.Checksum: checksum}))
 
-		if err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
+		err = ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
+		if err != nil {
 			logger.Error(err, "cannot set controller reference", "resource", r.GetName())
 
 			return err

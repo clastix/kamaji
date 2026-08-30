@@ -102,18 +102,21 @@ func (k *KubeProxy) CleanUp(ctx context.Context, tcp *kamajiv1alpha1.TenantContr
 	var deleted bool
 
 	for _, obj := range []client.Object{k.serviceAccount, k.clusterRoleBinding, k.role, k.roleBinding, k.configMap, k.daemonSet} {
-		if err = tenantClient.Get(ctx, types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
+		err = tenantClient.Get(ctx, types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj)
+		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				continue
 			}
 		}
 		// Skipping deletion:
 		// the kubeproxy addons is not managed by Kamaji.
-		if labels := obj.GetLabels(); labels == nil || labels[constants.ProjectNameLabelKey] != constants.ProjectNameLabelValue {
+		labels := obj.GetLabels()
+		if labels == nil || labels[constants.ProjectNameLabelKey] != constants.ProjectNameLabelValue {
 			continue
 		}
 
-		if err = tenantClient.Delete(ctx, obj); err != nil {
+		err = tenantClient.Delete(ctx, obj)
+		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				continue
 			}
@@ -141,7 +144,8 @@ func (k *KubeProxy) CreateOrUpdate(ctx context.Context, tcp *kamajiv1alpha1.Tena
 		return controllerutil.OperationResultNone, err
 	}
 
-	if err = k.decodeManifests(ctx, tcp); err != nil {
+	err = k.decodeManifests(ctx, tcp)
+	if err != nil {
 		logger.Error(err, "manifest decoding failed")
 
 		return controllerutil.OperationResultNone, err
@@ -301,7 +305,8 @@ func (k *KubeProxy) mutateDaemonSet(ctx context.Context, tenantClient client.Cli
 	ds.Name = k.daemonSet.Name
 	ds.Namespace = k.daemonSet.Namespace
 
-	if err := tenantClient.Get(ctx, client.ObjectKeyFromObject(&ds), &ds); err != nil {
+	err := tenantClient.Get(ctx, client.ObjectKeyFromObject(&ds), &ds)
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return utilities.CreateOrUpdateWithConflict(ctx, tenantClient, k.daemonSet, func() error {
 				return controllerutil.SetControllerReference(k.clusterRoleBinding, k.daemonSet, tenantClient.Scheme())
@@ -311,7 +316,8 @@ func (k *KubeProxy) mutateDaemonSet(ctx context.Context, tenantClient client.Cli
 		return controllerutil.OperationResultNone, err
 	}
 
-	if err := controllerutil.SetControllerReference(k.clusterRoleBinding, k.daemonSet, tenantClient.Scheme()); err != nil {
+	err = controllerutil.SetControllerReference(k.clusterRoleBinding, k.daemonSet, tenantClient.Scheme())
+	if err != nil {
 		return controllerutil.OperationResultNone, err
 	}
 	//nolint:staticcheck
@@ -345,32 +351,38 @@ func (k *KubeProxy) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Ten
 
 	parts := bytes.Split(manifests, []byte("---"))
 
-	if err = utilities.DecodeFromYAML(string(parts[1]), k.serviceAccount); err != nil {
+	err = utilities.DecodeFromYAML(string(parts[1]), k.serviceAccount)
+	if err != nil {
 		return fmt.Errorf("unable to decode ServiceAccount manifest: %w", err)
 	}
 	addon_utils.SetKamajiManagedLabels(k.serviceAccount)
 
-	if err = utilities.DecodeFromYAML(string(parts[2]), k.clusterRoleBinding); err != nil {
+	err = utilities.DecodeFromYAML(string(parts[2]), k.clusterRoleBinding)
+	if err != nil {
 		return fmt.Errorf("unable to decode ClusterRoleBinding manifest: %w", err)
 	}
 	addon_utils.SetKamajiManagedLabels(k.clusterRoleBinding)
 
-	if err = utilities.DecodeFromYAML(string(parts[3]), k.role); err != nil {
+	err = utilities.DecodeFromYAML(string(parts[3]), k.role)
+	if err != nil {
 		return fmt.Errorf("unable to decode Role manifest: %w", err)
 	}
 	addon_utils.SetKamajiManagedLabels(k.role)
 
-	if err = utilities.DecodeFromYAML(string(parts[4]), k.roleBinding); err != nil {
+	err = utilities.DecodeFromYAML(string(parts[4]), k.roleBinding)
+	if err != nil {
 		return fmt.Errorf("unable to decode RoleBinding manifest: %w", err)
 	}
 	addon_utils.SetKamajiManagedLabels(k.roleBinding)
 
-	if err = utilities.DecodeFromYAML(string(parts[5]), k.configMap); err != nil {
+	err = utilities.DecodeFromYAML(string(parts[5]), k.configMap)
+	if err != nil {
 		return fmt.Errorf("unable to decode ConfigMap manifest: %w", err)
 	}
 	addon_utils.SetKamajiManagedLabels(k.configMap)
 
-	if err = utilities.DecodeFromYAML(string(parts[6]), k.daemonSet); err != nil {
+	err = utilities.DecodeFromYAML(string(parts[6]), k.daemonSet)
+	if err != nil {
 		return fmt.Errorf("unable to decode DaemonSet manifest: %w", err)
 	}
 	addon_utils.SetKamajiManagedLabels(k.daemonSet)

@@ -64,7 +64,8 @@ var _ = Describe("Deploy a TenantControlPlane resource", func() {
 		// ObservedGeneration is set at the end of successful reconciliation,
 		// after status becomes Ready, so we need to wait for it.
 		Eventually(func() int64 {
-			if err := k8sClient.Get(context.Background(), types.NamespacedName{Name: tcp.GetName(), Namespace: tcp.GetNamespace()}, tcp); err != nil {
+			err := k8sClient.Get(context.Background(), types.NamespacedName{Name: tcp.GetName(), Namespace: tcp.GetNamespace()}, tcp)
+			if err != nil {
 				return -1
 			}
 

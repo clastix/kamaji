@@ -22,7 +22,8 @@ func main() {
 	root.AddCommand(migrator)
 	root.AddCommand(kubeconfigGenerator)
 
-	if err := root.Execute(); err != nil {
+	err := root.Execute()
+	if err != nil {
 		os.Exit(1)
 	}
 }

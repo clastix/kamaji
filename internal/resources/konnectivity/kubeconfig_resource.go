@@ -48,7 +48,8 @@ func (r *KubeconfigResource) ShouldCleanup(tenantControlPlane *kamajiv1alpha1.Te
 func (r *KubeconfigResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantControlPlane) (bool, error) {
 	logger := log.FromContext(ctx, "resource", r.GetName())
 
-	if err := r.Client.Delete(ctx, r.resource); err != nil {
+	err := r.Client.Delete(ctx, r.resource)
+	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			logger.Error(err, "cannot delete the requested resource")
 
@@ -108,7 +109,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			},
 		))
 
-		if err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme()); err != nil {
+		err := ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
+		if err != nil {
 			logger.Error(err, "cannot set controller reference for kubeconfig", "resource", r.GetName())
 
 			return err
@@ -118,7 +120,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 		caNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}
 		secretCA := &corev1.Secret{}
-		if err := r.Client.Get(ctx, caNamespacedName, secretCA); err != nil {
+		err = r.Client.Get(ctx, caNamespacedName, secretCA)
+		if err != nil {
 			logger.Error(err, "cannot retrieve the CA secret")
 
 			return err
@@ -132,7 +135,8 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 		certificateNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Addons.Konnectivity.Certificate.SecretName}
 		secretCertificate := &corev1.Secret{}
-		if err := r.Client.Get(ctx, certificateNamespacedName, secretCertificate); err != nil {
+		err = r.Client.Get(ctx, certificateNamespacedName, secretCertificate)
+		if err != nil {
 			logger.Error(err, "cannot retrieve the Konnectivity Certificate secret")
 
 			return err

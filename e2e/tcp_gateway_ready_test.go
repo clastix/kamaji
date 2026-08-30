@@ -95,10 +95,11 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 		Eventually(func() error {
 			route := &gatewayv1.TLSRoute{}
 			// TODO: Check ownership.
-			if err := k8sClient.Get(context.Background(), types.NamespacedName{
+			err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name,
 				Namespace: tcp.Namespace,
-			}, route); err != nil {
+			}, route)
+			if err != nil {
 				return err
 			}
 			if len(route.Spec.ParentRefs) == 0 {

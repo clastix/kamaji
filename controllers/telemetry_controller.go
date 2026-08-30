@@ -30,7 +30,8 @@ type TelemetryController struct {
 
 func (m *TelemetryController) retrieveControllerUID(ctx context.Context) (string, error) {
 	var defaultSvc corev1.Service
-	if err := m.Client.Get(ctx, types.NamespacedName{Name: "kubernetes", Namespace: "default"}, &defaultSvc); err != nil {
+	err := m.Client.Get(ctx, types.NamespacedName{Name: "kubernetes", Namespace: "default"}, &defaultSvc)
+	if err != nil {
 		return "", fmt.Errorf("cannot start the telemetry controller: %w", err)
 	}
 
@@ -74,7 +75,8 @@ func (m *TelemetryController) collectStats(ctx context.Context, uid string) {
 	}
 
 	var tcpList kamajiv1alpha1.TenantControlPlaneList
-	if err := m.Client.List(ctx, &tcpList); err != nil {
+	err := m.Client.List(ctx, &tcpList)
+	if err != nil {
 		logger.Error(err, "cannot list TenantControlPlane")
 
 		return
@@ -94,7 +96,8 @@ func (m *TelemetryController) collectStats(ctx context.Context, uid string) {
 	}
 
 	var datastoreList kamajiv1alpha1.DataStoreList
-	if err := m.Client.List(ctx, &datastoreList); err != nil {
+	err = m.Client.List(ctx, &datastoreList)
+	if err != nil {
 		logger.Error(err, "cannot list DataStores")
 
 		return

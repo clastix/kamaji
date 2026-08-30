@@ -100,10 +100,11 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API and Konnectivity"
 	It("Should create control plane TLSRoute preserving user-provided parentRef fields", func() {
 		Eventually(func() error {
 			route := &gatewayv1.TLSRoute{}
-			if err := k8sClient.Get(context.Background(), types.NamespacedName{
+			err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name,
 				Namespace: tcp.Namespace,
-			}, route); err != nil {
+			}, route)
+			if err != nil {
 				return err
 			}
 			if len(route.Spec.ParentRefs) == 0 {
@@ -129,10 +130,11 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API and Konnectivity"
 	It("Should create Konnectivity TLSRoute with correct sectionName", func() {
 		Eventually(func() error {
 			route := &gatewayv1.TLSRoute{}
-			if err := k8sClient.Get(context.Background(), types.NamespacedName{
+			err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name + "-konnectivity",
 				Namespace: tcp.Namespace,
-			}, route); err != nil {
+			}, route)
+			if err != nil {
 				return err
 			}
 			if len(route.Spec.ParentRefs) == 0 {
@@ -152,18 +154,20 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API and Konnectivity"
 	It("Should use same hostname for both TLSRoutes", func() {
 		Eventually(func() error {
 			controlPlaneRoute := &gatewayv1.TLSRoute{}
-			if err := k8sClient.Get(context.Background(), types.NamespacedName{
+			err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name,
 				Namespace: tcp.Namespace,
-			}, controlPlaneRoute); err != nil {
+			}, controlPlaneRoute)
+			if err != nil {
 				return err
 			}
 
 			konnectivityRoute := &gatewayv1.TLSRoute{}
-			if err := k8sClient.Get(context.Background(), types.NamespacedName{
+			err = k8sClient.Get(context.Background(), types.NamespacedName{
 				Name:      tcp.Name + "-konnectivity",
 				Namespace: tcp.Namespace,
-			}, konnectivityRoute); err != nil {
+			}, konnectivityRoute)
+			if err != nil {
 				return err
 			}
 

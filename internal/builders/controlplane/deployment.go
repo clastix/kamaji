@@ -1122,7 +1122,8 @@ func (d Deployment) templateLabels(ctx context.Context, tenantControlPlane *kama
 // secretHashValue function returns the md5 value for the secret of the given name and namespace.
 func (d Deployment) secretHashValue(ctx context.Context, client client.Client, namespace, name string) (string, error) {
 	secret := &corev1.Secret{}
-	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, secret); err != nil {
+	err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, secret)
+	if err != nil {
 		return "", fmt.Errorf("cannot retrieve *corev1.Secret for resource version retrieval: %w", err)
 	}
 

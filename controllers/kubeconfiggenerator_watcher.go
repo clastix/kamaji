@@ -29,7 +29,8 @@ func (r *KubeconfigGeneratorWatcher) Reconcile(ctx context.Context, req ctrl.Req
 	logger.Info("reconciling resource")
 
 	var tcp kamajiv1alpha1.TenantControlPlane
-	if err := r.Client.Get(ctx, req.NamespacedName, &tcp); err != nil {
+	err := r.Client.Get(ctx, req.NamespacedName, &tcp)
+	if err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info("resource may have been deleted, skipping")
 
@@ -42,7 +43,8 @@ func (r *KubeconfigGeneratorWatcher) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	var generators kamajiv1alpha1.KubeconfigGeneratorList
-	if err := r.Client.List(ctx, &generators); err != nil {
+	err = r.Client.List(ctx, &generators)
+	if err != nil {
 		logger.Error(err, "cannot list generators")
 
 		return ctrl.Result{}, err

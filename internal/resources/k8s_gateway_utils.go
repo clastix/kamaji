@@ -36,9 +36,10 @@ func fetchGatewayByListener(ctx context.Context, c client.Client, ref gatewayv1.
 
 	// Query gateways using the indexer
 	gatewayList := &gatewayv1.GatewayList{}
-	if err := c.List(ctx, gatewayList, client.MatchingFieldsSelector{
+	err := c.List(ctx, gatewayList, client.MatchingFieldsSelector{
 		Selector: fields.OneTermEqualSelector(kamajiv1alpha1.GatewayListenerNameKey, listenerKey),
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, fmt.Errorf("failed to list gateways by listener: %w", err)
 	}
 
@@ -145,10 +146,11 @@ func IsGatewayRouteStatusChanged(currentStatus *kamajiv1alpha1.KubernetesGateway
 // CleanupTLSRoute cleans up a TLSRoute resource if it's managed by the given TenantControlPlane.
 func CleanupTLSRoute(ctx context.Context, c client.Client, routeName, routeNamespace string, tcp metav1.Object) (bool, error) {
 	route := gatewayv1.TLSRoute{}
-	if err := c.Get(ctx, client.ObjectKey{
+	err := c.Get(ctx, client.ObjectKey{
 		Namespace: routeNamespace,
 		Name:      routeName,
-	}, &route); err != nil {
+	}, &route)
+	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return false, fmt.Errorf("failed to get TLSRoute before cleanup: %w", err)
 		}
@@ -160,7 +162,8 @@ func CleanupTLSRoute(ctx context.Context, c client.Client, routeName, routeNames
 		return false, nil
 	}
 
-	if err := c.Delete(ctx, &route); err != nil {
+	err = c.Delete(ctx, &route)
+	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return false, fmt.Errorf("cannot delete TLSRoute route: %w", err)
 		}
@@ -277,7 +280,8 @@ func resolveMatchingListeners(ctx context.Context, c client.Client, ref gatewayv
 	// SectionName unset: resolve the Gateway by namespace/name.
 	gateway := &gatewayv1.Gateway{}
 	key := k8stypes.NamespacedName{Namespace: string(*ref.Namespace), Name: string(ref.Name)}
-	if err := c.Get(ctx, key, gateway); err != nil {
+	err := c.Get(ctx, key, gateway)
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return nil, nil
 		}

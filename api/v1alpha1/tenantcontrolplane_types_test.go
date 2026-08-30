@@ -32,7 +32,8 @@ var _ = Describe("Cluster controller", func() {
 	})
 
 	AfterEach(func() {
-		if err := k8sClient.Delete(ctx, tcp); err != nil && !apierrors.IsNotFound(err) {
+		err := k8sClient.Delete(ctx, tcp)
+		if err != nil && !apierrors.IsNotFound(err) {
 			Expect(err).NotTo(HaveOccurred())
 		}
 	})

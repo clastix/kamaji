@@ -6,6 +6,7 @@ package utilities
 import (
 	"bytes"
 	"fmt"
+	maps0 "maps"
 	"sort"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,9 +33,7 @@ func MergeMaps(maps ...map[string]string) map[string]string {
 	result := map[string]string{}
 
 	for _, m := range maps {
-		for k, v := range m {
-			result[k] = v
-		}
+		maps0.Copy(result, m)
 	}
 
 	return result
@@ -56,7 +55,8 @@ func EncodeToYaml(o runtime.Object) ([]byte, error) {
 
 	buf := bytes.NewBuffer([]byte{})
 
-	if err := encoder.Encode(o, buf); err != nil {
+	err := encoder.Encode(o, buf)
+	if err != nil {
 		return nil, err
 	}
 
@@ -72,7 +72,8 @@ func DecodeFromYAML(o string, to runtime.Object) (err error) {
 		Strict: false,
 	})
 
-	if to, _, err = encoder.Decode([]byte(o), nil, to); err != nil { //nolint:ineffassign,staticcheck,wastedassign
+	to, _, err = encoder.Decode([]byte(o), nil, to)
+	if err != nil { //nolint:ineffassign,staticcheck,wastedassign
 		return
 	}
 
@@ -88,7 +89,8 @@ func DecodeFromJSON(o string, to runtime.Object) (err error) {
 		Strict: false,
 	})
 
-	if to, _, err = encoder.Decode([]byte(o), nil, to); err != nil { //nolint:ineffassign,staticcheck,wastedassign
+	to, _, err = encoder.Decode([]byte(o), nil, to)
+	if err != nil { //nolint:ineffassign,staticcheck,wastedassign
 		return
 	}
 
@@ -107,7 +109,8 @@ func EncodeToJSON(o runtime.Object) ([]byte, error) {
 
 	buf := bytes.NewBuffer([]byte{})
 
-	if err := encoder.Encode(o, buf); err != nil {
+	err := encoder.Encode(o, buf)
+	if err != nil {
 		return nil, err
 	}
 

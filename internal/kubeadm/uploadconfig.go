@@ -61,11 +61,13 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration, pat
 		},
 	}
 
-	if err = apiclient.CreateOrUpdate[*corev1.ConfigMap](client.CoreV1().ConfigMaps(metav1.NamespaceSystem), configMap); err != nil {
+	err = apiclient.CreateOrUpdate[*corev1.ConfigMap](client.CoreV1().ConfigMaps(metav1.NamespaceSystem), configMap)
+	if err != nil {
 		return nil, err
 	}
 
-	if err = createConfigMapRBACRules(client, configMapName); err != nil {
+	err = createConfigMapRBACRules(client, configMapName)
+	if err != nil {
 		return nil, fmt.Errorf("error creating kubelet configuration configmap RBAC rules: %w", err)
 	}
 
@@ -95,12 +97,14 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration, patch
 			return nil, fmt.Errorf("unable to encode KubeletConfiguration to JSON for JSON patching: %w", patchErr)
 		}
 
-		if kubeletConfig, patchErr = patch.Apply(kubeletConfig); patchErr != nil {
+		kubeletConfig, patchErr = patch.Apply(kubeletConfig)
+		if patchErr != nil {
 			return nil, fmt.Errorf("unable to apply JSON patching to KubeletConfiguration: %w", patchErr)
 		}
 
 		kc = kubelettypes.KubeletConfiguration{}
-		if patchErr = utilities.DecodeFromJSON(string(kubeletConfig), &kc); patchErr != nil {
+		patchErr = utilities.DecodeFromJSON(string(kubeletConfig), &kc)
+		if patchErr != nil {
 			return nil, fmt.Errorf("unable to decode JSON to KubeletConfiguration: %w", patchErr)
 		}
 	}
@@ -111,7 +115,7 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration, patch
 func createConfigMapRBACRules(client kubernetes.Interface, configMapName string) error {
 	configMapRBACName := kubeadmconstants.KubeletBaseConfigMapRole
 
-	if err := apiclient.CreateOrUpdate[*rbacv1.Role](client.RbacV1().Roles(metav1.NamespaceSystem), &rbacv1.Role{
+	err := apiclient.CreateOrUpdate[*rbacv1.Role](client.RbacV1().Roles(metav1.NamespaceSystem), &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      configMapRBACName,
 			Namespace: metav1.NamespaceSystem,
@@ -124,7 +128,8 @@ func createConfigMapRBACRules(client kubernetes.Interface, configMapName string)
 				ResourceNames: []string{configMapName},
 			},
 		},
-	}); err != nil {
+	})
+	if err != nil {
 		return err
 	}
 

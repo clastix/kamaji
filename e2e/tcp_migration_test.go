@@ -88,7 +88,8 @@ func featureTestMigration(driver string) {
 
 		By("start migration to a new DataStore")
 		Eventually(func() error {
-			if err := k8sClient.Get(context.Background(), types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.GetName()}, tcp); err != nil {
+			err := k8sClient.Get(context.Background(), types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.GetName()}, tcp)
+			if err != nil {
 				return err
 			}
 
@@ -123,7 +124,8 @@ func featureTestMigration(driver string) {
 
 		By("checking the DataStore of the TCP")
 		Eventually(func() string {
-			if err := k8sClient.Get(context.Background(), types.NamespacedName{Name: tcp.GetName(), Namespace: tcp.GetNamespace()}, tcp); err != nil {
+			err := k8sClient.Get(context.Background(), types.NamespacedName{Name: tcp.GetName(), Namespace: tcp.GetNamespace()}, tcp)
+			if err != nil {
 				return ""
 			}
 

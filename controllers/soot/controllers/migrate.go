@@ -76,7 +76,8 @@ func (m *Migrate) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile
 }
 
 func (m *Migrate) cleanup(ctx context.Context) error {
-	if err := m.Client.Delete(ctx, m.object()); err != nil {
+	err := m.Client.Delete(ctx, m.object())
+	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
