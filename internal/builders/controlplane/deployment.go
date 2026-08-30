@@ -784,7 +784,6 @@ func mergeAPIServerArgs(current, userExtras []string, safeDefaults, managed map[
 	// Kamaji-owned segment: preserved foreign flags from current
 	// safe defaults the user didn't set, and managed flags.
 	// Sorted for idempotency.
-	//nolint:prealloc
 	var kamajiOwned []string
 
 	for _, arg := range current {
