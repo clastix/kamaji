@@ -175,6 +175,22 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 		} else {
 			logger.Info("Generating new API Server certificate")
 
+			// Ensure the assigned control plane address is included in the certificate SANs
+			addr, _, addrErr := tenantControlPlane.AssignedControlPlaneAddress()
+			if addrErr == nil && addr != "" {
+				// Check if address is already in CertSANs
+				hasAddr := false
+				for _, san := range config.InitConfiguration.APIServer.CertSANs {
+					if san == addr {
+						hasAddr = true
+						break
+					}
+				}
+				if !hasAddr {
+					config.InitConfiguration.APIServer.CertSANs = append(config.InitConfiguration.APIServer.CertSANs, addr)
+				}
+			}
+
 			ca := kubeadm.CertificatePrivateKeyPair{
 				Name:        kubeadmconstants.CACertAndKeyBaseName,
 				Certificate: secretCA.Data[kubeadmconstants.CACertName],
