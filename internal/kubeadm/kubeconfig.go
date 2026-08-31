@@ -4,7 +4,6 @@
 package kubeadm
 
 import (
-	"bytes"
 	"os"
 	"path"
 	"path/filepath"
@@ -54,8 +53,18 @@ func IsKubeconfigCAValid(in, caCrt []byte) bool {
 		return false
 	}
 
+	caCertificate, err := crypto.ParseCertificateBytes(caCrt)
+	if err != nil {
+		return false
+	}
+
 	for _, cluster := range kc.Clusters {
-		if !bytes.Equal(cluster.Cluster.CertificateAuthorityData, caCrt) {
+		clusterCertificate, err := crypto.ParseCertificateBytes(cluster.Cluster.CertificateAuthorityData)
+		if err != nil {
+			return false
+		}
+
+		if !clusterCertificate.Equal(caCertificate) {
 			return false
 		}
 	}
