@@ -164,7 +164,16 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
-		checksum := r.checksum(caCertificatesSecret, config.Checksum(), utilities.CalculateMapChecksum(r.resource.Data))
+		// For pregenerated certificates, exclude config checksum from kubeconfig checksum
+		// because cert SANs changes don't affect the actual certificates (they're fixed).
+		// Including config checksum causes infinite loops when Service gets provisioned with IPs
+		// and SANs change, even though the actual kubeconfig content remains identical.
+		var configChecksum string
+		if tenantControlPlane.Spec.PreGeneratedCertificates == nil {
+			configChecksum = config.Checksum()
+		}
+
+		checksum := r.checksum(caCertificatesSecret, configChecksum, utilities.CalculateMapChecksum(r.resource.Data))
 
 		status, err := r.getKubeconfigStatus(tenantControlPlane)
 		if err != nil {
@@ -244,7 +253,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 				r.resource.Data[key] = kubeconfig
 			}
 
-			checksum = r.checksum(caCertificatesSecret, config.Checksum(), utilities.CalculateMapChecksum(r.resource.Data))
+			checksum = r.checksum(caCertificatesSecret, configChecksum, utilities.CalculateMapChecksum(r.resource.Data))
 			r.resource.SetAnnotations(utilities.MergeMaps(r.resource.GetAnnotations(), map[string]string{constants.Checksum: checksum}))
 		}
 
