@@ -239,7 +239,28 @@ func (c *CoreDNS) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Tenan
 		return fmt.Errorf("unable to generate manifests: %w", err)
 	}
 
-	// If multiple service CIDRs are defined, CoreDNS needs to be configured with multiple service addresses, and ip families and dualstack if required.
+	parts := bytes.Split(manifests, []byte("---"))
+
+	if err = utilities.DecodeFromYAML(string(parts[1]), c.deployment); err != nil {
+		return fmt.Errorf("unable to decode Deployment manifest: %w", err)
+	}
+	addons_utils.SetKamajiManagedLabels(c.deployment)
+
+	if err = utilities.DecodeFromYAML(string(parts[2]), c.configMap); err != nil {
+		return fmt.Errorf("unable to decode ConfigMap manifest: %w", err)
+	}
+	addons_utils.SetKamajiManagedLabels(c.configMap)
+
+	if err = utilities.DecodeFromYAML(string(parts[3]), c.service); err != nil {
+		return fmt.Errorf("unable to decode Service manifest: %w", err)
+	}
+	addons_utils.SetKamajiManagedLabels(c.service)
+
+	// If multiple service CIDRs are defined, CoreDNS needs multiple service addresses
+	// with matching IP families. This must run AFTER decoding the kubeadm Service
+	// manifest: that manifest carries a single-family ClusterIP (derived from the
+	// primary service subnet), which would otherwise overwrite ClusterIPs[0] and leave
+	// ClusterIP != ClusterIPs[0] — rejected by the API server for a dual-stack Service.
 	if len(tcp.Spec.NetworkProfile.DNSServiceIPs) > 1 {
 		c.service.Spec.ClusterIP = tcp.Spec.NetworkProfile.DNSServiceIPs[0]
 		c.service.Spec.ClusterIPs = tcp.Spec.NetworkProfile.DNSServiceIPs
@@ -261,23 +282,6 @@ func (c *CoreDNS) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Tenan
 		c.service.Spec.IPFamilies = families
 		c.service.Spec.IPFamilyPolicy = &policy
 	}
-
-	parts := bytes.Split(manifests, []byte("---"))
-
-	if err = utilities.DecodeFromYAML(string(parts[1]), c.deployment); err != nil {
-		return fmt.Errorf("unable to decode Deployment manifest: %w", err)
-	}
-	addons_utils.SetKamajiManagedLabels(c.deployment)
-
-	if err = utilities.DecodeFromYAML(string(parts[2]), c.configMap); err != nil {
-		return fmt.Errorf("unable to decode ConfigMap manifest: %w", err)
-	}
-	addons_utils.SetKamajiManagedLabels(c.configMap)
-
-	if err = utilities.DecodeFromYAML(string(parts[3]), c.service); err != nil {
-		return fmt.Errorf("unable to decode Service manifest: %w", err)
-	}
-	addons_utils.SetKamajiManagedLabels(c.service)
 
 	if err = utilities.DecodeFromYAML(string(parts[4]), c.clusterRole); err != nil {
 		return fmt.Errorf("unable to decode ClusterRole manifest: %w", err)
