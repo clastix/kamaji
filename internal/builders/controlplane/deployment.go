@@ -689,6 +689,7 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 	// Opinionated defaults: applied only when the user didn't provide the same flag in ExtraArgs.
 	safeDefaults := map[string]string{
 		"--allow-privileged":                   "true",
+		"--client-ca-file":                     path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
 		"--enable-bootstrap-token-auth":        "true",
 		"--requestheader-extra-headers-prefix": "X-Remote-Extra-",
 		"--requestheader-group-headers":        "X-Remote-Group",
@@ -708,7 +709,6 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 	// Managed flags: derived from the TCP spec, always applied, override any user duplicate.
 	managed := map[string]string{
 		"--advertise-address":                apiAdvertiseAddress,
-		"--client-ca-file":                   path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
 		"--enable-admission-plugins":         strings.Join(tenantControlPlane.Spec.Kubernetes.AdmissionControllers.ToSlice(), ","),
 		"--service-cluster-ip-range":         strings.Join(serviceCIDRs, ","),
 		"--kubelet-client-certificate":       path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientCertName),

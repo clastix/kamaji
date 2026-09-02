@@ -48,6 +48,30 @@ func CreateKubeconfig(kubeconfigName string, ca CertificatePrivateKeyPair, confi
 	return os.ReadFile(path)
 }
 
+// CreateKubeconfigWithClientSigner embeds the server CA while signing client credentials with a separate CA.
+func CreateKubeconfigWithClientSigner(
+	kubeconfigName string,
+	serverCA []byte,
+	clientSigner CertificatePrivateKeyPair,
+	config *Configuration,
+) ([]byte, error) {
+	kubeconfigBytes, err := CreateKubeconfig(kubeconfigName, clientSigner, config)
+	if err != nil {
+		return nil, err
+	}
+
+	kubeconfigConfig, err := utilities.DecodeKubeconfigYAML(kubeconfigBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range kubeconfigConfig.Clusters {
+		kubeconfigConfig.Clusters[i].Cluster.CertificateAuthorityData = serverCA
+	}
+
+	return utilities.EncodeToYaml(kubeconfigConfig)
+}
+
 func IsKubeconfigCAValid(in, caCrt []byte) bool {
 	kc, err := utilities.DecodeKubeconfigYAML(in)
 	if err != nil {

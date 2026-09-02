@@ -29,14 +29,15 @@ import (
 )
 
 var _ = Describe("KonnectivityKubeconfigResource", func() {
-	It("regenerates kubeconfig when embedded CA is stale", func() {
+	It("regenerates kubeconfig when its client certificate is stale", func() {
 		ctx := context.Background()
 
-		oldCACert, oldCAKey := createSelfSignedCA("old-ca")
-		newCACert, newCAKey := createSelfSignedCA("new-ca")
+		serverCACert, serverCAKey := createSelfSignedCA("server-ca")
+		oldClientCACert, oldClientCAKey := createSelfSignedCA("old-client-ca")
+		newClientCACert, newClientCAKey := createSelfSignedCA("new-client-ca")
 
-		oldClientCert, oldClientKey := createSignedKonnectivityCert(oldCACert, oldCAKey)
-		newClientCert, newClientKey := createSignedKonnectivityCert(newCACert, newCAKey)
+		oldClientCert, oldClientKey := createSignedKonnectivityCert(oldClientCACert, oldClientCAKey)
+		newClientCert, newClientKey := createSignedKonnectivityCert(newClientCACert, newClientCAKey)
 
 		tcp := &kamajiv1alpha1.TenantControlPlane{
 			ObjectMeta: metav1.ObjectMeta{
@@ -61,7 +62,7 @@ var _ = Describe("KonnectivityKubeconfigResource", func() {
 			},
 		}
 
-		staleKubeconfig := renderKubeconfig(oldCACert, oldClientCert, oldClientKey)
+		staleKubeconfig := renderKubeconfig(serverCACert, oldClientCert, oldClientKey)
 
 		kubeconfigSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -78,8 +79,8 @@ var _ = Describe("KonnectivityKubeconfigResource", func() {
 		caSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{Name: "tenant-01-ca", Namespace: "default"},
 			Data: map[string][]byte{
-				kubeadmconstants.CACertName: newCACert,
-				kubeadmconstants.CAKeyName:  newCAKey,
+				kubeadmconstants.CACertName: serverCACert,
+				kubeadmconstants.CAKeyName:  serverCAKey,
 			},
 		}
 
@@ -107,10 +108,67 @@ var _ = Describe("KonnectivityKubeconfigResource", func() {
 
 		reconciledKubeconfig := decodeKubeconfig(reconciled.Data["konnectivity-server.conf"])
 		Expect(reconciledKubeconfig.Clusters).To(HaveLen(1))
-		Expect(reconciledKubeconfig.Clusters[0].Cluster.CertificateAuthorityData).To(Equal(newCACert))
+		Expect(reconciledKubeconfig.Clusters[0].Cluster.CertificateAuthorityData).To(Equal(serverCACert))
 		Expect(reconciledKubeconfig.AuthInfos).To(HaveLen(1))
 		Expect(reconciledKubeconfig.AuthInfos[0].AuthInfo.ClientCertificateData).To(Equal(newClientCert))
 		Expect(reconciledKubeconfig.AuthInfos[0].AuthInfo.ClientKeyData).To(Equal(newClientKey))
+	})
+
+	It("signs the konnectivity client certificate with the dedicated client CA", func() {
+		ctx := context.Background()
+
+		serverCACert, serverCAKey := createSelfSignedCA("server-ca")
+		clientCACert, clientCAKey := createSelfSignedCA("client-ca")
+		tcp := &kamajiv1alpha1.TenantControlPlane{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "tenant-01",
+				Namespace: "default",
+				Annotations: map[string]string{
+					kamajiv1alpha1.ClientCASecretAnnotation: "tenant-01-client-ca",
+				},
+			},
+			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
+				Addons: kamajiv1alpha1.AddonsSpec{
+					Konnectivity: &kamajiv1alpha1.KonnectivitySpec{},
+				},
+			},
+			Status: kamajiv1alpha1.TenantControlPlaneStatus{
+				Certificates: kamajiv1alpha1.CertificatesStatus{
+					CA: kamajiv1alpha1.CertificatePrivateKeyPairStatus{SecretName: "tenant-01-ca"},
+				},
+			},
+		}
+		serverCASecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: "tenant-01-ca", Namespace: "default"},
+			Data: map[string][]byte{
+				kubeadmconstants.CACertName: serverCACert,
+				kubeadmconstants.CAKeyName:  serverCAKey,
+			},
+		}
+		clientCASecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: "tenant-01-client-ca", Namespace: "default"},
+			Data: map[string][]byte{
+				kubeadmconstants.CACertName: clientCACert,
+				kubeadmconstants.CAKeyName:  clientCAKey,
+			},
+		}
+		fakeClient := fake.NewClientBuilder().
+			WithScheme(runtimeScheme).
+			WithObjects(serverCASecret, clientCASecret).
+			Build()
+		resource := &konnectivity.CertificateResource{Client: fakeClient}
+		Expect(resource.Define(ctx, tcp)).To(Succeed())
+
+		_, err := resource.CreateOrUpdate(ctx, tcp)
+		Expect(err).NotTo(HaveOccurred())
+
+		reconciled := &corev1.Secret{}
+		Expect(fakeClient.Get(ctx, types.NamespacedName{Name: "tenant-01-konnectivity-certificate", Namespace: "default"}, reconciled)).To(Succeed())
+		valid, err := crypto.VerifyCertificate(reconciled.Data[corev1.TLSCertKey], clientCACert, x509.ExtKeyUsageClientAuth)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(valid).To(BeTrue())
+		valid, _ = crypto.VerifyCertificate(reconciled.Data[corev1.TLSCertKey], serverCACert, x509.ExtKeyUsageClientAuth)
+		Expect(valid).To(BeFalse())
 	})
 })
 

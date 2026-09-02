@@ -187,15 +187,24 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 				return nil, err
 			}
 
-			crtKeyPair := kubeadm.CertificatePrivateKeyPair{
-				Certificate: caSecret.Data[kubeadmconstants.CACertName],
-				PrivateKey:  caSecret.Data[kubeadmconstants.CAKeyName],
+			clientSignerSecret, err := GetClientSignerSecret(ctx, r.Client, tcp, &caSecret)
+			if err != nil {
+				return nil, err
+			}
+			clientSigner := kubeadm.CertificatePrivateKeyPair{
+				Certificate: clientSignerSecret.Data[kubeadmconstants.CACertName],
+				PrivateKey:  clientSignerSecret.Data[kubeadmconstants.CAKeyName],
 			}
 
 			for _, i := range []string{AdminKubeConfigFileName, SuperAdminKubeConfigFileName} {
 				configuration.InitConfiguration.CertificatesDir, _ = os.MkdirTemp(tmp, "")
 
-				kubeconfigValue, err := kubeadm.CreateKubeconfig(SuperAdminKubeConfigFileName, crtKeyPair, configuration)
+				kubeconfigValue, err := kubeadm.CreateKubeconfigWithClientSigner(
+					SuperAdminKubeConfigFileName,
+					caSecret.Data[kubeadmconstants.CACertName],
+					clientSigner,
+					configuration,
+				)
 				if err != nil {
 					return nil, err
 				}

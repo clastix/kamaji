@@ -315,6 +315,27 @@ func (r *TenantControlPlaneReconciler) mutexSpec(obj client.Object) mutex.Spec {
 	}
 }
 
+func (r *TenantControlPlaneReconciler) clientCASecretToTenantControlPlanes(ctx context.Context, object client.Object) []reconcile.Request {
+	var tenantControlPlanes kamajiv1alpha1.TenantControlPlaneList
+	if err := r.Client.List(ctx, &tenantControlPlanes, client.InNamespace(object.GetNamespace())); err != nil {
+		log.FromContext(ctx).Error(err, "cannot list TenantControlPlanes referencing client CA Secret")
+
+		return nil
+	}
+
+	requests := make([]reconcile.Request, 0)
+	for i := range tenantControlPlanes.Items {
+		tenantControlPlane := &tenantControlPlanes.Items[i]
+		if tenantControlPlane.GetAnnotations()[kamajiv1alpha1.ClientCASecretAnnotation] != object.GetName() {
+			continue
+		}
+
+		requests = append(requests, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(tenantControlPlane)})
+	}
+
+	return requests
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	r.clock = clock.RealClock{}
@@ -351,6 +372,7 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr
 		}})).
 		For(&kamajiv1alpha1.TenantControlPlane{}).
 		Owns(&corev1.Secret{}).
+		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(r.clientCASecretToTenantControlPlanes)).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).

@@ -112,6 +112,12 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 
 			return err
 		}
+		clientSignerSecret, err := resources.GetClientSignerSecret(ctx, r.Client, tenantControlPlane, secretCA)
+		if err != nil {
+			logger.Error(err, "cannot retrieve the client certificate signer")
+
+			return err
+		}
 
 		r.resource.SetLabels(utilities.MergeMaps(
 			r.resource.GetLabels(),
@@ -130,7 +136,7 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 		isRotationRequested := utilities.IsRotationRequested(r.resource)
 
 		if checksum := tenantControlPlane.Status.Addons.Konnectivity.Certificate.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.CalculateMapChecksum(r.resource.Data)) {
-			isCAValid, err := crypto.VerifyCertificate(r.resource.Data[corev1.TLSCertKey], secretCA.Data[kubeadmconstants.CACertName], x509.ExtKeyUsageServerAuth)
+			isCAValid, err := crypto.VerifyCertificate(r.resource.Data[corev1.TLSCertKey], clientSignerSecret.Data[kubeadmconstants.CACertName], x509.ExtKeyUsageClientAuth)
 			if err != nil {
 				logger.Info(fmt.Sprintf("certificate-authority verify failed: %s", err.Error()))
 			}
@@ -146,8 +152,8 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 
 		ca := kubeadm.CertificatePrivateKeyPair{
 			Name:        kubeadmconstants.CACertAndKeyBaseName,
-			Certificate: secretCA.Data[kubeadmconstants.CACertName],
-			PrivateKey:  secretCA.Data[kubeadmconstants.CAKeyName],
+			Certificate: clientSignerSecret.Data[kubeadmconstants.CACertName],
+			PrivateKey:  clientSignerSecret.Data[kubeadmconstants.CAKeyName],
 		}
 
 		cert, privKey, err := crypto.GenerateCertificatePrivateKeyPair(crypto.NewCertificateTemplate(CertCommonName), ca.Certificate, ca.PrivateKey)

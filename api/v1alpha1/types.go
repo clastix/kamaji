@@ -32,6 +32,7 @@ const (
 	ServiceTypeClusterIP          = (ServiceType)(corev1.ServiceTypeClusterIP)
 	ServiceTypeNodePort           = (ServiceType)(corev1.ServiceTypeNodePort)
 	KubeconfigSecretKeyAnnotation = "kamaji.clastix.io/kubeconfig-secret-key"
+	ClientCASecretAnnotation      = "kamaji.clastix.io/client-ca-secret"
 )
 
 // +kubebuilder:validation:Enum=ClusterIP;NodePort;LoadBalancer

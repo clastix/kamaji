@@ -166,6 +166,94 @@ var _ = Describe("Controlplane Deployment", func() {
 			Expect(got).NotTo(ContainElement("--secure-port=9443"))
 		})
 
+		It("lets the user select a dedicated client CA bundle", func() {
+			const clientCAPath = "/etc/kubernetes/client-ca/client-ca-bundle.crt"
+
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{
+				APIServer: []string{"--client-ca-file=" + clientCAPath},
+			}
+
+			got := d.buildKubeAPIServerCommand(tcp, "10.0.0.1", nil)
+
+			Expect(got).To(ContainElement("--client-ca-file=" + clientCAPath))
+			Expect(got).NotTo(ContainElement("--client-ca-file=/etc/kubernetes/pki/ca.crt"))
+		})
+
+		It("lets the user select a dedicated client certificate signer", func() {
+			const (
+				signerCertPath = "/etc/kubernetes/client-ca/client-ca.crt"
+				signerKeyPath  = "/etc/kubernetes/client-ca/client-ca.key"
+			)
+
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{
+				ControllerManager: []string{
+					"--cluster-signing-cert-file=" + signerCertPath,
+					"--cluster-signing-key-file=" + signerKeyPath,
+				},
+			}
+			podSpec := &corev1.PodSpec{}
+
+			d.buildControllerManager(podSpec, tcp)
+
+			Expect(podSpec.Containers).To(HaveLen(1))
+			Expect(podSpec.Containers[0].Args).To(ContainElements(
+				"--cluster-signing-cert-file="+signerCertPath,
+				"--cluster-signing-key-file="+signerKeyPath,
+			))
+			Expect(podSpec.Containers[0].Args).NotTo(ContainElements(
+				"--cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt",
+				"--cluster-signing-key-file=/etc/kubernetes/pki/ca.key",
+			))
+		})
+
+		It("mounts client trust and signer secrets into only the components that need them", func() {
+			clientTrustVolume := corev1.Volume{
+				Name: "client-ca-bundle",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: "tenant-client-ca-bundle",
+					},
+				},
+			}
+			clientSignerVolume := corev1.Volume{
+				Name: "client-ca-signer",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: "tenant-client-ca-signer",
+					},
+				},
+			}
+			clientTrustMount := corev1.VolumeMount{
+				Name:      clientTrustVolume.Name,
+				MountPath: "/etc/kubernetes/client-ca",
+				ReadOnly:  true,
+			}
+			clientSignerMount := corev1.VolumeMount{
+				Name:      clientSignerVolume.Name,
+				MountPath: "/etc/kubernetes/client-signer",
+				ReadOnly:  true,
+			}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.AdditionalVolumes = []corev1.Volume{clientTrustVolume, clientSignerVolume}
+			tcp.Spec.ControlPlane.Deployment.AdditionalVolumeMounts = &kamajiv1alpha1.AdditionalVolumeMounts{
+				APIServer:         []corev1.VolumeMount{clientTrustMount},
+				ControllerManager: []corev1.VolumeMount{clientSignerMount},
+			}
+			podSpec := &corev1.PodSpec{}
+
+			d.setAdditionalVolumes(podSpec, tcp)
+			d.buildKubeAPIServer(podSpec, tcp, "10.0.0.1")
+			d.buildControllerManager(podSpec, tcp)
+
+			Expect(podSpec.Volumes).To(ContainElements(clientTrustVolume, clientSignerVolume))
+			Expect(podSpec.Containers[0].VolumeMounts).To(ContainElement(clientTrustMount))
+			Expect(podSpec.Containers[0].VolumeMounts).NotTo(ContainElement(clientSignerMount))
+			Expect(podSpec.Containers[1].VolumeMounts).To(ContainElement(clientSignerMount))
+			Expect(podSpec.Containers[1].VolumeMounts).NotTo(ContainElement(clientTrustMount))
+		})
+
 		It("preserves multiple user values for a repeatable flag", func() {
 			user := []string{
 				"--service-account-issuer=https://issuer-one.example.com",

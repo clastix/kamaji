@@ -21,6 +21,7 @@ import (
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/constants"
+	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/kubeadm"
 	"github.com/clastix/kamaji/internal/utilities"
 )
@@ -128,13 +129,98 @@ func (r *KubeconfigResource) CreateOrUpdate(ctx context.Context, tenantControlPl
 	return utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, r.mutate(ctx, tenantControlPlane))
 }
 
-func (r *KubeconfigResource) checksum(caCertificatesSecret *corev1.Secret, kubeadmChecksum string, checksum string) string {
-	return utilities.CalculateMapChecksum(map[string][]byte{
+func (r *KubeconfigResource) checksum(
+	caCertificatesSecret *corev1.Secret,
+	clientSignerSecret *corev1.Secret,
+	kubeadmChecksum string,
+	checksum string,
+) string {
+	data := map[string][]byte{
 		"ca-cert-checksum": caCertificatesSecret.Data[kubeadmconstants.CACertName],
 		"ca-key-checksum":  caCertificatesSecret.Data[kubeadmconstants.CAKeyName],
 		"kubeadmconfig":    []byte(kubeadmChecksum),
 		"kubeconfig":       []byte(checksum),
-	})
+	}
+
+	if clientSignerSecret != caCertificatesSecret {
+		data["client-ca-cert-checksum"] = clientSignerSecret.Data[kubeadmconstants.CACertName]
+		data["client-ca-key-checksum"] = clientSignerSecret.Data[kubeadmconstants.CAKeyName]
+	}
+
+	return utilities.CalculateMapChecksum(data)
+}
+
+// GetClientSignerSecret returns the dedicated client certificate signer, or the server CA when none is configured.
+func GetClientSignerSecret(
+	ctx context.Context,
+	k8sClient client.Client,
+	tenantControlPlane *kamajiv1alpha1.TenantControlPlane,
+	defaultCASecret *corev1.Secret,
+) (*corev1.Secret, error) {
+	secretName := tenantControlPlane.GetAnnotations()[kamajiv1alpha1.ClientCASecretAnnotation]
+	if secretName == "" {
+		return defaultCASecret, nil
+	}
+
+	clientSignerSecret := &corev1.Secret{}
+	namespacedName := k8stypes.NamespacedName{
+		Namespace: tenantControlPlane.GetNamespace(),
+		Name:      secretName,
+	}
+	if err := k8sClient.Get(ctx, namespacedName, clientSignerSecret); err != nil {
+		return nil, fmt.Errorf("cannot retrieve client CA secret %s: %w", secretName, err)
+	}
+	if len(clientSignerSecret.Data[kubeadmconstants.CACertName]) == 0 {
+		return nil, fmt.Errorf("client CA secret %s is missing %s", secretName, kubeadmconstants.CACertName)
+	}
+	if len(clientSignerSecret.Data[kubeadmconstants.CAKeyName]) == 0 {
+		return nil, fmt.Errorf("client CA secret %s is missing %s", secretName, kubeadmconstants.CAKeyName)
+	}
+
+	isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
+		clientSignerSecret.Data[kubeadmconstants.CACertName],
+		clientSignerSecret.Data[kubeadmconstants.CAKeyName],
+		0,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("client CA secret %s is invalid: %w", secretName, err)
+	}
+	if !isValid {
+		return nil, fmt.Errorf("client CA secret %s does not contain a valid certificate and private key", secretName)
+	}
+
+	certificate, err := crypto.ParseCertificateBytes(clientSignerSecret.Data[kubeadmconstants.CACertName])
+	if err != nil {
+		return nil, fmt.Errorf("client CA secret %s certificate cannot be parsed: %w", secretName, err)
+	}
+	if !certificate.IsCA {
+		return nil, fmt.Errorf("client CA secret %s certificate is not a certificate authority", secretName)
+	}
+
+	return clientSignerSecret, nil
+}
+
+func (r *KubeconfigResource) createKubeconfig(
+	kubeconfigName string,
+	caCertificatesSecret *corev1.Secret,
+	clientSignerSecret *corev1.Secret,
+	config *kubeadm.Configuration,
+) ([]byte, error) {
+	clientSigner := kubeadm.CertificatePrivateKeyPair{
+		Certificate: clientSignerSecret.Data[kubeadmconstants.CACertName],
+		PrivateKey:  clientSignerSecret.Data[kubeadmconstants.CAKeyName],
+	}
+
+	if clientSignerSecret == caCertificatesSecret {
+		return kubeadm.CreateKubeconfig(kubeconfigName, clientSigner, config)
+	}
+
+	return kubeadm.CreateKubeconfigWithClientSigner(
+		kubeconfigName,
+		caCertificatesSecret.Data[kubeadmconstants.CACertName],
+		clientSigner,
+		config,
+	)
 }
 
 //nolint:gocognit
@@ -163,7 +249,19 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
-		checksum := r.checksum(caCertificatesSecret, config.Checksum(), utilities.CalculateMapChecksum(r.resource.Data))
+		clientSignerSecret, err := GetClientSignerSecret(ctx, r.Client, tenantControlPlane, caCertificatesSecret)
+		if err != nil {
+			logger.Error(err, "cannot retrieve the client certificate signer")
+
+			return err
+		}
+
+		checksum := r.checksum(
+			caCertificatesSecret,
+			clientSignerSecret,
+			config.Checksum(),
+			utilities.CalculateMapChecksum(r.resource.Data),
+		)
 
 		status, err := r.getKubeconfigStatus(tenantControlPlane)
 		if err != nil {
@@ -204,16 +302,16 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		}
 
 		if shouldCreate || shouldRotate {
-			crtKeyPair := kubeadm.CertificatePrivateKeyPair{
-				Certificate: caCertificatesSecret.Data[kubeadmconstants.CACertName],
-				PrivateKey:  caCertificatesSecret.Data[kubeadmconstants.CAKeyName],
-			}
-
 			if r.resource.Data == nil {
 				r.resource.Data = map[string][]byte{}
 			}
 
-			kubeconfig, kcErr := kubeadm.CreateKubeconfig(r.KubeConfigFileName, crtKeyPair, config)
+			kubeconfig, kcErr := r.createKubeconfig(
+				r.KubeConfigFileName,
+				caCertificatesSecret,
+				clientSignerSecret,
+				config,
+			)
 			if kcErr != nil {
 				logger.Error(kcErr, "cannot create a valid kubeconfig")
 
@@ -233,7 +331,12 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 				key := strings.ReplaceAll(r.KubeConfigFileName, ".conf", ".svc")
 
 				config.InitConfiguration.ControlPlaneEndpoint = fmt.Sprintf("%s.%s.svc:%d", tenantControlPlane.Name, tenantControlPlane.Namespace, tenantControlPlane.Spec.NetworkProfile.Port)
-				kubeconfig, kcErr = kubeadm.CreateKubeconfig(r.KubeConfigFileName, crtKeyPair, config)
+				kubeconfig, kcErr = r.createKubeconfig(
+					r.KubeConfigFileName,
+					caCertificatesSecret,
+					clientSignerSecret,
+					config,
+				)
 				if kcErr != nil {
 					logger.Error(kcErr, "cannot create a valid kubeconfig")
 
@@ -243,7 +346,12 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 				r.resource.Data[key] = kubeconfig
 			}
 
-			checksum = r.checksum(caCertificatesSecret, config.Checksum(), utilities.CalculateMapChecksum(r.resource.Data))
+			checksum = r.checksum(
+				caCertificatesSecret,
+				clientSignerSecret,
+				config.Checksum(),
+				utilities.CalculateMapChecksum(r.resource.Data),
+			)
 			r.resource.SetAnnotations(utilities.MergeMaps(r.resource.GetAnnotations(), map[string]string{constants.Checksum: checksum}))
 		}
 
