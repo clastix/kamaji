@@ -462,6 +462,16 @@ type KonnectivityAgentSpec struct {
 	// Must be 0 if Mode is DaemonSet.
 	//+kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Resources define the amount of CPU and memory to allocate to the Konnectivity agent.
+	//
+	// When unset the agent container declares no requests or limits, which places
+	// its Pod in the BestEffort QoS class. Since the agent tolerates all taints and
+	// commonly runs alongside the cluster's heaviest workloads, BestEffort makes it
+	// the first candidate for CPU starvation and eviction on a busy node, degrading
+	// the very tunnel that `kubectl exec`, `kubectl logs` and `kubectl port-forward`
+	// depend on. Setting requests here promotes the agent to Burstable so it is
+	// scheduled with a guaranteed share of CPU.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.
