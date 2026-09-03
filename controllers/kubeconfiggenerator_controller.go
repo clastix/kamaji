@@ -285,7 +285,7 @@ func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator 
 			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		},
 		NotAfter:            util.StartTimeUTC().Add(kubeadmconstants.CertificateValidityPeriod),
-		EncryptionAlgorithm: config.InitConfiguration.ClusterConfiguration.EncryptionAlgorithmType(),
+		EncryptionAlgorithm: config.InitConfiguration.ClusterConfiguration.EncryptionAlgorithm,
 	}
 
 	var caSecret corev1.Secret

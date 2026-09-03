@@ -9,5 +9,5 @@ const (
 	PausedReconciliationAnnotation = "kamaji.clastix.io/paused"
 
 	// DefaultKubernetesVersion is the default Kubernetes version used in e2e tests.
-	DefaultKubernetesVersion = "v1.35.7"
+	DefaultKubernetesVersion = "v1.37.0"
 )

@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,6 +39,11 @@ const (
 	dataStoreCertsVolumeName              = "kine-config"
 	kineVolumeCertName                    = "kine-certs"
 )
+
+// kubernetesPKIPath mirrors kubeadm's DefaultCertificatesDir, which is only
+// declared in the versioned kubeadm API packages: keeping a local copy avoids
+// churn every time one of those API versions is dropped.
+const kubernetesPKIPath = "/etc/kubernetes/pki"
 
 const (
 	apiServerFlagsAnnotation = "kube-apiserver.kamaji.clastix.io/args"
@@ -474,18 +478,18 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		"--authentication-kubeconfig":        kubeconfig,
 		"--authorization-kubeconfig":         kubeconfig,
 		"--bind-address":                     "0.0.0.0",
-		"--client-ca-file":                   path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
+		"--client-ca-file":                   path.Join(kubernetesPKIPath, constants.CACertName),
 		"--cluster-name":                     tenantControlPlane.GetName(),
-		"--cluster-signing-cert-file":        path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
-		"--cluster-signing-key-file":         path.Join(v1beta3.DefaultCertificatesDir, constants.CAKeyName),
+		"--cluster-signing-cert-file":        path.Join(kubernetesPKIPath, constants.CACertName),
+		"--cluster-signing-key-file":         path.Join(kubernetesPKIPath, constants.CAKeyName),
 		"--controllers":                      "*,bootstrapsigner,tokencleaner",
 		"--kubeconfig":                       kubeconfig,
 		"--leader-elect":                     "true",
 		"--service-cluster-ip-range":         strings.Join(serviceCIDRs, ","),
 		"--cluster-cidr":                     strings.Join(podCIDRs, ","),
-		"--requestheader-client-ca-file":     path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyCACertName),
-		"--root-ca-file":                     path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
-		"--service-account-private-key-file": path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName),
+		"--requestheader-client-ca-file":     path.Join(kubernetesPKIPath, constants.FrontProxyCACertName),
+		"--root-ca-file":                     path.Join(kubernetesPKIPath, constants.CACertName),
+		"--service-account-private-key-file": path.Join(kubernetesPKIPath, constants.ServiceAccountPrivateKeyName),
 		"--use-service-account-credentials":  "true",
 	}
 
@@ -536,7 +540,7 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
 		Name:      kubernetesPKIVolumeName,
 		ReadOnly:  true,
-		MountPath: v1beta3.DefaultCertificatesDir,
+		MountPath: kubernetesPKIPath,
 	})
 	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
 		Name:      caCertificatesVolumeName,
@@ -637,7 +641,7 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
 		Name:      kubernetesPKIVolumeName,
 		ReadOnly:  true,
-		MountPath: v1beta3.DefaultCertificatesDir,
+		MountPath: kubernetesPKIPath,
 	})
 	d.ensureVolumeMount(&volumeMounts, corev1.VolumeMount{
 		Name:      caCertificatesVolumeName,
@@ -708,21 +712,21 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 	// Managed flags: derived from the TCP spec, always applied, override any user duplicate.
 	managed := map[string]string{
 		"--advertise-address":                apiAdvertiseAddress,
-		"--client-ca-file":                   path.Join(v1beta3.DefaultCertificatesDir, constants.CACertName),
+		"--client-ca-file":                   path.Join(kubernetesPKIPath, constants.CACertName),
 		"--enable-admission-plugins":         strings.Join(tenantControlPlane.Spec.Kubernetes.AdmissionControllers.ToSlice(), ","),
 		"--service-cluster-ip-range":         strings.Join(serviceCIDRs, ","),
-		"--kubelet-client-certificate":       path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientCertName),
-		"--kubelet-client-key":               path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKubeletClientKeyName),
+		"--kubelet-client-certificate":       path.Join(kubernetesPKIPath, constants.APIServerKubeletClientCertName),
+		"--kubelet-client-key":               path.Join(kubernetesPKIPath, constants.APIServerKubeletClientKeyName),
 		"--kubelet-preferred-address-types":  strings.Join(kubeletPreferredAddressTypes, ","),
-		"--proxy-client-cert-file":           path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientCertName),
-		"--proxy-client-key-file":            path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyClientKeyName),
+		"--proxy-client-cert-file":           path.Join(kubernetesPKIPath, constants.FrontProxyClientCertName),
+		"--proxy-client-key-file":            path.Join(kubernetesPKIPath, constants.FrontProxyClientKeyName),
 		"--requestheader-allowed-names":      constants.FrontProxyClientCertCommonName,
-		"--requestheader-client-ca-file":     path.Join(v1beta3.DefaultCertificatesDir, constants.FrontProxyCACertName),
+		"--requestheader-client-ca-file":     path.Join(kubernetesPKIPath, constants.FrontProxyCACertName),
 		"--secure-port":                      fmt.Sprintf("%d", tenantControlPlane.Spec.NetworkProfile.Port),
-		"--service-account-key-file":         path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPublicKeyName),
-		"--service-account-signing-key-file": path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName),
-		"--tls-cert-file":                    path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerCertName),
-		"--tls-private-key-file":             path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKeyName),
+		"--service-account-key-file":         path.Join(kubernetesPKIPath, constants.ServiceAccountPublicKeyName),
+		"--service-account-signing-key-file": path.Join(kubernetesPKIPath, constants.ServiceAccountPrivateKeyName),
+		"--tls-cert-file":                    path.Join(kubernetesPKIPath, constants.APIServerCertName),
+		"--tls-private-key-file":             path.Join(kubernetesPKIPath, constants.APIServerKeyName),
 	}
 
 	switch d.DataStore.Spec.Driver {
