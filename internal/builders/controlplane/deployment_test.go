@@ -4,12 +4,16 @@
 package controlplane
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	pointer "k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -166,6 +170,180 @@ var _ = Describe("Controlplane Deployment", func() {
 			Expect(got).NotTo(ContainElement("--secure-port=9443"))
 		})
 
+		It("lets the user select a dedicated client CA bundle", func() {
+			const clientCAPath = "/etc/kubernetes/client-ca/client-ca-bundle.crt"
+
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.SetAnnotations(map[string]string{
+				kamajiv1alpha1.ClientCASecretAnnotation: "client-ca",
+			})
+			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{
+				APIServer: []string{"--client-ca-file=" + clientCAPath},
+			}
+
+			got := d.buildKubeAPIServerCommand(tcp, "10.0.0.1", nil)
+
+			Expect(got).To(ContainElement("--client-ca-file=" + clientCAPath))
+			Expect(got).NotTo(ContainElement("--client-ca-file=/etc/kubernetes/pki/ca.crt"))
+		})
+
+		It("keeps client CA trust managed for an unannotated tenant control plane", func() {
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{
+				APIServer: []string{"--client-ca-file=/etc/kubernetes/unmounted/ca.crt"},
+			}
+
+			got := d.buildKubeAPIServerCommand(tcp, "10.0.0.1", nil)
+
+			Expect(got).To(ContainElement("--client-ca-file=/etc/kubernetes/pki/ca.crt"))
+			Expect(got).NotTo(ContainElement("--client-ca-file=/etc/kubernetes/unmounted/ca.crt"))
+		})
+
+		It("rolls an opted-in control plane when its Konnectivity kubeconfig changes", func() {
+			const (
+				namespace      = "tenant"
+				kubeconfigName = "konnectivity-kubeconfig"
+				kubeconfigHash = "component.kamaji.clastix.io/konnectivity-kubeconfig"
+			)
+
+			scheme := runtime.NewScheme()
+			Expect(corev1.AddToScheme(scheme)).To(Succeed())
+			kubeconfigSecret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{Name: kubeconfigName, Namespace: namespace},
+				Data:       map[string][]byte{"konnectivity-server.conf": []byte("old")},
+			}
+			d.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(kubeconfigSecret).Build()
+			tcp := &kamajiv1alpha1.TenantControlPlane{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: namespace,
+					Annotations: map[string]string{
+						kamajiv1alpha1.ClientCASecretAnnotation: "client-ca",
+					},
+				},
+				Status: kamajiv1alpha1.TenantControlPlaneStatus{
+					Addons: kamajiv1alpha1.AddonsStatus{
+						Konnectivity: kamajiv1alpha1.KonnectivityStatus{
+							Kubeconfig: kamajiv1alpha1.KubeconfigStatus{SecretName: kubeconfigName},
+						},
+					},
+				},
+			}
+
+			before := d.templateLabels(context.Background(), tcp)[kubeconfigHash]
+			kubeconfigSecret.Data["konnectivity-server.conf"] = []byte("new")
+			Expect(d.Client.Update(context.Background(), kubeconfigSecret)).To(Succeed())
+			after := d.templateLabels(context.Background(), tcp)[kubeconfigHash]
+
+			Expect(before).NotTo(BeEmpty())
+			Expect(after).NotTo(Equal(before))
+		})
+
+		It("lets the user select a dedicated client certificate signer", func() {
+			const (
+				signerCertPath = "/etc/kubernetes/client-ca/client-ca.crt"
+				signerKeyPath  = "/etc/kubernetes/client-ca/client-ca.key"
+			)
+
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{
+				ControllerManager: []string{
+					"--cluster-signing-cert-file=" + signerCertPath,
+					"--cluster-signing-key-file=" + signerKeyPath,
+				},
+			}
+			podSpec := &corev1.PodSpec{}
+
+			d.buildControllerManager(podSpec, tcp)
+
+			Expect(podSpec.Containers).To(HaveLen(1))
+			Expect(podSpec.Containers[0].Args).To(ContainElements(
+				"--cluster-signing-cert-file="+signerCertPath,
+				"--cluster-signing-key-file="+signerKeyPath,
+			))
+			Expect(podSpec.Containers[0].Args).NotTo(ContainElements(
+				"--cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt",
+				"--cluster-signing-key-file=/etc/kubernetes/pki/ca.key",
+			))
+		})
+
+		It("omits global signer flags when per-purpose signers are configured", func() {
+			perPurposeArgs := []string{
+				"--cluster-signing-kube-apiserver-client-cert-file=/etc/kubernetes/client-ca/ca.crt",
+				"--cluster-signing-kube-apiserver-client-key-file=/etc/kubernetes/client-ca/ca.key",
+				"--cluster-signing-kubelet-client-cert-file=/etc/kubernetes/client-ca/ca.crt",
+				"--cluster-signing-kubelet-client-key-file=/etc/kubernetes/client-ca/ca.key",
+				"--cluster-signing-kubelet-serving-cert-file=/etc/kubernetes/pki/ca.crt",
+				"--cluster-signing-kubelet-serving-key-file=/etc/kubernetes/pki/ca.key",
+				"--cluster-signing-legacy-unknown-cert-file=/etc/kubernetes/client-ca/ca.crt",
+				"--cluster-signing-legacy-unknown-key-file=/etc/kubernetes/client-ca/ca.key",
+			}
+			globalArgs := []string{
+				"--cluster-signing-cert-file=/etc/kubernetes/other-ca/ca.crt",
+				"--cluster-signing-key-file=/etc/kubernetes/other-ca/ca.key",
+			}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{
+				ControllerManager: append(perPurposeArgs, globalArgs...),
+			}
+			podSpec := &corev1.PodSpec{}
+
+			d.buildControllerManager(podSpec, tcp)
+
+			Expect(podSpec.Containers).To(HaveLen(1))
+			Expect(podSpec.Containers[0].Args).To(ContainElements(perPurposeArgs))
+			Expect(podSpec.Containers[0].Args).NotTo(ContainElements(
+				"--cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt",
+				"--cluster-signing-key-file=/etc/kubernetes/pki/ca.key",
+			))
+			Expect(podSpec.Containers[0].Args).NotTo(ContainElements(globalArgs))
+		})
+
+		It("mounts client trust and signer secrets into only the components that need them", func() {
+			clientTrustVolume := corev1.Volume{
+				Name: "client-ca-bundle",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: "tenant-client-ca-bundle",
+					},
+				},
+			}
+			clientSignerVolume := corev1.Volume{
+				Name: "client-ca-signer",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: "tenant-client-ca-signer",
+					},
+				},
+			}
+			clientTrustMount := corev1.VolumeMount{
+				Name:      clientTrustVolume.Name,
+				MountPath: "/etc/kubernetes/client-ca",
+				ReadOnly:  true,
+			}
+			clientSignerMount := corev1.VolumeMount{
+				Name:      clientSignerVolume.Name,
+				MountPath: "/etc/kubernetes/client-signer",
+				ReadOnly:  true,
+			}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.AdditionalVolumes = []corev1.Volume{clientTrustVolume, clientSignerVolume}
+			tcp.Spec.ControlPlane.Deployment.AdditionalVolumeMounts = &kamajiv1alpha1.AdditionalVolumeMounts{
+				APIServer:         []corev1.VolumeMount{clientTrustMount},
+				ControllerManager: []corev1.VolumeMount{clientSignerMount},
+			}
+			podSpec := &corev1.PodSpec{}
+
+			d.setAdditionalVolumes(podSpec, tcp)
+			d.buildKubeAPIServer(podSpec, tcp, "10.0.0.1")
+			d.buildControllerManager(podSpec, tcp)
+
+			Expect(podSpec.Volumes).To(ContainElements(clientTrustVolume, clientSignerVolume))
+			Expect(podSpec.Containers[0].VolumeMounts).To(ContainElement(clientTrustMount))
+			Expect(podSpec.Containers[0].VolumeMounts).NotTo(ContainElement(clientSignerMount))
+			Expect(podSpec.Containers[1].VolumeMounts).To(ContainElement(clientSignerMount))
+			Expect(podSpec.Containers[1].VolumeMounts).NotTo(ContainElement(clientTrustMount))
+		})
+
 		It("preserves multiple user values for a repeatable flag", func() {
 			user := []string{
 				"--service-account-issuer=https://issuer-one.example.com",
@@ -283,6 +461,56 @@ var _ = Describe("Controlplane Deployment", func() {
 			Expect(c.ReadinessProbe.HTTPGet.Path).To(Equal("/readyz"))
 			Expect(c.StartupProbe.HTTPGet.Path).To(Equal("/livez"))
 			Expect(c.ReadinessProbe.HTTPGet.Port.IntValue()).To(Equal(6443))
+			Expect(c.ReadinessProbe.PeriodSeconds).To(Equal(int32(10)))
+			Expect(c.ReadinessProbe.FailureThreshold).To(Equal(int32(3)))
+		})
+
+		It("uses fast readiness detection for client CA rollouts", func() {
+			const (
+				clientCARotationReadinessPeriodSeconds    = int32(2)
+				clientCARotationReadinessFailureThreshold = int32(1)
+			)
+
+			podSpec := &corev1.PodSpec{}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.SetAnnotations(map[string]string{
+				kamajiv1alpha1.ClientCASecretAnnotation: "client-ca",
+			})
+			tcp.Spec.NetworkProfile.Port = 6443
+
+			d.buildKubeAPIServer(podSpec, tcp, "")
+
+			c := containerByName(podSpec, "kube-apiserver")
+			Expect(c.ReadinessProbe.PeriodSeconds).To(Equal(clientCARotationReadinessPeriodSeconds))
+			Expect(c.ReadinessProbe.FailureThreshold).To(Equal(clientCARotationReadinessFailureThreshold))
+		})
+
+		It("lets explicit probe configuration override client CA rollout defaults", func() {
+			const (
+				configuredReadinessPeriodSeconds    = int32(5)
+				configuredReadinessFailureThreshold = int32(2)
+			)
+
+			podSpec := &corev1.PodSpec{}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.SetAnnotations(map[string]string{
+				kamajiv1alpha1.ClientCASecretAnnotation: "client-ca",
+			})
+			tcp.Spec.NetworkProfile.Port = 6443
+			tcp.Spec.ControlPlane.Deployment.Probes = &kamajiv1alpha1.ControlPlaneProbes{
+				APIServer: &kamajiv1alpha1.ProbeSet{
+					Readiness: &kamajiv1alpha1.ProbeSpec{
+						PeriodSeconds:    pointer.To(configuredReadinessPeriodSeconds),
+						FailureThreshold: pointer.To(configuredReadinessFailureThreshold),
+					},
+				},
+			}
+
+			d.buildKubeAPIServer(podSpec, tcp, "")
+
+			c := containerByName(podSpec, "kube-apiserver")
+			Expect(c.ReadinessProbe.PeriodSeconds).To(Equal(configuredReadinessPeriodSeconds))
+			Expect(c.ReadinessProbe.FailureThreshold).To(Equal(configuredReadinessFailureThreshold))
 		})
 	})
 

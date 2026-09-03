@@ -172,6 +172,19 @@ func (r *KubeconfigGeneratorReconciler) process(ctx context.Context, generator *
 		return &statusErr
 	}
 
+	var caSecret corev1.Secret
+	if err := r.Client.Get(ctx, types.NamespacedName{Namespace: tcp.Namespace, Name: tcp.Status.Certificates.CA.SecretName}, &caSecret); err != nil {
+		statusErr.Message = fmt.Sprintf("cannot retrieve Certificate Authority: %s", err.Error())
+
+		return &statusErr
+	}
+	clientSignerSecret, err := resources.GetClientSignerSecret(ctx, r.Client, &tcp, &caSecret)
+	if err != nil {
+		statusErr.Message = fmt.Sprintf("cannot retrieve client certificate signer: %s", err.Error())
+
+		return &statusErr
+	}
+
 	uMap, uErr := runtime.DefaultUnstructuredConverter.ToUnstructured(&tcp)
 	if uErr != nil {
 		statusErr.Message = fmt.Sprintf("cannot convert the resource to a map: %s", uErr)
@@ -244,7 +257,7 @@ func (r *KubeconfigGeneratorReconciler) process(ctx context.Context, generator *
 			return &statusErr
 		}
 
-		if generateErr := r.generate(ctx, generator, &resultSecret, kubeconfigTmpl, &tcp, groups, user); generateErr != nil {
+		if generateErr := r.generate(ctx, generator, &resultSecret, kubeconfigTmpl, &tcp, clientSignerSecret, groups, user); generateErr != nil {
 			statusErr.Message = fmt.Sprintf("an error occurred generating the %q Secret: %s", objectKey.String(), generateErr.Error())
 
 			return &statusErr
@@ -253,10 +266,16 @@ func (r *KubeconfigGeneratorReconciler) process(ctx context.Context, generator *
 		return nil
 	}
 
-	isValid, validateErr := r.isValid(&resultSecret, kubeconfigTmpl, groups, user)
+	isValid, validateErr := r.isValid(
+		&resultSecret,
+		kubeconfigTmpl,
+		groups,
+		user,
+		clientSignerSecret.Data[kubeadmconstants.CACertName],
+	)
 	switch {
 	case !isValid:
-		if generateErr := r.generate(ctx, generator, &resultSecret, kubeconfigTmpl, &tcp, groups, user); generateErr != nil {
+		if generateErr := r.generate(ctx, generator, &resultSecret, kubeconfigTmpl, &tcp, clientSignerSecret, groups, user); generateErr != nil {
 			statusErr.Message = fmt.Sprintf("an error occurred regenerating the %q Secret: %s", objectKey.String(), generateErr.Error())
 
 			return &statusErr
@@ -272,7 +291,7 @@ func (r *KubeconfigGeneratorReconciler) process(ctx context.Context, generator *
 	}
 }
 
-func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator *kamajiv1alpha1.KubeconfigGenerator, secret *corev1.Secret, tmpl *clientcmdapiv1.Config, tcp *kamajiv1alpha1.TenantControlPlane, groups sets.Set[string], user string) error {
+func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator *kamajiv1alpha1.KubeconfigGenerator, secret *corev1.Secret, tmpl *clientcmdapiv1.Config, tcp *kamajiv1alpha1.TenantControlPlane, clientSignerSecret *corev1.Secret, groups sets.Set[string], user string) error {
 	_, config, err := resources.GetKubeadmManifestDeps(ctx, r.Client, tcp)
 	if err != nil {
 		return err
@@ -288,17 +307,12 @@ func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator 
 		EncryptionAlgorithm: config.InitConfiguration.ClusterConfiguration.EncryptionAlgorithmType(),
 	}
 
-	var caSecret corev1.Secret
-	if caErr := r.Client.Get(ctx, types.NamespacedName{Namespace: tcp.Namespace, Name: tcp.Status.Certificates.CA.SecretName}, &caSecret); caErr != nil {
-		return fmt.Errorf("cannot retrieve Certificate Authority: %w", caErr)
-	}
-
-	caCert, crtErr := crypto.ParseCertificateBytes(caSecret.Data[kubeadmconstants.CACertName])
+	caCert, crtErr := crypto.ParseCertificateBytes(clientSignerSecret.Data[kubeadmconstants.CACertName])
 	if crtErr != nil {
 		return fmt.Errorf("cannot parse Certificate Authority certificate: %w", crtErr)
 	}
 
-	caKey, keyErr := crypto.ParsePrivateKeyBytes(caSecret.Data[kubeadmconstants.CAKeyName])
+	caKey, keyErr := crypto.ParsePrivateKeyBytes(clientSignerSecret.Data[kubeadmconstants.CAKeyName])
 	if keyErr != nil {
 		return fmt.Errorf("cannot parse Certificate Authority key: %w", keyErr)
 	}
@@ -361,7 +375,7 @@ func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator 
 	return nil
 }
 
-func (r *KubeconfigGeneratorReconciler) isValid(secret *corev1.Secret, tmpl *clientcmdapiv1.Config, groups sets.Set[string], user string) (bool, error) {
+func (r *KubeconfigGeneratorReconciler) isValid(secret *corev1.Secret, tmpl *clientcmdapiv1.Config, groups sets.Set[string], user string, clientCA []byte) (bool, error) {
 	if utilities.IsRotationRequested(secret) {
 		return false, nil
 	}
@@ -405,6 +419,11 @@ func (r *KubeconfigGeneratorReconciler) isValid(secret *corev1.Secret, tmpl *cli
 		}
 
 		if !sets.New[string](crt.Subject.Organization...).Equal(groups) {
+			return false, nil
+		}
+
+		signedByClientCA, _ := crypto.VerifyCertificate(auth.AuthInfo.ClientCertificateData, clientCA, x509.ExtKeyUsageClientAuth)
+		if !signedByClientCA {
 			return false, nil
 		}
 	}

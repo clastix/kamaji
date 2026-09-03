@@ -49,6 +49,20 @@ const (
 	schedulerContainerName    = "kube-scheduler"
 	kineContainerName         = "kine"
 	kineInitContainerName     = "chmod"
+
+	clientCARotationReadinessPeriodSeconds    = int32(2)
+	clientCARotationReadinessFailureThreshold = int32(1)
+)
+
+var perPurposeControllerManagerSignerFlags = sets.New(
+	"--cluster-signing-kube-apiserver-client-cert-file",
+	"--cluster-signing-kube-apiserver-client-key-file",
+	"--cluster-signing-kubelet-client-cert-file",
+	"--cluster-signing-kubelet-client-key-file",
+	"--cluster-signing-kubelet-serving-cert-file",
+	"--cluster-signing-kubelet-serving-key-file",
+	"--cluster-signing-legacy-unknown-cert-file",
+	"--cluster-signing-legacy-unknown-key-file",
 )
 
 func applyProbeOverrides(probe *corev1.Probe, spec *kamajiv1alpha1.ProbeSpec) {
@@ -490,7 +504,19 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 	}
 
 	if extraArgs := tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs; extraArgs != nil && len(extraArgs.ControllerManager) > 0 {
-		args = utilities.MergeMaps(args, utilities.ArgsFromSliceToMap(extraArgs.ControllerManager))
+		extraArgsMap := utilities.ArgsFromSliceToMap(extraArgs.ControllerManager)
+		for flag := range extraArgsMap {
+			if perPurposeControllerManagerSignerFlags.Has(flag) {
+				delete(args, "--cluster-signing-cert-file")
+				delete(args, "--cluster-signing-key-file")
+				delete(extraArgsMap, "--cluster-signing-cert-file")
+				delete(extraArgsMap, "--cluster-signing-key-file")
+
+				break
+			}
+		}
+
+		args = utilities.MergeMaps(args, extraArgsMap)
 	}
 
 	podSpec.Containers[index].Name = "kube-controller-manager"
@@ -603,6 +629,11 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 	podSpec.Containers[index].LivenessProbe = defaultProbe("/livez", tenantControlPlane.Spec.NetworkProfile.Port)
 	podSpec.Containers[index].ReadinessProbe = defaultProbe("/readyz", tenantControlPlane.Spec.NetworkProfile.Port)
 	podSpec.Containers[index].StartupProbe = defaultProbe("/livez", tenantControlPlane.Spec.NetworkProfile.Port)
+
+	if tenantControlPlane.GetAnnotations()[kamajiv1alpha1.ClientCASecretAnnotation] != "" {
+		podSpec.Containers[index].ReadinessProbe.PeriodSeconds = clientCARotationReadinessPeriodSeconds
+		podSpec.Containers[index].ReadinessProbe.FailureThreshold = clientCARotationReadinessFailureThreshold
+	}
 
 	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
 		applyProbeSetOverrides(&podSpec.Containers[index], probes, probes.APIServer)
@@ -723,6 +754,10 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 		"--service-account-signing-key-file": path.Join(v1beta3.DefaultCertificatesDir, constants.ServiceAccountPrivateKeyName),
 		"--tls-cert-file":                    path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerCertName),
 		"--tls-private-key-file":             path.Join(v1beta3.DefaultCertificatesDir, constants.APIServerKeyName),
+	}
+	if tenantControlPlane.GetAnnotations()[kamajiv1alpha1.ClientCASecretAnnotation] != "" {
+		safeDefaults["--client-ca-file"] = managed["--client-ca-file"]
+		delete(managed, "--client-ca-file")
 	}
 
 	switch d.DataStore.Spec.Driver {
@@ -1114,6 +1149,13 @@ func (d Deployment) templateLabels(ctx context.Context, tenantControlPlane *kama
 		"component.kamaji.clastix.io/service-account":                       hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.Certificates.SA.SecretName),
 		"component.kamaji.clastix.io/scheduler-kubeconfig":                  hash(ctx, tenantControlPlane.GetNamespace(), tenantControlPlane.Status.KubeConfig.Scheduler.SecretName),
 		"component.kamaji.clastix.io/datastore":                             tenantControlPlane.Status.Storage.DataStoreName,
+	}
+	if tenantControlPlane.GetAnnotations()[kamajiv1alpha1.ClientCASecretAnnotation] != "" {
+		labels["component.kamaji.clastix.io/konnectivity-kubeconfig"] = hash(
+			ctx,
+			tenantControlPlane.GetNamespace(),
+			tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.SecretName,
+		)
 	}
 
 	return labels

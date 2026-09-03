@@ -5,6 +5,7 @@ package kubeadm
 
 import (
 	"bytes"
+	"crypto/x509"
 	"os"
 	"path"
 	"path/filepath"
@@ -48,6 +49,30 @@ func CreateKubeconfig(kubeconfigName string, ca CertificatePrivateKeyPair, confi
 	return os.ReadFile(path)
 }
 
+// CreateKubeconfigWithClientSigner embeds the server CA while signing client credentials with a separate CA.
+func CreateKubeconfigWithClientSigner(
+	kubeconfigName string,
+	serverCA []byte,
+	clientSigner CertificatePrivateKeyPair,
+	config *Configuration,
+) ([]byte, error) {
+	kubeconfigBytes, err := CreateKubeconfig(kubeconfigName, clientSigner, config)
+	if err != nil {
+		return nil, err
+	}
+
+	kubeconfigConfig, err := utilities.DecodeKubeconfigYAML(kubeconfigBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range kubeconfigConfig.Clusters {
+		kubeconfigConfig.Clusters[i].Cluster.CertificateAuthorityData = serverCA
+	}
+
+	return utilities.EncodeToYaml(kubeconfigConfig)
+}
+
 func IsKubeconfigCAValid(in, caCrt []byte) bool {
 	kc, err := utilities.DecodeKubeconfigYAML(in)
 	if err != nil {
@@ -56,6 +81,26 @@ func IsKubeconfigCAValid(in, caCrt []byte) bool {
 
 	for _, cluster := range kc.Clusters {
 		if !bytes.Equal(cluster.Cluster.CertificateAuthorityData, caCrt) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func IsKubeconfigClientCertificateValid(in, clientCA []byte) bool {
+	kc, err := utilities.DecodeKubeconfigYAML(in)
+	if err != nil || len(kc.AuthInfos) == 0 {
+		return false
+	}
+
+	for _, authInfo := range kc.AuthInfos {
+		valid, verifyErr := crypto.VerifyCertificate(
+			authInfo.AuthInfo.ClientCertificateData,
+			clientCA,
+			x509.ExtKeyUsageClientAuth,
+		)
+		if verifyErr != nil || !valid {
 			return false
 		}
 	}

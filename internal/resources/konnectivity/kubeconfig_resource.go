@@ -4,6 +4,7 @@
 package konnectivity
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -124,18 +125,19 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
-		checksum := tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum
-		if len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) && !isRotationRequested &&
-			kubeadm.IsKubeconfigCAValid(r.resource.Data[konnectivityKubeconfigFileName], secretCA.Data[kubeadmconstants.CACertName]) {
-			return nil
-		}
-
 		certificateNamespacedName := k8stypes.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Addons.Konnectivity.Certificate.SecretName}
 		secretCertificate := &corev1.Secret{}
 		if err := r.Client.Get(ctx, certificateNamespacedName, secretCertificate); err != nil {
 			logger.Error(err, "cannot retrieve the Konnectivity Certificate secret")
 
 			return err
+		}
+
+		checksum := tenantControlPlane.Status.Addons.Konnectivity.Kubeconfig.Checksum
+		if len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) && !isRotationRequested &&
+			kubeadm.IsKubeconfigCAValid(r.resource.Data[konnectivityKubeconfigFileName], secretCA.Data[kubeadmconstants.CACertName]) &&
+			isKubeconfigClientCertificateCurrent(r.resource, secretCertificate) {
+			return nil
 		}
 
 		userName := CertCommonName
@@ -192,4 +194,16 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 
 		return nil
 	}
+}
+
+func isKubeconfigClientCertificateCurrent(kubeconfigSecret, certificateSecret *corev1.Secret) bool {
+	kubeconfig, err := utilities.DecodeKubeconfig(*kubeconfigSecret, konnectivityKubeconfigFileName)
+	if err != nil || len(kubeconfig.AuthInfos) == 0 {
+		return false
+	}
+
+	authInfo := kubeconfig.AuthInfos[0].AuthInfo
+
+	return bytes.Equal(authInfo.ClientCertificateData, certificateSecret.Data[corev1.TLSCertKey]) &&
+		bytes.Equal(authInfo.ClientKeyData, certificateSecret.Data[corev1.TLSPrivateKeyKey])
 }
