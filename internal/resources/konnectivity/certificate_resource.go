@@ -156,7 +156,16 @@ func (r *CertificateResource) mutate(ctx context.Context, tenantControlPlane *ka
 			PrivateKey:  clientSignerSecret.Data[kubeadmconstants.CAKeyName],
 		}
 
-		cert, privKey, err := crypto.GenerateCertificatePrivateKeyPair(crypto.NewCertificateTemplate(CertCommonName), ca.Certificate, ca.PrivateKey)
+		certificateTemplate := crypto.NewCertificateTemplate(CertCommonName)
+		signerCertificate, err := crypto.ParseCertificateBytes(ca.Certificate)
+		if err != nil {
+			return fmt.Errorf("cannot parse client signer certificate: %w", err)
+		}
+		if certificateTemplate.NotAfter.After(signerCertificate.NotAfter) {
+			certificateTemplate.NotAfter = signerCertificate.NotAfter
+		}
+
+		cert, privKey, err := crypto.GenerateCertificatePrivateKeyPair(certificateTemplate, ca.Certificate, ca.PrivateKey)
 		if err != nil {
 			logger.Error(err, "unable to generate certificate and private key")
 

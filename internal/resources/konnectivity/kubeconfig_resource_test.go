@@ -167,10 +167,17 @@ var _ = Describe("KonnectivityKubeconfigResource", func() {
 		valid, err := crypto.VerifyCertificate(reconciled.Data[corev1.TLSCertKey], clientCACert, x509.ExtKeyUsageClientAuth)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(valid).To(BeTrue())
+		clientCertificate, err := crypto.ParseCertificateBytes(reconciled.Data[corev1.TLSCertKey])
+		Expect(err).NotTo(HaveOccurred())
+		clientCertificateAuthority, err := crypto.ParseCertificateBytes(clientCACert)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(clientCertificate.NotAfter.After(clientCertificateAuthority.NotAfter)).To(BeFalse())
 		valid, _ = crypto.VerifyCertificate(reconciled.Data[corev1.TLSCertKey], serverCACert, x509.ExtKeyUsageClientAuth)
 		Expect(valid).To(BeFalse())
 	})
 })
+
+const testCAValidityYears = 2
 
 func createSelfSignedCA(commonName string) ([]byte, []byte) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -182,7 +189,7 @@ func createSelfSignedCA(commonName string) ([]byte, []byte) {
 			CommonName: commonName,
 		},
 		NotBefore:             time.Now().Add(-1 * time.Minute),
-		NotAfter:              time.Now().Add(24 * time.Hour),
+		NotAfter:              time.Now().AddDate(testCAValidityYears, 0, 0),
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
 		BasicConstraintsValid: true,
 		IsCA:                  true,

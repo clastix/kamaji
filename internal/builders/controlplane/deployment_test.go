@@ -4,12 +4,16 @@
 package controlplane
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	pointer "k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -170,6 +174,9 @@ var _ = Describe("Controlplane Deployment", func() {
 			const clientCAPath = "/etc/kubernetes/client-ca/client-ca-bundle.crt"
 
 			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.SetAnnotations(map[string]string{
+				kamajiv1alpha1.ClientCASecretAnnotation: "client-ca",
+			})
 			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{
 				APIServer: []string{"--client-ca-file=" + clientCAPath},
 			}
@@ -178,6 +185,57 @@ var _ = Describe("Controlplane Deployment", func() {
 
 			Expect(got).To(ContainElement("--client-ca-file=" + clientCAPath))
 			Expect(got).NotTo(ContainElement("--client-ca-file=/etc/kubernetes/pki/ca.crt"))
+		})
+
+		It("keeps client CA trust managed for an unannotated tenant control plane", func() {
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{
+				APIServer: []string{"--client-ca-file=/etc/kubernetes/unmounted/ca.crt"},
+			}
+
+			got := d.buildKubeAPIServerCommand(tcp, "10.0.0.1", nil)
+
+			Expect(got).To(ContainElement("--client-ca-file=/etc/kubernetes/pki/ca.crt"))
+			Expect(got).NotTo(ContainElement("--client-ca-file=/etc/kubernetes/unmounted/ca.crt"))
+		})
+
+		It("rolls an opted-in control plane when its Konnectivity kubeconfig changes", func() {
+			const (
+				namespace      = "tenant"
+				kubeconfigName = "konnectivity-kubeconfig"
+				kubeconfigHash = "component.kamaji.clastix.io/konnectivity-kubeconfig"
+			)
+
+			scheme := runtime.NewScheme()
+			Expect(corev1.AddToScheme(scheme)).To(Succeed())
+			kubeconfigSecret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{Name: kubeconfigName, Namespace: namespace},
+				Data:       map[string][]byte{"konnectivity-server.conf": []byte("old")},
+			}
+			d.Client = fake.NewClientBuilder().WithScheme(scheme).WithObjects(kubeconfigSecret).Build()
+			tcp := &kamajiv1alpha1.TenantControlPlane{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: namespace,
+					Annotations: map[string]string{
+						kamajiv1alpha1.ClientCASecretAnnotation: "client-ca",
+					},
+				},
+				Status: kamajiv1alpha1.TenantControlPlaneStatus{
+					Addons: kamajiv1alpha1.AddonsStatus{
+						Konnectivity: kamajiv1alpha1.KonnectivityStatus{
+							Kubeconfig: kamajiv1alpha1.KubeconfigStatus{SecretName: kubeconfigName},
+						},
+					},
+				},
+			}
+
+			before := d.templateLabels(context.Background(), tcp)[kubeconfigHash]
+			kubeconfigSecret.Data["konnectivity-server.conf"] = []byte("new")
+			Expect(d.Client.Update(context.Background(), kubeconfigSecret)).To(Succeed())
+			after := d.templateLabels(context.Background(), tcp)[kubeconfigHash]
+
+			Expect(before).NotTo(BeEmpty())
+			Expect(after).NotTo(Equal(before))
 		})
 
 		It("lets the user select a dedicated client certificate signer", func() {

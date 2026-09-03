@@ -33,6 +33,7 @@ const (
 	ControllerManagerKubeConfigFileName = kubeadmconstants.ControllerManagerKubeConfigFileName
 	SchedulerKubeConfigFileName         = kubeadmconstants.SchedulerKubeConfigFileName
 	localhost                           = "127.0.0.1"
+	clientSignerValidityBuffer          = 24 * time.Hour
 )
 
 type KubeconfigResource struct {
@@ -200,8 +201,29 @@ func GetClientSignerSecret(
 	if certificate.KeyUsage&x509.KeyUsageCertSign == 0 {
 		return nil, fmt.Errorf("client CA secret %s certificate does not permit certificate signing", secretName)
 	}
+	if !allowsClientAuthentication(certificate) {
+		return nil, fmt.Errorf("client CA secret %s certificate does not permit client authentication", secretName)
+	}
+	minimumValidity := kubeadmconstants.CertificateValidityPeriod + clientSignerValidityBuffer
+	if !certificate.NotAfter.After(time.Now().Add(minimumValidity)) {
+		return nil, fmt.Errorf("client CA secret %s certificate expires before the minimum client credential lifetime", secretName)
+	}
 
 	return clientSignerSecret, nil
+}
+
+func allowsClientAuthentication(certificate *x509.Certificate) bool {
+	if len(certificate.ExtKeyUsage) == 0 && len(certificate.UnknownExtKeyUsage) == 0 {
+		return true
+	}
+
+	for _, usage := range certificate.ExtKeyUsage {
+		if usage == x509.ExtKeyUsageAny || usage == x509.ExtKeyUsageClientAuth {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (r *KubeconfigResource) createKubeconfig(

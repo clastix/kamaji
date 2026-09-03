@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"strings"
 	"testing"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,57 +73,91 @@ func TestGetClientSignerSecret(t *testing.T) {
 	}
 }
 
-func TestGetClientSignerSecretRejectsCAWithoutCertSignUsage(t *testing.T) {
+func TestGetClientSignerSecretRejectsInvalidCAConstraints(t *testing.T) {
 	t.Parallel()
 
-	clientCACert, clientCAKey := certstestutil.SetupCertificateAuthority(t)
-	clientCACert.KeyUsage = x509.KeyUsageDigitalSignature
-	clientCACertDER, err := x509.CreateCertificate(
-		rand.Reader,
-		clientCACert,
-		clientCACert,
-		clientCAKey.Public(),
-		clientCAKey,
-	)
-	if err != nil {
-		t.Fatalf("create client CA certificate: %v", err)
-	}
-	clientCAKeyPEM, err := keyutil.MarshalPrivateKeyToPEM(clientCAKey)
-	if err != nil {
-		t.Fatalf("marshal client CA key: %v", err)
-	}
-
-	scheme := runtime.NewScheme()
-	if err = corev1.AddToScheme(scheme); err != nil {
-		t.Fatalf("add core scheme: %v", err)
-	}
-
-	const (
-		namespace          = "tenant"
-		clientCASecret     = "client-ca"
-		tenantControlPlane = "tenant-control-plane"
-	)
-	dedicatedSigner := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Name: clientCASecret, Namespace: namespace},
-		Data: map[string][]byte{
-			kubeadmconstants.CACertName: pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: clientCACertDER}),
-			kubeadmconstants.CAKeyName:  clientCAKeyPEM,
-		},
-	}
-	tcp := &kamajiv1alpha1.TenantControlPlane{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      tenantControlPlane,
-			Namespace: namespace,
-			Annotations: map[string]string{
-				kamajiv1alpha1.ClientCASecretAnnotation: clientCASecret,
+	testCases := []struct {
+		name      string
+		mutate    func(*x509.Certificate)
+		wantError string
+	}{
+		{
+			name: "certificate signing key usage is absent",
+			mutate: func(certificate *x509.Certificate) {
+				certificate.KeyUsage = x509.KeyUsageDigitalSignature
 			},
+			wantError: "does not permit certificate signing",
+		},
+		{
+			name: "extended key usage excludes client authentication",
+			mutate: func(certificate *x509.Certificate) {
+				certificate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
+			},
+			wantError: "does not permit client authentication",
+		},
+		{
+			name: "certificate expires before generated client credentials",
+			mutate: func(certificate *x509.Certificate) {
+				certificate.NotAfter = time.Now().Add(clientSignerValidityBuffer)
+			},
+			wantError: "expires before the minimum client credential lifetime",
 		},
 	}
-	k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(dedicatedSigner).Build()
 
-	_, err = GetClientSignerSecret(t.Context(), k8sClient, tcp, &corev1.Secret{})
-	if err == nil || !strings.Contains(err.Error(), "does not permit certificate signing") {
-		t.Fatalf("expected certificate signing key usage error, got %v", err)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			clientCACert, clientCAKey := certstestutil.SetupCertificateAuthority(t)
+			testCase.mutate(clientCACert)
+			clientCACertDER, err := x509.CreateCertificate(
+				rand.Reader,
+				clientCACert,
+				clientCACert,
+				clientCAKey.Public(),
+				clientCAKey,
+			)
+			if err != nil {
+				t.Fatalf("create client CA certificate: %v", err)
+			}
+			clientCAKeyPEM, err := keyutil.MarshalPrivateKeyToPEM(clientCAKey)
+			if err != nil {
+				t.Fatalf("marshal client CA key: %v", err)
+			}
+
+			scheme := runtime.NewScheme()
+			if err = corev1.AddToScheme(scheme); err != nil {
+				t.Fatalf("add core scheme: %v", err)
+			}
+
+			const (
+				namespace          = "tenant"
+				clientCASecret     = "client-ca"
+				tenantControlPlane = "tenant-control-plane"
+			)
+			dedicatedSigner := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{Name: clientCASecret, Namespace: namespace},
+				Data: map[string][]byte{
+					kubeadmconstants.CACertName: pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: clientCACertDER}),
+					kubeadmconstants.CAKeyName:  clientCAKeyPEM,
+				},
+			}
+			tcp := &kamajiv1alpha1.TenantControlPlane{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      tenantControlPlane,
+					Namespace: namespace,
+					Annotations: map[string]string{
+						kamajiv1alpha1.ClientCASecretAnnotation: clientCASecret,
+					},
+				},
+			}
+			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(dedicatedSigner).Build()
+
+			_, err = GetClientSignerSecret(t.Context(), k8sClient, tcp, &corev1.Secret{})
+			if err == nil || !strings.Contains(err.Error(), testCase.wantError) {
+				t.Fatalf("expected %q error, got %v", testCase.wantError, err)
+			}
+		})
 	}
 }
 
