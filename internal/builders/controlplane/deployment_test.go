@@ -219,9 +219,13 @@ var _ = Describe("Controlplane Deployment", func() {
 				"--cluster-signing-legacy-unknown-cert-file=/etc/kubernetes/client-ca/ca.crt",
 				"--cluster-signing-legacy-unknown-key-file=/etc/kubernetes/client-ca/ca.key",
 			}
+			globalArgs := []string{
+				"--cluster-signing-cert-file=/etc/kubernetes/other-ca/ca.crt",
+				"--cluster-signing-key-file=/etc/kubernetes/other-ca/ca.key",
+			}
 			tcp := kamajiv1alpha1.TenantControlPlane{}
 			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{
-				ControllerManager: perPurposeArgs,
+				ControllerManager: append(perPurposeArgs, globalArgs...),
 			}
 			podSpec := &corev1.PodSpec{}
 
@@ -233,6 +237,7 @@ var _ = Describe("Controlplane Deployment", func() {
 				"--cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt",
 				"--cluster-signing-key-file=/etc/kubernetes/pki/ca.key",
 			))
+			Expect(podSpec.Containers[0].Args).NotTo(ContainElements(globalArgs))
 		})
 
 		It("mounts client trust and signer secrets into only the components that need them", func() {

@@ -506,6 +506,8 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 			if perPurposeControllerManagerSignerFlags.Has(flag) {
 				delete(args, "--cluster-signing-cert-file")
 				delete(args, "--cluster-signing-key-file")
+				delete(extraArgsMap, "--cluster-signing-cert-file")
+				delete(extraArgsMap, "--cluster-signing-key-file")
 
 				break
 			}

@@ -5,6 +5,7 @@ package resources
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"strings"
 	"time"
@@ -195,6 +196,9 @@ func GetClientSignerSecret(
 	}
 	if !certificate.IsCA {
 		return nil, fmt.Errorf("client CA secret %s certificate is not a certificate authority", secretName)
+	}
+	if certificate.KeyUsage&x509.KeyUsageCertSign == 0 {
+		return nil, fmt.Errorf("client CA secret %s certificate does not permit certificate signing", secretName)
 	}
 
 	return clientSignerSecret, nil

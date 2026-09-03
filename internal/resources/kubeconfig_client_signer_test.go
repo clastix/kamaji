@@ -4,6 +4,10 @@
 package resources
 
 import (
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/pem"
+	"strings"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -65,6 +69,60 @@ func TestGetClientSignerSecret(t *testing.T) {
 	}
 	if got.Name != clientCASecret {
 		t.Fatalf("expected signer %q, got %q", clientCASecret, got.Name)
+	}
+}
+
+func TestGetClientSignerSecretRejectsCAWithoutCertSignUsage(t *testing.T) {
+	t.Parallel()
+
+	clientCACert, clientCAKey := certstestutil.SetupCertificateAuthority(t)
+	clientCACert.KeyUsage = x509.KeyUsageDigitalSignature
+	clientCACertDER, err := x509.CreateCertificate(
+		rand.Reader,
+		clientCACert,
+		clientCACert,
+		clientCAKey.Public(),
+		clientCAKey,
+	)
+	if err != nil {
+		t.Fatalf("create client CA certificate: %v", err)
+	}
+	clientCAKeyPEM, err := keyutil.MarshalPrivateKeyToPEM(clientCAKey)
+	if err != nil {
+		t.Fatalf("marshal client CA key: %v", err)
+	}
+
+	scheme := runtime.NewScheme()
+	if err = corev1.AddToScheme(scheme); err != nil {
+		t.Fatalf("add core scheme: %v", err)
+	}
+
+	const (
+		namespace          = "tenant"
+		clientCASecret     = "client-ca"
+		tenantControlPlane = "tenant-control-plane"
+	)
+	dedicatedSigner := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: clientCASecret, Namespace: namespace},
+		Data: map[string][]byte{
+			kubeadmconstants.CACertName: pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: clientCACertDER}),
+			kubeadmconstants.CAKeyName:  clientCAKeyPEM,
+		},
+	}
+	tcp := &kamajiv1alpha1.TenantControlPlane{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      tenantControlPlane,
+			Namespace: namespace,
+			Annotations: map[string]string{
+				kamajiv1alpha1.ClientCASecretAnnotation: clientCASecret,
+			},
+		},
+	}
+	k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(dedicatedSigner).Build()
+
+	_, err = GetClientSignerSecret(t.Context(), k8sClient, tcp, &corev1.Secret{})
+	if err == nil || !strings.Contains(err.Error(), "does not permit certificate signing") {
+		t.Fatalf("expected certificate signing key usage error, got %v", err)
 	}
 }
 
