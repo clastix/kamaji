@@ -33,12 +33,12 @@ func NewETCDConnection(config ConnectionConfig) (Connection, error) {
 	}
 
 	return &EtcdClient{
-		Client: *client,
+		Client: client,
 	}, nil
 }
 
 type EtcdClient struct {
-	Client etcdclient.Client
+	Client *etcdclient.Client
 }
 
 func (e *EtcdClient) CreateUser(ctx context.Context, user, password string) error {
@@ -199,7 +199,7 @@ func (e *EtcdClient) Migrate(ctx context.Context, tcp kamajiv1alpha1.TenantContr
 	}
 
 	for _, kv := range response.Kvs {
-		if _, err = targetClient.Client.Put(ctx, string(kv.Key), string(kv.Value)); err != nil {
+		if _, err = targetClient.Client.Put(ctx, string(kv.GetKey()), string(kv.GetValue())); err != nil {
 			return err
 		}
 	}
