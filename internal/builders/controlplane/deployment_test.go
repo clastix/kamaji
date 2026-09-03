@@ -208,6 +208,33 @@ var _ = Describe("Controlplane Deployment", func() {
 			))
 		})
 
+		It("omits global signer flags when per-purpose signers are configured", func() {
+			perPurposeArgs := []string{
+				"--cluster-signing-kube-apiserver-client-cert-file=/etc/kubernetes/client-ca/ca.crt",
+				"--cluster-signing-kube-apiserver-client-key-file=/etc/kubernetes/client-ca/ca.key",
+				"--cluster-signing-kubelet-client-cert-file=/etc/kubernetes/client-ca/ca.crt",
+				"--cluster-signing-kubelet-client-key-file=/etc/kubernetes/client-ca/ca.key",
+				"--cluster-signing-kubelet-serving-cert-file=/etc/kubernetes/pki/ca.crt",
+				"--cluster-signing-kubelet-serving-key-file=/etc/kubernetes/pki/ca.key",
+				"--cluster-signing-legacy-unknown-cert-file=/etc/kubernetes/client-ca/ca.crt",
+				"--cluster-signing-legacy-unknown-key-file=/etc/kubernetes/client-ca/ca.key",
+			}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{
+				ControllerManager: perPurposeArgs,
+			}
+			podSpec := &corev1.PodSpec{}
+
+			d.buildControllerManager(podSpec, tcp)
+
+			Expect(podSpec.Containers).To(HaveLen(1))
+			Expect(podSpec.Containers[0].Args).To(ContainElements(perPurposeArgs))
+			Expect(podSpec.Containers[0].Args).NotTo(ContainElements(
+				"--cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt",
+				"--cluster-signing-key-file=/etc/kubernetes/pki/ca.key",
+			))
+		})
+
 		It("mounts client trust and signer secrets into only the components that need them", func() {
 			clientTrustVolume := corev1.Volume{
 				Name: "client-ca-bundle",

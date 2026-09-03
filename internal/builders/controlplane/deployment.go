@@ -51,6 +51,17 @@ const (
 	kineInitContainerName     = "chmod"
 )
 
+var perPurposeControllerManagerSignerFlags = sets.New(
+	"--cluster-signing-kube-apiserver-client-cert-file",
+	"--cluster-signing-kube-apiserver-client-key-file",
+	"--cluster-signing-kubelet-client-cert-file",
+	"--cluster-signing-kubelet-client-key-file",
+	"--cluster-signing-kubelet-serving-cert-file",
+	"--cluster-signing-kubelet-serving-key-file",
+	"--cluster-signing-legacy-unknown-cert-file",
+	"--cluster-signing-legacy-unknown-key-file",
+)
+
 func applyProbeOverrides(probe *corev1.Probe, spec *kamajiv1alpha1.ProbeSpec) {
 	if probe == nil || spec == nil {
 		return
@@ -490,7 +501,17 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 	}
 
 	if extraArgs := tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs; extraArgs != nil && len(extraArgs.ControllerManager) > 0 {
-		args = utilities.MergeMaps(args, utilities.ArgsFromSliceToMap(extraArgs.ControllerManager))
+		extraArgsMap := utilities.ArgsFromSliceToMap(extraArgs.ControllerManager)
+		for flag := range extraArgsMap {
+			if perPurposeControllerManagerSignerFlags.Has(flag) {
+				delete(args, "--cluster-signing-cert-file")
+				delete(args, "--cluster-signing-key-file")
+
+				break
+			}
+		}
+
+		args = utilities.MergeMaps(args, extraArgsMap)
 	}
 
 	podSpec.Containers[index].Name = "kube-controller-manager"
