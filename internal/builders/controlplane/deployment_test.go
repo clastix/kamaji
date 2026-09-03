@@ -461,6 +461,56 @@ var _ = Describe("Controlplane Deployment", func() {
 			Expect(c.ReadinessProbe.HTTPGet.Path).To(Equal("/readyz"))
 			Expect(c.StartupProbe.HTTPGet.Path).To(Equal("/livez"))
 			Expect(c.ReadinessProbe.HTTPGet.Port.IntValue()).To(Equal(6443))
+			Expect(c.ReadinessProbe.PeriodSeconds).To(Equal(int32(10)))
+			Expect(c.ReadinessProbe.FailureThreshold).To(Equal(int32(3)))
+		})
+
+		It("uses fast readiness detection for client CA rollouts", func() {
+			const (
+				clientCARotationReadinessPeriodSeconds    = int32(2)
+				clientCARotationReadinessFailureThreshold = int32(1)
+			)
+
+			podSpec := &corev1.PodSpec{}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.SetAnnotations(map[string]string{
+				kamajiv1alpha1.ClientCASecretAnnotation: "client-ca",
+			})
+			tcp.Spec.NetworkProfile.Port = 6443
+
+			d.buildKubeAPIServer(podSpec, tcp, "")
+
+			c := containerByName(podSpec, "kube-apiserver")
+			Expect(c.ReadinessProbe.PeriodSeconds).To(Equal(clientCARotationReadinessPeriodSeconds))
+			Expect(c.ReadinessProbe.FailureThreshold).To(Equal(clientCARotationReadinessFailureThreshold))
+		})
+
+		It("lets explicit probe configuration override client CA rollout defaults", func() {
+			const (
+				configuredReadinessPeriodSeconds    = int32(5)
+				configuredReadinessFailureThreshold = int32(2)
+			)
+
+			podSpec := &corev1.PodSpec{}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.SetAnnotations(map[string]string{
+				kamajiv1alpha1.ClientCASecretAnnotation: "client-ca",
+			})
+			tcp.Spec.NetworkProfile.Port = 6443
+			tcp.Spec.ControlPlane.Deployment.Probes = &kamajiv1alpha1.ControlPlaneProbes{
+				APIServer: &kamajiv1alpha1.ProbeSet{
+					Readiness: &kamajiv1alpha1.ProbeSpec{
+						PeriodSeconds:    pointer.To(configuredReadinessPeriodSeconds),
+						FailureThreshold: pointer.To(configuredReadinessFailureThreshold),
+					},
+				},
+			}
+
+			d.buildKubeAPIServer(podSpec, tcp, "")
+
+			c := containerByName(podSpec, "kube-apiserver")
+			Expect(c.ReadinessProbe.PeriodSeconds).To(Equal(configuredReadinessPeriodSeconds))
+			Expect(c.ReadinessProbe.FailureThreshold).To(Equal(configuredReadinessFailureThreshold))
 		})
 	})
 

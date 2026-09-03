@@ -49,6 +49,9 @@ const (
 	schedulerContainerName    = "kube-scheduler"
 	kineContainerName         = "kine"
 	kineInitContainerName     = "chmod"
+
+	clientCARotationReadinessPeriodSeconds    = int32(2)
+	clientCARotationReadinessFailureThreshold = int32(1)
 )
 
 var perPurposeControllerManagerSignerFlags = sets.New(
@@ -626,6 +629,11 @@ func (d Deployment) buildKubeAPIServer(podSpec *corev1.PodSpec, tenantControlPla
 	podSpec.Containers[index].LivenessProbe = defaultProbe("/livez", tenantControlPlane.Spec.NetworkProfile.Port)
 	podSpec.Containers[index].ReadinessProbe = defaultProbe("/readyz", tenantControlPlane.Spec.NetworkProfile.Port)
 	podSpec.Containers[index].StartupProbe = defaultProbe("/livez", tenantControlPlane.Spec.NetworkProfile.Port)
+
+	if tenantControlPlane.GetAnnotations()[kamajiv1alpha1.ClientCASecretAnnotation] != "" {
+		podSpec.Containers[index].ReadinessProbe.PeriodSeconds = clientCARotationReadinessPeriodSeconds
+		podSpec.Containers[index].ReadinessProbe.FailureThreshold = clientCARotationReadinessFailureThreshold
+	}
 
 	if probes := tenantControlPlane.Spec.ControlPlane.Deployment.Probes; probes != nil {
 		applyProbeSetOverrides(&podSpec.Containers[index], probes, probes.APIServer)
