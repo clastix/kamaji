@@ -5,6 +5,7 @@ package kubeadm
 
 import (
 	"bytes"
+	"crypto/x509"
 	"os"
 	"path"
 	"path/filepath"
@@ -80,6 +81,26 @@ func IsKubeconfigCAValid(in, caCrt []byte) bool {
 
 	for _, cluster := range kc.Clusters {
 		if !bytes.Equal(cluster.Cluster.CertificateAuthorityData, caCrt) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func IsKubeconfigClientCertificateValid(in, clientCA []byte) bool {
+	kc, err := utilities.DecodeKubeconfigYAML(in)
+	if err != nil || len(kc.AuthInfos) == 0 {
+		return false
+	}
+
+	for _, authInfo := range kc.AuthInfos {
+		valid, verifyErr := crypto.VerifyCertificate(
+			authInfo.AuthInfo.ClientCertificateData,
+			clientCA,
+			x509.ExtKeyUsageClientAuth,
+		)
+		if verifyErr != nil || !valid {
 			return false
 		}
 	}

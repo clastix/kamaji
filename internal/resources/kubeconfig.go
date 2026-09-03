@@ -317,6 +317,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 		shouldCreate = shouldCreate || len(r.resource.Data) == 0                       // Missing data key
 		shouldCreate = shouldCreate || len(r.resource.Data[r.KubeConfigFileName]) == 0 // Missing kubeconfig file, must be generated
 		shouldCreate = shouldCreate || !kubeadm.IsKubeconfigCAValid(r.resource.Data[r.KubeConfigFileName], caCertificatesSecret.Data[kubeadmconstants.CACertName])
+		shouldCreate = shouldCreate || !kubeadm.IsKubeconfigClientCertificateValid(r.resource.Data[r.KubeConfigFileName], clientSignerSecret.Data[kubeadmconstants.CACertName])
 		shouldCreate = shouldCreate || !kubeadm.IsKubeconfigValid(r.resource.Data[r.KubeConfigFileName], r.CertExpirationThreshold) // invalid kubeconfig, or expired client certificate
 		shouldCreate = shouldCreate || status.Checksum != checksum || len(r.resource.UID) == 0                                      // Wrong checksum
 

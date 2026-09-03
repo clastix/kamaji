@@ -67,3 +67,52 @@ func TestCreateKubeconfigWithClientSigner(t *testing.T) {
 		t.Fatal("client certificate is unexpectedly signed by server CA")
 	}
 }
+
+func TestIsKubeconfigClientCertificateValid(t *testing.T) {
+	t.Parallel()
+
+	serverCA, _ := certstestutil.SetupCertificateAuthority(t)
+	oldClientCA, oldClientCAKey := certstestutil.SetupCertificateAuthority(t)
+	newClientCA, _ := certstestutil.SetupCertificateAuthority(t)
+
+	oldClientCAKeyPEM, err := keyutil.MarshalPrivateKeyToPEM(oldClientCAKey)
+	if err != nil {
+		t.Fatalf("marshal old client CA key: %v", err)
+	}
+
+	for _, kubeconfigName := range []string{
+		kubeadmconstants.AdminKubeConfigFileName,
+		kubeadmconstants.SuperAdminKubeConfigFileName,
+	} {
+		t.Run(kubeconfigName, func(t *testing.T) {
+			t.Parallel()
+
+			config, configErr := kubeadmconfig.DefaultedStaticInitConfiguration()
+			if configErr != nil {
+				t.Fatalf("create kubeadm configuration: %v", configErr)
+			}
+
+			config.CertificatesDir = t.TempDir()
+			config.ClusterName = "tenant"
+			config.ControlPlaneEndpoint = "127.0.0.1:6443"
+
+			oldClientCAPEM := pkiutil.EncodeCertPEM(oldClientCA)
+			kubeconfig, createErr := CreateKubeconfigWithClientSigner(
+				kubeconfigName,
+				pkiutil.EncodeCertPEM(serverCA),
+				CertificatePrivateKeyPair{Certificate: oldClientCAPEM, PrivateKey: oldClientCAKeyPEM},
+				&Configuration{InitConfiguration: *config},
+			)
+			if createErr != nil {
+				t.Fatalf("create kubeconfig: %v", createErr)
+			}
+
+			if !IsKubeconfigClientCertificateValid(kubeconfig, oldClientCAPEM) {
+				t.Fatal("expected the current client signer to validate the kubeconfig")
+			}
+			if IsKubeconfigClientCertificateValid(kubeconfig, pkiutil.EncodeCertPEM(newClientCA)) {
+				t.Fatal("expected a stale client signer to invalidate the kubeconfig")
+			}
+		})
+	}
+}
