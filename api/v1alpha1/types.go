@@ -24,13 +24,13 @@ func (a AdmissionControllers) ToSlice() []string {
 type CGroupDriver string
 
 func (c CGroupDriver) String() string {
-	return (string)(c)
+	return string(c)
 }
 
 const (
-	ServiceTypeLoadBalancer       = (ServiceType)(corev1.ServiceTypeLoadBalancer)
-	ServiceTypeClusterIP          = (ServiceType)(corev1.ServiceTypeClusterIP)
-	ServiceTypeNodePort           = (ServiceType)(corev1.ServiceTypeNodePort)
+	ServiceTypeLoadBalancer       = ServiceType(corev1.ServiceTypeLoadBalancer)
+	ServiceTypeClusterIP          = ServiceType(corev1.ServiceTypeClusterIP)
+	ServiceTypeNodePort           = ServiceType(corev1.ServiceTypeNodePort)
 	KubeconfigSecretKeyAnnotation = "kamaji.clastix.io/kubeconfig-secret-key"
 )
 
