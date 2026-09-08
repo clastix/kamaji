@@ -9825,6 +9825,8 @@ versions:
                               description: Type of deployment condition.
                               type: string
                           type: object
+                          required:
+                            - type
                         type: array
                         x-kubernetes-list-map-keys:
                           - type

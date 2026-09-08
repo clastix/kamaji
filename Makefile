@@ -51,6 +51,12 @@ GORELEASER     ?= $(LOCALBIN)/goreleaser
 COSIGN         ?= $(LOCALBIN)/cosign
 SYFT           ?= $(LOCALBIN)/syft
 YQ             ?= $(LOCALBIN)/yq
+
+# Kubernetes API types embedded in the Kamaji API (e.g. appsv1.DeploymentStatus) declare list-map keys on
+# their conditions, although marking them as optional: the API server rejects those schemas, since every
+# x-kubernetes-list-map-keys entry must be required, or have a default value. The following expression
+# patches the generated CRDs by marking as required the list-map keys which are missing a default value.
+CRD_LIST_MAP_KEYS_PATCH = (.. | select(has("x-kubernetes-list-map-keys"))) |= (. as $$schema | .items.required = ((.items.required // []) + ($$schema["x-kubernetes-list-map-keys"] | map(. as $$key | select($$schema.items.properties[$$key] | has("default") | not))) | unique)) | (.. | select(has("required") and (.required | length == 0))) |= del(.required)
 ENVTEST        ?= $(LOCALBIN)/setup-envtest
 
 all: build
@@ -163,6 +169,9 @@ crds: controller-gen yq
 	$(CONTROLLER_GEN) crd webhook paths="./..." output:stdout | $(YQ) 'select(documentIndex == 1)' > ./charts/kamaji/crds/kamaji.clastix.io_kubeconfiggenerators.yaml
 	$(CONTROLLER_GEN) crd webhook paths="./..." output:stdout | $(YQ) 'select(documentIndex == 2)' > ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml
 	$(YQ) -i '. *n load("./charts/kamaji/controller-gen/crd-conversion.yaml")' ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml
+	$(YQ) -i '$(CRD_LIST_MAP_KEYS_PATCH)' ./charts/kamaji/crds/kamaji.clastix.io_datastores.yaml
+	$(YQ) -i '$(CRD_LIST_MAP_KEYS_PATCH)' ./charts/kamaji/crds/kamaji.clastix.io_kubeconfiggenerators.yaml
+	$(YQ) -i '$(CRD_LIST_MAP_KEYS_PATCH)' ./charts/kamaji/crds/kamaji.clastix.io_tenantcontrolplanes.yaml
 	# kamaji-crds chart
 	cp ./charts/kamaji/controller-gen/crd-conversion.yaml ./charts/kamaji-crds/hack/crd-conversion.yaml
 	$(YQ) '.spec' ./charts/kamaji/crds/kamaji.clastix.io_datastores.yaml > ./charts/kamaji-crds/hack/kamaji.clastix.io_datastores_spec.yaml

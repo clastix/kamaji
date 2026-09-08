@@ -50598,6 +50598,13 @@ DeploymentCondition describes the state of a deployment at a certain point.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type of deployment condition.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
         <td><b>lastTransitionTime</b></td>
         <td>string</td>
         <td>
@@ -50634,13 +50641,6 @@ DeploymentCondition describes the state of a deployment at a certain point.
         <td>string</td>
         <td>
           Status of the condition, one of True, False, Unknown.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>type</b></td>
-        <td>string</td>
-        <td>
-          Type of deployment condition.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
