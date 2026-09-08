@@ -6,22 +6,96 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/retry"
 	pointer "k8s.io/utils/ptr"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	ds "github.com/clastix/kamaji/internal/resources/datastore"
 	"github.com/clastix/kamaji/internal/utilities"
 )
+
+// Seed size for the migration: enough objects to slow etcd's per-key Put loop, and enough
+// bytes to slow PostgreSQL's bulk COPY. Tunable.
+const (
+	migrationSeedObjects      = 400
+	migrationSeedPayloadBytes = 128 * 1024
+	migrationSeedConcurrency  = 10
+)
+
+// migrationSeedBackoff outlasts the multi-second API server stalls that retry.DefaultBackoff does not.
+var migrationSeedBackoff = wait.Backoff{
+	Duration: 100 * time.Millisecond,
+	Factor:   2.0,
+	Jitter:   0.1,
+	Steps:    6,
+}
+
+// seedMigrationData fills the tenant cluster with ConfigMaps, returning their names.
+func seedMigrationData(ctx context.Context, tcpClient ctrlclient.Client, namespace string) []string {
+	GinkgoHelper()
+
+	payload := strings.Repeat("k", migrationSeedPayloadBytes)
+
+	names := make([]string, 0, migrationSeedObjects)
+	for i := range migrationSeedObjects {
+		names = append(names, fmt.Sprintf("migration-seed-%04d", i))
+	}
+
+	work := make(chan string)
+	errs := make(chan error, migrationSeedObjects)
+
+	var wg sync.WaitGroup
+
+	for range migrationSeedConcurrency {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			for name := range work {
+				cm := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+					Data:       map[string]string{"name": name, "payload": payload},
+				}
+				// The API server is contended: a create can need more than one attempt.
+				if err := retry.OnError(migrationSeedBackoff, func(error) bool { return true }, func() error {
+					return ctrlclient.IgnoreAlreadyExists(tcpClient.Create(ctx, cm))
+				}); err != nil {
+					errs <- fmt.Errorf("unable to seed ConfigMap %s/%s: %w", namespace, name, err)
+				}
+			}
+		}()
+	}
+
+	for _, name := range names {
+		work <- name
+	}
+
+	close(work)
+	wg.Wait()
+	close(errs)
+
+	for err := range errs {
+		Expect(err).ToNot(HaveOccurred())
+	}
+
+	return names
+}
 
 func featureTestMigration(driver string) {
 	var tcp *kamajiv1alpha1.TenantControlPlane
@@ -86,6 +160,9 @@ func featureTestMigration(driver string) {
 		ns.SetName("kamaji-test")
 		Expect(tcpClient.Create(context.Background(), ns)).ToNot(HaveOccurred())
 
+		By("seeding the source DataStore so the migration takes observable time")
+		seeded := seedMigrationData(context.Background(), tcpClient, ns.GetName())
+
 		By("start migration to a new DataStore")
 		Eventually(func() error {
 			if err := k8sClient.Get(context.Background(), types.NamespacedName{Namespace: tcp.GetNamespace(), Name: tcp.GetName()}, tcp); err != nil {
@@ -101,17 +178,27 @@ func featureTestMigration(driver string) {
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionMigrating)
 
 		By("waiting for the webhook installation")
-		// Measured directly in CI (GitHub Actions run 30307341733): the whole manager
-		// process - the host-side tenantcontrolplane controller across every TCP in the
-		// suite, plus this tenant's own soot sub-manager - went completely silent for
-		// 2m16s (21:45:45 to 21:48:01 UTC) with no errors logged, consistent with the
-		// process being starved of CPU on the 2-vCPU runner rather than any Kamaji-side
-		// bug: many tenant control planes, datastores, and their apiservers all compete
-		// for the same two cores. One minute sits well inside that observed stall, so
-		// the wait is widened to five for headroom above it.
+		// The webhook only exists while the migration Job runs: once it completes the API
+		// server is repointed at the target DataStore and the webhook, being tenant data,
+		// is gone. So this is a window to sample, not a state to wait for, and a longer
+		// timeout cannot help once it has shut. The counters separate samples that reached
+		// the API server from those lost to it being starved.
+		var reachable, unreachable int
+
 		Eventually(func() error {
-			return tcpClient.Get(context.Background(), types.NamespacedName{Name: "kamaji-freeze"}, &admissionregistrationv1.ValidatingWebhookConfiguration{})
-		}, 5*time.Minute, time.Second).Should(Succeed())
+			err := tcpClient.Get(context.Background(), types.NamespacedName{Name: ds.FreezeWebhookName}, &admissionregistrationv1.ValidatingWebhookConfiguration{})
+
+			switch {
+			case err == nil || apierrors.IsNotFound(err):
+				reachable++
+			default:
+				unreachable++
+			}
+
+			return err
+		}, 5*time.Minute, 500*time.Millisecond).Should(Succeed(), func() string {
+			return fmt.Sprintf("never observed %s in the tenant cluster: %d samples reached the API server, %d were lost to it being unreachable", ds.FreezeWebhookName, reachable, unreachable)
+		})
 
 		By("ensuring changes are not allowed")
 		Consistently(func() error {
@@ -134,6 +221,18 @@ func featureTestMigration(driver string) {
 		Eventually(func() error {
 			return tcpClient.Get(context.Background(), types.NamespacedName{Name: ns.GetName()}, &corev1.Namespace{})
 		}).ShouldNot(HaveOccurred())
+
+		By("checking every seeded object survived the migration")
+		// Makes this spec assert its own name, rather than just the one Namespace.
+		Eventually(func() error {
+			for _, name := range seeded {
+				if err := tcpClient.Get(context.Background(), types.NamespacedName{Namespace: ns.GetName(), Name: name}, &corev1.ConfigMap{}); err != nil {
+					return fmt.Errorf("seeded ConfigMap %s/%s did not survive the migration: %w", ns.GetName(), name, err)
+				}
+			}
+
+			return nil
+		}, 5*time.Minute, time.Second).Should(Succeed())
 		// The Freeze ValidatingWebhookConfiguration should have been removed successfully:
 		// we're checking write operations are allowed.
 		By("checking the changes are newly allowed")
