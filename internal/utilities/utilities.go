@@ -6,7 +6,6 @@ package utilities
 import (
 	"bytes"
 	"fmt"
-	"sort"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -118,6 +117,11 @@ func EncodeToJSON(o runtime.Object) ([]byte, error) {
 //
 // If the new CIDRs field is populated, it is considered authoritative.
 // The deprecated field is only used as a fallback for backward compatibility.
+//
+// The order of the returned CIDRs is significant and is preserved as supplied:
+// for a dual-stack cluster the FIRST entry selects the primary IP family of the
+// tenant, so reordering them changes the meaning of the spec. Duplicates are
+// removed, keeping the first occurrence.
 func GetEffectiveCIDRs(deprecated string, current []string) []string {
 	if len(current) > 0 {
 		return UniqueStrings(current)
@@ -130,12 +134,22 @@ func GetEffectiveCIDRs(deprecated string, current []string) []string {
 	return nil
 }
 
-// UniqueStrings returns a slice of unique strings from the provided slice.
+// UniqueStrings returns the unique values of the provided slice, keeping the
+// first occurrence of each in its original position. The order is preserved
+// because callers such as GetEffectiveCIDRs carry order-significant values.
 func UniqueStrings(input []string) []string {
-	unique := sets.New[string](input...)
+	seen := sets.New[string]()
+	result := make([]string, 0, len(input))
 
-	result := unique.UnsortedList()
-	sort.Strings(result)
+	for _, item := range input {
+		if seen.Has(item) {
+			continue
+		}
+
+		seen.Insert(item)
+
+		result = append(result, item)
+	}
 
 	return result
 }
