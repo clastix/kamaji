@@ -50,7 +50,7 @@ func AddKubeProxy(client kubernetes.Interface, config *Configuration) ([]byte, e
 	config.InitConfiguration.KubernetesVersion = config.Parameters.KubeProxyOptions.Tag
 
 	b := bytes.NewBuffer([]byte{})
-	if err := proxy.EnsureProxyAddon(&config.InitConfiguration.ClusterConfiguration, &config.InitConfiguration.LocalAPIEndpoint, client, b, true); err != nil {
+	if err := proxy.EnsureProxyAddon(&config.InitConfiguration.ClusterConfiguration, &config.InitConfiguration.LocalAPIEndpoint, client, "", b, true); err != nil {
 		return nil, err
 	}
 

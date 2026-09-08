@@ -2,6 +2,21 @@ version: "2"
 linters:
   default: all
   disable:
+    ### Evaluate if shuold be enabled
+    - embeddedstructfieldcheck
+    - exhaustruct_v5
+    - funcorder
+    - goconst
+    - gocritic
+    - godoclint
+    - modernize
+    - nilnesserr
+    - noinlineerr
+    - nolintlint
+    - prealloc
+    - staticcheck
+    - wsl_v5
+    ###
     - cyclop
     - depguard
     - dupl
@@ -14,6 +29,7 @@ linters:
     - gocognit
     - godox
     - gomoddirectives
+    - gomodguard
     - gosec
     - interfacebloat
     - ireturn

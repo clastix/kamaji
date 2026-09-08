@@ -93,8 +93,9 @@ making it easier to build and manage distributed Kubernetes environments at scal
 In recent Kubernetes releases, Konnectivity has aligned its versioning with the Kubernetes API Server.
 
 This means that for example:
-- Kubernetes v1.34.0 pairs with Konnectivity v0.34.0
+- Kubernetes v1.35.0 pairs with Konnectivity v0.34.0
 - Kubernetes v1.33.0 pairs with Konnectivity v0.33.0
+- and so on for each Kubernetes version
 
 Within Kamaji, this version matching happens automatically.
 
