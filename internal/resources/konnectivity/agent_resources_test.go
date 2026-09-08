@@ -4,7 +4,6 @@
 package konnectivity
 
 import (
-	"context"
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -42,7 +41,7 @@ func agentContainerResources(t *testing.T, tcp *kamajiv1alpha1.TenantControlPlan
 	ds := &appsv1.DaemonSet{}
 	r := &Agent{resource: ds}
 
-	if err := r.mutate(context.Background(), tcp)(); err != nil {
+	if err := r.mutate(t.Context(), tcp)(); err != nil {
 		t.Fatalf("mutate: %v", err)
 	}
 
