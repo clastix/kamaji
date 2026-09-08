@@ -62,6 +62,39 @@ func TestHandlerHistogramUsesSingleMetricWithHandlerLabel(t *testing.T) {
 	}
 }
 
+func TestKubeconfigHandlerHistogramIsScopedToResourceName(t *testing.T) {
+	handlerCollector.Reset()
+
+	names := []string{"admin-kubeconfig", "controller-manager-kubeconfig", "scheduler-kubeconfig"}
+
+	for _, name := range names {
+		resource := KubeconfigResource{Name: name}
+
+		resource.GetHistogram().Observe(0.10)
+	}
+
+	families, err := metrics.Registry.Gather()
+	if err != nil {
+		t.Fatalf("failed to gather metric families: %v", err)
+	}
+
+	for _, family := range families {
+		if family.GetName() != "kamaji_handler_time_seconds" {
+			continue
+		}
+
+		for _, name := range names {
+			if !hasLabelValueForFamily(family, "handler", name) {
+				t.Errorf("expected handler label value %s in kamaji_handler_time_seconds", name)
+			}
+		}
+
+		return
+	}
+
+	t.Fatalf("metric family kamaji_handler_time_seconds not found")
+}
+
 func hasLabelValueForFamily(family *io_prometheus_client.MetricFamily, labelName, labelValue string) bool {
 	for _, metric := range family.GetMetric() {
 		for _, label := range metric.GetLabel() {
