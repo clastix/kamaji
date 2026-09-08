@@ -33,10 +33,11 @@ import (
 )
 
 type CertificateLifecycle struct {
-	Channel   chan event.GenericEvent
-	Deadline  time.Duration
-	EnqueueFn func(secret *corev1.Secret)
-	Metrics   *metrics.Recorder
+	Channel          chan event.GenericEvent
+	Deadline         time.Duration
+	ReconcileTimeout time.Duration
+	EnqueueFn        func(secret *corev1.Secret)
+	Metrics          *metrics.Recorder
 
 	client client.Client
 }
@@ -51,6 +52,10 @@ func (s *CertificateLifecycle) Reconcile(ctx context.Context, request reconcile.
 			logger.WithName("metrics").Error(err, "cannot refresh certificate status gauges")
 		}
 	}(ctx)
+
+	var cancelFn context.CancelFunc
+	ctx, cancelFn = context.WithTimeout(ctx, s.ReconcileTimeout)
+	defer cancelFn()
 
 	logger.Info("starting CertificateLifecycle handling")
 

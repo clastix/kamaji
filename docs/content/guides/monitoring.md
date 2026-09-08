@@ -49,6 +49,43 @@ A ready-to-use Grafana dashboard for these metrics is available [here](https://r
 
 ![Kamaji Monitoring Dashboard](../images/kamaji-monitoring-dashboard.png)
 
+### Securing the metrics endpoint
+
+By default, the `manager` and `kubeconfig-generator` metrics endpoints are served in plaintext with no authentication, reachable by any workload with network access to the pod. Pass `--metrics-secure=true` (via `extraArgs`/`kubeconfigGenerator.extraArgs` in the Helm chart) to serve metrics over HTTPS and require the caller to authenticate with a bearer token authorized against the bundled `kamaji-metrics-reader` ClusterRole:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kamaji-metrics-reader-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kamaji-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: kube-prometheus-stack-prometheus
+  namespace: monitoring-system
+```
+
+With `--metrics-secure=true` enabled, update the `ServiceMonitor` endpoint to scrape over TLS with the scraper's own service account token:
+
+```yaml
+endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 15s
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+    authorization:
+      credentials:
+        key: token
+        name: kube-prometheus-stack-prometheus-token
+```
+
+If you'd rather keep the endpoint on plaintext HTTP, restrict access with a `NetworkPolicy` instead.
+
 ## Tenant Control Plane component metrics
 
 ## Enable metrics scraping

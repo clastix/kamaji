@@ -47,6 +47,7 @@ import (
 type KubeconfigGeneratorReconciler struct {
 	Client            client.Client
 	NotValidThreshold time.Duration
+	ReconcileTimeout  time.Duration
 	CertificateChan   chan event.GenericEvent
 }
 
@@ -57,6 +58,10 @@ type KubeconfigGeneratorReconciler struct {
 
 func (r *KubeconfigGeneratorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+
+	var cancelFn context.CancelFunc
+	ctx, cancelFn = context.WithTimeout(ctx, r.ReconcileTimeout)
+	defer cancelFn()
 
 	logger.Info("reconciling resource")
 

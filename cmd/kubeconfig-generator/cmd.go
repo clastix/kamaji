@@ -21,8 +21,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	cmdutils "github.com/clastix/kamaji/cmd/utils"
 	"github.com/clastix/kamaji/controllers"
 	"github.com/clastix/kamaji/internal"
 	"github.com/clastix/kamaji/internal/metrics"
@@ -32,6 +32,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	// CLI flags
 	var (
 		metricsBindAddress            string
+		metricsSecure                 bool
 		healthProbeBindAddress        string
 		leaderElect                   bool
 		controllerReconcileTimeout    time.Duration
@@ -54,6 +55,10 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return fmt.Errorf("certificate expiration deadline must be at least 24 hours")
 			}
 
+			if controllerReconcileTimeout.Seconds() == 0 {
+				return fmt.Errorf("the controller reconcile timeout must be greater than zero")
+			}
+
 			return nil
 		},
 		RunE: func(*cobra.Command, []string) error {
@@ -68,10 +73,8 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			setupLog.Info(fmt.Sprintf("Go OS/Arch: %s/%s", goRuntime.GOOS, goRuntime.GOARCH))
 
 			ctrlOpts := ctrl.Options{
-				Scheme: scheme,
-				Metrics: metricsserver.Options{
-					BindAddress: metricsBindAddress,
-				},
+				Scheme:                  scheme,
+				Metrics:                 cmdutils.MetricsServerOptions(metricsBindAddress, metricsSecure),
 				HealthProbeBindAddress:  healthProbeBindAddress,
 				LeaderElection:          leaderElect,
 				LeaderElectionNamespace: managerNamespace,
@@ -107,7 +110,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				}
 			}
 
-			certController := &controllers.CertificateLifecycle{Channel: triggerChan, Deadline: certificateExpirationDeadline, Metrics: metricsRecorder}
+			certController := &controllers.CertificateLifecycle{Channel: triggerChan, Deadline: certificateExpirationDeadline, ReconcileTimeout: controllerReconcileTimeout, Metrics: metricsRecorder}
 			certController.EnqueueFn = certController.EnqueueForKubeconfigGenerator
 			if err = certController.SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "CertificateLifecycle")
@@ -116,8 +119,9 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			}
 
 			if err = (&controllers.KubeconfigGeneratorWatcher{
-				Client:        mgr.GetClient(),
-				GeneratorChan: triggerChan,
+				Client:           mgr.GetClient(),
+				GeneratorChan:    triggerChan,
+				ReconcileTimeout: controllerReconcileTimeout,
 			}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "KubeconfigGeneratorWatcher")
 
@@ -127,6 +131,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			if err = (&controllers.KubeconfigGeneratorReconciler{
 				Client:            mgr.GetClient(),
 				NotValidThreshold: certificateExpirationDeadline,
+				ReconcileTimeout:  controllerReconcileTimeout,
 				CertificateChan:   triggerChan,
 			}).SetupWithManager(mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "KubeconfigGenerator")
@@ -154,6 +159,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	// Setting CLI flags
 	cmd.Flags().StringVar(&metricsBindAddress, "metrics-bind-address", ":8090", "The address the metric endpoint binds to.")
+	cmd.Flags().BoolVar(&metricsSecure, "metrics-secure", false, "If set, the metrics endpoint is served over HTTPS and requires a bearer token authorized against the manager's kamaji-metrics-reader ClusterRole, instead of being served in plaintext without authentication.")
 	cmd.Flags().StringVar(&healthProbeBindAddress, "health-probe-bind-address", ":8091", "The address the probe endpoint binds to.")
 	cmd.Flags().BoolVar(&leaderElect, "leader-elect", true, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	cmd.Flags().DurationVar(&controllerReconcileTimeout, "controller-reconcile-timeout", 30*time.Second, "The reconciliation request timeout before the controller withdraw the external resource calls, such as dealing with the Datastore, or the Tenant Control Plane API endpoint.")

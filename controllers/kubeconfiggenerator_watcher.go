@@ -5,6 +5,7 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,12 +20,17 @@ import (
 )
 
 type KubeconfigGeneratorWatcher struct {
-	Client        client.Client
-	GeneratorChan chan event.GenericEvent
+	Client           client.Client
+	GeneratorChan    chan event.GenericEvent
+	ReconcileTimeout time.Duration
 }
 
 func (r *KubeconfigGeneratorWatcher) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+
+	var cancelFn context.CancelFunc
+	ctx, cancelFn = context.WithTimeout(ctx, r.ReconcileTimeout)
+	defer cancelFn()
 
 	logger.Info("reconciling resource")
 
