@@ -290,6 +290,16 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			FailureThreshold:    3,
 		}
 
+		podTemplateSpec.Spec.Containers[0].Resources = corev1.ResourceRequirements{
+			Limits:   nil,
+			Requests: nil,
+		}
+
+		if resources := tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Resources; resources != nil {
+			podTemplateSpec.Spec.Containers[0].Resources.Limits = resources.Limits
+			podTemplateSpec.Spec.Containers[0].Resources.Requests = resources.Requests
+		}
+
 		switch tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.Mode {
 		case kamajiv1alpha1.KonnectivityAgentModeDaemonSet:
 			r.resource.(*appsv1.DaemonSet).Spec.Template = *podTemplateSpec //nolint:forcetypeassert
