@@ -390,3 +390,58 @@ var _ = Describe("Controlplane Deployment", func() {
 		})
 	})
 })
+
+var _ = Describe("kine securityContext", func() {
+	var (
+		d  Deployment
+		sc *corev1.SecurityContext
+	)
+	BeforeEach(func() {
+		sc = &corev1.SecurityContext{
+			AllowPrivilegeEscalation: pointer.To(false),
+			RunAsNonRoot:             pointer.To(true),
+			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
+			SeccompProfile:           &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+		}
+		d = Deployment{
+			KineContainerImage: "kine:latest",
+			DataStore: kamajiv1alpha1.DataStore{
+				Spec: kamajiv1alpha1.DataStoreSpec{
+					Driver:    kamajiv1alpha1.KineMySQLDriver,
+					TLSConfig: &kamajiv1alpha1.TLSConfig{},
+				},
+			},
+		}
+	})
+
+	It("applies the configured securityContext to the kine sidecar and chmod init container", func() {
+		tcp := kamajiv1alpha1.TenantControlPlane{}
+		tcp.Spec.ControlPlane.Deployment.ContainerSecurityContexts = &kamajiv1alpha1.ControlPlaneContainerSecurityContexts{
+			Kine:     sc,
+			KineInit: sc,
+		}
+
+		podSpec := &corev1.PodSpec{}
+		d.buildKine(podSpec, tcp)
+
+		found, kineIdx := utilities.HasNamedContainer(podSpec.Containers, kineContainerName)
+		Expect(found).To(BeTrue())
+		Expect(podSpec.Containers[kineIdx].SecurityContext).To(Equal(sc))
+
+		found, initIdx := utilities.HasNamedContainer(podSpec.InitContainers, kineInitContainerName)
+		Expect(found).To(BeTrue())
+		Expect(podSpec.InitContainers[initIdx].SecurityContext).To(Equal(sc))
+	})
+
+	It("leaves securityContext nil when not configured", func() {
+		podSpec := &corev1.PodSpec{}
+		d.buildKine(podSpec, kamajiv1alpha1.TenantControlPlane{})
+
+		_, kineIdx := utilities.HasNamedContainer(podSpec.Containers, kineContainerName)
+		Expect(podSpec.Containers[kineIdx].SecurityContext).To(BeNil())
+
+		found, initIdx := utilities.HasNamedContainer(podSpec.InitContainers, kineInitContainerName)
+		Expect(found).To(BeTrue())
+		Expect(podSpec.InitContainers[initIdx].SecurityContext).To(BeNil())
+	})
+})
