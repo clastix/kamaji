@@ -118,7 +118,9 @@ type KubeletSpec struct {
 	// Default to InternalIP, ExternalIP, Hostname.
 	//+kubebuilder:default={"InternalIP","ExternalIP","Hostname"}
 	//+kubebuilder:validation:MinItems=1
-	//+listType=set
+	//+kubebuilder:validation:MaxItems=5
+	//+kubebuilder:validation:XValidation:rule="self.all(x, self.exists_one(y, y == x))",message="preferredAddressTypes entries must be unique"
+	//+listType=atomic
 	PreferredAddressTypes []KubeletPreferredAddressType `json:"preferredAddressTypes,omitempty"`
 	// CGroupFS defines the cgroup driver for Kubelet
 	// https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
