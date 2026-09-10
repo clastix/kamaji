@@ -194,6 +194,27 @@ var _ = Describe("Controlplane Deployment", func() {
 			}))
 		})
 
+		It("keeps the Konnectivity egress flag in place across reconciles", func() {
+			// Regression for #1281: the addon used to append its flag after the user
+			// extras, and the next reconcile sorted it back into the Kamaji-owned
+			// segment. Same flags, different order, hence an extra no-op rollout.
+			userExtras := []string{"--audit-log-path=/var/log/audit.log"}
+
+			first := mergeAPIServerArgs(nil, userExtras, safeDefaults, managed)
+
+			podSpec := &corev1.PodSpec{Containers: []corev1.Container{{
+				Name: apiServerContainerName,
+				Args: first,
+			}}}
+			Konnectivity{}.buildVolumeMounts(podSpec, userExtras)
+
+			withKonnectivity := podSpec.Containers[0].Args
+			Expect(withKonnectivity).To(ContainElement(HavePrefix("--egress-selector-config-file=")))
+
+			// A subsequent reconcile of the Deployment builder must be a no-op.
+			Expect(mergeAPIServerArgs(withKonnectivity, userExtras, safeDefaults, managed)).To(Equal(withKonnectivity))
+		})
+
 		It("preserves foreign flags from current, sorted within the Kamaji-owned segment", func() {
 			current := []string{"--egress-selector-config-file=/etc/kubernetes/konnectivity/egress.yaml"}
 			got := mergeAPIServerArgs(current, nil, safeDefaults, managed)

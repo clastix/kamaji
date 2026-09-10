@@ -200,7 +200,7 @@ func (k Konnectivity) RemovingContainer(podSpec *corev1.PodSpec) {
 	}
 }
 
-func (k Konnectivity) buildVolumeMounts(podSpec *corev1.PodSpec) {
+func (k Konnectivity) buildVolumeMounts(podSpec *corev1.PodSpec, apiServerExtraArgs []string) {
 	found, index := utilities.HasNamedContainer(podSpec.Containers, apiServerContainerName)
 	if !found {
 		return
@@ -225,7 +225,9 @@ func (k Konnectivity) buildVolumeMounts(podSpec *corev1.PodSpec) {
 	}
 
 	if !foundFlag {
-		podSpec.Containers[index].Args = append(podSpec.Containers[index].Args, egressConfigFlag)
+		// The flag must land in the position the Deployment builder would sort it into,
+		// otherwise the next reconcile reorders the args and rolls the control plane again.
+		podSpec.Containers[index].Args = utilities.InsertArgInSortedSegment(podSpec.Containers[index].Args, apiServerExtraArgs, egressConfigFlag)
 	}
 
 	vFound, vIndex := false, 0 //nolint:wastedassign
@@ -297,7 +299,13 @@ func (k Konnectivity) buildVolumes(status kamajiv1alpha1.KonnectivityStatus, pod
 
 func (k Konnectivity) Build(deployment *appsv1.Deployment, tenantControlPlane kamajiv1alpha1.TenantControlPlane) {
 	k.buildKonnectivityContainer(tenantControlPlane.Spec.Kubernetes.Version, tenantControlPlane.Spec.Addons.Konnectivity, *tenantControlPlane.Spec.ControlPlane.Deployment.Replicas, &deployment.Spec.Template.Spec)
-	k.buildVolumeMounts(&deployment.Spec.Template.Spec)
+
+	var apiServerExtraArgs []string
+	if extraArgs := tenantControlPlane.Spec.ControlPlane.Deployment.ExtraArgs; extraArgs != nil {
+		apiServerExtraArgs = extraArgs.APIServer
+	}
+
+	k.buildVolumeMounts(&deployment.Spec.Template.Spec, apiServerExtraArgs)
 	k.buildVolumes(tenantControlPlane.Status.Addons.Konnectivity, &deployment.Spec.Template.Spec)
 
 	k.Scheme.Default(deployment)
