@@ -21,6 +21,9 @@ var (
 )
 
 //+kubebuilder:validation:MinItems=1
+//+kubebuilder:validation:MaxItems=64
+//+kubebuilder:validation:items:MaxLength=256
+//+kubebuilder:validation:XValidation:rule="self.all(e, e.startsWith('[') || e.split(':').size() <= 2)",message="an IPv6 endpoint address must be bracketed, e.g. [2001:db8::1]:2379"
 
 type Endpoints []string
 
