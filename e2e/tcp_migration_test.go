@@ -13,15 +13,46 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	pointer "k8s.io/utils/ptr"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	ds "github.com/clastix/kamaji/internal/resources/datastore"
 	"github.com/clastix/kamaji/internal/utilities"
 )
+
+// migrationFixtures is kept small on purpose: objects written here land in the Kamaji
+// manager's soot cache, which shares that process's 100Mi limit.
+const migrationFixtures = 5
+
+// awaitFreezeWebhook drains freeze webhook events until the object is seen. The watch must
+// already be open before the migration is triggered: the webhook exists only while the
+// migration Job runs, and polling for it loses the race whenever the tenant API server is
+// contended, which on a 2-vCPU runner is most of that window.
+func awaitFreezeWebhook(w watch.Interface, timeout time.Duration) error {
+	deadline := time.After(timeout)
+
+	for {
+		select {
+		case event, open := <-w.ResultChan():
+			if !open {
+				return fmt.Errorf("watch closed before %s was observed", ds.FreezeWebhookName)
+			}
+
+			if event.Type == watch.Added || event.Type == watch.Modified {
+				return nil
+			}
+		case <-deadline:
+			return fmt.Errorf("timed out waiting for %s", ds.FreezeWebhookName)
+		}
+	}
+}
 
 func featureTestMigration(driver string) {
 	var tcp *kamajiv1alpha1.TenantControlPlane
@@ -82,9 +113,33 @@ func featureTestMigration(driver string) {
 		tcpClient, err := ctrlclient.New(restConfig, ctrlclient.Options{})
 		Expect(err).ToNot(HaveOccurred())
 
+		tcpClientset, err := kubernetes.NewForConfig(restConfig)
+		Expect(err).ToNot(HaveOccurred())
+
 		ns := &corev1.Namespace{}
 		ns.SetName("kamaji-test")
 		Expect(tcpClient.Create(context.Background(), ns)).ToNot(HaveOccurred())
+
+		By("writing fixtures the migration has to carry across")
+		fixtures := make([]string, 0, migrationFixtures)
+
+		for i := range migrationFixtures {
+			cm := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("migration-fixture-%d", i), Namespace: ns.GetName()},
+				Data:       map[string]string{"payload": rand.String(256)},
+			}
+			Expect(tcpClient.Create(context.Background(), cm)).ToNot(HaveOccurred())
+
+			fixtures = append(fixtures, cm.GetName())
+		}
+
+		By("opening a watch on the freeze webhook before the migration can install it")
+		freezeWatch, err := tcpClientset.AdmissionregistrationV1().ValidatingWebhookConfigurations().Watch(context.Background(), metav1.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector("metadata.name", ds.FreezeWebhookName).String(),
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		defer freezeWatch.Stop()
 
 		By("start migration to a new DataStore")
 		Eventually(func() error {
@@ -101,17 +156,15 @@ func featureTestMigration(driver string) {
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionMigrating)
 
 		By("waiting for the webhook installation")
-		// Measured directly in CI (GitHub Actions run 30307341733): the whole manager
-		// process - the host-side tenantcontrolplane controller across every TCP in the
-		// suite, plus this tenant's own soot sub-manager - went completely silent for
-		// 2m16s (21:45:45 to 21:48:01 UTC) with no errors logged, consistent with the
-		// process being starved of CPU on the 2-vCPU runner rather than any Kamaji-side
-		// bug: many tenant control planes, datastores, and their apiservers all compete
-		// for the same two cores. One minute sits well inside that observed stall, so
-		// the wait is widened to five for headroom above it.
-		Eventually(func() error {
-			return tcpClient.Get(context.Background(), types.NamespacedName{Name: "kamaji-freeze"}, &admissionregistrationv1.ValidatingWebhookConfiguration{})
-		}, 5*time.Minute, time.Second).Should(Succeed())
+		// The webhook is pushed to the watch opened above the instant Kamaji installs it,
+		// so a contended API server delays the event rather than hiding it. If the watch
+		// drops - the API server is restarted at the end of the migration - fall back to
+		// a direct read, which still succeeds while the window is open.
+		if err := awaitFreezeWebhook(freezeWatch, 5*time.Minute); err != nil {
+			Eventually(func() error {
+				return tcpClient.Get(context.Background(), types.NamespacedName{Name: ds.FreezeWebhookName}, &admissionregistrationv1.ValidatingWebhookConfiguration{})
+			}, time.Minute, time.Second).Should(Succeed(), "%s never observed: %s", ds.FreezeWebhookName, err)
+		}
 
 		By("ensuring changes are not allowed")
 		Consistently(func() error {
@@ -134,6 +187,18 @@ func featureTestMigration(driver string) {
 		Eventually(func() error {
 			return tcpClient.Get(context.Background(), types.NamespacedName{Name: ns.GetName()}, &corev1.Namespace{})
 		}).ShouldNot(HaveOccurred())
+
+		By("checking every fixture survived the migration")
+		// Makes this spec assert its own name, rather than just the one Namespace.
+		Eventually(func() error {
+			for _, name := range fixtures {
+				if err := tcpClient.Get(context.Background(), types.NamespacedName{Namespace: ns.GetName(), Name: name}, &corev1.ConfigMap{}); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		}, time.Minute, time.Second).Should(Succeed())
 		// The Freeze ValidatingWebhookConfiguration should have been removed successfully:
 		// we're checking write operations are allowed.
 		By("checking the changes are newly allowed")
