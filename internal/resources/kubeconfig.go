@@ -43,9 +43,10 @@ type KubeconfigResource struct {
 }
 
 func (r *KubeconfigResource) GetHistogram() prometheus.Histogram {
-	kubeconfigCollector = LazyLoadHistogramFromResource(kubeconfigCollector, r)
-
-	return kubeconfigCollector
+	// Unlike the other resources, the handler name is per-instance rather than a constant:
+	// caching the observer in a package-level variable would bind every KubeconfigResource
+	// to the name of the first one calling this function.
+	return LazyLoadHistogramFromResource(nil, r)
 }
 
 func (r *KubeconfigResource) ShouldStatusBeUpdated(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) bool {

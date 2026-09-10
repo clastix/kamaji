@@ -22,7 +22,6 @@ var (
 	serviceCollector                   prometheus.Histogram
 	kubeadmconfigCollector             prometheus.Histogram
 	kubeadmupgradeCollector            prometheus.Histogram
-	kubeconfigCollector                prometheus.Histogram
 	serviceaccountcertificateCollector prometheus.Histogram
 
 	kubeadmphaseUploadConfigKubeadmCollector prometheus.Histogram
