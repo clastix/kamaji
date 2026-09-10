@@ -23,6 +23,7 @@ const (
 	CertCommonName = "system:konnectivity-server"
 
 	konnectivityEgressSelectorConfigurationPath = "/etc/kubernetes/konnectivity/configurations/egress-selector-configuration.yaml"
+	egressSelectorConfigurationFlag             = "--egress-selector-config-file"
 	konnectivityServerName                      = "konnectivity-server"
 	konnectivityServerPath                      = "/run/konnectivity"
 
@@ -179,7 +180,7 @@ func (k Konnectivity) RemovingKubeAPIServerContainerArg(podSpec *corev1.PodSpec)
 	var parsedArgs []string
 
 	for _, v := range podSpec.Containers[index].Args {
-		if strings.HasPrefix(v, "--egress-selector-config-file") || strings.HasPrefix(v, "--egress-selector-config-file=") {
+		if strings.HasPrefix(v, egressSelectorConfigurationFlag) || strings.HasPrefix(v, egressSelectorConfigurationFlag+"=") {
 			continue
 		}
 
@@ -205,28 +206,10 @@ func (k Konnectivity) buildVolumeMounts(podSpec *corev1.PodSpec) {
 	if !found {
 		return
 	}
-	// Adding the egress selector config file flag:
-	// we can't rely on maps since not preserving order of arguments,
-	// api-server has sensitive parameters.
-	egressConfigFlag := fmt.Sprintf("--egress-selector-config-file=%s", konnectivityEgressSelectorConfigurationPath)
-
-	var foundFlag bool
-
-	for i, v := range podSpec.Containers[index].Args {
-		if !strings.HasPrefix(v, "--egress-selector-config-file") {
-			continue
-		}
-
-		if v != egressConfigFlag {
-			podSpec.Containers[index].Args[i] = egressConfigFlag
-		}
-
-		foundFlag = true
-	}
-
-	if !foundFlag {
-		podSpec.Containers[index].Args = append(podSpec.Containers[index].Args, egressConfigFlag)
-	}
+	// The --egress-selector-config-file flag is rendered by the kube-apiserver
+	// command builder as a managed flag once the Konnectivity addon is enabled,
+	// so that the resulting argument list stays deterministic from the very
+	// first reconcile pass (no reordering on subsequent reconciles).
 
 	vFound, vIndex := false, 0 //nolint:wastedassign
 	// Patching the volume mounts

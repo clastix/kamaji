@@ -763,6 +763,13 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 	if len(d.DataStoreOverrides) != 0 {
 		managed["--etcd-servers-overrides"] = d.etcdServersOverrides()
 	}
+	// The Konnectivity addon flag is rendered together with the managed flags,
+	// in sorted position, so that the argument list is deterministic from the
+	// first reconcile pass. Appending it later (as done previously) caused a
+	// second, no-op rollout of every TenantControlPlane (clastix/kamaji#1281).
+	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
+		managed[egressSelectorConfigurationFlag] = konnectivityEgressSelectorConfigurationPath
+	}
 
 	return mergeAPIServerArgs(current, userExtras, safeDefaults, managed)
 }
@@ -772,8 +779,8 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 // - user ExtraArgs are preserved verbatim, duplicates included for repeatable flags;
 // - safe defaults fill in only for flag names the user didn't provide.
 //
-// Flags already on the container that Kamaji doesn't own and the user didn't set are kept
-// (e.g. --egress-selector-config-file injected by the Konnectivity addon).
+// Flags already on the container that Kamaji doesn't own and the user didn't set are kept,
+// e.g. flags injected by addons on a previous pass.
 func mergeAPIServerArgs(current, userExtras []string, safeDefaults, managed map[string]string) []string {
 	userFlags := sets.New[string]()
 	// sanitizedExtras will contain the userExtras arguments,
