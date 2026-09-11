@@ -194,6 +194,20 @@ var _ = Describe("Controlplane Deployment", func() {
 			}))
 		})
 
+		It("keeps the Konnectivity egress flag in place across reconciles", func() {
+			userExtras := []string{"--audit-log-path=/var/log/audit.log"}
+
+			podSpec := &corev1.PodSpec{Containers: []corev1.Container{{
+				Name: apiServerContainerName,
+				Args: mergeAPIServerArgs(nil, userExtras, safeDefaults, managed),
+			}}}
+			Konnectivity{}.buildVolumeMounts(podSpec, userExtras)
+
+			args := podSpec.Containers[0].Args
+			// A subsequent reconcile of the Deployment builder must not reorder them.
+			Expect(mergeAPIServerArgs(args, userExtras, safeDefaults, managed)).To(Equal(args))
+		})
+
 		It("preserves foreign flags from current, sorted within the Kamaji-owned segment", func() {
 			current := []string{"--egress-selector-config-file=/etc/kubernetes/konnectivity/egress.yaml"}
 			got := mergeAPIServerArgs(current, nil, safeDefaults, managed)
