@@ -8896,9 +8896,13 @@ spec:
                               - InternalDNS
                               - ExternalDNS
                             type: string
+                          maxItems: 5
                           minItems: 1
                           type: array
-                          x-kubernetes-list-type: set
+                          x-kubernetes-list-type: atomic
+                          x-kubernetes-validations:
+                            - message: preferredAddressTypes entries must be unique
+                              rule: self.all(x, self.exists_one(y, y == x))
                       type: object
                     version:
                       description: Kubernetes Version for the tenant control plane
