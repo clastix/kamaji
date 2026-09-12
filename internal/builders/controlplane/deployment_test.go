@@ -4,6 +4,7 @@
 package controlplane
 
 import (
+	"slices"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -204,6 +205,46 @@ var _ = Describe("Controlplane Deployment", func() {
 				"--service-account-issuer=https://kubernetes.default.svc.cluster.local",
 				"--service-cluster-ip-range=10.96.0.0/12",
 			}))
+		})
+	})
+
+	Describe("Konnectivity egress selector flag", func() {
+		var tcp kamajiv1alpha1.TenantControlPlane
+
+		JustBeforeEach(func() {
+			tcp = kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.Addons.Konnectivity = &kamajiv1alpha1.KonnectivitySpec{}
+			tcp.Spec.NetworkProfile.Port = 7443
+		})
+
+		It("renders the flag in sorted position when the addon is enabled", func() {
+			got := d.buildKubeAPIServerCommand(tcp, "1.2.3.4", nil)
+
+			Expect(got).To(ContainElement(egressSelectorConfigurationFlag + "=" + konnectivityEgressSelectorConfigurationPath))
+			Expect(slices.IsSorted(got)).To(BeTrue())
+			// In the sorted segment, the egress selector flag lands between
+			// --client-ca-file and --enable-admission-plugins.
+			Expect(utilities.ArgsFromSliceToMap(got)).To(HaveKey(egressSelectorConfigurationFlag))
+		})
+
+		It("omits the flag when the addon is disabled", func() {
+			tcp.Spec.Addons.Konnectivity = nil
+
+			got := d.buildKubeAPIServerCommand(tcp, "1.2.3.4", nil)
+
+			Expect(got).NotTo(ContainElement(ContainSubstring(egressSelectorConfigurationFlag + "=")))
+		})
+
+		It("is deterministic across reconciler passes, regardless of the current args ordering", func() {
+			first := d.buildKubeAPIServerCommand(tcp, "1.2.3.4", nil)
+			// Simulate the previous buggy flow: the addon appended the flag at
+			// the end of the rendered args on a second pass.
+			dst := slices.Clone(first)
+			dst = append(dst, egressSelectorConfigurationFlag+"="+konnectivityEgressSelectorConfigurationPath)
+			// The next reconcile must not reorder the flags: same spec, same args.
+			second := d.buildKubeAPIServerCommand(tcp, "1.2.3.4", dst)
+
+			Expect(second).To(Equal(first))
 		})
 	})
 
