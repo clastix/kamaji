@@ -71,7 +71,7 @@ func DecodeFromYAML(o string, to runtime.Object) (err error) {
 		Strict: false,
 	})
 
-	if to, _, err = encoder.Decode([]byte(o), nil, to); err != nil { //nolint:ineffassign,staticcheck,wastedassign
+	if to, _, err = encoder.Decode([]byte(o), nil, to); err != nil {
 		return
 	}
 
@@ -87,7 +87,7 @@ func DecodeFromJSON(o string, to runtime.Object) (err error) {
 		Strict: false,
 	})
 
-	if to, _, err = encoder.Decode([]byte(o), nil, to); err != nil { //nolint:ineffassign,staticcheck,wastedassign
+	if to, _, err = encoder.Decode([]byte(o), nil, to); err != nil {
 		return
 	}
 
