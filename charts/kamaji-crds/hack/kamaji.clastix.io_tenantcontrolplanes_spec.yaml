@@ -125,16 +125,7 @@ versions:
                             format: int32
                             type: integer
                           resources:
-                            description: |-
-                              Resources define the amount of CPU and memory to allocate to the Konnectivity agent.
-
-                              When unset the agent container declares no requests or limits, which places
-                              its Pod in the BestEffort QoS class. Since the agent tolerates all taints and
-                              commonly runs alongside the cluster's heaviest workloads, BestEffort makes it
-                              the first candidate for CPU starvation and eviction on a busy node, degrading
-                              the very tunnel that `kubectl exec`, `kubectl logs` and `kubectl port-forward`
-                              depend on. Setting requests here promotes the agent to Burstable so it is
-                              scheduled with a guaranteed share of CPU.
+                            description: Resources define the amount of CPU and memory to allocate to the Konnectivity agent.
                             properties:
                               claims:
                                 description: |-
@@ -7221,10 +7212,6 @@ versions:
                               type: string
                             type: array
                           controllerManager:
-                            description: |-
-                              ControllerManager extra args. Kamaji sets --bind-address to the IPv6 wildcard "::"
-                              (which also serves IPv4 on a dual-stack pod); on hosts with IPv6 disabled in the
-                              kernel, override it to "0.0.0.0" here.
                             items:
                               type: string
                             type: array
@@ -7234,10 +7221,6 @@ versions:
                               type: string
                             type: array
                           scheduler:
-                            description: |-
-                              Scheduler extra args. Kamaji sets --bind-address to the IPv6 wildcard "::"
-                              (which also serves IPv4 on a dual-stack pod); on hosts with IPv6 disabled in the
-                              kernel, override it to "0.0.0.0" here.
                             items:
                               type: string
                             type: array
@@ -8927,13 +8910,9 @@ versions:
                             - InternalDNS
                             - ExternalDNS
                           type: string
-                        maxItems: 5
                         minItems: 1
                         type: array
-                        x-kubernetes-list-type: atomic
-                        x-kubernetes-validations:
-                          - message: preferredAddressTypes entries must be unique
-                            rule: self.all(x, self.exists_one(y, y == x))
+                        x-kubernetes-list-type: set
                     type: object
                   version:
                     description: Kubernetes Version for the tenant control plane
@@ -9043,8 +9022,6 @@ versions:
                     x-kubernetes-validations:
                       - message: all podCidrs entries must be valid CIDRs
                         rule: self.all(x, isCIDR(x))
-                      - message: podCidrs must not contain two CIDRs of the same IP family
-                        rule: size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()
                   port:
                     default: 6443
                     description: Port where API server will be exposed
@@ -9072,137 +9049,6 @@ versions:
                     x-kubernetes-validations:
                       - message: all serviceCidrs entries must be valid CIDRs
                         rule: self.all(x, isCIDR(x))
-                      - message: serviceCidrs must not contain two CIDRs of the same IP family
-                        rule: size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()
-                type: object
-              preGeneratedCertificates:
-                description: |-
-                  PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
-                  This field is immutable after creation.
-                properties:
-                  apiServer:
-                    description: |-
-                      API Server certificate and key from existing Secret.
-                      If specified, this certificate will be used instead of generating a new one.
-                      The certificate must be signed by the CA specified above or the generated CA.
-                    properties:
-                      certificateKey:
-                        default: tls.crt
-                        description: CertificateKey is the key in the Secret containing the certificate.
-                        type: string
-                      privateKeyKey:
-                        default: tls.key
-                        description: PrivateKeyKey is the key in the Secret containing the private key.
-                        type: string
-                      secretName:
-                        description: SecretName references a Secret containing certificate data
-                        minLength: 1
-                        type: string
-                    required:
-                      - secretName
-                    type: object
-                  ca:
-                    description: |-
-                      CA certificate and key from existing Secret.
-                      If specified, this CA will be used instead of generating a new one.
-                    properties:
-                      certificateKey:
-                        default: tls.crt
-                        description: CertificateKey is the key in the Secret containing the certificate.
-                        type: string
-                      privateKeyKey:
-                        default: tls.key
-                        description: PrivateKeyKey is the key in the Secret containing the private key.
-                        type: string
-                      secretName:
-                        description: SecretName references a Secret containing certificate data
-                        minLength: 1
-                        type: string
-                    required:
-                      - secretName
-                    type: object
-                  frontProxyCA:
-                    description: |-
-                      Front proxy CA certificate and key from existing Secret.
-                      If specified, this CA will be used instead of generating a new one.
-                    properties:
-                      certificateKey:
-                        default: tls.crt
-                        description: CertificateKey is the key in the Secret containing the certificate.
-                        type: string
-                      privateKeyKey:
-                        default: tls.key
-                        description: PrivateKeyKey is the key in the Secret containing the private key.
-                        type: string
-                      secretName:
-                        description: SecretName references a Secret containing certificate data
-                        minLength: 1
-                        type: string
-                    required:
-                      - secretName
-                    type: object
-                  frontProxyClient:
-                    description: |-
-                      Front proxy client certificate and key from existing Secret.
-                      If specified, this certificate will be used instead of generating a new one.
-                      The certificate must be signed by the front proxy CA specified above or the generated front proxy CA.
-                    properties:
-                      certificateKey:
-                        default: tls.crt
-                        description: CertificateKey is the key in the Secret containing the certificate.
-                        type: string
-                      privateKeyKey:
-                        default: tls.key
-                        description: PrivateKeyKey is the key in the Secret containing the private key.
-                        type: string
-                      secretName:
-                        description: SecretName references a Secret containing certificate data
-                        minLength: 1
-                        type: string
-                    required:
-                      - secretName
-                    type: object
-                  kubeletClient:
-                    description: |-
-                      Kubelet client certificate and key from existing Secret.
-                      If specified, this certificate will be used instead of generating a new one.
-                      The certificate must be signed by the CA specified above or the generated CA.
-                    properties:
-                      certificateKey:
-                        default: tls.crt
-                        description: CertificateKey is the key in the Secret containing the certificate.
-                        type: string
-                      privateKeyKey:
-                        default: tls.key
-                        description: PrivateKeyKey is the key in the Secret containing the private key.
-                        type: string
-                      secretName:
-                        description: SecretName references a Secret containing certificate data
-                        minLength: 1
-                        type: string
-                    required:
-                      - secretName
-                    type: object
-                  serviceAccount:
-                    description: |-
-                      Service account key pair from existing Secret.
-                      If specified, this key pair will be used instead of generating a new one.
-                    properties:
-                      privateKeyKey:
-                        default: sa.key
-                        description: PrivateKeyKey is the key in the Secret containing the private key.
-                        type: string
-                      publicKeyKey:
-                        default: sa.pub
-                        description: PublicKeyKey is the key in the Secret containing the public key.
-                        type: string
-                      secretName:
-                        description: SecretName references a Secret containing key data
-                        minLength: 1
-                        type: string
-                    required:
-                      - secretName
-                    type: object
                 type: object
               preGeneratedCertificates:
                 description: |-
