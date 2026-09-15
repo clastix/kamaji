@@ -14,14 +14,13 @@ import (
 	"math/big"
 	"time"
 
+	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	pointer "k8s.io/utils/ptr"
-
-	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
 func generateTestCertificate() (certPEM, keyPEM []byte) {
@@ -53,7 +52,6 @@ func generateTestCertificate() (certPEM, keyPEM []byte) {
 
 	return certPEM, keyPEM
 }
-
 
 var _ = Describe("Deploy TenantControlPlane with PreGenerated Certificates", func() {
 	Context("using pregenerated CA certificate", func() {
