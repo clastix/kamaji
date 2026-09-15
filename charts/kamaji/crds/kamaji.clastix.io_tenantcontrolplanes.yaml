@@ -133,16 +133,7 @@ spec:
                               format: int32
                               type: integer
                             resources:
-                              description: |-
-                                Resources define the amount of CPU and memory to allocate to the Konnectivity agent.
-
-                                When unset the agent container declares no requests or limits, which places
-                                its Pod in the BestEffort QoS class. Since the agent tolerates all taints and
-                                commonly runs alongside the cluster's heaviest workloads, BestEffort makes it
-                                the first candidate for CPU starvation and eviction on a busy node, degrading
-                                the very tunnel that `kubectl exec`, `kubectl logs` and `kubectl port-forward`
-                                depend on. Setting requests here promotes the agent to Burstable so it is
-                                scheduled with a guaranteed share of CPU.
+                              description: Resources define the amount of CPU and memory to allocate to the Konnectivity agent.
                               properties:
                                 claims:
                                   description: |-
@@ -547,6 +538,39 @@ spec:
                             ImageTag allows to specify a tag for the image.
                             In case this value is set, kubeadm does not change automatically the version of the above components during upgrades.
                           type: string
+                      type: object
+                  type: object
+                bootstrap:
+                  description: Bootstrap configures initial cluster setup including RBAC and essential components.
+                  properties:
+                    rbac:
+                      description: RBAC configures Role-Based Access Control bootstrap.
+                      properties:
+                        adminGroups:
+                          default:
+                            - system:masters
+                          description: |-
+                            AdminGroups specifies groups that should be granted cluster-admin privileges.
+                            Defaults to ["system:masters"] which is the traditional K8s admin group.
+                          items:
+                            type: string
+                          type: array
+                        adminUsers:
+                          default:
+                            - kubernetes-admin
+                          description: |-
+                            AdminUsers specifies users that should be granted cluster-admin privileges.
+                            Defaults to ["kubernetes-admin"] which matches the generated kubeconfig user.
+                          items:
+                            type: string
+                          type: array
+                        enabled:
+                          default: true
+                          description: |-
+                            Enabled controls whether RBAC bootstrap is performed.
+                            When enabled, creates ClusterRoleBindings for admin users and groups.
+                            Defaults to true when the bootstrap.rbac stanza is present.
+                          type: boolean
                       type: object
                   type: object
                 controlPlane:
@@ -7196,10 +7220,6 @@ spec:
                                 type: string
                               type: array
                             controllerManager:
-                              description: |-
-                                ControllerManager extra args. Kamaji sets --bind-address to the IPv6 wildcard "::"
-                                (which also serves IPv4 on a dual-stack pod); on hosts with IPv6 disabled in the
-                                kernel, override it to "0.0.0.0" here.
                               items:
                                 type: string
                               type: array
@@ -7209,10 +7229,6 @@ spec:
                                 type: string
                               type: array
                             scheduler:
-                              description: |-
-                                Scheduler extra args. Kamaji sets --bind-address to the IPv6 wildcard "::"
-                                (which also serves IPv4 on a dual-stack pod); on hosts with IPv6 disabled in the
-                                kernel, override it to "0.0.0.0" here.
                               items:
                                 type: string
                               type: array
@@ -8711,6 +8727,12 @@ spec:
                             - PreferDualStack
                             - RequireDualStack
                           type: string
+                        publicAPIServerAddress:
+                          description: |-
+                            PublicAPIServerAddress allows specifying a custom hostname for the API server.
+                            If set, this address will be used in cluster-info ConfigMaps and kubeconfigs
+                            instead of the LoadBalancer IP, enabling the use of DNS names that match certificate SANs.
+                          type: string
                         serviceType:
                           description: ServiceType allows specifying how to expose the Tenant Control Plane.
                           enum:
@@ -8896,13 +8918,9 @@ spec:
                               - InternalDNS
                               - ExternalDNS
                             type: string
-                          maxItems: 5
                           minItems: 1
                           type: array
-                          x-kubernetes-list-type: atomic
-                          x-kubernetes-validations:
-                            - message: preferredAddressTypes entries must be unique
-                              rule: self.all(x, self.exists_one(y, y == x))
+                          x-kubernetes-list-type: set
                       type: object
                     version:
                       description: Kubernetes Version for the tenant control plane
@@ -9012,8 +9030,6 @@ spec:
                       x-kubernetes-validations:
                         - message: all podCidrs entries must be valid CIDRs
                           rule: self.all(x, isCIDR(x))
-                        - message: podCidrs must not contain two CIDRs of the same IP family
-                          rule: size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()
                     port:
                       default: 6443
                       description: Port where API server will be exposed
@@ -9041,8 +9057,135 @@ spec:
                       x-kubernetes-validations:
                         - message: all serviceCidrs entries must be valid CIDRs
                           rule: self.all(x, isCIDR(x))
-                        - message: serviceCidrs must not contain two CIDRs of the same IP family
-                          rule: size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()
+                  type: object
+                preGeneratedCertificates:
+                  description: |-
+                    PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
+                    This field is immutable after creation.
+                  properties:
+                    apiServer:
+                      description: |-
+                        API Server certificate and key from existing Secret.
+                        If specified, this certificate will be used instead of generating a new one.
+                        The certificate must be signed by the CA specified above or the generated CA.
+                      properties:
+                        certificateKey:
+                          default: tls.crt
+                          description: CertificateKey is the key in the Secret containing the certificate.
+                          type: string
+                        privateKeyKey:
+                          default: tls.key
+                          description: PrivateKeyKey is the key in the Secret containing the private key.
+                          type: string
+                        secretName:
+                          description: SecretName references a Secret containing certificate data
+                          minLength: 1
+                          type: string
+                      required:
+                        - secretName
+                      type: object
+                    ca:
+                      description: |-
+                        CA certificate and key from existing Secret.
+                        If specified, this CA will be used instead of generating a new one.
+                      properties:
+                        certificateKey:
+                          default: tls.crt
+                          description: CertificateKey is the key in the Secret containing the certificate.
+                          type: string
+                        privateKeyKey:
+                          default: tls.key
+                          description: PrivateKeyKey is the key in the Secret containing the private key.
+                          type: string
+                        secretName:
+                          description: SecretName references a Secret containing certificate data
+                          minLength: 1
+                          type: string
+                      required:
+                        - secretName
+                      type: object
+                    frontProxyCA:
+                      description: |-
+                        Front proxy CA certificate and key from existing Secret.
+                        If specified, this CA will be used instead of generating a new one.
+                      properties:
+                        certificateKey:
+                          default: tls.crt
+                          description: CertificateKey is the key in the Secret containing the certificate.
+                          type: string
+                        privateKeyKey:
+                          default: tls.key
+                          description: PrivateKeyKey is the key in the Secret containing the private key.
+                          type: string
+                        secretName:
+                          description: SecretName references a Secret containing certificate data
+                          minLength: 1
+                          type: string
+                      required:
+                        - secretName
+                      type: object
+                    frontProxyClient:
+                      description: |-
+                        Front proxy client certificate and key from existing Secret.
+                        If specified, this certificate will be used instead of generating a new one.
+                        The certificate must be signed by the front proxy CA specified above or the generated front proxy CA.
+                      properties:
+                        certificateKey:
+                          default: tls.crt
+                          description: CertificateKey is the key in the Secret containing the certificate.
+                          type: string
+                        privateKeyKey:
+                          default: tls.key
+                          description: PrivateKeyKey is the key in the Secret containing the private key.
+                          type: string
+                        secretName:
+                          description: SecretName references a Secret containing certificate data
+                          minLength: 1
+                          type: string
+                      required:
+                        - secretName
+                      type: object
+                    kubeletClient:
+                      description: |-
+                        Kubelet client certificate and key from existing Secret.
+                        If specified, this certificate will be used instead of generating a new one.
+                        The certificate must be signed by the CA specified above or the generated CA.
+                      properties:
+                        certificateKey:
+                          default: tls.crt
+                          description: CertificateKey is the key in the Secret containing the certificate.
+                          type: string
+                        privateKeyKey:
+                          default: tls.key
+                          description: PrivateKeyKey is the key in the Secret containing the private key.
+                          type: string
+                        secretName:
+                          description: SecretName references a Secret containing certificate data
+                          minLength: 1
+                          type: string
+                      required:
+                        - secretName
+                      type: object
+                    serviceAccount:
+                      description: |-
+                        Service account key pair from existing Secret.
+                        If specified, this key pair will be used instead of generating a new one.
+                      properties:
+                        privateKeyKey:
+                          default: sa.key
+                          description: PrivateKeyKey is the key in the Secret containing the private key.
+                          type: string
+                        publicKeyKey:
+                          default: sa.pub
+                          description: PublicKeyKey is the key in the Secret containing the public key.
+                          type: string
+                        secretName:
+                          description: SecretName references a Secret containing key data
+                          minLength: 1
+                          type: string
+                      required:
+                        - secretName
+                      type: object
                   type: object
                 writePermissions:
                   description: |-
@@ -9707,6 +9850,25 @@ spec:
                           type: string
                       required:
                         - enabled
+                      type: object
+                  type: object
+                bootstrap:
+                  description: Bootstrap contains the status of the bootstrap configuration
+                  properties:
+                    rbac:
+                      description: RBACBootstrapStatus defines the status of RBAC bootstrap configuration.
+                      properties:
+                        clusterRoleBinding:
+                          properties:
+                            lastUpdate:
+                              description: Last time when k8s object was updated
+                              format: date-time
+                              type: string
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          type: object
                       type: object
                   type: object
                 certificates:
