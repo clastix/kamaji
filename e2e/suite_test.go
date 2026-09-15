@@ -76,6 +76,7 @@ var _ = BeforeSuite(func() {
 			ControllerName: "gateway.envoyproxy.io/gatewayclass-controller",
 		},
 	}
+	_ = k8sClient.Delete(context.Background(), gatewayClass)
 	Expect(k8sClient.Create(context.Background(), gatewayClass)).NotTo(HaveOccurred())
 
 	By("creating Gateway with kube-apiserver and konnectivity-server listeners")

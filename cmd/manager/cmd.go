@@ -271,6 +271,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 					handlers.TenantControlPlanePreGeneratedCerts{
 						Client: mgr.GetClient(),
 					},
+					handlers.TenantControlPlaneValidateCIDRs{},
 				},
 				routes.TenantControlPlaneTelemetry{}: {
 					handlers.TenantControlPlaneTelemetry{
