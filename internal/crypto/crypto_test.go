@@ -92,6 +92,86 @@ func TestParsePrivateKeyBytes(t *testing.T) {
 	}
 }
 
+func TestCheckCertificateAndPrivateKeyPairValidity(t *testing.T) {
+	t.Parallel()
+
+	certPEM, keyPEM, err := GenerateSelfSignedCA()
+	if err != nil {
+		t.Fatalf("failed to generate test certificate: %v", err)
+	}
+
+	tests := []struct {
+		name      string
+		cert      []byte
+		key       []byte
+		threshold time.Duration
+		want      bool
+		wantError bool
+	}{
+		{
+			name:      "valid cert and key, well beyond threshold",
+			cert:      certPEM,
+			key:       keyPEM,
+			threshold: 30 * 24 * time.Hour,
+			want:      true,
+			wantError: false,
+		},
+		{
+			name:      "valid cert and key, within expiration threshold",
+			cert:      certPEM,
+			key:       keyPEM,
+			threshold: 400 * 24 * time.Hour,
+			want:      false,
+			wantError: false,
+		},
+		{
+			name:      "empty cert bytes",
+			cert:      []byte{},
+			key:       keyPEM,
+			threshold: 30 * 24 * time.Hour,
+			want:      false,
+			wantError: false,
+		},
+		{
+			name:      "empty key bytes",
+			cert:      certPEM,
+			key:       []byte{},
+			threshold: 30 * 24 * time.Hour,
+			want:      false,
+			wantError: false,
+		},
+		{
+			name:      "mismatched cert and key",
+			cert:      certPEM,
+			key:       func() []byte { _, k, _ := GenerateSelfSignedCA(); return k }(),
+			threshold: 30 * 24 * time.Hour,
+			want:      false,
+			wantError: false,
+		},
+		{
+			name:      "malformed cert bytes",
+			cert:      []byte("not a valid cert"),
+			key:       keyPEM,
+			threshold: 30 * 24 * time.Hour,
+			want:      false,
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := CheckCertificateAndPrivateKeyPairValidity(tt.cert, tt.key, tt.threshold)
+			if (err != nil) != tt.wantError {
+				t.Errorf("CheckCertificateAndPrivateKeyPairValidity() error = %v, wantError %v", err, tt.wantError)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("CheckCertificateAndPrivateKeyPairValidity() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func GenerateSelfSignedCA() ([]byte, []byte, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
