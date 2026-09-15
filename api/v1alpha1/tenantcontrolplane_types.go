@@ -70,7 +70,6 @@ type NetworkProfileSpec struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=2
 	// +kubebuilder:validation:XValidation:rule="self.all(x, isCIDR(x))",message="all serviceCidrs entries must be valid CIDRs"
-	// +kubebuilder:validation:XValidation:rule="size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()",message="serviceCidrs must not contain two CIDRs of the same IP family"
 	ServiceCIDRs []string `json:"serviceCidrs,omitempty"`
 	// CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.
 	// Deprecated: use PodCIDRs instead.
@@ -85,7 +84,6 @@ type NetworkProfileSpec struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=2
 	// +kubebuilder:validation:XValidation:rule="self.all(x, isCIDR(x))",message="all podCidrs entries must be valid CIDRs"
-	// +kubebuilder:validation:XValidation:rule="size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()",message="podCidrs must not contain two CIDRs of the same IP family"
 	PodCIDRs []string `json:"podCidrs,omitempty"`
 	// The DNS Service for internal resolution, it must match the Service CIDR.
 	// In case of an empty value, it is automatically computed according to the Service CIDR, e.g.:
@@ -118,9 +116,7 @@ type KubeletSpec struct {
 	// Default to InternalIP, ExternalIP, Hostname.
 	//+kubebuilder:default={"InternalIP","ExternalIP","Hostname"}
 	//+kubebuilder:validation:MinItems=1
-	//+kubebuilder:validation:MaxItems=5
-	//+kubebuilder:validation:XValidation:rule="self.all(x, self.exists_one(y, y == x))",message="preferredAddressTypes entries must be unique"
-	//+listType=atomic
+	//+listType=set
 	PreferredAddressTypes []KubeletPreferredAddressType `json:"preferredAddressTypes,omitempty"`
 	// CGroupFS defines the cgroup driver for Kubelet
 	// https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/configure-cgroup-driver/
@@ -347,17 +343,10 @@ type AdditionalVolumeMounts struct {
 }
 
 // ControlPlaneExtraArgs allows specifying additional arguments to the Control Plane components.
-// Extra arguments are applied last and override the defaults Kamaji sets.
 type ControlPlaneExtraArgs struct {
-	APIServer []string `json:"apiServer,omitempty"`
-	// ControllerManager extra args. Kamaji sets --bind-address to the IPv6 wildcard "::"
-	// (which also serves IPv4 on a dual-stack pod); on hosts with IPv6 disabled in the
-	// kernel, override it to "0.0.0.0" here.
+	APIServer         []string `json:"apiServer,omitempty"`
 	ControllerManager []string `json:"controllerManager,omitempty"`
-	// Scheduler extra args. Kamaji sets --bind-address to the IPv6 wildcard "::"
-	// (which also serves IPv4 on a dual-stack pod); on hosts with IPv6 disabled in the
-	// kernel, override it to "0.0.0.0" here.
-	Scheduler []string `json:"scheduler,omitempty"`
+	Scheduler         []string `json:"scheduler,omitempty"`
 	// Available only if Kamaji is running using Kine as backing storage.
 	Kine []string `json:"kine,omitempty"`
 }
@@ -396,6 +385,11 @@ type ServiceSpec struct {
 	//+kubebuilder:validation:MaxItems=2
 	//+kubebuilder:validation:items:Enum=IPv4;IPv6
 	IPFamilies []corev1.IPFamily `json:"ipFamilies,omitempty"`
+	// PublicAPIServerAddress allows specifying a custom hostname for the API server.
+	// If set, this address will be used in cluster-info ConfigMaps and kubeconfigs
+	// instead of the LoadBalancer IP, enabling the use of DNS names that match certificate SANs.
+	// +optional
+	PublicAPIServerAddress string `json:"publicAPIServerAddress,omitempty"`
 }
 
 // AddonSpec defines the spec for every addon.
@@ -473,16 +467,6 @@ type KonnectivityAgentSpec struct {
 	// Must be 0 if Mode is DaemonSet.
 	//+kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
-	// Resources define the amount of CPU and memory to allocate to the Konnectivity agent.
-	//
-	// When unset the agent container declares no requests or limits, which places
-	// its Pod in the BestEffort QoS class. Since the agent tolerates all taints and
-	// commonly runs alongside the cluster's heaviest workloads, BestEffort makes it
-	// the first candidate for CPU starvation and eviction on a busy node, degrading
-	// the very tunnel that `kubectl exec`, `kubectl logs` and `kubectl port-forward`
-	// depend on. Setting requests here promotes the agent to Burstable so it is
-	// scheduled with a guaranteed share of CPU.
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.
@@ -525,6 +509,105 @@ type DataStoreOverride struct {
 	Resource string `json:"resource,omitempty"`
 	// DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Resource.
 	DataStore string `json:"dataStore,omitempty"`
+}
+
+// CertificateReference references a Secret containing certificate and private key data.
+type CertificateReference struct {
+	// SecretName references a Secret containing certificate data
+	// +kubebuilder:validation:MinLength=1
+	SecretName string `json:"secretName"`
+
+	// CertificateKey is the key in the Secret containing the certificate.
+	// +kubebuilder:default="tls.crt"
+	CertificateKey string `json:"certificateKey,omitempty"`
+
+	// PrivateKeyKey is the key in the Secret containing the private key.
+	// +kubebuilder:default="tls.key"
+	PrivateKeyKey string `json:"privateKeyKey,omitempty"`
+}
+
+// KeyReference references a Secret containing public and private key data.
+type KeyReference struct {
+	// SecretName references a Secret containing key data
+	// +kubebuilder:validation:MinLength=1
+	SecretName string `json:"secretName"`
+
+	// PublicKeyKey is the key in the Secret containing the public key.
+	// +kubebuilder:default="sa.pub"
+	PublicKeyKey string `json:"publicKeyKey,omitempty"`
+
+	// PrivateKeyKey is the key in the Secret containing the private key.
+	// +kubebuilder:default="sa.key"
+	PrivateKeyKey string `json:"privateKeyKey,omitempty"`
+}
+
+// PreGeneratedCertificatesSpec allows specifying existing certificates instead of generating new ones.
+type PreGeneratedCertificatesSpec struct {
+	// CA certificate and key from existing Secret.
+	// If specified, this CA will be used instead of generating a new one.
+	CA *CertificateReference `json:"ca,omitempty"`
+
+	// API Server certificate and key from existing Secret.
+	// If specified, this certificate will be used instead of generating a new one.
+	// The certificate must be signed by the CA specified above or the generated CA.
+	APIServer *CertificateReference `json:"apiServer,omitempty"`
+
+	// Kubelet client certificate and key from existing Secret.
+	// If specified, this certificate will be used instead of generating a new one.
+	// The certificate must be signed by the CA specified above or the generated CA.
+	KubeletClient *CertificateReference `json:"kubeletClient,omitempty"`
+
+	// Front proxy CA certificate and key from existing Secret.
+	// If specified, this CA will be used instead of generating a new one.
+	FrontProxyCA *CertificateReference `json:"frontProxyCA,omitempty"`
+
+	// Front proxy client certificate and key from existing Secret.
+	// If specified, this certificate will be used instead of generating a new one.
+	// The certificate must be signed by the front proxy CA specified above or the generated front proxy CA.
+	FrontProxyClient *CertificateReference `json:"frontProxyClient,omitempty"`
+
+	// Service account key pair from existing Secret.
+	// If specified, this key pair will be used instead of generating a new one.
+	ServiceAccount *KeyReference `json:"serviceAccount,omitempty"`
+}
+
+// RBACBootstrapSpec defines the RBAC bootstrap configuration.
+type RBACBootstrapSpec struct {
+	// Enabled controls whether RBAC bootstrap is performed.
+	// When enabled, creates ClusterRoleBindings for admin users and groups.
+	// Defaults to true when the bootstrap.rbac stanza is present.
+	// +kubebuilder:default=true
+	Enabled *bool `json:"enabled,omitempty"`
+	// AdminUsers specifies users that should be granted cluster-admin privileges.
+	// Defaults to ["kubernetes-admin"] which matches the generated kubeconfig user.
+	// +kubebuilder:default={"kubernetes-admin"}
+	AdminUsers []string `json:"adminUsers,omitempty"`
+	// AdminGroups specifies groups that should be granted cluster-admin privileges.
+	// Defaults to ["system:masters"] which is the traditional K8s admin group.
+	// +kubebuilder:default={"system:masters"}
+	AdminGroups []string `json:"adminGroups,omitempty"`
+}
+
+// BootstrapSpec defines the bootstrap configuration for tenant control plane clusters.
+type BootstrapSpec struct {
+	// RBAC configures Role-Based Access Control bootstrap.
+	RBAC *RBACBootstrapSpec `json:"rbac,omitempty"`
+}
+
+// IsRBACBootstrapEnabled reports whether RBAC bootstrap should be reconciled for
+// this Tenant Control Plane. RBAC bootstrap is opt-in: it applies only when the
+// bootstrap.rbac stanza is present and not explicitly disabled.
+//
+// RBACBootstrapSpec.Enabled is a *bool rather than a bool so that an explicit
+// false is distinguishable from an unset field. With a plain bool, omitempty
+// drops false during serialization and the API server re-applies the true
+// default, leaving no way to turn the feature off.
+func (in *TenantControlPlane) IsRBACBootstrapEnabled() bool {
+	if in.Spec.Bootstrap == nil || in.Spec.Bootstrap.RBAC == nil {
+		return false
+	}
+
+	return in.Spec.Bootstrap.RBAC.Enabled == nil || *in.Spec.Bootstrap.RBAC.Enabled
 }
 
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
@@ -572,6 +655,11 @@ type TenantControlPlaneSpec struct {
 	Kubernetes KubernetesSpec `json:"kubernetes"`
 	// NetworkProfile specifies how the network is
 	NetworkProfile NetworkProfileSpec `json:"networkProfile,omitempty"`
+	// PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
+	// This field is immutable after creation.
+	PreGeneratedCertificates *PreGeneratedCertificatesSpec `json:"preGeneratedCertificates,omitempty"`
+	// Bootstrap configures initial cluster setup including RBAC and essential components.
+	Bootstrap *BootstrapSpec `json:"bootstrap,omitempty"`
 	// Addons contain which addons are enabled
 	Addons AddonsSpec `json:"addons,omitempty"`
 }
