@@ -12,8 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/clastix/kamaji/internal/errors"
 )
 
 // AssignedControlPlaneAddress returns the announced address and port of a Tenant Control Plane.
@@ -76,8 +74,6 @@ func (in *TenantControlPlane) DeclaredControlPlaneAddress(ctx context.Context, c
 		// Fall back to DNS name if clusterIP is not yet assigned
 		return fmt.Sprintf("%s.%s.svc", in.GetName(), in.GetNamespace()), nil
 	}
-
-	return "", errors.MissingValidIPError{}
 }
 
 // ControlPlaneServiceIPs returns every IP address the Tenant Control Plane Service
@@ -117,35 +113,6 @@ func (in *TenantControlPlane) ControlPlaneServiceIPs(ctx context.Context, c clie
 	}
 
 	return ips, nil
-}
-
-// getLoadBalancerAddress extracts the IP address from LoadBalancer ingress.
-// It also checks and rejects hostname usage for LoadBalancer ingress.
-//
-// Reasons for not supporting hostnames:
-// - DNS resolution can differ across environments, leading to inconsistent behavior.
-// - It may cause connectivity problems between Kubernetes components.
-// - The DNS resolution could change over time, potentially breaking cluster-to-API-server connections.
-//
-// Recommended solutions:
-// - Use a static IP address to ensure stable and predictable communication within the cluster.
-// - If a hostname is necessary, consider setting up a Virtual IP (VIP) for the given hostname.
-// - Alternatively, use an external load balancer that can provide a stable IP address.
-//
-// Note: Implementing L7 routing with the API Server requires a deep understanding of the implications.
-// Users should be aware of the complexities involved, including potential issues with TLS passthrough
-// for client-based certificate authentication in Ingress expositions.
-func getLoadBalancerAddress(ingress []corev1.LoadBalancerIngress) (string, error) {
-	for _, lb := range ingress {
-		if ip := lb.IP; len(ip) > 0 {
-			return ip, nil
-		}
-		if hostname := lb.Hostname; len(hostname) > 0 {
-			return "", fmt.Errorf("hostname not supported for LoadBalancer ingress: use static IP instead")
-		}
-	}
-
-	return "", errors.MissingValidIPError{}
 }
 
 func (in *TenantControlPlane) GetDefaultDatastoreUsername() string {

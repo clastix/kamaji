@@ -183,6 +183,7 @@ func (r *APIServerCertificate) mutate(ctx context.Context, tenantControlPlane *k
 				for _, san := range config.InitConfiguration.APIServer.CertSANs {
 					if san == addr {
 						hasAddr = true
+
 						break
 					}
 				}
