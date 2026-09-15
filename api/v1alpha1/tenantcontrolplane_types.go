@@ -470,6 +470,8 @@ type KonnectivityAgentSpec struct {
 	// Must be 0 if Mode is DaemonSet.
 	//+kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Resources defines the amount of CPU and memory to allocate to the Konnectivity agent container.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // KonnectivitySpec defines the spec for Konnectivity.
