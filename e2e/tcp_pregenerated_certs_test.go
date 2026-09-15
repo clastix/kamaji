@@ -54,6 +54,7 @@ func generateTestCertificate() (certPEM, keyPEM []byte) {
 	return certPEM, keyPEM
 }
 
+
 var _ = Describe("Deploy TenantControlPlane with PreGenerated Certificates", func() {
 	Context("using pregenerated CA certificate", func() {
 		var (
@@ -177,5 +178,18 @@ var _ = Describe("Deploy TenantControlPlane with PreGenerated Certificates", fun
 			// Cleanup
 			_ = k8sClient.Delete(context.Background(), tcpWithBadSecret)
 		})
+
+		It("should reject when both PreGeneratedCertificates and NetworkProfile.CertSANs are set", func() {
+			tcp.Spec.NetworkProfile.CertSANs = []string{"custom.example.com"}
+
+			// Attempt to create the TenantControlPlane
+			err := k8sClient.Create(context.Background(), tcp)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("cannot be specified when certSANs is configured"))
+
+			// Cleanup
+			_ = k8sClient.Delete(context.Background(), tcp)
+		})
 	})
+
 })

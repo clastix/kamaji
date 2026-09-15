@@ -574,7 +574,7 @@ type PreGeneratedCertificatesSpec struct {
 	// Service account key pair from existing Secret.
 	// If specified, this key pair will be used instead of generating a new one.
 	ServiceAccount *KeyReference `json:"serviceAccount,omitempty"`
-}
+ }
 
 // RBACBootstrapSpec defines the RBAC bootstrap configuration.
 type RBACBootstrapSpec struct {
