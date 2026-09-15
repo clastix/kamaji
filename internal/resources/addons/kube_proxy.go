@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/prometheus/client_golang/prometheus"
 	appsv1 "k8s.io/api/apps/v1"
@@ -374,6 +375,14 @@ func (k *KubeProxy) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Ten
 		return fmt.Errorf("unable to decode DaemonSet manifest: %w", err)
 	}
 	addon_utils.SetKamajiManagedLabels(k.daemonSet)
+
+	envVars := utilities.EnvarsFromSliceToMap(k.daemonSet.Spec.Template.Spec.Containers[0].Env)
+
+	extraEnvVars := utilities.EnvarsFromSliceToMap(tcp.Spec.Addons.KubeProxy.ExtraEnvs)
+
+	maps.Copy(envVars, extraEnvVars)
+
+	k.daemonSet.Spec.Template.Spec.Containers[0].Env = utilities.EnvarsFromMapToSlice(envVars)
 
 	return nil
 }
