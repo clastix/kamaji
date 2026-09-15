@@ -1,4 +1,4 @@
-// Copyright 2024 Clastix Labs
+// Copyright 2022 Clastix Labs
 // SPDX-License-Identifier: Apache-2.0
 
 package utilities
@@ -53,6 +53,8 @@ func TestIsRotationRequested(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "test-secret",
@@ -110,6 +112,8 @@ func TestSetLastRotationTimestamp(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "test-secret",
@@ -123,17 +127,20 @@ func TestSetLastRotationTimestamp(t *testing.T) {
 			annotations := secret.GetAnnotations()
 			if !tt.expectAnnotationPresent {
 				t.Errorf("SetLastRotationTimestamp() annotation not present")
+
 				return
 			}
 
 			value, ok := annotations[RotateCertificateRequestAnnotation]
 			if !ok {
 				t.Errorf("SetLastRotationTimestamp() annotation key not found")
+
 				return
 			}
 
 			if value == "" {
 				t.Errorf("SetLastRotationTimestamp() annotation value is empty, expected timestamp")
+
 				return
 			}
 
@@ -141,6 +148,7 @@ func TestSetLastRotationTimestamp(t *testing.T) {
 				_, err := time.Parse(time.RFC3339, value)
 				if err != nil {
 					t.Errorf("SetLastRotationTimestamp() annotation value %q not parseable as RFC3339: %v", value, err)
+
 					return
 				}
 			}
