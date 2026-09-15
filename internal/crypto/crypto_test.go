@@ -141,9 +141,13 @@ func TestCheckCertificateAndPrivateKeyPairValidity(t *testing.T) {
 			wantError: false,
 		},
 		{
-			name:      "mismatched cert and key",
-			cert:      certPEM,
-			key:       func() []byte { _, k, _ := GenerateSelfSignedCA(); return k }(),
+			name: "mismatched cert and key",
+			cert: certPEM,
+			key: func() []byte {
+				_, k, _ := GenerateSelfSignedCA()
+
+				return k
+			}(),
 			threshold: 30 * 24 * time.Hour,
 			want:      false,
 			wantError: false,
@@ -160,9 +164,12 @@ func TestCheckCertificateAndPrivateKeyPairValidity(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := CheckCertificateAndPrivateKeyPairValidity(tt.cert, tt.key, tt.threshold)
 			if (err != nil) != tt.wantError {
 				t.Errorf("CheckCertificateAndPrivateKeyPairValidity() error = %v, wantError %v", err, tt.wantError)
+
 				return
 			}
 			if got != tt.want {
