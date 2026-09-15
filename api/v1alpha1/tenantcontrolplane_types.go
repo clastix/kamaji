@@ -661,7 +661,9 @@ type TenantControlPlaneSpec struct {
 	// NetworkProfile specifies how the network is
 	NetworkProfile NetworkProfileSpec `json:"networkProfile,omitempty"`
 	// PreGeneratedCertificates allows specifying existing certificates instead of generating new ones.
-	// This field is immutable after creation.
+	// To renew an expiring pregenerated certificate, update the referenced Secret's data and trigger
+	// rotation via the certs.kamaji.clastix.io/rotate annotation on the target Secret (see the
+	// certificates lifecycle guide).
 	PreGeneratedCertificates *PreGeneratedCertificatesSpec `json:"preGeneratedCertificates,omitempty"`
 	// Bootstrap configures initial cluster setup including RBAC and essential components.
 	Bootstrap *BootstrapSpec `json:"bootstrap,omitempty"`

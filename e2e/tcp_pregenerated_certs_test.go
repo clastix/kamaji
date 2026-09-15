@@ -54,7 +54,6 @@ func generateTestCertificate() (certPEM, keyPEM []byte) {
 	return certPEM, keyPEM
 }
 
-
 var _ = Describe("Deploy TenantControlPlane with PreGenerated Certificates", func() {
 	Context("using pregenerated CA certificate", func() {
 		var (
@@ -191,5 +190,4 @@ var _ = Describe("Deploy TenantControlPlane with PreGenerated Certificates", fun
 			_ = k8sClient.Delete(context.Background(), tcp)
 		})
 	})
-
 })
