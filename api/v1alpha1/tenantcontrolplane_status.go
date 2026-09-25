@@ -160,6 +160,16 @@ type AddonsStatus struct {
 	Konnectivity KonnectivityStatus `json:"konnectivity,omitempty"`
 }
 
+// RBACBootstrapStatus defines the status of RBAC bootstrap configuration.
+type RBACBootstrapStatus struct {
+	ClusterRoleBinding ExternalKubernetesObjectStatus `json:"clusterRoleBinding,omitempty"`
+}
+
+// BootstrapStatus defines the status of the bootstrap configuration.
+type BootstrapStatus struct {
+	RBAC *RBACBootstrapStatus `json:"rbac,omitempty"`
+}
+
 // TenantControlPlaneStatus defines the observed state of TenantControlPlane.
 type TenantControlPlaneStatus struct {
 	// ObservedGeneration represents the .metadata.generation that was last reconciled.
@@ -182,6 +192,8 @@ type TenantControlPlaneStatus struct {
 	ControlPlaneEndpoint string `json:"controlPlaneEndpoint,omitempty"`
 	// Addons contains the status of the different Addons
 	Addons AddonsStatus `json:"addons,omitempty"`
+	// Bootstrap contains the status of the bootstrap configuration
+	Bootstrap *BootstrapStatus `json:"bootstrap,omitempty"`
 }
 
 // KubernetesStatus defines the status of the resources deployed in the management cluster,
