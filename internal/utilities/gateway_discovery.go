@@ -4,105 +4,35 @@
 package utilities
 
 import (
-	"context"
+	"slices"
 
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
-// AreGatewayResourcesAvailable checks if Gateway API is available in the cluster through a discovery Client
-// with fallback to client-based check.
-func AreGatewayResourcesAvailable(ctx context.Context, c client.Client, discoveryClient discovery.DiscoveryInterface) bool {
-	if discoveryClient == nil {
-		return IsGatewayAPIAvailableViaClient(ctx, c)
+// GatewayAPIKinds are the gateway.networking.k8s.io/v1 kinds the TenantControlPlane controller watches.
+var GatewayAPIKinds = []string{"Gateway", "HTTPRoute", "GRPCRoute", "TLSRoute"}
+
+// MissingGatewayAPIKinds returns the GatewayAPIKinds the API server does not serve.
+func MissingGatewayAPIKinds(discoveryClient discovery.DiscoveryInterface) ([]string, error) {
+	resourceList, err := discoveryClient.ServerResourcesForGroupVersion(gatewayv1.GroupVersion.String())
+	if k8serrors.IsNotFound(err) {
+		return GatewayAPIKinds, nil
 	}
 
-	available, err := GatewayAPIResourcesAvailable(ctx, discoveryClient)
 	if err != nil {
-		return false
+		return nil, err
 	}
 
-	return available
-}
+	var missing []string
 
-// NOTE: These functions are extremely similar, maybe they can be merged and accept a GVK.
-// Explicit for now.
-// GatewayAPIResourcesAvailable checks if Gateway API is available in the cluster.
-func GatewayAPIResourcesAvailable(ctx context.Context, discoveryClient discovery.DiscoveryInterface) (bool, error) {
-	gatewayAPIGroup := gatewayv1.GroupName
-
-	serverGroups, err := discoveryClient.ServerGroups()
-	if err != nil {
-		return false, err
-	}
-
-	for _, group := range serverGroups.Groups {
-		if group.Name == gatewayAPIGroup {
-			return true, nil
+	for _, kind := range GatewayAPIKinds {
+		if !slices.ContainsFunc(resourceList.APIResources, func(r metav1.APIResource) bool { return r.Kind == kind }) {
+			missing = append(missing, kind)
 		}
 	}
 
-	return false, nil
-}
-
-// TLSRouteAPIAvailable checks specifically for TLSRoute resource availability.
-func TLSRouteAPIAvailable(ctx context.Context, discoveryClient discovery.DiscoveryInterface) (bool, error) {
-	gv := gatewayv1.GroupVersion
-
-	resourceList, err := discoveryClient.ServerResourcesForGroupVersion(gv.String())
-	if err != nil {
-		return false, err
-	}
-
-	for _, resource := range resourceList.APIResources {
-		if resource.Kind == "TLSRoute" {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-// IsTLSRouteAvailable checks if TLSRoute is available with fallback to client-based check.
-func IsTLSRouteAvailable(ctx context.Context, c client.Client, discoveryClient discovery.DiscoveryInterface) bool {
-	if discoveryClient == nil {
-		return IsTLSRouteAvailableViaClient(ctx, c)
-	}
-
-	available, err := TLSRouteAPIAvailable(ctx, discoveryClient)
-	if err != nil {
-		return false
-	}
-
-	return available
-}
-
-// IsTLSRouteAvailableViaClient uses client to check TLSRoute availability.
-func IsTLSRouteAvailableViaClient(ctx context.Context, c client.Client) bool {
-	// Try to check if TLSRoute GVK can be resolved
-	gvk := schema.GroupVersionKind{
-		Group:   gatewayv1.GroupName,
-		Version: gatewayv1.GroupVersion.Version,
-		Kind:    "TLSRoute",
-	}
-
-	restMapper := c.RESTMapper()
-	_, err := restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
-	if err != nil {
-		if meta.IsNoMatchError(err) {
-			return false
-		}
-		// Other errors might be transient, assume available
-		return true
-	}
-
-	return true
-}
-
-// IsGatewayAPIAvailableViaClient uses client to check Gateway API availability.
-func IsGatewayAPIAvailableViaClient(ctx context.Context, c client.Client) bool {
-	return IsTLSRouteAvailableViaClient(ctx, c)
+	return missing, nil
 }

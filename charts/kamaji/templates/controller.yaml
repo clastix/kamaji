@@ -35,6 +35,9 @@ spec:
         {{- if .Values.telemetry.disabled }}
         - --disable-telemetry
         {{- end }}
+        {{- if .Values.gatewayAPI.enabled }}
+        - --enable-gateway-api
+        {{- end }}
         {{- if .Values.loggingDevel.enable }}
         - --zap-devel
         {{- end }}

@@ -132,6 +132,10 @@ kamaji-etcd:
 telemetry:
   disabled: false
 
+gatewayAPI:
+  # -- Enable the Gateway API support. The Gateway API CRDs must be installed before Kamaji starts, otherwise the controller exits.
+  enabled: false
+
 kubeconfigGenerator:
   # -- Toggle to deploy the Kubeconfig Generator Deployment.
   enabled: false
