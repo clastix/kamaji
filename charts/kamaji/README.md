@@ -78,6 +78,7 @@ Here the values you can override:
 | defaultDatastoreName | string | `"default"` | If specified, all the Kamaji instances with an unassigned DataStore will inherit this default value. |
 | extraArgs | list | `[]` | A list of extra arguments to add to the kamaji controller default ones |
 | fullnameOverride | string | `""` |  |
+| gatewayAPI.enabled | bool | `false` | Enable the Gateway API support. The Gateway API CRDs must be installed before Kamaji starts, otherwise the controller exits. |
 | healthProbeBindAddress | string | `":8081"` | The address the probe endpoint binds to. (default ":8081") |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"clastix/kamaji"` | The container image of the Kamaji controller. |

@@ -347,14 +347,14 @@ e2e-setup: build load helm ginkgo cert-manager gateway-api envoy-gateway ## Crea
 	$(HELM) upgrade --debug --install kamaji-crds ./charts/kamaji-crds --create-namespace --namespace kamaji-system
 	$(HELM) repo add clastix https://clastix.github.io/charts
 	$(HELM) dependency build ./charts/kamaji
-	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true"
+	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true" --set "gatewayAPI.enabled=true"
 	$(MAKE) datastores
 
 ##@ Document
 
 .PHONY: e2e-redeploy
 e2e-redeploy: build load
-	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true"
+	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true" --set "gatewayAPI.enabled=true"
 
 .PHONY: e2e-test
 e2e-test: build load
