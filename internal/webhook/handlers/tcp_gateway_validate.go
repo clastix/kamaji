@@ -21,6 +21,9 @@ import (
 type TenantControlPlaneGatewayValidation struct {
 	Client          client.Client
 	DiscoveryClient discovery.DiscoveryInterface
+	// GatewayAPIAvailable is the value the controller resolved at startup: admitting a Gateway spec
+	// it will not reconcile would fail silently.
+	GatewayAPIAvailable bool
 }
 
 func (t TenantControlPlaneGatewayValidation) OnCreate(object runtime.Object) AdmissionResponse {
@@ -64,8 +67,8 @@ func (t TenantControlPlaneGatewayValidation) OnDelete(object runtime.Object) Adm
 }
 
 func (t TenantControlPlaneGatewayValidation) validateGatewayAPIAvailability(ctx context.Context) error {
-	if !utilities.AreGatewayResourcesAvailable(ctx, t.Client, t.DiscoveryClient) {
-		return fmt.Errorf("the Gateway API is not available in this cluster, cannot use gatewayRoute configuration")
+	if !t.GatewayAPIAvailable {
+		return fmt.Errorf("the Gateway API was not available when Kamaji started, cannot use gatewayRoute configuration: install the Gateway API CRDs and restart Kamaji")
 	}
 
 	// Additional check for TLSRoute specifically

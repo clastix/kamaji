@@ -155,6 +155,16 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				return err
 			}
 
+			// Resolved once for the process lifetime, so a discovery error must not be read as "not installed".
+			gatewayAPIAvailable, err := utilities.GatewayAPIResourcesAvailable(ctx, discoveryClient)
+			if err != nil {
+				setupLog.Error(err, "unable to discover Gateway API availability")
+
+				return err
+			}
+
+			setupLog.Info("Gateway API availability resolved", "available", gatewayAPIAvailable)
+
 			reconciler := &controllers.TenantControlPlaneReconciler{
 				Client:    mgr.GetClient(),
 				APIReader: mgr.GetAPIReader(),
@@ -174,7 +184,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 				KamajiMigrateImage:      migrateJobImage,
 				KamajiMigrateCABundle:   webhookCABundle,
 				MaxConcurrentReconciles: maxConcurrentReconciles,
-				DiscoveryClient:         discoveryClient,
+				GatewayAPIAvailable:     gatewayAPIAvailable,
 			}
 
 			if err = reconciler.SetupWithManager(ctx, mgr); err != nil {
@@ -228,7 +238,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			}
 
 			// Only requires to look for the core api group.
-			if utilities.AreGatewayResourcesAvailable(ctx, mgr.GetClient(), discoveryClient) {
+			if gatewayAPIAvailable {
 				if err = (&kamajiv1alpha1.GatewayListener{}).SetupWithManager(ctx, mgr); err != nil {
 					setupLog.Error(err, "unable to create indexer", "indexer", "GatewayListener")
 
@@ -265,8 +275,9 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 						},
 					},
 					handlers.TenantControlPlaneGatewayValidation{
-						Client:          mgr.GetClient(),
-						DiscoveryClient: discoveryClient,
+						Client:              mgr.GetClient(),
+						DiscoveryClient:     discoveryClient,
+						GatewayAPIAvailable: gatewayAPIAvailable,
 					},
 				},
 				routes.TenantControlPlaneTelemetry{}: {

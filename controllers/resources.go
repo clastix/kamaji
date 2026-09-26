@@ -11,7 +11,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	k8stypes "k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -22,7 +21,6 @@ import (
 	"github.com/clastix/kamaji/internal/resources"
 	ds "github.com/clastix/kamaji/internal/resources/datastore"
 	"github.com/clastix/kamaji/internal/resources/konnectivity"
-	"github.com/clastix/kamaji/internal/utilities"
 )
 
 type GroupResourceBuilderConfiguration struct {
@@ -40,7 +38,7 @@ type GroupResourceBuilderConfiguration struct {
 	KamajiService                 string
 	KamajiMigrateImage            string
 	KamajiMigrateCABundle         []byte
-	DiscoveryClient               discovery.DiscoveryInterface
+	GatewayAPIAvailable           bool
 }
 
 type GroupDeletableResourceBuilderConfiguration struct {
@@ -72,8 +70,7 @@ func GetResources(ctx context.Context, config GroupResourceBuilderConfiguration)
 	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
 	resources = append(resources, getKubernetesIngressResources(config.client)...)
 
-	// Conditionally add Gateway resources
-	if utilities.AreGatewayResourcesAvailable(ctx, config.client, config.DiscoveryClient) {
+	if config.GatewayAPIAvailable {
 		resources = append(resources, getKubernetesGatewayResources(config.client)...)
 		resources = append(resources, getKonnectivityGatewayResources(config.client)...)
 	}

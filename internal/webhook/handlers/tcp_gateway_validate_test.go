@@ -104,6 +104,7 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 
 		Context("and Gateway APIs are available", func() {
 			BeforeEach(func() {
+				handler.GatewayAPIAvailable = true
 				mockDiscovery.serverGroups = &metav1.APIGroupList{
 					Groups: []metav1.APIGroup{
 						{Name: "gateway.networking.k8s.io"},
@@ -138,19 +139,20 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 			It("should deny creation with clear error message", func() {
 				_, err := handler.OnCreate(tcp)(ctx, admission.Request{})
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Gateway API is not available in this cluster"))
+				Expect(err.Error()).To(ContainSubstring("Gateway API was not available when Kamaji started"))
 			})
 
 			It("should deny updates with clear error message", func() {
 				oldTCP := tcp.DeepCopy()
 				_, err := handler.OnUpdate(tcp, oldTCP)(ctx, admission.Request{})
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Gateway API is not available in this cluster"))
+				Expect(err.Error()).To(ContainSubstring("Gateway API was not available when Kamaji started"))
 			})
 		})
 
 		Context("and Gateway API group exists but TLSRoute is not available", func() {
 			BeforeEach(func() {
+				handler.GatewayAPIAvailable = true
 				mockDiscovery.serverGroups = &metav1.APIGroupList{
 					Groups: []metav1.APIGroup{
 						{Name: "gateway.networking.k8s.io"},
@@ -170,6 +172,35 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 				Expect(err.Error()).To(ContainSubstring("TLSRoute resource is not available"))
 			})
 		})
+
+		Context("and Gateway APIs were installed after Kamaji started", func() {
+			BeforeEach(func() {
+				handler.GatewayAPIAvailable = false
+				mockDiscovery.serverGroups = &metav1.APIGroupList{
+					Groups: []metav1.APIGroup{
+						{Name: "gateway.networking.k8s.io"},
+					},
+				}
+				mockDiscovery.serverResources["gateway.networking.k8s.io/v1"] = &metav1.APIResourceList{
+					APIResources: []metav1.APIResource{
+						{Kind: "TLSRoute"},
+					},
+				}
+			})
+
+			It("should deny creation because the controller does not reconcile Gateway resources until restarted", func() {
+				_, err := handler.OnCreate(tcp)(ctx, admission.Request{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("restart Kamaji"))
+			})
+
+			It("should deny updates because the controller does not reconcile Gateway resources until restarted", func() {
+				oldTCP := tcp.DeepCopy()
+				_, err := handler.OnUpdate(tcp, oldTCP)(ctx, admission.Request{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("restart Kamaji"))
+			})
+		})
 	})
 
 	Context("when Gateway configuration is added in update", func() {
@@ -186,7 +217,7 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 
 			_, err := handler.OnUpdate(tcp, oldTCP)(ctx, admission.Request{})
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Gateway API is not available"))
+			Expect(err.Error()).To(ContainSubstring("Gateway API was not available when Kamaji started"))
 		})
 
 		It("should allow removing Gateway configuration", func() {
