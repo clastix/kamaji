@@ -11,7 +11,7 @@ We will cover a few examples below on how this is done.
 
 Before using Gateway API mode, please ensure:
 
-1. **Gateway API CRDs are installed** in your cluster (Required CRDs: `GatewayClass`, `Gateway`, `TLSRoute`)
+1. **Gateway API CRDs are installed** in your cluster (Required CRDs: `GatewayClass`, `Gateway`, `TLSRoute`). Kamaji checks for the Gateway API once, when it starts: install the CRDs before starting Kamaji, or restart Kamaji after installing them.
 
 2. **A Gateway resource exists** with appropriate configuration (see examples in this guide):
     - Listeners for kube-apiserver.

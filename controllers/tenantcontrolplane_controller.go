@@ -19,7 +19,6 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8stypes "k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/utils/clock"
@@ -45,7 +44,6 @@ import (
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
 	"github.com/clastix/kamaji/internal/metrics"
 	"github.com/clastix/kamaji/internal/resources"
-	"github.com/clastix/kamaji/internal/utilities"
 )
 
 // TenantControlPlaneReconciler reconciles a TenantControlPlane object.
@@ -62,7 +60,9 @@ type TenantControlPlaneReconciler struct {
 	KamajiMigrateCABundle   []byte
 	MaxConcurrentReconciles int
 	ReconcileTimeout        time.Duration
-	DiscoveryClient         discovery.DiscoveryInterface
+	// GatewayAPIAvailable is resolved once at startup: it selects both the Gateway API watches and the
+	// Gateway resources reconciled, so the two cannot disagree.
+	GatewayAPIAvailable bool
 	// CertificateChan is the channel used by the CertificateLifecycleController that is checking for
 	// certificates and kubeconfig user certs validity: a generic event for the given TCP will be triggered
 	// once the validity threshold for the given certificate is reached.
@@ -240,7 +240,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		KamajiService:                 r.KamajiService,
 		KamajiMigrateImage:            r.KamajiMigrateImage,
 		KamajiMigrateCABundle:         r.KamajiMigrateCABundle,
-		DiscoveryClient:               r.DiscoveryClient,
+		GatewayAPIAvailable:           r.GatewayAPIAvailable,
 	}
 	registeredResources := GetResources(ctx, groupResourceBuilderConfiguration)
 
@@ -384,8 +384,7 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr
 			return ok && v == "migrate"
 		})))
 
-	// Conditionally add Gateway API ownership if available
-	if utilities.AreGatewayResourcesAvailable(ctx, r.Client, r.DiscoveryClient) {
+	if r.GatewayAPIAvailable {
 		controllerBuilder = controllerBuilder.
 			Owns(&gatewayv1.HTTPRoute{}).
 			Owns(&gatewayv1.GRPCRoute{}).
