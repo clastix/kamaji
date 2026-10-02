@@ -6,6 +6,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
@@ -166,6 +167,11 @@ func (r *Config) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.
 				username = []byte(tenantControlPlane.Spec.DataStoreUsername)
 			default:
 				username = []byte(tenantControlPlane.GetDefaultDatastoreUsername())
+			}
+			// MySQL account names are limited to 32 characters, a hyphenated UID is 36:
+			// the default username (also populated in the spec by the defaulting webhook) must drop the hyphens.
+			if r.DataStore.Spec.Driver == kamajiv1alpha1.KineMySQLDriver && len(tenantControlPlane.UID) > 0 && string(username) == tenantControlPlane.GetDefaultDatastoreUsername() {
+				username = []byte(strings.ReplaceAll(string(username), "-", ""))
 			}
 		}
 
