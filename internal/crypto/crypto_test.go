@@ -120,3 +120,20 @@ func GenerateSelfSignedCA() ([]byte, []byte, error) {
 
 	return certPEM, keyPEM, nil
 }
+
+func TestNewCertificateTemplate(t *testing.T) {
+	a := NewCertificateTemplate("a")
+	b := NewCertificateTemplate("b")
+
+	if len(a.ExtKeyUsage) != 1 || a.ExtKeyUsage[0] != x509.ExtKeyUsageClientAuth {
+		t.Errorf("expected only the client auth extended key usage, got %v", a.ExtKeyUsage)
+	}
+
+	if a.SerialNumber.Cmp(b.SerialNumber) == 0 {
+		t.Errorf("expected distinct serial numbers, got %v twice", a.SerialNumber)
+	}
+
+	if len(a.SubjectKeyId) != 0 {
+		t.Errorf("expected no static SubjectKeyId, got %v", a.SubjectKeyId)
+	}
+}
