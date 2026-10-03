@@ -49,7 +49,8 @@ func NewConnectionConfig(ctx context.Context, client client.Client, ds kamajiv1a
 		}
 
 		tlsConfig = &tls.Config{
-			RootCAs: rootCAs,
+			RootCAs:    rootCAs,
+			MinVersion: tls.VersionTLS12,
 		}
 	}
 
