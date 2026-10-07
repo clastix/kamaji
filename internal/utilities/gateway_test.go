@@ -44,7 +44,7 @@ func TestGetControlPlaneAddressAndPortFromGateway(t *testing.T) {
 				t.Errorf("expected address %q, got %q", tt.wantAddr, gotAddr)
 			}
 			if gotPort != tt.wantPort {
-				t.Errorf("expected port %q, got %q", gotPort, tt.wantPort)
+				t.Errorf("expected port %q, got %q", tt.wantPort, gotPort)
 			}
 		})
 	}
