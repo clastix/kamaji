@@ -175,6 +175,8 @@ func (r *Setup) Delete(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 	})
 	if err != nil {
 		logger.Error(err, "unable to patch TenantControlPlane for finalizer removal")
+
+		return fmt.Errorf("unable to remove the datastore finalizer: %w", err)
 	}
 
 	return nil
