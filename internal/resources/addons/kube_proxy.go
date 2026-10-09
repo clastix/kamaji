@@ -375,5 +375,15 @@ func (k *KubeProxy) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Ten
 	}
 	addon_utils.SetKamajiManagedLabels(k.daemonSet)
 
+	envVars := utilities.EnvarsFromSliceToMap(k.daemonSet.Spec.Template.Spec.Containers[0].Env)
+
+	extraEnvVars := utilities.EnvarsFromSliceToMap(tcp.Spec.Addons.KubeProxy.ExtraEnvs)
+
+	for k, v := range extraEnvVars {
+		envVars[k] = v
+	}
+
+	k.daemonSet.Spec.Template.Spec.Containers[0].Env = utilities.EnvarsFromMapToSlice(envVars)
+
 	return nil
 }
