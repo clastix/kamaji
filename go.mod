@@ -3,7 +3,6 @@ module github.com/clastix/kamaji
 go 1.26.5
 
 require (
-	github.com/JamesStewy/go-mysqldump v0.2.2
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/clastix/kamaji-telemetry v1.0.0
 	github.com/evanphx/json-patch/v5 v5.9.11
@@ -48,7 +47,6 @@ require (
 	dario.cat/mergo v1.0.2 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
-	github.com/DATA-DOG/go-sqlmock v1.5.2 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/NYTimes/gziphandler v1.1.1 // indirect
@@ -243,5 +241,3 @@ replace (
 	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.37.0
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.37.0
 )
-
-replace github.com/JamesStewy/go-mysqldump => github.com/vtoma/go-mysqldump v1.0.0
