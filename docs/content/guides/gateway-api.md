@@ -11,16 +11,18 @@ We will cover a few examples below on how this is done.
 
 Before using Gateway API mode, please ensure:
 
-1. **Gateway API CRDs are installed** in your cluster (Required CRDs: `GatewayClass`, `Gateway`, `TLSRoute`)
+1. **Gateway API CRDs are installed** in your cluster (Required CRDs: `GatewayClass`, `Gateway`, `HTTPRoute`, `GRPCRoute`, `TLSRoute`).
 
-2. **A Gateway resource exists** with appropriate configuration (see examples in this guide):
+2. **Gateway API support is enabled** in Kamaji: it is disabled by default. Start the manager with `--enable-gateway-api`, or set `gatewayAPI.enabled=true` in the Helm chart. With the flag set, Kamaji exits at startup if the cluster does not serve the required Gateway API resources.
+
+3. **A Gateway resource exists** with appropriate configuration (see examples in this guide):
     - Listeners for kube-apiserver.
     - Use TLS protocol with Passthrough mode
     - Hostname (or Hostname pattern) matching your Tenant Control Plane hostname
 
-3. (optional) **DNS is configured** to resolve hostnames (or hostname pattern) to the Gateway's LoadBalancer IP address. (This is needed for worker nodes to join, for testing we will use host entries in `/etc/hosts` for this guide)
+4. (optional) **DNS is configured** to resolve hostnames (or hostname pattern) to the Gateway's LoadBalancer IP address. (This is needed for worker nodes to join, for testing we will use host entries in `/etc/hosts` for this guide)
 
-4. **Gateway controller is running** (e.g., Envoy Gateway, Istio Gateway, etc.)
+5. **Gateway controller is running** (e.g., Envoy Gateway, Istio Gateway, etc.)
 
 To replicate the guide below, please install [Envoy Gateway](https://gateway.envoyproxy.io/docs/tasks/quickstart/).
 
