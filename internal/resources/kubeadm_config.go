@@ -135,7 +135,7 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 		spec := tenantControlPlane.Spec.ControlPlane
 		if spec.Gateway != nil {
 			if len(spec.Gateway.Hostname) > 0 {
-				gaddr, gport := utilities.GetControlPlaneAddressAndPortFromHostname(string(spec.Gateway.Hostname), port)
+				gaddr, gport := utilities.GetControlPlaneAddressAndPortFromGateway(spec.Gateway.Hostname, spec.Gateway.GatewayParentRefs, port)
 				endpoint = net.JoinHostPort(gaddr, strconv.FormatInt(int64(gport), 10))
 			}
 		}
