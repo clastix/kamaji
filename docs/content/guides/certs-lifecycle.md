@@ -137,4 +137,25 @@ k8s-133   v1.33.0   Ready                          172.18.255.200:6443      k8s-
 This operation is intended to be performed manually since a new Certificate Authority requires the restart of all the components,
 as well as of the nodes: in such a case, you will need to distribute the new Certificate Authority and the new nodes certificates.
 
-Given the sensibility of such operation, the `Secret` controller will not check the _CA_, which is offering validity of 10 years as `kubeadm` default values. 
+Given the sensibility of such operation, the `Secret` controller will not check the _CA_, which is offering validity of 10 years as `kubeadm` default values.
+
+## Pregenerated certificates renewal
+
+When `spec.preGeneratedCertificates` is used to reference external certificates from a Secret (managed by an external PKI), Kamaji copies that Secret's data into the target certificate Secret rather than generating a new pair. To renew an expiring pregenerated certificate:
+
+1. **Update the source Secret** with the renewed certificate and private key data. This is performed by your external PKI management system, outside of Kamaji's control.
+
+2. **Trigger rotation on the target Secret** using the `certs.kamaji.clastix.io/rotate` annotation, the same mechanism used for standard (generated) certificates:
+
+```
+$: kubectl annotate secret <tcp-name>-ca certs.kamaji.clastix.io/rotate=""
+secret/<tcp-name>-ca annotated
+```
+
+For other pregenerated certificates, use the corresponding target Secret names: `<tcp-name>-api-server-certificate`, `<tcp-name>-api-server-kubelet-client-certificate`, `<tcp-name>-front-proxy-ca-certificate`, `<tcp-name>-front-proxy-client-certificate`, or `<tcp-name>-sa-certificate`.
+
+3. **Kamaji re-reads the source Secret** and updates the target Secret with the renewed cert/key, triggering a TenantControlPlane rollout with the updated certificates — just as with standard rotation.
+
+Automatic rotation via the `CertificateLifecycle` controller also applies to pregenerated certificates: if `--certificate-expiration-deadline` is configured (default: 1 day before expiry), the controller will automatically trigger rotation when the cert in the target Secret approaches expiration, regardless of whether the data originated from generation or a pregenerated source.
+
+Note: If the pregenerated certificate is a Certificate Authority, the same node-level redistribution caveats documented in the "Certificate Authority rotation" section above apply. 
