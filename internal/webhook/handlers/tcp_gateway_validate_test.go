@@ -111,6 +111,7 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 				}
 				mockDiscovery.serverResources["gateway.networking.k8s.io/v1"] = &metav1.APIResourceList{
 					APIResources: []metav1.APIResource{
+						{Kind: "Gateway"},
 						{Kind: "TLSRoute"},
 					},
 				}
@@ -168,6 +169,28 @@ var _ = Describe("TCP Gateway Validation Webhook", func() {
 				_, err := handler.OnCreate(tcp)(ctx, admission.Request{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("TLSRoute resource is not available"))
+			})
+		})
+
+		Context("and Gateway API group exists but Gateway is not available", func() {
+			BeforeEach(func() {
+				mockDiscovery.serverGroups = &metav1.APIGroupList{
+					Groups: []metav1.APIGroup{
+						{Name: "gateway.networking.k8s.io"},
+					},
+				}
+				mockDiscovery.serverResources["gateway.networking.k8s.io/v1"] = &metav1.APIResourceList{
+					APIResources: []metav1.APIResource{
+						{Kind: "HTTPRoute"},
+						{Kind: "TLSRoute"},
+					},
+				}
+			})
+
+			It("should deny creation when Gateway is missing", func() {
+				_, err := handler.OnCreate(tcp)(ctx, admission.Request{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Gateway resource is not available"))
 			})
 		})
 	})

@@ -64,14 +64,17 @@ func (t TenantControlPlaneGatewayValidation) OnDelete(object runtime.Object) Adm
 }
 
 func (t TenantControlPlaneGatewayValidation) validateGatewayAPIAvailability(ctx context.Context) error {
-	if !utilities.AreGatewayResourcesAvailable(ctx, t.Client, t.DiscoveryClient) {
+	if utilities.AreGatewayResourcesAvailable(ctx, t.Client, t.DiscoveryClient) {
+		return nil
+	}
+
+	if !utilities.IsGatewayAPIGroupAvailable(ctx, t.Client, t.DiscoveryClient) {
 		return fmt.Errorf("the Gateway API is not available in this cluster, cannot use gatewayRoute configuration")
 	}
 
-	// Additional check for TLSRoute specifically
 	if !utilities.IsTLSRouteAvailable(ctx, t.Client, t.DiscoveryClient) {
 		return fmt.Errorf("TLSRoute resource is not available in this cluster")
 	}
 
-	return nil
+	return fmt.Errorf("the Gateway resource is not available in this cluster")
 }
