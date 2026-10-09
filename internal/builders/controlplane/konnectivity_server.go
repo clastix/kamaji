@@ -176,7 +176,6 @@ func (k Konnectivity) RemovingKubeAPIServerContainerArg(podSpec *corev1.PodSpec)
 	if !found {
 		return
 	}
-	//nolint:prealloc
 	var parsedArgs []string
 
 	for _, v := range podSpec.Containers[index].Args {
