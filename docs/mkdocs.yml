@@ -77,6 +77,7 @@ nav:
   - guides/certs-lifecycle.md
   - guides/pausing.md
   - guides/write-permissions.md
+  - guides/rbac-bootstrap.md
   - guides/datastore-migration.md
   - guides/datastore-overrides.md
   - guides/gitops.md
