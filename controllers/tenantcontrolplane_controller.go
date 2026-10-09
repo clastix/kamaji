@@ -88,8 +88,6 @@ type TenantControlPlaneReconcilerConfig struct {
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;delete
-//+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=httproutes,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=grpcroutes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=tlsroutes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gateways,verbs=get;list;watch
 
@@ -384,11 +382,12 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr
 			return ok && v == "migrate"
 		})))
 
-	// Conditionally add Gateway API ownership if available
+	// Conditionally add Gateway API ownership if available.
+	// HTTPRoute and GRPCRoute are not owned: Kamaji only creates TLSRoutes, and the group check does
+	// not guarantee every kind is served (GKE's managed Gateway API omits GRPCRoute). An informer for
+	// an unserved kind never syncs and the manager fails to start.
 	if utilities.AreGatewayResourcesAvailable(ctx, r.Client, r.DiscoveryClient) {
 		controllerBuilder = controllerBuilder.
-			Owns(&gatewayv1.HTTPRoute{}).
-			Owns(&gatewayv1.GRPCRoute{}).
 			Owns(&gatewayv1.TLSRoute{}).
 			Watches(&gatewayv1.Gateway{}, handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
 				return nil

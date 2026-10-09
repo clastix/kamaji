@@ -28,24 +28,51 @@ func AreGatewayResourcesAvailable(ctx context.Context, c client.Client, discover
 	return available
 }
 
+// gatewayKinds are the Gateway API kinds Kamaji watches. A cluster can serve the group without
+// every kind in it, and an informer for an unserved kind never syncs.
+var gatewayKinds = []string{"Gateway", "TLSRoute"}
+
 // NOTE: These functions are extremely similar, maybe they can be merged and accept a GVK.
 // Explicit for now.
-// GatewayAPIResourcesAvailable checks if Gateway API is available in the cluster.
+// GatewayAPIResourcesAvailable checks if the Gateway API kinds Kamaji uses are served in the cluster.
 func GatewayAPIResourcesAvailable(ctx context.Context, discoveryClient discovery.DiscoveryInterface) (bool, error) {
-	gatewayAPIGroup := gatewayv1.GroupName
-
-	serverGroups, err := discoveryClient.ServerGroups()
+	resourceList, err := discoveryClient.ServerResourcesForGroupVersion(gatewayv1.GroupVersion.String())
 	if err != nil {
 		return false, err
 	}
 
-	for _, group := range serverGroups.Groups {
-		if group.Name == gatewayAPIGroup {
-			return true, nil
+	served := make(map[string]bool, len(resourceList.APIResources))
+	for _, resource := range resourceList.APIResources {
+		served[resource.Kind] = true
+	}
+
+	for _, kind := range gatewayKinds {
+		if !served[kind] {
+			return false, nil
 		}
 	}
 
-	return false, nil
+	return true, nil
+}
+
+// IsGatewayAPIGroupAvailable checks if the Gateway API group is served at all, with fallback to client-based check.
+func IsGatewayAPIGroupAvailable(ctx context.Context, c client.Client, discoveryClient discovery.DiscoveryInterface) bool {
+	if discoveryClient == nil {
+		return IsGatewayAPIAvailableViaClient(ctx, c)
+	}
+
+	serverGroups, err := discoveryClient.ServerGroups()
+	if err != nil {
+		return false
+	}
+
+	for _, group := range serverGroups.Groups {
+		if group.Name == gatewayv1.GroupName {
+			return true
+		}
+	}
+
+	return false
 }
 
 // TLSRouteAPIAvailable checks specifically for TLSRoute resource availability.
@@ -82,15 +109,28 @@ func IsTLSRouteAvailable(ctx context.Context, c client.Client, discoveryClient d
 
 // IsTLSRouteAvailableViaClient uses client to check TLSRoute availability.
 func IsTLSRouteAvailableViaClient(ctx context.Context, c client.Client) bool {
-	// Try to check if TLSRoute GVK can be resolved
+	return isGatewayKindAvailableViaClient(c, "TLSRoute")
+}
+
+// IsGatewayAPIAvailableViaClient uses client to check that the Gateway API kinds Kamaji uses are available.
+func IsGatewayAPIAvailableViaClient(ctx context.Context, c client.Client) bool {
+	for _, kind := range gatewayKinds {
+		if !isGatewayKindAvailableViaClient(c, kind) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func isGatewayKindAvailableViaClient(c client.Client, kind string) bool {
 	gvk := schema.GroupVersionKind{
 		Group:   gatewayv1.GroupName,
 		Version: gatewayv1.GroupVersion.Version,
-		Kind:    "TLSRoute",
+		Kind:    kind,
 	}
 
-	restMapper := c.RESTMapper()
-	_, err := restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	_, err := c.RESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
 		if meta.IsNoMatchError(err) {
 			return false
@@ -100,9 +140,4 @@ func IsTLSRouteAvailableViaClient(ctx context.Context, c client.Client) bool {
 	}
 
 	return true
-}
-
-// IsGatewayAPIAvailableViaClient uses client to check Gateway API availability.
-func IsGatewayAPIAvailableViaClient(ctx context.Context, c client.Client) bool {
-	return IsTLSRouteAvailableViaClient(ctx, c)
 }
