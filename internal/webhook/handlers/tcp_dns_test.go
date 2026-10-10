@@ -59,6 +59,28 @@ var _ = Describe("TCP DNS Validation Webhook", func() {
 		})
 	})
 
+	Context("when a TenantControlPlane with an invalid DNS service IP is being deleted", func() {
+		BeforeEach(func() {
+			tcp.Spec.NetworkProfile.DNSServiceIPs = []string{"10.231.4.1"}
+
+			now := metav1.Now()
+			tcp.DeletionTimestamp = &now
+		})
+
+		It("should allow the update so finalizers can be removed", func() {
+			oldTCP := tcp.DeepCopy()
+
+			_, err := handler.OnUpdate(tcp, oldTCP)(ctx, admission.Request{})
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should still deny creation of the same spec", func() {
+			_, err := handler.OnCreate(tcp)(ctx, admission.Request{})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("is not contained in any configured service CIDR"))
+		})
+	})
+
 	Context("when multiple DNS service IPs belong to the same service CIDR", func() {
 		BeforeEach(func() {
 			tcp.Spec.NetworkProfile.ServiceCIDRs = []string{"10.96.0.0/16", "fd00::/120"}
