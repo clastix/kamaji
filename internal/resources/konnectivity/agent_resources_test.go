@@ -4,6 +4,7 @@
 package konnectivity
 
 import (
+	"context"
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -111,5 +112,20 @@ func TestAgentResources_RequestsOnly(t *testing.T) {
 
 	if got.Limits != nil {
 		t.Errorf("limits = %v, want nil so the container stays Burstable without a throttling ceiling", got.Limits)
+	}
+}
+
+// TestAgentShouldStatusBeUpdatedNilKonnectivity asserts the status check does
+// not panic when the Konnectivity addon is nil and the status agent fields are
+// empty. The old code dereferenced the nil spec in the third clause.
+func TestAgentShouldStatusBeUpdatedNilKonnectivity(t *testing.T) {
+	tcp := &kamajiv1alpha1.TenantControlPlane{}
+	tcp.SetName("test-tcp")
+	tcp.SetNamespace("default")
+
+	r := &Agent{resource: &appsv1.DaemonSet{}}
+
+	if r.ShouldStatusBeUpdated(context.Background(), tcp) {
+		t.Errorf("expected false when Konnectivity is nil and status is empty")
 	}
 }
