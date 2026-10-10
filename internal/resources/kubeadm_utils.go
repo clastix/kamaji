@@ -60,7 +60,7 @@ func GetKubeadmManifestDeps(ctx context.Context, client client.Client, tenantCon
 			config.Parameters.CoreDNSOptions.Repository = coreDNS.ImageRepository
 		}
 
-		if len(coreDNS.ImageRepository) > 0 {
+		if len(coreDNS.ImageTag) > 0 {
 			config.Parameters.CoreDNSOptions.Tag = coreDNS.ImageTag
 		}
 	}
