@@ -230,7 +230,7 @@ func (c *CoreDNS) decodeManifests(ctx context.Context, tcp *kamajiv1alpha1.Tenan
 		config.Parameters.CoreDNSOptions.Repository = tcp.Spec.Addons.CoreDNS.ImageRepository
 	}
 
-	if len(tcp.Spec.Addons.CoreDNS.ImageRepository) > 0 {
+	if len(tcp.Spec.Addons.CoreDNS.ImageTag) > 0 {
 		config.Parameters.CoreDNSOptions.Tag = tcp.Spec.Addons.CoreDNS.ImageTag
 	}
 
