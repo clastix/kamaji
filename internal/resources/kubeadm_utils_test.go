@@ -7,8 +7,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/clastix/kamaji/api/v1alpha1"
-	"github.com/clastix/kamaji/internal/kubeadm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,6 +14,9 @@ import (
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/yaml"
+
+	"github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/kubeadm"
 )
 
 // kubeadmUtilsTestScheme returns a scheme that knows the types used by
@@ -29,6 +30,7 @@ func kubeadmUtilsTestScheme(t *testing.T) *runtime.Scheme {
 	if err := corev1.AddToScheme(scheme); err != nil {
 		t.Fatalf("adding corev1 to scheme: %v", err)
 	}
+
 	return scheme
 }
 
