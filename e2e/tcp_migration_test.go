@@ -167,8 +167,17 @@ func featureTestMigration(driver string) {
 		}
 
 		By("ensuring changes are not allowed")
+		diagWh := &admissionregistrationv1.ValidatingWebhookConfiguration{}
+		diagErr := tcpClient.Get(context.Background(), types.NamespacedName{Name: ds.FreezeWebhookName}, diagWh)
+		GinkgoWriter.Printf("DIAG freeze webhook get err=%v webhooks=%d\n", diagErr, len(diagWh.Webhooks))
+		for _, w := range diagWh.Webhooks {
+			GinkgoWriter.Printf("DIAG   webhook=%s rules=%v selector=%v\n", w.Name, w.Rules, w.NamespaceSelector)
+		}
+		GinkgoWriter.Printf("DIAG test namespace=%s\n", ns.GetName())
 		Consistently(func() error {
-			return tcpClient.Delete(context.Background(), ns)
+			derr := tcpClient.Delete(context.Background(), ns)
+			GinkgoWriter.Printf("DIAG delete namespace=%s err=%v\n", ns.GetName(), derr)
+			return derr
 		}, 10*time.Second, time.Second).Should(HaveOccurred())
 
 		By("waiting for completion of migration")
