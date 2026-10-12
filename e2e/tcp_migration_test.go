@@ -177,6 +177,7 @@ func featureTestMigration(driver string) {
 		Consistently(func() error {
 			derr := tcpClient.Delete(context.Background(), ns)
 			GinkgoWriter.Printf("DIAG delete namespace=%s err=%v\n", ns.GetName(), derr)
+
 			return derr
 		}, 10*time.Second, time.Second).Should(HaveOccurred())
 
