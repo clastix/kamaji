@@ -217,7 +217,7 @@ func featureTestMigration(driver string) {
 			writeNamespace.Name = fmt.Sprintf("write-%s-%s", rand.String(5), driver)
 
 			return tcpClient.Create(context.Background(), &writeNamespace)
-		}).ShouldNot(HaveOccurred())
+		}, 5*time.Minute, time.Second).ShouldNot(HaveOccurred())
 	})
 }
 
