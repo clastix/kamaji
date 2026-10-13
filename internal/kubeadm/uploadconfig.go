@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
 	kubelettypes "k8s.io/kubelet/config/v1beta1"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
@@ -41,7 +42,7 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration, pat
 		TenantControlPlaneCgroupDriver:  config.Parameters.TenantControlPlaneCGroupDriver,
 	}
 
-	content, err := getKubeletConfigmapContent(kubeletConfiguration, patches)
+	content, err := getKubeletConfigmapContent(kubeletConfiguration, patches, config.Parameters.TenantControlPlaneVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +73,25 @@ func UploadKubeletConfig(client kubernetes.Interface, config *Configuration, pat
 	return nil, nil
 }
 
-func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration, patch jsonpatchv5.Patch) ([]byte, error) {
+// minVerKubeletNewDefaults is the first Kubernetes version whose kubelet
+// accepts the CrashLoopBackOff and ImagePullCredentialsVerificationPolicy
+// defaults without enabling the KubeletCrashLoopBackOffMax and
+// KubeletEnsureSecretPulledImages feature gates.
+var minVerKubeletNewDefaults = semver.MustParse("1.35.0")
+
+// kubeletConfigFieldsMinVersion maps the KubeletConfiguration fields Kamaji
+// emits by default to the first Kubernetes release whose kubelet config API
+// knows them: older kubelets and kubeadm fail strict decoding on them.
+// A pre-release compares below its minor and loses that minor's fields, which
+// its early alphas do not have yet.
+// Tenants older than v1.31 would need more entries, starting with failCgroupV1.
+var kubeletConfigFieldsMinVersion = map[string]semver.Version{
+	"crashLoopBackOff":             semver.MustParse("1.32.0"),
+	"mergeDefaultEvictionSettings": semver.MustParse("1.33.0"),
+	"memoryReservationPolicy":      semver.MustParse("1.36.0"),
+}
+
+func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration, patch jsonpatchv5.Patch, version string) ([]byte, error) {
 	var kc kubelettypes.KubeletConfiguration
 
 	kubeletv1beta1.SetDefaults_KubeletConfiguration(&kc)
@@ -88,6 +107,20 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration, patch
 	// Restore default behaviour so Kubelet will automatically
 	// determine the resolvConf location, as reported in clastix/kamaji#581.
 	kc.ResolverConfig = nil
+
+	// Clear fields set by SetDefaults_KubeletConfiguration from Kubernetes >= 1.35.
+	// Older kubelets reject these fields because the corresponding feature gates
+	// (KubeletCrashLoopBackOffMax, KubeletEnsureSecretPulledImages) are not enabled.
+	// See: https://github.com/clastix/kamaji/issues/1062
+	parsedVer, parseErr := semver.ParseTolerant(version)
+	if parseErr != nil {
+		return nil, fmt.Errorf("failed to parse kubernetes version %q for kubelet config: %w", version, parseErr)
+	}
+
+	if parsedVer.LT(minVerKubeletNewDefaults) {
+		kc.CrashLoopBackOff = kubelettypes.CrashLoopBackOffConfig{}
+		kc.ImagePullCredentialsVerificationPolicy = ""
+	}
 
 	if len(patch) > 0 {
 		kubeletConfig, patchErr := utilities.EncodeToJSON(&kc)
@@ -105,7 +138,25 @@ func getKubeletConfigmapContent(kubeletConfiguration KubeletConfiguration, patch
 		}
 	}
 
-	return utilities.EncodeToYaml(&kc)
+	// Non-pointer struct fields survive zeroing and the JSON patch round trip,
+	// so the fields are dropped from the encoded object instead.
+	content, err := utilities.EncodeToJSON(&kc)
+	if err != nil {
+		return nil, fmt.Errorf("unable to encode KubeletConfiguration to JSON: %w", err)
+	}
+
+	var u unstructured.Unstructured
+	if err = u.UnmarshalJSON(content); err != nil {
+		return nil, fmt.Errorf("unable to decode KubeletConfiguration JSON: %w", err)
+	}
+
+	for field, minVer := range kubeletConfigFieldsMinVersion {
+		if parsedVer.LT(minVer) {
+			unstructured.RemoveNestedField(u.Object, field)
+		}
+	}
+
+	return utilities.EncodeToYaml(&u)
 }
 
 func createConfigMapRBACRules(client kubernetes.Interface, configMapName string) error {
