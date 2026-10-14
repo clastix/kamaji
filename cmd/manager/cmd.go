@@ -185,7 +185,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 
 			k8sVersion, versionErr := cmdutils.KubernetesVersion(mgr.GetConfig())
 			if versionErr != nil {
-				setupLog.Error(err, "unable to get kubernetes version")
+				setupLog.Error(versionErr, "unable to get kubernetes version")
 
 				k8sVersion = "Unknown"
 			}
