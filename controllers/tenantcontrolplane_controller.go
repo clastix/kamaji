@@ -19,7 +19,6 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8stypes "k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/utils/clock"
@@ -45,7 +44,6 @@ import (
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
 	"github.com/clastix/kamaji/internal/metrics"
 	"github.com/clastix/kamaji/internal/resources"
-	"github.com/clastix/kamaji/internal/utilities"
 )
 
 // TenantControlPlaneReconciler reconciles a TenantControlPlane object.
@@ -62,7 +60,7 @@ type TenantControlPlaneReconciler struct {
 	KamajiMigrateCABundle   []byte
 	MaxConcurrentReconciles int
 	ReconcileTimeout        time.Duration
-	DiscoveryClient         discovery.DiscoveryInterface
+	GatewayAPIEnabled       bool
 	// CertificateChan is the channel used by the CertificateLifecycleController that is checking for
 	// certificates and kubeconfig user certs validity: a generic event for the given TCP will be triggered
 	// once the validity threshold for the given certificate is reached.
@@ -238,7 +236,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		KamajiService:                 r.KamajiService,
 		KamajiMigrateImage:            r.KamajiMigrateImage,
 		KamajiMigrateCABundle:         r.KamajiMigrateCABundle,
-		DiscoveryClient:               r.DiscoveryClient,
+		GatewayAPIEnabled:             r.GatewayAPIEnabled,
 	}
 	registeredResources := GetResources(ctx, groupResourceBuilderConfiguration)
 
@@ -382,11 +380,10 @@ func (r *TenantControlPlaneReconciler) SetupWithManager(ctx context.Context, mgr
 			return ok && v == "migrate"
 		})))
 
-	// Conditionally add Gateway API ownership if available.
-	// HTTPRoute and GRPCRoute are not owned: Kamaji only creates TLSRoutes, and the group check does
-	// not guarantee every kind is served (GKE's managed Gateway API omits GRPCRoute). An informer for
-	// an unserved kind never syncs and the manager fails to start.
-	if utilities.AreGatewayResourcesAvailable(ctx, r.Client, r.DiscoveryClient) {
+	// HTTPRoute and GRPCRoute are not owned: Kamaji only creates TLSRoutes, and some managed
+	// Gateway API offerings omit GRPCRoute. An informer for an unserved kind never syncs and the
+	// manager fails to start.
+	if r.GatewayAPIEnabled {
 		controllerBuilder = controllerBuilder.
 			Owns(&gatewayv1.TLSRoute{}).
 			Watches(&gatewayv1.Gateway{}, handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {

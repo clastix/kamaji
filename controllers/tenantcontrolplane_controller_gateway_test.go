@@ -10,12 +10,9 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	fakediscovery "k8s.io/client-go/discovery/fake"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	clienttesting "k8s.io/client-go/testing"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -70,20 +67,7 @@ func TestTenantControlPlaneControllerStartsWithoutGRPCRoute(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	servedKinds := []string{"Gateway", "HTTPRoute", "TLSRoute"}
-	served := map[string]bool{}
-	apiResources := make([]metav1.APIResource, 0, len(servedKinds))
-	for _, kind := range servedKinds {
-		served[kind] = true
-		apiResources = append(apiResources, metav1.APIResource{Kind: kind})
-	}
-
-	discoveryClient := &fakediscovery.FakeDiscovery{Fake: &clienttesting.Fake{
-		Resources: []*metav1.APIResourceList{{
-			GroupVersion: gatewayv1.GroupVersion.String(),
-			APIResources: apiResources,
-		}},
-	}}
+	served := map[string]bool{"Gateway": true, "HTTPRoute": true, "TLSRoute": true}
 
 	mgr, err := ctrl.NewManager(&rest.Config{Host: "https://127.0.0.1:1"}, ctrl.Options{
 		Scheme:                 scheme,
@@ -102,10 +86,10 @@ func TestTenantControlPlaneControllerStartsWithoutGRPCRoute(t *testing.T) {
 	}
 
 	reconciler := &TenantControlPlaneReconciler{
-		Client:          fake.NewClientBuilder().WithScheme(scheme).Build(),
-		DiscoveryClient: discoveryClient,
-		TriggerChan:     make(chan event.GenericEvent),
-		CertificateChan: make(chan event.GenericEvent),
+		Client:            fake.NewClientBuilder().WithScheme(scheme).Build(),
+		GatewayAPIEnabled: true,
+		TriggerChan:       make(chan event.GenericEvent),
+		CertificateChan:   make(chan event.GenericEvent),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
