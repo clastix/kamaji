@@ -4,22 +4,24 @@
 package utilities
 
 import (
+	"net"
 	"strconv"
 	"strings"
 )
 
 func GetControlPlaneAddressAndPortFromHostname(hostname string, defaultPort int32) (address string, port int32) {
-	parts := strings.Split(hostname, ":")
-
-	address, port = parts[0], defaultPort
-
-	if len(parts) == 2 {
-		intPort, _ := strconv.Atoi(parts[1])
-
-		if intPort > 0 {
-			port = int32(intPort)
-		}
+	host, rawPort, err := net.SplitHostPort(hostname)
+	if err != nil {
+		// No port, or a bare IPv6 literal: the whole string is the address,
+		// except for a bracketed IPv6 literal that has to be unwrapped.
+		return strings.TrimSuffix(strings.TrimPrefix(hostname, "["), "]"), defaultPort
 	}
 
-	return address, port
+	port = defaultPort
+
+	if intPort, _ := strconv.Atoi(rawPort); intPort > 0 {
+		port = int32(intPort)
+	}
+
+	return host, port
 }
