@@ -4,10 +4,8 @@
 package utilities
 
 import (
-	"slices"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
@@ -29,7 +27,14 @@ func MissingGatewayAPIKinds(discoveryClient discovery.DiscoveryInterface) ([]str
 	var missing []string
 
 	for _, kind := range GatewayAPIKinds {
-		if !slices.ContainsFunc(resourceList.APIResources, func(r metav1.APIResource) bool { return r.Kind == kind }) {
+		found := false
+		for _, r := range resourceList.APIResources {
+			if r.Kind == kind {
+				found = true
+				break
+			}
+		}
+		if !found {
 			missing = append(missing, kind)
 		}
 	}
