@@ -113,7 +113,7 @@ func BuildFreezeValidatingWebhookConfiguration(namespace, serviceName string, ca
 			},
 			FailurePolicy:           pointer.To(admissionregistrationv1.Fail),
 			MatchPolicy:             pointer.To(admissionregistrationv1.Equivalent),
-			SideEffects:            pointer.To(admissionregistrationv1.SideEffectClassNoneOnDryRun),
+			SideEffects:             pointer.To(admissionregistrationv1.SideEffectClassNoneOnDryRun),
 			AdmissionReviewVersions: []string{"v1"},
 		},
 	}
