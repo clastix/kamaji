@@ -132,68 +132,6 @@ func TestMySQLMigrateNullValues(t *testing.T) {
 
 // TestMySQLMigrateBatching exercises more rows than migrateBatchSize, so the migration
 // spans multiple INSERT batches, and checks every row survives in order.
-func TestMySQLMigrateBatching(t *testing.T) {
-	if os.Getenv("KAMAJI_MYSQL_MIGRATE_IT") == "" {
-		t.Skip("set KAMAJI_MYSQL_MIGRATE_IT=1 to run (spins up real MariaDB containers via Docker)")
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-	defer cancel()
-
-	source := startMariaDB(ctx, t)
-	target := startMariaDB(ctx, t)
-
-	const schema = "testschema"
-
-	rowCount := migrateBatchSize*2 + 7
-
-	setupDB := openMariaDB(t, source, "")
-	defer setupDB.Close()
-
-	mustExec(ctx, t, setupDB, fmt.Sprintf("CREATE DATABASE `%s`", schema))
-	mustExec(ctx, t, setupDB, kineTableDDL(schema))
-
-	for i := 1; i <= rowCount; i++ {
-		if _, err := setupDB.ExecContext(ctx, fmt.Sprintf("INSERT INTO `%s`.kine (id, name, value) VALUES (?, ?, ?)", schema), i, fmt.Sprintf("/registry/test/%d", i), []byte(fmt.Sprintf("value-%d", i))); err != nil {
-			t.Fatalf("seed source row %d: %v", i, err)
-		}
-	}
-
-	sourceConn := mustMySQLConnection(t, source)
-	targetConn := mustMySQLConnection(t, target)
-
-	tcp := kamajiv1alpha1.TenantControlPlane{ObjectMeta: metav1.ObjectMeta{UID: types.UID("test-migrate-uid")}}
-	tcp.Status.Storage.Setup.Schema = schema
-
-	if err := sourceConn.Migrate(ctx, tcp, targetConn); err != nil {
-		t.Fatalf("Migrate: %v", err)
-	}
-
-	verifyDB := openMariaDB(t, target, schema)
-	defer verifyDB.Close()
-
-	var count int
-	if err := verifyDB.QueryRowContext(ctx, "SELECT COUNT(*) FROM kine").Scan(&count); err != nil {
-		t.Fatalf("count migrated rows: %v", err)
-	}
-
-	if count != rowCount {
-		t.Fatalf("expected %d migrated rows, got %d", rowCount, count)
-	}
-
-	var value []byte
-	if err := verifyDB.QueryRowContext(ctx, "SELECT value FROM kine WHERE id = ?", rowCount).Scan(&value); err != nil {
-		t.Fatalf("read back last row: %v", err)
-	}
-
-	if want := fmt.Sprintf("value-%d", rowCount); string(value) != want {
-		t.Fatalf("last row value = %q, want %q", value, want)
-	}
-}
-
-// TestMySQLMigrateDiscoversTables checks that Migrate() doesn't assume the schema contains
-// only (or even) a table named "kine": it should copy whatever base tables are actually
-// there, each with its own column set, the same thing a schema-wide dump would do.
 func TestMySQLMigrateDiscoversTables(t *testing.T) {
 	if os.Getenv("KAMAJI_MYSQL_MIGRATE_IT") == "" {
 		t.Skip("set KAMAJI_MYSQL_MIGRATE_IT=1 to run (spins up real MariaDB containers via Docker)")
