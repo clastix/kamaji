@@ -149,7 +149,7 @@ func TestMySQLMigrateBatching(t *testing.T) {
 
 	const schema = "testschema"
 
-	rowCount := migrateBatchSize*2 + 7
+	rowCount := 2007 // 2*migrateBatchSize(1000) + 7
 
 	setupDB := openMariaDB(t, source, "")
 	defer setupDB.Close()
