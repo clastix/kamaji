@@ -3,6 +3,10 @@
 
 package datastore
 
+// migrateBatchSize must match the internal batch size used by MySQL Migrate.
+// Kept here so the batching test exercises more rows than one batch.
+const migrateBatchSize = 1000
+
 import (
 	"bytes"
 	"context"
