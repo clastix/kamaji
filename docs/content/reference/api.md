@@ -47589,7 +47589,8 @@ Selects a key of a ConfigMap.
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          The key to select.<br/>
+          The key to select from the ConfigMap's Data field.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -47939,68 +47940,6 @@ WARNING: for last cut-off releases, the container image could be not available.<
 </table>
 
 
-<span id="tenantcontrolplanespecaddonskonnectivityagentresources">`TenantControlPlane.spec.addons.konnectivity.agent.resources`</span>
-
-
-Resources define the amount of CPU and memory to allocate to the Konnectivity agent.
-
-When unset the agent container declares no requests or limits, which places
-its Pod in the BestEffort QoS class. Since the agent tolerates all taints and
-commonly runs alongside the cluster's heaviest workloads, BestEffort makes it
-the first candidate for CPU starvation and eviction on a busy node, degrading
-the very tunnel that `kubectl exec`, `kubectl logs` and `kubectl port-forward`
-depend on. Setting requests here promotes the agent to Burstable so it is
-scheduled with a guaranteed share of CPU.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityagentresourcesclaimsindex">claims</a></b></td>
-        <td>[]object</td>
-        <td>
-          Claims lists the names of resources, defined in spec.resourceClaims,
-that are used by this container.
-
-This field depends on the
-DynamicResourceAllocation feature gate.
-
-This field is immutable. It can only be set for containers.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>limits</b></td>
-        <td>map[string]int or string</td>
-        <td>
-          Limits describes the maximum amount of compute resources allowed.
-More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>requests</b></td>
-        <td>map[string]int or string</td>
-        <td>
-          Requests describes the minimum amount of compute resources required.
-If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-otherwise to an implementation-defined value. Requests cannot exceed Limits.
-More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-<span id="tenantcontrolplanespecaddonskonnectivityagentresourcesclaimsindex">`TenantControlPlane.spec.addons.konnectivity.agent.resources.claims[index]`</span>
-
-
-ResourceClaim references one entry in PodSpec.ResourceClaims.
-
 <span id="tenantcontrolplanespecaddonskonnectivityagentextraenvsindex">`TenantControlPlane.spec.addons.konnectivity.agent.extraEnvs[index]`</span>
 
 
@@ -48123,7 +48062,8 @@ Selects a key of a ConfigMap.
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          The key to select.<br/>
+          The key to select from the ConfigMap's Data field.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -48320,6 +48260,99 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityagentresources">`TenantControlPlane.spec.addons.konnectivity.agent.resources`</span>
+
+
+Resources define the amount of CPU and memory to allocate to the Konnectivity agent.
+
+When unset the agent container declares no requests or limits, which places
+its Pod in the BestEffort QoS class. Since the agent tolerates all taints and
+commonly runs alongside the cluster's heaviest workloads, BestEffort makes it
+the first candidate for CPU starvation and eviction on a busy node, degrading
+the very tunnel that `kubectl exec`, `kubectl logs` and `kubectl port-forward`
+depend on. Setting requests here promotes the agent to Burstable so it is
+scheduled with a guaranteed share of CPU.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#tenantcontrolplanespecaddonskonnectivityagentresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims,
+that are used by this container.
+
+This field depends on the
+DynamicResourceAllocation feature gate.
+
+This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+<span id="tenantcontrolplanespecaddonskonnectivityagentresourcesclaimsindex">`TenantControlPlane.spec.addons.konnectivity.agent.resources.claims[index]`</span>
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of
+the Pod where this field is used. It makes that resource available
+inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>request</b></td>
+        <td>string</td>
+        <td>
+          Request is the name chosen for a request in the referenced claim.
+If empty, everything from the claim is made available, otherwise
+only the result of this request.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -48591,7 +48624,8 @@ Selects a key of a ConfigMap.
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          The key to select.<br/>
+          The key to select from the ConfigMap's Data field.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -49415,7 +49449,8 @@ Selects a key of a ConfigMap.
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          The key to select.<br/>
+          The key to select from the ConfigMap's Data field.
+Keys in the BinaryData field are not currently propagated to container env vars.<br/>
         </td>
         <td>true</td>
       </tr><tr>
