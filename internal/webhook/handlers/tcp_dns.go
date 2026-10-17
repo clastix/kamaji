@@ -23,7 +23,16 @@ func (t TenantControlPlaneDNS) OnCreate(object runtime.Object) AdmissionResponse
 }
 
 func (t TenantControlPlaneDNS) OnUpdate(_, newObject runtime.Object) AdmissionResponse {
-	return t.validate(newObject)
+	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
+		// A TenantControlPlane being deleted must always be able to drop its finalizers.
+		// Kamaji removes them with an UPDATE, so rejecting an invalid spec here would
+		// leave the object stuck in Terminating forever. Mirrors tcp_version.go.
+		if newObject.(*kamajiv1alpha1.TenantControlPlane).DeletionTimestamp != nil { //nolint:forcetypeassert
+			return nil, nil
+		}
+
+		return t.validate(newObject)(ctx, req)
+	}
 }
 
 func (t TenantControlPlaneDNS) OnDelete(runtime.Object) AdmissionResponse {
