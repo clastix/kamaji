@@ -134,7 +134,7 @@ var _ = Describe("TCP DNS Validation Webhook", func() {
 	Context("when using legacy serviceCidr", func() {
 		BeforeEach(func() {
 			tcp.Spec.NetworkProfile.ServiceCIDRs = nil
-			tcp.Spec.NetworkProfile.ServiceCIDR = "10.96.0.0/16"
+			tcp.Spec.NetworkProfile.ServiceCIDR = "10.96.0.0/16" //nolint:staticcheck // intentional use of deprecated field
 
 			tcp.Spec.NetworkProfile.DNSServiceIPs = []string{
 				"10.96.0.10",

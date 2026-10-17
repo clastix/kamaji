@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientcmdapiv1 "k8s.io/client-go/tools/clientcmd/api/v1"
@@ -42,12 +43,20 @@ func TestGetKubeadmManifestDepsCoreDNSImageTag(t *testing.T) {
 	tcp.SetName("test-tcp")
 	tcp.SetNamespace("default")
 	tcp.Spec.Kubernetes.Version = "v1.28.0"
-	tcp.Spec.NetworkProfile.PodCIDR = "10.244.0.0/16"
-	tcp.Spec.NetworkProfile.ServiceCIDR = "10.96.0.0/12"
+	tcp.Spec.NetworkProfile.PodCIDR = "10.244.0.0/16"    //nolint:staticcheck // intentional use of deprecated field
+	tcp.Spec.NetworkProfile.ServiceCIDR = "10.96.0.0/12" //nolint:staticcheck // intentional use of deprecated field
 	tcp.Spec.NetworkProfile.DNSServiceIPs = []string{"10.96.0.10"}
 	tcp.Spec.NetworkProfile.CertSANs = []string{"test-tcp.default.svc"}
 	tcp.Spec.NetworkProfile.Port = 6443
-	tcp.Spec.Kubernetes.Kubelet.CGroupFS = "cgroupfs"
+	tcp.Spec.Kubernetes.Kubelet.ConfigurationJSONPatches = v1alpha1.JSONPatches{
+		{
+			Op:   "replace",
+			Path: "/cgroupDriver",
+			Value: &apiextensionsv1.JSON{
+				Raw: []byte(`"cgroupfs"`),
+			},
+		},
+	}
 	tcp.Status.ControlPlaneEndpoint = "1.2.3.4:6443"
 	tcp.Status.KubeadmConfig.ConfigmapName = "test-tcp-kubeadm-config"
 	tcp.Status.KubeConfig.Admin.SecretName = "test-tcp-admin-conf"

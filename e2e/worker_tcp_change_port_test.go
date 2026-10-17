@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/version"
@@ -52,7 +53,15 @@ var _ = Describe("validating kubeconfig", func() {
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
 					Version: kamajiv1alpha1.DefaultKubernetesVersion,
 					Kubelet: kamajiv1alpha1.KubeletSpec{
-						CGroupFS: "cgroupfs",
+						ConfigurationJSONPatches: kamajiv1alpha1.JSONPatches{
+							{
+								Op:   "replace",
+								Path: "/cgroupDriver",
+								Value: &apiextensionsv1.JSON{
+									Raw: []byte(`"cgroupfs"`),
+								},
+							},
+						},
 					},
 					AdmissionControllers: kamajiv1alpha1.AdmissionControllers{
 						"LimitRanger",

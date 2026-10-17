@@ -10,6 +10,8 @@ import (
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -47,7 +49,10 @@ var _ = Describe("Kubelet preferredAddressTypes", func() {
 			obj.Spec.ControlPlane.Service.ServiceType = ServiceTypeClusterIP
 			obj.Spec.Kubernetes.Kubelet.PreferredAddressTypes = addressTypes
 
-			Expect(k8sClient.Patch(ctx, obj, client.Apply, client.FieldOwner(manager), client.ForceOwnership)).ToNot(HaveOccurred())
+			raw, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(k8sClient.Apply(ctx, client.ApplyConfigurationFromUnstructured(&unstructured.Unstructured{Object: raw}), client.FieldOwner(manager), client.ForceOwnership)).ToNot(HaveOccurred())
 		}
 
 		apply("manager-a", NodeInternalIP, NodeExternalIP, NodeHostName)

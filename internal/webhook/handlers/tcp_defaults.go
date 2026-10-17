@@ -33,9 +33,9 @@ func (t TenantControlPlaneDefaults) OnCreate(object runtime.Object) AdmissionRes
 
 			if len(defaulted.Spec.NetworkProfile.ServiceCIDRs) > 0 {
 				cidrs = defaulted.Spec.NetworkProfile.ServiceCIDRs
-			} else if defaulted.Spec.NetworkProfile.ServiceCIDR != "" {
+			} else if defaulted.Spec.NetworkProfile.ServiceCIDR != "" { //nolint:staticcheck // intentional read of deprecated field
 				// Backward compatibility
-				cidrs = []string{defaulted.Spec.NetworkProfile.ServiceCIDR}
+				cidrs = []string{defaulted.Spec.NetworkProfile.ServiceCIDR} //nolint:staticcheck // intentional read of deprecated field
 			}
 
 			dnsIPs := make([]string, 0, len(cidrs))
@@ -94,11 +94,11 @@ func (t TenantControlPlaneDefaults) defaultUnsetFields(tcp *kamajiv1alpha1.Tenan
 	}
 
 	// Backward compatibility for serviceCidr and podCidr fields
-	if len(tcp.Spec.NetworkProfile.ServiceCIDRs) == 0 && tcp.Spec.NetworkProfile.ServiceCIDR != "" {
-		tcp.Spec.NetworkProfile.ServiceCIDRs = []string{tcp.Spec.NetworkProfile.ServiceCIDR}
+	if len(tcp.Spec.NetworkProfile.ServiceCIDRs) == 0 && tcp.Spec.NetworkProfile.ServiceCIDR != "" { //nolint:staticcheck // intentional read of deprecated field
+		tcp.Spec.NetworkProfile.ServiceCIDRs = []string{tcp.Spec.NetworkProfile.ServiceCIDR} //nolint:staticcheck // intentional read of deprecated field
 	}
 
-	if len(tcp.Spec.NetworkProfile.PodCIDRs) == 0 && tcp.Spec.NetworkProfile.PodCIDR != "" {
-		tcp.Spec.NetworkProfile.PodCIDRs = []string{tcp.Spec.NetworkProfile.PodCIDR}
+	if len(tcp.Spec.NetworkProfile.PodCIDRs) == 0 && tcp.Spec.NetworkProfile.PodCIDR != "" { //nolint:staticcheck // intentional read of deprecated field
+		tcp.Spec.NetworkProfile.PodCIDRs = []string{tcp.Spec.NetworkProfile.PodCIDR} //nolint:staticcheck // intentional read of deprecated field
 	}
 }

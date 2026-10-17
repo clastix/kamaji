@@ -13,7 +13,6 @@ linters:
     - noinlineerr
     - nolintlint
     - prealloc
-    - staticcheck
     - wsl_v5
     ###
     - cyclop

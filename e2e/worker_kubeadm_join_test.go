@@ -19,6 +19,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/testcontainers/testcontainers-go"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -61,7 +62,15 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
 					Version: "v1.35.0",
 					Kubelet: kamajiv1alpha1.KubeletSpec{
-						CGroupFS: "cgroupfs",
+						ConfigurationJSONPatches: kamajiv1alpha1.JSONPatches{
+							{
+								Op:   "add",
+								Path: "/cgroupDriver",
+								Value: &apiextensionsv1.JSON{
+									Raw: []byte(`"cgroupfs"`),
+								},
+							},
+						},
 					},
 					AdmissionControllers: kamajiv1alpha1.AdmissionControllers{
 						"LimitRanger",
