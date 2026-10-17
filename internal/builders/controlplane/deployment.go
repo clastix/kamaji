@@ -473,8 +473,8 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 	}
 
 	// backward compatibility for deprecated CIDR fields
-	serviceCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.ServiceCIDR, tenantControlPlane.Spec.NetworkProfile.ServiceCIDRs)
-	podCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.PodCIDR, tenantControlPlane.Spec.NetworkProfile.PodCIDRs)
+	serviceCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.ServiceCIDR, tenantControlPlane.Spec.NetworkProfile.ServiceCIDRs) //nolint:staticcheck // intentional read of deprecated field //nolint:staticcheck // intentional read of deprecated field
+	podCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.PodCIDR, tenantControlPlane.Spec.NetworkProfile.PodCIDRs)             //nolint:staticcheck // intentional read of deprecated field
 
 	kubeconfig := "/etc/kubernetes/controller-manager.conf"
 
@@ -720,7 +720,7 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 	}
 
 	// backward compatibility for deprecated CIDR fields
-	serviceCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.ServiceCIDR, tenantControlPlane.Spec.NetworkProfile.ServiceCIDRs)
+	serviceCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.ServiceCIDR, tenantControlPlane.Spec.NetworkProfile.ServiceCIDRs) //nolint:staticcheck // intentional read of deprecated field
 
 	// Managed flags: derived from the TCP spec, always applied, override any user duplicate.
 	managed := map[string]string{

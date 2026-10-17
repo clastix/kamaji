@@ -50,8 +50,8 @@ func validateDNSServiceIPs(tcp *kamajiv1alpha1.TenantControlPlane) error {
 	serviceCIDRs := tcp.Spec.NetworkProfile.ServiceCIDRs
 
 	// Backward compatibility
-	if len(serviceCIDRs) == 0 && tcp.Spec.NetworkProfile.ServiceCIDR != "" {
-		serviceCIDRs = []string{tcp.Spec.NetworkProfile.ServiceCIDR}
+	if len(serviceCIDRs) == 0 && tcp.Spec.NetworkProfile.ServiceCIDR != "" { //nolint:staticcheck // intentional read of deprecated field
+		serviceCIDRs = []string{tcp.Spec.NetworkProfile.ServiceCIDR} //nolint:staticcheck // intentional read of deprecated field
 	}
 
 	// Safety check

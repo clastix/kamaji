@@ -168,16 +168,16 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 		certSANs = mergeCertSANs(address, certSANs, serviceIPs)
 
 		// Backward compatibility for deprecated CIDR fields
-		if tenantControlPlane.Spec.NetworkProfile.ServiceCIDR != "" {
+		if tenantControlPlane.Spec.NetworkProfile.ServiceCIDR != "" { //nolint:staticcheck // intentional read of deprecated field
 			logger.Info("serviceCidr is deprecated, please migrate to serviceCidrs")
 		}
 
-		if tenantControlPlane.Spec.NetworkProfile.PodCIDR != "" {
+		if tenantControlPlane.Spec.NetworkProfile.PodCIDR != "" { //nolint:staticcheck // intentional read of deprecated field
 			logger.Info("podCidr is deprecated, please migrate to podCidrs")
 		}
 
-		serviceCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.ServiceCIDR, tenantControlPlane.Spec.NetworkProfile.ServiceCIDRs)
-		podCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.PodCIDR, tenantControlPlane.Spec.NetworkProfile.PodCIDRs)
+		serviceCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.ServiceCIDR, tenantControlPlane.Spec.NetworkProfile.ServiceCIDRs) //nolint:staticcheck // intentional read of deprecated field
+		podCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.PodCIDR, tenantControlPlane.Spec.NetworkProfile.PodCIDRs)             //nolint:staticcheck // intentional read of deprecated field
 
 		params := kubeadm.Parameters{
 			TenantControlPlaneAddress:       address,

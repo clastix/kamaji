@@ -39,7 +39,7 @@ func GetKubeadmManifestDeps(ctx context.Context, client client.Client, tenantCon
 	}
 
 	// Backward compatibility for deprecated CIDR fields
-	podCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.PodCIDR, tenantControlPlane.Spec.NetworkProfile.PodCIDRs)
+	podCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.PodCIDR, tenantControlPlane.Spec.NetworkProfile.PodCIDRs) //nolint:staticcheck // intentional read of deprecated field
 
 	config.Kubeconfig = *kubeconfig
 	config.Parameters = kubeadm.Parameters{
@@ -195,7 +195,7 @@ func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr
 	}
 
 	// Backward compatibility for deprecated CIDR fields
-	podCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.PodCIDR, tenantControlPlane.Spec.NetworkProfile.PodCIDRs)
+	podCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.PodCIDR, tenantControlPlane.Spec.NetworkProfile.PodCIDRs) //nolint:staticcheck // intentional read of deprecated field
 
 	config.Kubeconfig = *kubeconfig
 	config.Parameters = kubeadm.Parameters{

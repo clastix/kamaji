@@ -37,7 +37,7 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 			},
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
-					ServiceCIDR: "10.96.0.0/12",
+					ServiceCIDR: "10.96.0.0/12", //nolint:staticcheck // intentional use of deprecated field
 					DNSServiceIPs: []string{
 						"10.96.0.10",
 					},
@@ -94,7 +94,7 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 		BeforeEach(func() {
 			tcp.Spec.NetworkProfile.ServiceCIDRs = nil
 			tcp.Spec.NetworkProfile.PodCIDRs = nil
-			tcp.Spec.NetworkProfile.PodCIDR = "10.244.0.0/16"
+			tcp.Spec.NetworkProfile.PodCIDR = "10.244.0.0/16" //nolint:staticcheck // intentional use of deprecated field
 		})
 
 		It("should populate serviceCidrs and podCidrs from legacy fields", func() {
@@ -125,7 +125,7 @@ var _ = Describe("TCP Defaulting Webhook", func() {
 
 	Describe("dual stack service CIDRs", func() {
 		BeforeEach(func() {
-			tcp.Spec.NetworkProfile.ServiceCIDR = ""
+			tcp.Spec.NetworkProfile.ServiceCIDR = "" //nolint:staticcheck // intentional use of deprecated field
 			tcp.Spec.NetworkProfile.DNSServiceIPs = nil
 
 			tcp.Spec.NetworkProfile.ServiceCIDRs = []string{
