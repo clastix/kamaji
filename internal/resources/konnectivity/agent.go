@@ -6,6 +6,8 @@ package konnectivity
 import (
 	"context"
 	"fmt"
+	"net"
+	"strconv"
 
 	"github.com/blang/semver"
 	"github.com/prometheus/client_golang/prometheus"
@@ -259,7 +261,12 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		args["--proxy-server-host"] = address
 		args["--proxy-server-port"] = fmt.Sprintf("%d", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port)
 		args["--admin-server-port"] = "8133"
-		args["--health-server-port"] = "8134"
+		args["--health-server-port"] = strconv.Itoa(agentHealthServerPort)
+		if tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.HostNetwork {
+			// Without a host the health server, which also serves /metrics without
+			// authentication, listens on every interface of the node.
+			args["--health-server-host"] = "127.0.0.1"
+		}
 		args["--service-account-token-path"] = "/var/run/secrets/tokens/konnectivity-agent-token"
 
 		extraArgs := utilities.ArgsFromSliceToMap(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.ExtraArgs)
@@ -279,7 +286,8 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/healthz",
-					Port:   intstr.FromInt32(8134),
+					Host:   agentProbeHost(args["--health-server-host"]),
+					Port:   agentProbePort(args["--health-server-port"]),
 					Scheme: corev1.URISchemeHTTP,
 				},
 			},
@@ -314,4 +322,25 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 
 		return nil
 	}
+}
+
+// agentProbeHost returns the host the kubelet probes for the agent's
+// --health-server-host: the Pod IP, unless the health server listens on a
+// single address.
+func agentProbeHost(healthServerHost string) string {
+	if ip := net.ParseIP(healthServerHost); healthServerHost == "" || (ip != nil && ip.IsUnspecified()) {
+		return ""
+	}
+
+	return healthServerHost
+}
+
+// agentProbePort returns the port the kubelet probes for the agent's
+// --health-server-port, or the default one when the value is not a number.
+func agentProbePort(healthServerPort string) intstr.IntOrString {
+	if port := intstr.Parse(healthServerPort); port.Type == intstr.Int {
+		return port
+	}
+
+	return intstr.FromInt32(agentHealthServerPort)
 }

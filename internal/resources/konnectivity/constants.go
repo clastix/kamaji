@@ -12,6 +12,7 @@ const (
 	CertCommonName = "system:konnectivity-server"
 	AgentNamespace = core.NamespaceSystem
 
+	agentHealthServerPort           = 8134
 	agentTokenName                  = "konnectivity-agent-token"
 	apiServerAPIVersion             = "apiserver.k8s.io/v1beta1"
 	defaultClusterName              = "kubernetes"
