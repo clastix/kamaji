@@ -64,7 +64,7 @@ var _ = Describe("starting a kind worker with kubeadm", func() {
 					Kubelet: kamajiv1alpha1.KubeletSpec{
 						ConfigurationJSONPatches: kamajiv1alpha1.JSONPatches{
 							{
-								Op:   "replace",
+								Op:   "add",
 								Path: "/cgroupDriver",
 								Value: &apiextensionsv1.JSON{
 									Raw: []byte(`"cgroupfs"`),
