@@ -7,7 +7,6 @@ linters:
     - exhaustruct_v5
     - funcorder
     - goconst
-    - gocritic
     - godoclint
     - modernize
     - nilnesserr

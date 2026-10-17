@@ -58,6 +58,7 @@ type NetworkProfileSpec struct {
 	// Use this field to add additional hostnames when exposing the Tenant Control Plane with third solutions.
 	CertSANs []string `json:"certSANs,omitempty"`
 	// CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.
+	//
 	// Deprecated: use ServiceCIDRs instead.
 	//+kubebuilder:default="10.96.0.0/16"
 	//+kubebuilder:validation:Optional
@@ -73,6 +74,7 @@ type NetworkProfileSpec struct {
 	// +kubebuilder:validation:XValidation:rule="size(self) < 2 || cidr(self[0]).ip().family() != cidr(self[1]).ip().family()",message="serviceCidrs must not contain two CIDRs of the same IP family"
 	ServiceCIDRs []string `json:"serviceCidrs,omitempty"`
 	// CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.
+	//
 	// Deprecated: use PodCIDRs instead.
 	//+kubebuilder:default="10.244.0.0/16"
 	//+kubebuilder:validation:Optional
