@@ -10,6 +10,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	pointer "k8s.io/utils/ptr"
@@ -60,7 +61,15 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API and Konnectivity"
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
 					Version: "v1.28.0",
 					Kubelet: kamajiv1alpha1.KubeletSpec{
-						CGroupFS: "cgroupfs",
+						ConfigurationJSONPatches: kamajiv1alpha1.JSONPatches{
+							{
+								Op:   "replace",
+								Path: "/cgroupDriver",
+								Value: &apiextensionsv1.JSON{
+									Raw: []byte(`"cgroupfs"`),
+								},
+							},
+						},
 					},
 					AdmissionControllers: kamajiv1alpha1.AdmissionControllers{
 						"LimitRanger",

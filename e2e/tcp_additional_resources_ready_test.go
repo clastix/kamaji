@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -121,7 +122,15 @@ var _ = Describe("Deploy a TenantControlPlane resource with additional options",
 			Kubernetes: kamajiv1alpha1.KubernetesSpec{
 				Version: kamajiv1alpha1.DefaultKubernetesVersion,
 				Kubelet: kamajiv1alpha1.KubeletSpec{
-					CGroupFS: "cgroupfs",
+					ConfigurationJSONPatches: []kamajiv1alpha1.JSONPatch{
+						{
+							Op:   "replace",
+							Path: "/cgroupDriver",
+							Value: &apiextensionsv1.JSON{
+								Raw: []byte(`"cgroupfs"`),
+							},
+						},
+					},
 				},
 				AdmissionControllers: kamajiv1alpha1.AdmissionControllers{
 					"LimitRanger",

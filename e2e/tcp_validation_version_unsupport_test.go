@@ -11,6 +11,7 @@ import (
 	"github.com/blang/semver"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	pointer "k8s.io/utils/ptr"
@@ -45,7 +46,15 @@ var _ = Describe("using an unsupported TenantControlPlane Kubernetes version", f
 					Kubernetes: kamajiv1alpha1.KubernetesSpec{
 						Version: fmt.Sprintf("v%s", unsupported.String()),
 						Kubelet: kamajiv1alpha1.KubeletSpec{
-							CGroupFS: "cgroupfs",
+							ConfigurationJSONPatches: kamajiv1alpha1.JSONPatches{
+								{
+									Op:   "replace",
+									Path: "/cgroupDriver",
+									Value: &apiextensionsv1.JSON{
+										Raw: []byte(`"cgroupfs"`),
+									},
+								},
+							},
 						},
 					},
 				},
@@ -73,7 +82,15 @@ var _ = Describe("using an unsupported TenantControlPlane Kubernetes version", f
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
 					Version: fmt.Sprintf("v%s", v.String()),
 					Kubelet: kamajiv1alpha1.KubeletSpec{
-						CGroupFS: "cgroupfs",
+						ConfigurationJSONPatches: kamajiv1alpha1.JSONPatches{
+							{
+								Op:   "replace",
+								Path: "/cgroupDriver",
+								Value: &apiextensionsv1.JSON{
+									Raw: []byte(`"cgroupfs"`),
+								},
+							},
+						},
 					},
 				},
 			},

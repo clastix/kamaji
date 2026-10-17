@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientcmdapiv1 "k8s.io/client-go/tools/clientcmd/api/v1"
@@ -47,7 +48,15 @@ func TestGetKubeadmManifestDepsCoreDNSImageTag(t *testing.T) {
 	tcp.Spec.NetworkProfile.DNSServiceIPs = []string{"10.96.0.10"}
 	tcp.Spec.NetworkProfile.CertSANs = []string{"test-tcp.default.svc"}
 	tcp.Spec.NetworkProfile.Port = 6443
-	tcp.Spec.Kubernetes.Kubelet.CGroupFS = "cgroupfs"
+	tcp.Spec.Kubernetes.Kubelet.ConfigurationJSONPatches = v1alpha1.JSONPatches{
+		{
+			Op:   "replace",
+			Path: "/cgroupDriver",
+			Value: &apiextensionsv1.JSON{
+				Raw: []byte(`"cgroupfs"`),
+			},
+		},
+	}
 	tcp.Status.ControlPlaneEndpoint = "1.2.3.4:6443"
 	tcp.Status.KubeadmConfig.ConfigmapName = "test-tcp-kubeadm-config"
 	tcp.Status.KubeConfig.Admin.SecretName = "test-tcp-admin-conf"
