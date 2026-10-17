@@ -282,6 +282,9 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 					handlers.TenantControlPlaneGatewayValidation{
 						GatewayAPIEnabled: enableGatewayAPI,
 					},
+					handlers.TenantControlPlanePreGeneratedCerts{
+						Client: mgr.GetClient(),
+					},
 				},
 				routes.TenantControlPlaneTelemetry{}: {
 					handlers.TenantControlPlaneTelemetry{
