@@ -48452,6 +48452,7 @@ Example: {"192.168.1.0/24", "10.0.0.0/8"}<br/>
         <td>string</td>
         <td>
           CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.
+
 Deprecated: use PodCIDRs instead.<br/>
           <br/>
             <i>Default</i>: 10.244.0.0/16<br/>
@@ -48481,6 +48482,7 @@ When specified, this field takes precedence over PodCIDR.<br/>
         <td>string</td>
         <td>
           CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.
+
 Deprecated: use ServiceCIDRs instead.<br/>
           <br/>
             <i>Default</i>: 10.96.0.0/16<br/>

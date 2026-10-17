@@ -8986,6 +8986,7 @@ versions:
                     default: 10.244.0.0/16
                     description: |-
                       CIDR for Kubernetes Pods: if empty, defaulted to 10.244.0.0/16.
+
                       Deprecated: use PodCIDRs instead.
                     type: string
                     x-kubernetes-validations:
@@ -9015,6 +9016,7 @@ versions:
                     default: 10.96.0.0/16
                     description: |-
                       CIDR for Kubernetes Services: if empty, defaulted to 10.96.0.0/16.
+
                       Deprecated: use ServiceCIDRs instead.
                     type: string
                     x-kubernetes-validations:
