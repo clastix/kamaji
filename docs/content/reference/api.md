@@ -31209,6 +31209,15 @@ as a reconcile error.<br/>
             <i>Enum</i>: SingleStack, PreferDualStack, RequireDualStack<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>publicAPIServerAddress</b></td>
+        <td>string</td>
+        <td>
+          PublicAPIServerAddress allows specifying a custom hostname for the API server.
+If set, this address will be used in cluster-info ConfigMaps and kubeconfigs
+instead of the LoadBalancer IP, enabling the use of DNS names that match certificate SANs.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
