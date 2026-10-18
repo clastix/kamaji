@@ -9,6 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	pointer "k8s.io/utils/ptr"
 
@@ -205,6 +206,39 @@ var _ = Describe("Controlplane Deployment", func() {
 				"--service-account-issuer=https://kubernetes.default.svc.cluster.local",
 				"--service-cluster-ip-range=10.96.0.0/12",
 			}))
+		})
+	})
+
+	Describe("resetKubeAPIServerFlags", func() {
+		var (
+			deployment *appsv1.Deployment
+			tcp        kamajiv1alpha1.TenantControlPlane
+		)
+
+		BeforeEach(func() {
+			deployment = &appsv1.Deployment{}
+			deployment.Spec.Template.Spec.Containers = []corev1.Container{{
+				Name: apiServerContainerName,
+				Args: []string{"--audit-log-path=/var/log/audit.log", "--secure-port=6443"},
+			}}
+			tcp = kamajiv1alpha1.TenantControlPlane{}
+		})
+
+		It("keeps the args when extra args were never set", func() {
+			d.resetKubeAPIServerFlags(deployment, tcp)
+
+			Expect(deployment.Spec.Template.Spec.Containers[0].Args).To(HaveLen(2))
+			Expect(deployment.GetAnnotations()).To(BeEmpty())
+		})
+
+		It("resets the args when the extraArgs block is removed", func() {
+			previous, err := utilities.CalculateStringSliceChecksum([]string{"--audit-log-path=/var/log/audit.log"})
+			Expect(err).ToNot(HaveOccurred())
+			deployment.SetAnnotations(map[string]string{apiServerFlagsAnnotation: previous})
+
+			d.resetKubeAPIServerFlags(deployment, tcp)
+
+			Expect(deployment.Spec.Template.Spec.Containers[0].Args).To(BeEmpty())
 		})
 	})
 

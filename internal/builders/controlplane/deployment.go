@@ -1203,7 +1203,12 @@ func (d Deployment) setTopologySpreadConstraints(spec *appsv1.DeploymentSpec, to
 // resetKubeAPIServerFlags ensures that upon a change of the kube-apiserver extra flags the desired ones are properly
 // applied, also considering that the container could be lately patched by the konnectivity addon resources.
 func (d Deployment) resetKubeAPIServerFlags(resource *appsv1.Deployment, tcp kamajiv1alpha1.TenantControlPlane) {
-	if tcp.Spec.ControlPlane.Deployment.ExtraArgs == nil {
+	var extraArgs []string
+
+	if tcp.Spec.ControlPlane.Deployment.ExtraArgs != nil {
+		extraArgs = tcp.Spec.ControlPlane.Deployment.ExtraArgs.APIServer
+	} else if _, tracked := resource.GetAnnotations()[apiServerFlagsAnnotation]; !tracked {
+		// no extra args now, and none ever applied: nothing to reset
 		return
 	}
 	// kube-apiserver container is not still there, we can skip the hashing
@@ -1217,7 +1222,7 @@ func (d Deployment) resetKubeAPIServerFlags(resource *appsv1.Deployment, tcp kam
 	// retrieving the previous hash for the apiserver args:
 	// in case of non-matching values, removing all the args in order to perform a full reconciliation from a clean start.
 	previousHash := resource.GetAnnotations()[apiServerFlagsAnnotation]
-	currentHash, err := utilities.CalculateStringSliceChecksum(tcp.Spec.ControlPlane.Deployment.ExtraArgs.APIServer)
+	currentHash, err := utilities.CalculateStringSliceChecksum(extraArgs)
 	if err != nil {
 		return
 	}
