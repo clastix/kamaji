@@ -159,9 +159,9 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 			return ctrl.Result{RequeueAfter: time.Second}, nil
 		}
 
-		log.Error(err, "cannot retrieve the DataStore for the given instance")
+		log.Error(dsErr, "cannot retrieve the DataStore for the given instance")
 
-		return ctrl.Result{}, err
+		return ctrl.Result{}, dsErr
 	}
 
 	if !ds.Status.Ready {
