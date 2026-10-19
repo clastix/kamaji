@@ -22,7 +22,7 @@ func (t TenantControlPlaneDNS) OnCreate(object runtime.Object) AdmissionResponse
 	return t.validate(object)
 }
 
-func (t TenantControlPlaneDNS) OnUpdate(_, newObject runtime.Object) AdmissionResponse {
+func (t TenantControlPlaneDNS) OnUpdate(newObject, _ runtime.Object) AdmissionResponse {
 	return func(ctx context.Context, req admission.Request) ([]jsonpatch.JsonPatchOperation, error) {
 		// A TenantControlPlane being deleted must always be able to drop its finalizers.
 		// Kamaji removes them with an UPDATE, so rejecting an invalid spec here would
