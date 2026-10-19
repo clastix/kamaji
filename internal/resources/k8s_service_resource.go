@@ -141,6 +141,10 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 			r.resource.Spec.IPFamilies = families
 		}
 
+		// Always written, even when empty: removing the ranges from the TenantControlPlane
+		// must clear them on the Service, and the API server rejects them on any other Service type.
+		r.resource.Spec.LoadBalancerSourceRanges = tenantControlPlane.Spec.NetworkProfile.LoadBalancerSourceRanges
+
 		switch tenantControlPlane.Spec.ControlPlane.Service.ServiceType {
 		case kamajiv1alpha1.ServiceTypeLoadBalancer:
 			r.resource.Spec.Type = corev1.ServiceTypeLoadBalancer
@@ -163,10 +167,6 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 
 			if tenantControlPlane.Spec.NetworkProfile.LoadBalancerClass != nil {
 				r.resource.Spec.LoadBalancerClass = ptr.To(*tenantControlPlane.Spec.NetworkProfile.LoadBalancerClass)
-			}
-
-			if len(tenantControlPlane.Spec.NetworkProfile.LoadBalancerSourceRanges) > 0 {
-				r.resource.Spec.LoadBalancerSourceRanges = tenantControlPlane.Spec.NetworkProfile.LoadBalancerSourceRanges
 			}
 		case kamajiv1alpha1.ServiceTypeNodePort:
 			r.resource.Spec.Type = corev1.ServiceTypeNodePort
