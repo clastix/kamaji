@@ -59,6 +59,25 @@ var _ = Describe("TCP DNS Validation Webhook", func() {
 		})
 	})
 
+	Context("when the DNS service IP changes on update", func() {
+		It("should deny a DNS service IP outside the service CIDRs", func() {
+			oldTCP := tcp.DeepCopy()
+			tcp.Spec.NetworkProfile.DNSServiceIPs = []string{"10.231.4.1"}
+
+			_, err := handler.OnUpdate(tcp, oldTCP)(ctx, admission.Request{})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("is not contained in any configured service CIDR"))
+		})
+
+		It("should allow replacing an invalid DNS service IP with a valid one", func() {
+			oldTCP := tcp.DeepCopy()
+			oldTCP.Spec.NetworkProfile.DNSServiceIPs = []string{"10.231.4.1"}
+
+			_, err := handler.OnUpdate(tcp, oldTCP)(ctx, admission.Request{})
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
 	Context("when a TenantControlPlane with an invalid DNS service IP is being deleted", func() {
 		BeforeEach(func() {
 			tcp.Spec.NetworkProfile.DNSServiceIPs = []string{"10.231.4.1"}
