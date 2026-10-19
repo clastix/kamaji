@@ -365,3 +365,71 @@ var _ = Describe("KubernetesServiceResource LoadBalancerSourceRanges", func() {
 		Expect(svc.Spec.LoadBalancerSourceRanges).To(BeEmpty())
 	})
 })
+
+var _ = Describe("KubernetesServiceResource ExternalIPs", func() {
+	var tcp *kamajiv1alpha1.TenantControlPlane
+
+	const tcpName = "test-tcp-external-ips"
+
+	// reconcile runs the resource against a Service that still carries the external IP
+	// written by an earlier reconcile.
+	reconcile := func() *corev1.Service {
+		ctx := context.Background()
+		existing := &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{Name: tcpName, Namespace: "default"},
+			Spec: corev1.ServiceSpec{
+				Type:        corev1.ServiceTypeClusterIP,
+				ExternalIPs: []string{"192.0.2.10"},
+			},
+		}
+		resource := &resources.KubernetesServiceResource{
+			Client: fake.NewClientBuilder().WithScheme(runtimeScheme).WithObjects(existing).Build(),
+		}
+
+		Expect(resource.Define(ctx, tcp)).To(Succeed())
+		_, err := resource.CreateOrUpdate(ctx, tcp)
+		Expect(err).NotTo(HaveOccurred())
+
+		svc := &corev1.Service{}
+		Expect(resource.Client.Get(ctx, client.ObjectKeyFromObject(existing), svc)).To(Succeed())
+
+		return svc
+	}
+
+	BeforeEach(func() {
+		tcp = &kamajiv1alpha1.TenantControlPlane{
+			ObjectMeta: metav1.ObjectMeta{Name: tcpName, Namespace: "default"},
+			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
+				ControlPlane: kamajiv1alpha1.ControlPlane{
+					Service: kamajiv1alpha1.ServiceSpec{ServiceType: kamajiv1alpha1.ServiceTypeClusterIP},
+				},
+				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{Port: 6443, Address: "203.0.113.10"},
+			},
+		}
+	})
+
+	It("clears the external IP when allowAddressAsExternalIP is off", func() {
+		Expect(reconcile().Spec.ExternalIPs).To(BeEmpty())
+	})
+
+	It("clears the external IP of a NodePort Service when allowAddressAsExternalIP is off", func() {
+		tcp.Spec.ControlPlane.Service.ServiceType = kamajiv1alpha1.ServiceTypeNodePort
+
+		Expect(reconcile().Spec.ExternalIPs).To(BeEmpty())
+	})
+
+	It("clears the external IP when the Service becomes a LoadBalancer", func() {
+		tcp.Spec.NetworkProfile.AllowAddressAsExternalIP = true
+		tcp.Spec.ControlPlane.Service.ServiceType = kamajiv1alpha1.ServiceTypeLoadBalancer
+
+		svc := reconcile()
+		Expect(svc.Spec.Type).To(Equal(corev1.ServiceTypeLoadBalancer))
+		Expect(svc.Spec.ExternalIPs).To(BeEmpty())
+	})
+
+	It("replaces the external IP with the address when allowAddressAsExternalIP is on", func() {
+		tcp.Spec.NetworkProfile.AllowAddressAsExternalIP = true
+
+		Expect(reconcile().Spec.ExternalIPs).To(Equal([]string{"203.0.113.10"}))
+	})
+})
