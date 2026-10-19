@@ -305,3 +305,63 @@ var _ = Describe("KubernetesServiceResource IP families", func() {
 		Expect(svc.Spec.IPFamilies).To(Equal([]corev1.IPFamily{corev1.IPv4Protocol}))
 	})
 })
+
+var _ = Describe("KubernetesServiceResource LoadBalancerSourceRanges", func() {
+	var tcp *kamajiv1alpha1.TenantControlPlane
+
+	const tcpName = "test-tcp-source-ranges"
+
+	// reconcile runs the resource against a LoadBalancer Service that still carries two ranges.
+	reconcile := func() *corev1.Service {
+		ctx := context.Background()
+		existing := &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{Name: tcpName, Namespace: "default"},
+			Spec: corev1.ServiceSpec{
+				Type:                     corev1.ServiceTypeLoadBalancer,
+				LoadBalancerSourceRanges: []string{"192.0.2.0/24", "198.51.100.0/24"},
+			},
+		}
+		resource := &resources.KubernetesServiceResource{
+			Client: fake.NewClientBuilder().WithScheme(runtimeScheme).WithObjects(existing).Build(),
+		}
+
+		Expect(resource.Define(ctx, tcp)).To(Succeed())
+		_, err := resource.CreateOrUpdate(ctx, tcp)
+		Expect(err).NotTo(HaveOccurred())
+
+		svc := &corev1.Service{}
+		Expect(resource.Client.Get(ctx, client.ObjectKeyFromObject(existing), svc)).To(Succeed())
+
+		return svc
+	}
+
+	BeforeEach(func() {
+		tcp = &kamajiv1alpha1.TenantControlPlane{
+			ObjectMeta: metav1.ObjectMeta{Name: tcpName, Namespace: "default"},
+			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
+				ControlPlane: kamajiv1alpha1.ControlPlane{
+					Service: kamajiv1alpha1.ServiceSpec{ServiceType: kamajiv1alpha1.ServiceTypeLoadBalancer},
+				},
+				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{Port: 6443},
+			},
+		}
+	})
+
+	It("clears the ranges when the TenantControlPlane no longer lists any", func() {
+		Expect(reconcile().Spec.LoadBalancerSourceRanges).To(BeEmpty())
+	})
+
+	It("replaces the ranges with the ones listed by the TenantControlPlane", func() {
+		tcp.Spec.NetworkProfile.LoadBalancerSourceRanges = []string{"203.0.113.0/24"}
+
+		Expect(reconcile().Spec.LoadBalancerSourceRanges).To(Equal([]string{"203.0.113.0/24"}))
+	})
+
+	It("clears the ranges when the Service is no longer of type LoadBalancer", func() {
+		tcp.Spec.ControlPlane.Service.ServiceType = kamajiv1alpha1.ServiceTypeClusterIP
+
+		svc := reconcile()
+		Expect(svc.Spec.Type).To(Equal(corev1.ServiceTypeClusterIP))
+		Expect(svc.Spec.LoadBalancerSourceRanges).To(BeEmpty())
+	})
+})
