@@ -62,7 +62,8 @@ func (m *Migrate) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile
 	switch *tcp.Status.Kubernetes.Version.Status {
 	case v1alpha1.VersionMigrating:
 		err = m.createOrUpdate(ctx)
-	case v1alpha1.VersionReady:
+	// A control plane with write limitations reports WriteLimited, never Ready.
+	case v1alpha1.VersionReady, v1alpha1.VersionWriteLimited:
 		err = m.cleanup(ctx)
 	}
 
