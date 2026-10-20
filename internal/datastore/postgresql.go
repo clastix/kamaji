@@ -111,10 +111,10 @@ func NewPostgreSQLConnection(config ConnectionConfig) (Connection, error) {
 	}
 
 	fn := func(dbName string) *pg.DB {
-		o := opt
+		o := *opt
 		o.Database = dbName
 
-		return pg.Connect(o)
+		return pg.Connect(&o)
 	}
 
 	return &PostgreSQLConnection{
