@@ -70,6 +70,10 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 			DataStoreOverrides: r.DataStoreOverrides,
 		}).Build(ctx, r.resource, *tenantControlPlane)
 
+		if tenantControlPlane.Spec.Addons.Konnectivity != nil {
+			builder.Konnectivity{Scheme: *r.Client.Scheme()}.Build(r.resource, *tenantControlPlane)
+		}
+
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
 }
