@@ -282,6 +282,35 @@ var _ = Describe("Controlplane Deployment", func() {
 		})
 	})
 
+	Describe("Konnectivity removal", func() {
+		It("restores the pod spec the addon was built onto", func() {
+			deployment := &appsv1.Deployment{}
+			deployment.Spec.Template.Spec = corev1.PodSpec{
+				Containers: []corev1.Container{{Name: apiServerContainerName}},
+				Volumes:    []corev1.Volume{{Name: kubernetesPKIVolumeName}},
+			}
+			podSpec := &deployment.Spec.Template.Spec
+			original := podSpec.DeepCopy()
+
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.Replicas = pointer.To(int32(2))
+			tcp.Spec.Addons.Konnectivity = &kamajiv1alpha1.KonnectivitySpec{}
+			tcp.Status.Addons.Konnectivity.ConfigMap.Name = "egress-selector"
+			tcp.Status.Addons.Konnectivity.Kubeconfig.SecretName = "konnectivity-kubeconfig"
+
+			k := Konnectivity{}
+			k.Build(deployment, tcp)
+			Expect(podSpec.Volumes).To(ContainElement(HaveField("Name", konnectivityServerKubeconfigVolume)))
+
+			k.RemovingContainer(podSpec)
+			k.RemovingKubeAPIServerContainerArg(podSpec)
+			k.RemovingVolumes(podSpec)
+			k.RemovingVolumeMounts(podSpec)
+
+			Expect(podSpec).To(Equal(original))
+		})
+	})
+
 	Describe("control plane probes", func() {
 		// helper: find a container by name in a built PodSpec
 		containerByName := func(spec *corev1.PodSpec, name string) corev1.Container {

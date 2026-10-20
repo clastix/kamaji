@@ -159,7 +159,7 @@ func (k Konnectivity) RemovingVolumeMounts(podSpec *corev1.PodSpec) {
 }
 
 func (k Konnectivity) RemovingVolumes(podSpec *corev1.PodSpec) {
-	for _, volumeName := range []string{konnectivityUDSVolume, egressSelectorConfigurationVolume} {
+	for _, volumeName := range []string{konnectivityUDSVolume, egressSelectorConfigurationVolume, konnectivityServerKubeconfigVolume} {
 		if volumeFound, volumeIndex := utilities.HasNamedVolume(podSpec.Volumes, volumeName); volumeFound {
 			var volumes []corev1.Volume
 
