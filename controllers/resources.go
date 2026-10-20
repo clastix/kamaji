@@ -328,7 +328,6 @@ func getKonnectivityServerRequirementsResources(c client.Client, threshold time.
 
 func getKonnectivityServerPatchResources(c client.Client) []resources.Resource {
 	return []resources.Resource{
-		&konnectivity.KubernetesDeploymentResource{Builder: builder.Konnectivity{Scheme: *c.Scheme()}, Client: c},
 		&konnectivity.ServiceResource{Client: c},
 	}
 }

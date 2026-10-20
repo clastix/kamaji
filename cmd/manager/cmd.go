@@ -275,9 +275,6 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 							Client:             mgr.GetClient(),
 							KineContainerImage: kineImage,
 						},
-						KonnectivityBuilder: controlplane.Konnectivity{
-							Scheme: *mgr.GetScheme(),
-						},
 					},
 					handlers.TenantControlPlaneGatewayValidation{
 						GatewayAPIEnabled: enableGatewayAPI,

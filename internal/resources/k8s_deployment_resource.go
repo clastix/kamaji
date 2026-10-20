@@ -36,8 +36,13 @@ func (r *KubernetesDeploymentResource) isStatusEqual(tenantControlPlane *kamajiv
 	return r.resource.Status.String() == tenantControlPlane.Status.Kubernetes.Deployment.DeploymentStatus.String()
 }
 
+func (r *KubernetesDeploymentResource) isKonnectivityStatusEqual(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+	return tenantControlPlane.Status.Addons.Konnectivity.Enabled == (tenantControlPlane.Spec.Addons.Konnectivity != nil)
+}
+
 func (r *KubernetesDeploymentResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	return !r.isStatusEqual(tenantControlPlane) ||
+		!r.isKonnectivityStatusEqual(tenantControlPlane) ||
 		tenantControlPlane.Spec.Kubernetes.Version != tenantControlPlane.Status.Kubernetes.Version.Version ||
 		*r.computeStatus(tenantControlPlane) != ptr.Deref(tenantControlPlane.Status.Kubernetes.Version.Status, kamajiv1alpha1.VersionUnknown)
 }
@@ -69,10 +74,6 @@ func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControl
 			KineContainerImage: r.KineContainerImage,
 			DataStoreOverrides: r.DataStoreOverrides,
 		}).Build(ctx, r.resource, *tenantControlPlane)
-
-		if tenantControlPlane.Spec.Addons.Konnectivity != nil {
-			builder.Konnectivity{Scheme: *r.Client.Scheme()}.Build(r.resource, *tenantControlPlane)
-		}
 
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
@@ -119,6 +120,7 @@ func (r *KubernetesDeploymentResource) UpdateTenantControlPlaneStatus(_ context.
 		Namespace:        r.resource.GetNamespace(),
 		LastUpdate:       metav1.Now(),
 	}
+	tenantControlPlane.Status.Addons.Konnectivity.Enabled = tenantControlPlane.Spec.Addons.Konnectivity != nil
 
 	return nil
 }

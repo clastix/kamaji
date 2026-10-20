@@ -10,7 +10,6 @@ import (
 	"github.com/blang/semver"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	pointer "k8s.io/utils/ptr"
 
@@ -32,9 +31,7 @@ const (
 	konnectivityServerKubeconfigVolume = "konnectivity-server-kubeconfig"
 )
 
-type Konnectivity struct {
-	Scheme runtime.Scheme
-}
+type Konnectivity struct{}
 
 func (k Konnectivity) serverVersion(tcpVersion, addonVersion string) string {
 	if addonVersion != "" {
@@ -277,10 +274,20 @@ func (k Konnectivity) buildVolumes(status kamajiv1alpha1.KonnectivityStatus, pod
 	}
 }
 
+// Build adds the Konnectivity server to the Deployment, or removes it when the addon gets disabled.
 func (k Konnectivity) Build(deployment *appsv1.Deployment, tenantControlPlane kamajiv1alpha1.TenantControlPlane) {
+	if tenantControlPlane.Spec.Addons.Konnectivity == nil {
+		if tenantControlPlane.Status.Addons.Konnectivity.Enabled {
+			k.RemovingContainer(&deployment.Spec.Template.Spec)
+			k.RemovingKubeAPIServerContainerArg(&deployment.Spec.Template.Spec)
+			k.RemovingVolumes(&deployment.Spec.Template.Spec)
+			k.RemovingVolumeMounts(&deployment.Spec.Template.Spec)
+		}
+
+		return
+	}
+
 	k.buildKonnectivityContainer(tenantControlPlane.Spec.Kubernetes.Version, tenantControlPlane.Spec.Addons.Konnectivity, *tenantControlPlane.Spec.ControlPlane.Deployment.Replicas, &deployment.Spec.Template.Spec)
 	k.buildVolumeMounts(&deployment.Spec.Template.Spec)
 	k.buildVolumes(tenantControlPlane.Status.Addons.Konnectivity, &deployment.Spec.Template.Spec)
-
-	k.Scheme.Default(deployment)
 }

@@ -11,7 +11,6 @@ var (
 	agentCollector              prometheus.Histogram
 	certificateCollector        prometheus.Histogram
 	clusterrolebindingCollector prometheus.Histogram
-	deploymentCollector         prometheus.Histogram
 	egressCollector             prometheus.Histogram
 	gatewayCollector            prometheus.Histogram
 	kubeconfigCollector         prometheus.Histogram
