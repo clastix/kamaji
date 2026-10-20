@@ -25,9 +25,9 @@ metadata:
   name: my-control-plane
 spec:
   writePermissions:
-    blockCreate: true
+    blockCreation: true
     blockUpdate: true
-    blockDelete: true
+    blockDeletion: true
 ```
 
 Once applied, the Tenant Control Plane will switch into `WriteLimited` status.
@@ -44,9 +44,9 @@ metadata:
   name: my-control-plane
 spec:
   writePermissions:
-    blockCreate: true
+    blockCreation: true
     blockUpdate: true
-    blockDelete: false
+    blockDeletion: false
 ```
 
 !!! note "Datastore quota"
@@ -87,9 +87,9 @@ As a result, all changes initiated by tenants (such as `kubectl apply`, `kubectl
 
 If a tenant user tries to perform non-allowed write operations, such as:
 
-- creating resources when `TenantControlPlane.spec.writePermissions.blockCreate` is set to `true`
+- creating resources when `TenantControlPlane.spec.writePermissions.blockCreation` is set to `true`
 - updating resources when `TenantControlPlane.spec.writePermissions.blockUpdate` is set to `true`
-- deleting resources when `TenantControlPlane.spec.writePermissions.blockDelete` is set to `true`
+- deleting resources when `TenantControlPlane.spec.writePermissions.blockDeletion` is set to `true`
 
 the following error is returned:
 
