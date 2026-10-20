@@ -145,6 +145,10 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 		// must clear them on the Service, and the API server rejects them on any other Service type.
 		r.resource.Spec.LoadBalancerSourceRanges = tenantControlPlane.Spec.NetworkProfile.LoadBalancerSourceRanges
 
+		// Reset on every reconcile: only the ClusterIP and NodePort cases below set it again,
+		// so an address written earlier must not outlive allowAddressAsExternalIP.
+		r.resource.Spec.ExternalIPs = nil
+
 		switch tenantControlPlane.Spec.ControlPlane.Service.ServiceType {
 		case kamajiv1alpha1.ServiceTypeLoadBalancer:
 			r.resource.Spec.Type = corev1.ServiceTypeLoadBalancer
