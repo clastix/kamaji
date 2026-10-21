@@ -1749,6 +1749,11 @@ func (in *ServiceSpec) DeepCopyInto(out *ServiceSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.Headless != nil {
+		in, out := &in.Headless, &out.Headless
+		*out = new(bool)
+		**out = **in
+	}
 	if in.IPFamilyPolicy != nil {
 		in, out := &in.IPFamilyPolicy, &out.IPFamilyPolicy
 		*out = new(corev1.IPFamilyPolicy)

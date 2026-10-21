@@ -204,3 +204,95 @@ var _ = Describe("Cluster controller", func() {
 		})
 	})
 })
+
+var _ = Describe("TenantControlPlane headless Service validation", func() {
+	var (
+		ctx context.Context
+		tcp *TenantControlPlane
+	)
+
+	BeforeEach(func() {
+		ctx = context.Background()
+		tcp = &TenantControlPlane{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "tcp-headless",
+				Namespace: "default",
+			},
+			Spec: TenantControlPlaneSpec{},
+		}
+	})
+
+	AfterEach(func() {
+		if err := k8sClient.Delete(ctx, tcp); err != nil && !apierrors.IsNotFound(err) {
+			Expect(err).NotTo(HaveOccurred())
+		}
+	})
+
+	Context("Headless field", func() {
+		It("allows creation with ClusterIP and a networkProfile address", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeClusterIP
+			tcp.Spec.ControlPlane.Service.Headless = ptr.To(true)
+			tcp.Spec.NetworkProfile.Address = "192.0.2.7"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("denies headless with a LoadBalancer service type", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeLoadBalancer
+			tcp.Spec.ControlPlane.Service.Headless = ptr.To(true)
+			tcp.Spec.NetworkProfile.Address = "192.0.2.7"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("headless is supported only with ClusterIP service type"))
+		})
+
+		It("denies headless with a NodePort service type", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeNodePort
+			tcp.Spec.ControlPlane.Service.Headless = ptr.To(true)
+			tcp.Spec.NetworkProfile.Address = "192.0.2.7"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("headless is supported only with ClusterIP service type"))
+		})
+
+		It("denies headless without a networkProfile address", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeClusterIP
+			tcp.Spec.ControlPlane.Service.Headless = ptr.To(true)
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("headless requires networkProfile.address to be set"))
+		})
+
+		It("denies unsetting headless", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeClusterIP
+			tcp.Spec.ControlPlane.Service.Headless = ptr.To(true)
+			tcp.Spec.NetworkProfile.Address = "192.0.2.7"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+
+			tcp.Spec.ControlPlane.Service.Headless = nil
+			err = k8sClient.Update(ctx, tcp)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("headless cannot be set or unset at runtime"))
+		})
+
+		It("denies switching headless from true to false", func() {
+			tcp.Spec.ControlPlane.Service.ServiceType = ServiceTypeClusterIP
+			tcp.Spec.ControlPlane.Service.Headless = ptr.To(true)
+			tcp.Spec.NetworkProfile.Address = "192.0.2.7"
+
+			err := k8sClient.Create(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+
+			tcp.Spec.ControlPlane.Service.Headless = ptr.To(false)
+			err = k8sClient.Update(ctx, tcp)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Headless is immutable"))
+		})
+	})
+})

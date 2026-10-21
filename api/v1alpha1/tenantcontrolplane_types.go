@@ -380,6 +380,14 @@ type ServiceSpec struct {
 	// rejected by validation.
 	//+optional
 	AllocateLoadBalancerNodePorts *bool `json:"allocateLoadBalancerNodePorts,omitempty"`
+	// Headless deploys the Tenant Control Plane Service as a headless Service
+	// (spec.clusterIP: None): no Service VIP is allocated, and DNS resolves
+	// directly to the backing pod IPs. It is only valid when serviceType is
+	// ClusterIP, and requires networkProfile.address to be set, since a headless
+	// Service has no VIP to announce as the control plane endpoint.
+	//+optional
+	//+kubebuilder:validation:XValidation:rule="self == oldSelf",message="Headless is immutable"
+	Headless *bool `json:"headless,omitempty"`
 	// IPFamilyPolicy maps directly to the generated Service's spec.ipFamilyPolicy.
 	// When nil, the management cluster default applies, preserving existing behaviour.
 	// PreferDualStack and RequireDualStack describe a dual-stack Service and expect
@@ -536,6 +544,9 @@ type DataStoreOverride struct {
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == 'LoadBalancer')", message="LoadBalancer source ranges are supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == 'LoadBalancer'", message="LoadBalancerClass is supported only with LoadBalancer service type"
 // +kubebuilder:validation:XValidation:rule="!has(self.controlPlane.service.allocateLoadBalancerNodePorts) || self.controlPlane.service.serviceType == 'LoadBalancer'", message="allocateLoadBalancerNodePorts is supported only with LoadBalancer service type"
+// +kubebuilder:validation:XValidation:rule="!has(self.controlPlane.service.headless) || !self.controlPlane.service.headless || self.controlPlane.service.serviceType == 'ClusterIP'", message="headless is supported only with ClusterIP service type"
+// +kubebuilder:validation:XValidation:rule="!has(self.controlPlane.service.headless) || !self.controlPlane.service.headless || has(self.networkProfile.address) && self.networkProfile.address != ''", message="headless requires networkProfile.address to be set, since a headless Service has no VIP to announce"
+// +kubebuilder:validation:XValidation:rule="has(self.controlPlane.service.headless) == has(oldSelf.controlPlane.service.headless)", message="headless cannot be set or unset at runtime"
 // +kubebuilder:validation:XValidation:rule="self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)",message="LoadBalancerClass cannot be set or unset at runtime"
 // +kubebuilder:validation:XValidation:rule="!has(self.controlPlane.service.ipFamilyPolicy) || self.controlPlane.service.ipFamilyPolicy != 'SingleStack' || !has(self.controlPlane.service.ipFamilies) || size(self.controlPlane.service.ipFamilies) <= 1", message="ipFamilies must contain at most one entry when ipFamilyPolicy is SingleStack"
 // +kubebuilder:validation:XValidation:rule="!has(self.controlPlane.service.ipFamilies) || size(self.controlPlane.service.ipFamilies) < 2 || self.controlPlane.service.ipFamilies[0] != self.controlPlane.service.ipFamilies[1]", message="ipFamilies entries must be unique"
