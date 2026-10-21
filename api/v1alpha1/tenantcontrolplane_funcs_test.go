@@ -8,6 +8,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -133,5 +134,108 @@ func TestControlPlaneServiceIPsMissingService(t *testing.T) {
 
 	if _, err := tcp.ControlPlaneServiceIPs(t.Context(), c); err == nil {
 		t.Fatal("expected an error when the Service does not exist, got nil")
+	}
+}
+
+func TestDeclaredControlPlaneAddress(t *testing.T) {
+	const (
+		name    = "tcp"
+		ns      = "default"
+		annAddr = "192.0.2.7"
+	)
+
+	headless := func(mutate func(*TenantControlPlane)) *TenantControlPlane {
+		t := &TenantControlPlane{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}
+		t.Spec.ControlPlane.Service.Headless = ptr.To(true)
+		mutate(t)
+
+		return t
+	}
+
+	svc := func(mutate func(*corev1.Service)) *corev1.Service {
+		s := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}
+		mutate(s)
+
+		return s
+	}
+
+	tests := []struct {
+		name    string
+		tcp     *TenantControlPlane
+		service *corev1.Service
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "declared networkProfile.address wins over the Service",
+			tcp: headless(func(t *TenantControlPlane) {
+				t.Spec.NetworkProfile.Address = annAddr
+			}),
+			service: svc(func(s *corev1.Service) {
+				s.Spec.Type = corev1.ServiceTypeClusterIP
+				s.Spec.ClusterIP = clusterIPv4
+			}),
+			want: annAddr,
+		},
+		{
+			name: "ClusterIP returns the allocated VIP",
+			tcp:  &TenantControlPlane{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}},
+			service: svc(func(s *corev1.Service) {
+				s.Spec.Type = corev1.ServiceTypeClusterIP
+				s.Spec.ClusterIP = clusterIPv4
+			}),
+			want: clusterIPv4,
+		},
+		{
+			name: "headless without networkProfile.address errors instead of returning None",
+			tcp:  headless(func(*TenantControlPlane) {}),
+			service: svc(func(s *corev1.Service) {
+				s.Spec.Type = corev1.ServiceTypeClusterIP
+				s.Spec.ClusterIP = corev1.ClusterIPNone
+				s.Spec.ClusterIPs = []string{corev1.ClusterIPNone}
+			}),
+			wantErr: true,
+		},
+		{
+			name: "headless falls back to networkProfile.address",
+			tcp: headless(func(t *TenantControlPlane) {
+				t.Spec.NetworkProfile.Address = annAddr
+			}),
+			service: svc(func(s *corev1.Service) {
+				s.Spec.Type = corev1.ServiceTypeClusterIP
+				s.Spec.ClusterIP = corev1.ClusterIPNone
+				s.Spec.ClusterIPs = []string{corev1.ClusterIPNone}
+			}),
+			want: annAddr,
+		},
+		{
+			name:    "ClusterIP without an allocated VIP errors",
+			tcp:     &TenantControlPlane{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}},
+			service: svc(func(s *corev1.Service) {}),
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := fake.NewClientBuilder().WithObjects(tt.service).Build()
+
+			got, err := tt.tcp.DeclaredControlPlaneAddress(t.Context(), c)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected an error, got address %q", got)
+				}
+
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if got != tt.want {
+				t.Fatalf("got %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
