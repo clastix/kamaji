@@ -31183,6 +31183,17 @@ rejected by validation.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>headless</b></td>
+        <td>boolean</td>
+        <td>
+          Headless deploys the Tenant Control Plane Service as a headless Service
+(spec.clusterIP: None): no Service VIP is allocated, and DNS resolves
+directly to the backing pod IPs. It is only valid when serviceType is
+ClusterIP, and requires networkProfile.address to be set, since a headless
+Service has no VIP to announce as the control plane endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>ipFamilies</b></td>
         <td>[]enum</td>
         <td>

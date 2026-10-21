@@ -83,6 +83,7 @@ nav:
   - guides/console.md
   - guides/kubeconfig-generator.md
   - guides/gateway-api.md
+  - guides/headless-control-plane-service.md
   - guides/upgrade.md
   - guides/monitoring.md
   - guides/terraform.md
