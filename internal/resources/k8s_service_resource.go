@@ -176,13 +176,17 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 			r.resource.Spec.Type = corev1.ServiceTypeNodePort
 			r.resource.Spec.Ports[0].NodePort = tenantControlPlane.Spec.NetworkProfile.Port
 
-			if tenantControlPlane.Spec.NetworkProfile.AllowAddressAsExternalIP && len(address) > 0 {
+			if tenantControlPlane.Spec.NetworkProfile.AllowAddressAsExternalIP && len(address) > 0 && address != corev1.ClusterIPNone {
 				r.resource.Spec.ExternalIPs = []string{address}
 			}
 		default:
 			r.resource.Spec.Type = corev1.ServiceTypeClusterIP
 
-			if tenantControlPlane.Spec.NetworkProfile.AllowAddressAsExternalIP && len(address) > 0 {
+			if ptr.Deref(tenantControlPlane.Spec.ControlPlane.Service.Headless, false) {
+				r.resource.Spec.ClusterIP = corev1.ClusterIPNone
+			}
+
+			if tenantControlPlane.Spec.NetworkProfile.AllowAddressAsExternalIP && len(address) > 0 && address != corev1.ClusterIPNone {
 				r.resource.Spec.ExternalIPs = []string{address}
 			}
 		}
