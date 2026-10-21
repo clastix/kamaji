@@ -4,7 +4,6 @@
 package kubeconfiggenerator
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -20,7 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	cmdutils "github.com/clastix/kamaji/cmd/utils"
 	"github.com/clastix/kamaji/controllers"
@@ -149,14 +147,6 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			return nil
 		},
 	}
-	// Setting zap logger
-	zapfs := flag.NewFlagSet("zap", flag.ExitOnError)
-	opts := zap.Options{
-		Development: true,
-	}
-	opts.BindFlags(zapfs)
-	cmd.Flags().AddGoFlagSet(zapfs)
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	// Setting CLI flags
 	cmd.Flags().StringVar(&metricsBindAddress, "metrics-bind-address", ":8090", "The address the metric endpoint binds to.")
 	cmd.Flags().BoolVar(&metricsSecure, "metrics-secure", false, "If set, the metrics endpoint is served over HTTPS and requires a bearer token authorized against the manager's kamaji-metrics-reader ClusterRole, instead of being served in plaintext without authentication.")

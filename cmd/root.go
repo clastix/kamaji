@@ -4,22 +4,33 @@
 package cmd
 
 import (
+	"flag"
+
 	"github.com/spf13/cobra"
 	_ "go.uber.org/automaxprocs" // Automatically set `GOMAXPROCS` to match Linux container CPU quota.
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	appsv1 "k8s.io/kubernetes/pkg/apis/apps/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
 
 func NewCmd(scheme *runtime.Scheme) *cobra.Command {
-	return &cobra.Command{
+	zapfs := flag.NewFlagSet("zap", flag.ExitOnError)
+	opts := zap.Options{
+		Development: true,
+	}
+	opts.BindFlags(zapfs)
+
+	cmd := &cobra.Command{
 		Use:   "kamaji",
 		Short: "Build and operate Kubernetes at scale with a fraction of operational burden.",
 		PersistentPreRun: func(*cobra.Command, []string) {
+			ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 			utilruntime.Must(kamajiv1alpha1.AddToScheme(scheme))
 			utilruntime.Must(appsv1.RegisterDefaults(scheme))
@@ -28,4 +39,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			utilruntime.Must(gatewayv1.Install(scheme))
 		},
 	}
+	cmd.PersistentFlags().AddGoFlagSet(zapfs)
+
+	return cmd
 }
