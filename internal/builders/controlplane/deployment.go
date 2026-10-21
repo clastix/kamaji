@@ -150,6 +150,7 @@ func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, te
 	d.setAdditionalVolumes(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setVolumes(&deployment.Spec.Template.Spec, tenantControlPlane)
 	d.setServiceAccount(&deployment.Spec.Template.Spec, tenantControlPlane)
+	Konnectivity{}.Build(deployment, tenantControlPlane)
 	d.Client.Scheme().Default(deployment)
 }
 
@@ -1200,8 +1201,7 @@ func (d Deployment) setTopologySpreadConstraints(spec *appsv1.DeploymentSpec, to
 	spec.Template.Spec.TopologySpreadConstraints = topologies
 }
 
-// resetKubeAPIServerFlags ensures that upon a change of the kube-apiserver extra flags the desired ones are properly
-// applied, also considering that the container could be lately patched by the konnectivity addon resources.
+// resetKubeAPIServerFlags ensures that upon a change of the kube-apiserver extra flags the desired ones are properly applied.
 func (d Deployment) resetKubeAPIServerFlags(resource *appsv1.Deployment, tcp kamajiv1alpha1.TenantControlPlane) {
 	var extraArgs []string
 

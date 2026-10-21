@@ -22,9 +22,8 @@ import (
 )
 
 type TenantControlPlaneDeployment struct {
-	Client              client.Client
-	DeploymentBuilder   controlplane.Deployment
-	KonnectivityBuilder controlplane.Konnectivity
+	Client            client.Client
+	DeploymentBuilder controlplane.Deployment
 }
 
 func (t TenantControlPlaneDeployment) OnCreate(runtime.Object) AdmissionResponse {
@@ -91,10 +90,6 @@ func (t TenantControlPlaneDeployment) OnUpdate(newObject runtime.Object, oldObje
 		}
 
 		t.DeploymentBuilder.Build(ctx, &deployment, *tcp)
-
-		if tcp.Spec.Addons.Konnectivity != nil {
-			t.KonnectivityBuilder.Build(&deployment, *tcp)
-		}
 
 		if k8serrors.IsNotFound(err) {
 			err = t.Client.Create(ctx, &deployment, client.DryRunAll)
