@@ -176,6 +176,21 @@ func featureTestMigration(driver string) {
 		}
 
 		By("ensuring changes are not allowed")
+		// A freshly created ValidatingWebhookConfiguration is enforced asynchronously by
+		// the API server admission plugin: a write issued right after the webhook has
+		// been observed can bypass it entirely. Probe with a throwaway Namespace until
+		// blocking is effective - the probe must be disposable, since a bypassed delete
+		// succeeds and removes the object - before asserting blocking is consistent.
+		Eventually(func() error {
+			probe := &corev1.Namespace{}
+			probe.SetName(fmt.Sprintf("freeze-probe-%s", rand.String(5)))
+
+			if err := tcpClient.Create(context.Background(), probe); err != nil {
+				return err
+			}
+
+			return tcpClient.Delete(context.Background(), probe)
+		}, time.Minute, time.Second).Should(HaveOccurred())
 		Consistently(func() error {
 			return tcpClient.Delete(context.Background(), ns)
 		}, 10*time.Second, time.Second).Should(HaveOccurred())
