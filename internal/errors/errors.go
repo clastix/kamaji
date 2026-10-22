@@ -20,3 +20,9 @@ type MissingValidIPError struct{}
 func (m MissingValidIPError) Error() string {
 	return "the actual resource doesn't have yet a valid IP address"
 }
+
+type MissingControlPlaneAddressError struct{}
+
+func (m MissingControlPlaneAddressError) Error() string {
+	return "cannot announce the TenantControlPlane address with a headless Service: spec.networkProfile.address must be set"
+}

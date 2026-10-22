@@ -11,6 +11,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
@@ -69,6 +70,13 @@ func (in *TenantControlPlane) DeclaredControlPlaneAddress(ctx context.Context, c
 		// Returning the hard-coded value in the specification in case of non LoadBalanced resources
 		return in.Spec.NetworkProfile.Address, nil
 	case svc.Spec.Type == corev1.ServiceTypeClusterIP:
+		// A headless Service has clusterIP: None: there is no VIP to announce, and the
+		// address must come from the specification (guarded by validation, and a safety
+		// net for resources created before the CEL rules were introduced).
+		if svc.Spec.ClusterIP == corev1.ClusterIPNone && ptr.Deref(in.Spec.ControlPlane.Service.Headless, false) {
+			return "", kamajierrors.MissingControlPlaneAddressError{}
+		}
+
 		return svc.Spec.ClusterIP, nil
 	case svc.Spec.Type == corev1.ServiceTypeLoadBalancer:
 		loadBalancerStatus = svc.Status.LoadBalancer

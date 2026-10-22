@@ -8681,6 +8681,17 @@ spec:
                             valid when serviceType is LoadBalancer; setting it with any other serviceType is
                             rejected by validation.
                           type: boolean
+                        headless:
+                          description: |-
+                            Headless deploys the Tenant Control Plane Service as a headless Service
+                            (spec.clusterIP: None): no Service VIP is allocated, and DNS resolves
+                            directly to the backing pod IPs. It is only valid when serviceType is
+                            ClusterIP, and requires networkProfile.address to be set, since a headless
+                            Service has no VIP to announce as the control plane endpoint.
+                          type: boolean
+                          x-kubernetes-validations:
+                            - message: Headless is immutable
+                              rule: self == oldSelf
                         ipFamilies:
                           description: |-
                             IPFamilies maps directly to the generated Service's spec.ipFamilies. Order is
@@ -9079,6 +9090,12 @@ spec:
                   rule: '!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == ''LoadBalancer'''
                 - message: allocateLoadBalancerNodePorts is supported only with LoadBalancer service type
                   rule: '!has(self.controlPlane.service.allocateLoadBalancerNodePorts) || self.controlPlane.service.serviceType == ''LoadBalancer'''
+                - message: headless is supported only with ClusterIP service type
+                  rule: '!has(self.controlPlane.service.headless) || !self.controlPlane.service.headless || self.controlPlane.service.serviceType == ''ClusterIP'''
+                - message: headless requires networkProfile.address to be set, since a headless Service has no VIP to announce
+                  rule: '!has(self.controlPlane.service.headless) || !self.controlPlane.service.headless || has(self.networkProfile.address) && self.networkProfile.address != '''''
+                - message: headless cannot be set or unset at runtime
+                  rule: has(self.controlPlane.service.headless) == has(oldSelf.controlPlane.service.headless)
                 - message: LoadBalancerClass cannot be set or unset at runtime
                   rule: self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)
                 - message: ipFamilies must contain at most one entry when ipFamilyPolicy is SingleStack
