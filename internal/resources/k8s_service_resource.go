@@ -115,7 +115,7 @@ func (r *KubernetesServiceResource) mutate(ctx context.Context, tenantControlPla
 				port.TargetPort = intstr.FromInt32(tenantControlPlane.Spec.NetworkProfile.Port)
 
 				ports = append(ports, port)
-			case i == 1 && port.Name == "konnectivity-server":
+			case port.Name == "konnectivity-server":
 				ports = append(ports, port)
 			}
 		}
