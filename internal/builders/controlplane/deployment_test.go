@@ -38,6 +38,36 @@ var _ = Describe("Controlplane Deployment", func() {
 	})
 
 	Describe("DataStoreOverrides flag generation", func() {
+		It("drops the flag after DataStoreOverrides are removed", func() {
+			d.DataStore.Spec.Driver = kamajiv1alpha1.EtcdDriver
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			first := d.buildKubeAPIServerCommand(tcp, "192.0.2.1", nil)
+			Expect(first).To(ContainElement("--etcd-servers-overrides=/events#https://etcd-0;https://etcd-1;https://etcd-2"))
+
+			d.DataStoreOverrides = nil
+			current := append(first, "--watch-cache=false")
+			got := d.buildKubeAPIServerCommand(tcp, "192.0.2.1", current)
+			Expect(got).To(ContainElement("--watch-cache=false"))
+			Expect(got).To(Equal(d.buildKubeAPIServerCommand(tcp, "192.0.2.1", []string{"--watch-cache=false"})))
+		})
+
+		It("keeps user extraArgs after DataStoreOverrides are emptied", func() {
+			d.DataStore.Spec.Driver = kamajiv1alpha1.EtcdDriver
+			extraArgs := []string{
+				"--service-account-issuer=https://issuer-two.example.com",
+				"--service-account-issuer=https://issuer-one.example.com",
+				"--etcd-servers-overrides=/events#https://custom-etcd",
+			}
+			tcp := kamajiv1alpha1.TenantControlPlane{}
+			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{APIServer: extraArgs}
+			first := d.buildKubeAPIServerCommand(tcp, "192.0.2.1", nil)
+
+			d.DataStoreOverrides = []DataStoreOverrides{}
+			got := d.buildKubeAPIServerCommand(tcp, "192.0.2.1", first)
+			Expect(got).To(Equal(d.buildKubeAPIServerCommand(tcp, "192.0.2.1", nil)))
+			Expect(got[len(got)-len(extraArgs):]).To(Equal(extraArgs))
+		})
+
 		It("should generate valid --etcd-servers-overrides value", func() {
 			etcdSerVersOverrides := d.etcdServersOverrides()
 			Expect(etcdSerVersOverrides).To(Equal("/events#https://etcd-0;https://etcd-1;https://etcd-2"))
