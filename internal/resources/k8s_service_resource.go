@@ -33,10 +33,13 @@ func (r *KubernetesServiceResource) GetHistogram() prometheus.Histogram {
 	return serviceCollector
 }
 
-func (r *KubernetesServiceResource) ShouldStatusBeUpdated(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+func (r *KubernetesServiceResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
+	address, err := tenantControlPlane.DeclaredControlPlaneAddress(ctx, r.Client)
+
 	return tenantControlPlane.Status.Kubernetes.Service.Name != r.resource.GetName() ||
 		tenantControlPlane.Status.Kubernetes.Service.Namespace != r.resource.GetNamespace() ||
-		tenantControlPlane.Status.Kubernetes.Service.Port != r.resource.Spec.Ports[0].Port
+		tenantControlPlane.Status.Kubernetes.Service.Port != r.resource.Spec.Ports[0].Port ||
+		err == nil && tenantControlPlane.Status.ControlPlaneEndpoint != net.JoinHostPort(address, strconv.FormatInt(int64(tenantControlPlane.Spec.NetworkProfile.Port), 10))
 }
 
 func (r *KubernetesServiceResource) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
