@@ -250,22 +250,17 @@ func NewMySQLConnection(config ConnectionConfig) (Connection, error) {
 		return nil, err
 	}
 
-	tlsKey := "mysql"
-
-	if config.TLSConfig != nil {
-		if err = mysql.RegisterTLSConfig(tlsKey, config.TLSConfig); err != nil {
-			return nil, err
-		}
-		mysqlConfig.TLSConfig = tlsKey
-	}
-
+	// Not mysql.RegisterTLSConfig: that registry is process-global, so a shared key lets
+	// concurrent reconciles of different DataStores swap each other's CA and client key.
+	mysqlConfig.TLS = config.TLSConfig
 	mysqlConfig.DBName = config.DBName
-	parsedDSN := mysqlConfig.FormatDSN()
 
-	db, err := sql.Open("mysql", parsedDSN)
+	connector, err := mysql.NewConnector(mysqlConfig)
 	if err != nil {
 		return nil, err
 	}
+
+	db := sql.OpenDB(connector)
 
 	return &MySQLConnection{db: db, config: mysqlConfig, connector: config.Endpoints[0]}, nil
 }
