@@ -8,6 +8,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"path"
+	"slices"
 	"sort"
 	"strings"
 
@@ -763,6 +764,12 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 
 	if len(d.DataStoreOverrides) != 0 {
 		managed["--etcd-servers-overrides"] = d.etcdServersOverrides()
+	} else {
+		current = slices.DeleteFunc(current, func(arg string) bool {
+			flag, _, _ := strings.Cut(arg, "=")
+
+			return flag == "--etcd-servers-overrides"
+		})
 	}
 	// The Konnectivity addon flag is rendered together with the managed flags,
 	// in sorted position, so that the argument list is deterministic from the
