@@ -433,3 +433,35 @@ var _ = Describe("KubernetesServiceResource ExternalIPs", func() {
 		Expect(reconcile().Spec.ExternalIPs).To(Equal([]string{"203.0.113.10"}))
 	})
 })
+
+var _ = Describe("KubernetesServiceResource control plane endpoint", func() {
+	DescribeTable("refreshes status after an address change", func(serviceType kamajiv1alpha1.ServiceType, address, endpoint string, expected bool) {
+		ctx := context.Background()
+		tcp := &kamajiv1alpha1.TenantControlPlane{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-tcp", Namespace: "default"},
+			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
+				ControlPlane: kamajiv1alpha1.ControlPlane{
+					Service: kamajiv1alpha1.ServiceSpec{ServiceType: serviceType},
+				},
+				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{Address: address, Port: 6443},
+			},
+		}
+		resource := &resources.KubernetesServiceResource{
+			Client: fake.NewClientBuilder().WithScheme(runtimeScheme).Build(),
+		}
+		Expect(resource.Define(ctx, tcp)).To(Succeed())
+		_, err := resource.CreateOrUpdate(ctx, tcp)
+		Expect(err).NotTo(HaveOccurred())
+		tcp.Status.Kubernetes.Service.Name = tcp.Name
+		tcp.Status.Kubernetes.Service.Namespace = tcp.Namespace
+		tcp.Status.Kubernetes.Service.Port = tcp.Spec.NetworkProfile.Port
+		tcp.Status.ControlPlaneEndpoint = endpoint
+
+		Expect(resource.ShouldStatusBeUpdated(ctx, tcp)).To(Equal(expected))
+	},
+		Entry("changed ClusterIP address", kamajiv1alpha1.ServiceTypeClusterIP, "203.0.113.20", "203.0.113.10:6443", true),
+		Entry("changed NodePort address", kamajiv1alpha1.ServiceTypeNodePort, "203.0.113.20", "203.0.113.10:6443", true),
+		Entry("unchanged address and port", kamajiv1alpha1.ServiceTypeClusterIP, "203.0.113.10", "203.0.113.10:6443", false),
+		Entry("LoadBalancer without ingress", kamajiv1alpha1.ServiceTypeLoadBalancer, "", "", false),
+	)
+})
