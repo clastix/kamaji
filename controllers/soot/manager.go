@@ -98,11 +98,16 @@ func (m *Manager) cleanup(ctx context.Context, req reconcile.Request, tenantCont
 		}()
 	}
 
-	tcpName := req.NamespacedName.String()
+	m.stop(ctx, req.NamespacedName.String())
 
+	return nil
+}
+
+// stop cancels the soot manager before removing it: once out of the map, nothing could stop it.
+func (m *Manager) stop(ctx context.Context, tcpName string) {
 	v, ok := m.sootMap[tcpName]
 	if !ok {
-		return nil
+		return
 	}
 
 	v.cancelFn()
@@ -126,8 +131,6 @@ func (m *Manager) cleanup(ctx context.Context, req reconcile.Request, tenantCont
 	}
 
 	delete(m.sootMap, tcpName)
-
-	return nil
 }
 
 func (m *Manager) retryTenantControlPlaneAnnotations(ctx context.Context, request reconcile.Request, modifierFn func(annotations map[string]string)) error {
@@ -178,7 +181,7 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	if ok {
 		switch {
 		case tcp.Annotations != nil && tcp.Annotations[sootManagerAnnotation] == sootManagerFailedAnnotation:
-			delete(m.sootMap, request.String())
+			m.stop(ctx, request.String())
 
 			return reconcile.Result{}, m.retryTenantControlPlaneAnnotations(ctx, request, func(annotations map[string]string) {
 				delete(annotations, sootManagerAnnotation)
@@ -384,15 +387,17 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 	completedCh := make(chan struct{})
 	// Starting the manager
 	go func() {
-		if err = mgr.Start(tcpCtx); err != nil {
-			logger.Error(err, "unable to start soot manager")
+		startErr := mgr.Start(tcpCtx)
+		// A soot manager stopped on purpose can fail while shutting down: it must not flag the next one as failed
+		if startErr != nil && tcpCtx.Err() == nil {
+			logger.Error(startErr, "unable to start soot manager")
 			// The sootManagerAnnotation is used to propagate the error between reconciliations with its state:
 			// this is required to avoid mutex and prevent concurrent read/write on the soot map
 			annotationErr := m.retryTenantControlPlaneAnnotations(ctx, request, func(annotations map[string]string) {
 				annotations[sootManagerAnnotation] = sootManagerFailedAnnotation
 			})
 			if annotationErr != nil {
-				logger.Error(err, "unable to update TenantControlPlane for soot failed annotation")
+				logger.Error(annotationErr, "unable to update TenantControlPlane for soot failed annotation")
 			}
 			// When the manager cannot start we're enqueuing back the request to take advantage of the backoff factor
 			// of the queue: this is a goroutine and cannot return an error since the manager is running on its own,
