@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -115,36 +116,7 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 	}
 
 	res, err := utilities.CreateOrUpdateWithConflict(ctx, d.Client, d.job, func() error {
-		d.job.SetLabels(map[string]string{
-			"tcp.kamaji.clastix.io/name":      tenantControlPlane.GetName(),
-			"tcp.kamaji.clastix.io/namespace": tenantControlPlane.GetNamespace(),
-			"kamaji.clastix.io/component":     "migrate",
-		})
-
-		d.job.Spec.Template.ObjectMeta.Labels = utilities.MergeMaps(d.job.Spec.Template.ObjectMeta.Labels, d.job.Spec.Template.ObjectMeta.Labels)
-		d.job.Spec.Template.Spec.ServiceAccountName = d.KamajiServiceAccount
-		d.job.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
-		if len(d.job.Spec.Template.Spec.Containers) == 0 {
-			d.job.Spec.Template.Spec.Containers = append(d.job.Spec.Template.Spec.Containers, corev1.Container{})
-		}
-		d.job.Spec.Template.Spec.Containers[0].Name = "migrate"
-		d.job.Spec.Template.Spec.Containers[0].Image = d.MigrateImage
-		d.job.Spec.Template.Spec.Containers[0].Args = []string{
-			"migrate",
-			fmt.Sprintf("--tenant-control-plane=%s/%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName()),
-			fmt.Sprintf("--target-datastore=%s", tenantControlPlane.Spec.DataStore),
-		}
-
-		if annotations := tenantControlPlane.GetAnnotations(); annotations != nil {
-			v, _ := strconv.ParseBool(annotations["kamaji.clastix.io/cleanup-prior-migration"])
-			d.job.Spec.Template.Spec.Containers[0].Args = append(d.job.Spec.Template.Spec.Containers[0].Args, fmt.Sprintf("--cleanup-prior-migration=%t", v))
-
-			if timeout, tErr := time.ParseDuration(annotations["kamaji.clastix.io/migration-timeout"]); tErr == nil {
-				d.job.Spec.Template.Spec.Containers[0].Args = append(d.job.Spec.Template.Spec.Containers[0].Args, fmt.Sprintf("--timeout=%s", timeout.String()))
-			}
-		}
-
-		return nil
+		return d.mutateJob(tenantControlPlane)
 	})
 	if err != nil {
 		// Jobs are immutable, except for a tiny subset of fields:
@@ -192,6 +164,53 @@ func (d *Migrate) ShouldStatusBeUpdated(context.Context, *kamajiv1alpha1.TenantC
 func (d *Migrate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if d.inProgress {
 		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionMigrating
+	}
+
+	return nil
+}
+
+// mutateJob fills in the migration Job: it is the mutate function of the CreateOrUpdate
+// above, kept separate so the resulting Job can be asserted without a tenant client.
+func (d *Migrate) mutateJob(tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	d.job.SetLabels(map[string]string{
+		"tcp.kamaji.clastix.io/name":      tenantControlPlane.GetName(),
+		"tcp.kamaji.clastix.io/namespace": tenantControlPlane.GetNamespace(),
+		"kamaji.clastix.io/component":     "migrate",
+	})
+
+	d.job.Spec.Template.ObjectMeta.Labels = utilities.MergeMaps(d.job.Spec.Template.ObjectMeta.Labels, d.job.Spec.Template.ObjectMeta.Labels)
+	d.job.Spec.Template.Spec.ServiceAccountName = d.KamajiServiceAccount
+	d.job.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
+	// The Job only copies datastore data, so a fixed securityContext keeps it
+	// admissible under the "restricted" Pod Security Standard.
+	d.job.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+		RunAsNonRoot:   ptr.To(true),
+		SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+	}
+
+	if len(d.job.Spec.Template.Spec.Containers) == 0 {
+		d.job.Spec.Template.Spec.Containers = append(d.job.Spec.Template.Spec.Containers, corev1.Container{})
+	}
+
+	d.job.Spec.Template.Spec.Containers[0].Name = "migrate"
+	d.job.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
+		AllowPrivilegeEscalation: ptr.To(false),
+		Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
+	}
+	d.job.Spec.Template.Spec.Containers[0].Image = d.MigrateImage
+	d.job.Spec.Template.Spec.Containers[0].Args = []string{
+		"migrate",
+		fmt.Sprintf("--tenant-control-plane=%s/%s", tenantControlPlane.GetNamespace(), tenantControlPlane.GetName()),
+		fmt.Sprintf("--target-datastore=%s", tenantControlPlane.Spec.DataStore),
+	}
+
+	if annotations := tenantControlPlane.GetAnnotations(); annotations != nil {
+		v, _ := strconv.ParseBool(annotations["kamaji.clastix.io/cleanup-prior-migration"])
+		d.job.Spec.Template.Spec.Containers[0].Args = append(d.job.Spec.Template.Spec.Containers[0].Args, fmt.Sprintf("--cleanup-prior-migration=%t", v))
+
+		if timeout, tErr := time.ParseDuration(annotations["kamaji.clastix.io/migration-timeout"]); tErr == nil {
+			d.job.Spec.Template.Spec.Containers[0].Args = append(d.job.Spec.Template.Spec.Containers[0].Args, fmt.Sprintf("--timeout=%s", timeout.String()))
+		}
 	}
 
 	return nil
