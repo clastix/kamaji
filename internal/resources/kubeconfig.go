@@ -164,7 +164,19 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 			return err
 		}
 
-		checksum := r.checksum(caCertificatesSecret, config.Checksum(), utilities.CalculateMapChecksum(r.resource.Data))
+		// For pregenerated certificates, exclude the kubeadm config checksum from the
+		// kubeconfig checksum: the certificates are immutable, but config.Checksum()
+		// changes as the control plane Service picks up its ClusterIP/LoadBalancer
+		// ingress IPs (which feed the certificate SANs). Including it regenerates the
+		// kubeconfig (and its client keypair) on every reconcile, which in turn changes
+		// the component checksum, the Deployment pod-template hash, and thus spawns a
+		// new ReplicaSet on every reconcile: an infinite loop.
+		var configChecksum string
+		if tenantControlPlane.Spec.PreGeneratedCertificates == nil {
+			configChecksum = config.Checksum()
+		}
+
+		checksum := r.checksum(caCertificatesSecret, configChecksum, utilities.CalculateMapChecksum(r.resource.Data))
 
 		status, err := r.getKubeconfigStatus(tenantControlPlane)
 		if err != nil {
@@ -244,7 +256,7 @@ func (r *KubeconfigResource) mutate(ctx context.Context, tenantControlPlane *kam
 				r.resource.Data[key] = kubeconfig
 			}
 
-			checksum = r.checksum(caCertificatesSecret, config.Checksum(), utilities.CalculateMapChecksum(r.resource.Data))
+			checksum = r.checksum(caCertificatesSecret, configChecksum, utilities.CalculateMapChecksum(r.resource.Data))
 			r.resource.SetAnnotations(utilities.MergeMaps(r.resource.GetAnnotations(), map[string]string{constants.Checksum: checksum}))
 		}
 
