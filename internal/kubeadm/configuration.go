@@ -32,8 +32,13 @@ func CreateKubeadmInitConfiguration(params Parameters) (*Configuration, error) {
 	// we have to store the ComponentConfigs to a null value.
 	conf.ClusterConfiguration.ComponentConfigs = nil
 
+	advertiseAddress := params.TenantControlPlaneAddress
+	if params.TenantControlPlaneAdvertiseAddress != "" {
+		advertiseAddress = params.TenantControlPlaneAdvertiseAddress
+	}
+
 	conf.LocalAPIEndpoint = kubeadmapi.APIEndpoint{
-		AdvertiseAddress: params.TenantControlPlaneAddress,
+		AdvertiseAddress: advertiseAddress,
 		BindPort:         params.TenantControlPlanePort,
 	}
 

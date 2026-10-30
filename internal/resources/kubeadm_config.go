@@ -180,18 +180,19 @@ func (r *KubeadmConfigResource) mutate(ctx context.Context, tenantControlPlane *
 		podCIDRs := utilities.GetEffectiveCIDRs(tenantControlPlane.Spec.NetworkProfile.PodCIDR, tenantControlPlane.Spec.NetworkProfile.PodCIDRs)             //nolint:staticcheck // intentional read of deprecated field
 
 		params := kubeadm.Parameters{
-			TenantControlPlaneAddress:       address,
-			TenantControlPlanePort:          port,
-			TenantControlPlaneName:          tenantControlPlane.GetName(),
-			TenantControlPlaneNamespace:     tenantControlPlane.GetNamespace(),
-			TenantControlPlaneEndpoint:      endpoint,
-			TenantControlPlaneCertSANs:      certSANs,
-			TenantControlPlaneClusterDomain: tenantControlPlane.Spec.NetworkProfile.ClusterDomain,
-			TenantControlPlanePodCIDR:       podCIDRs,
-			TenantControlPlaneServiceCIDR:   serviceCIDRs,
-			TenantControlPlaneVersion:       tenantControlPlane.Spec.Kubernetes.Version,
-			ETCDs:                           r.ETCDs,
-			CertificatesDir:                 r.TmpDirectory,
+			TenantControlPlaneAddress:          address,
+			TenantControlPlaneAdvertiseAddress: advAddress,
+			TenantControlPlanePort:             port,
+			TenantControlPlaneName:             tenantControlPlane.GetName(),
+			TenantControlPlaneNamespace:        tenantControlPlane.GetNamespace(),
+			TenantControlPlaneEndpoint:         endpoint,
+			TenantControlPlaneCertSANs:         certSANs,
+			TenantControlPlaneClusterDomain:    tenantControlPlane.Spec.NetworkProfile.ClusterDomain,
+			TenantControlPlanePodCIDR:          podCIDRs,
+			TenantControlPlaneServiceCIDR:      serviceCIDRs,
+			TenantControlPlaneVersion:          tenantControlPlane.Spec.Kubernetes.Version,
+			ETCDs:                              r.ETCDs,
+			CertificatesDir:                    r.TmpDirectory,
 		}
 
 		config, err := kubeadm.CreateKubeadmInitConfiguration(params)

@@ -11,6 +11,27 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/componentconfigs"
 )
 
+func TestCreateKubeadmInitConfigurationUsesAdvertiseAddressForLocalAPIEndpoint(t *testing.T) {
+	config, err := CreateKubeadmInitConfiguration(Parameters{
+		TenantControlPlaneAddress:          "control-plane.example.com",
+		TenantControlPlaneAdvertiseAddress: "192.0.2.1",
+		TenantControlPlanePort:             6443,
+		ETCDs:                              []string{"http://etcd.default.svc:2379"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "192.0.2.1", config.InitConfiguration.LocalAPIEndpoint.AdvertiseAddress)
+}
+
+func TestCreateKubeadmInitConfigurationDefaultsLocalAPIEndpointToControlPlaneAddress(t *testing.T) {
+	config, err := CreateKubeadmInitConfiguration(Parameters{
+		TenantControlPlaneAddress: "192.0.2.1",
+		TenantControlPlanePort:    6443,
+		ETCDs:                     []string{"http://etcd.default.svc:2379"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "192.0.2.1", config.InitConfiguration.LocalAPIEndpoint.AdvertiseAddress)
+}
+
 func TestGetKubeadmInitConfigurationFromMapDefaultsKubeProxyClusterCIDR(t *testing.T) {
 	testCases := []struct {
 		name     string
