@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -53,7 +54,9 @@ var _ = Describe("Deploy a TenantControlPlane with RBAC bootstrap enabled", func
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
 					Version: kamajiv1alpha1.DefaultKubernetesVersion,
 					Kubelet: kamajiv1alpha1.KubeletSpec{
-						CGroupFS: "cgroupfs",
+						ConfigurationJSONPatches: kamajiv1alpha1.JSONPatches{
+							{Op: "add", Path: "/cgroupDriver", Value: &apiextensionsv1.JSON{Raw: []byte(`"cgroupfs"`)}},
+						},
 					},
 				},
 				Bootstrap: &kamajiv1alpha1.BootstrapSpec{
