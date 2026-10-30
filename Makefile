@@ -356,12 +356,12 @@ e2e-setup: build load helm ginkgo cert-manager gateway-api envoy-gateway ## Crea
 e2e-redeploy: build load
 	$(HELM) upgrade --debug --install kamaji ./charts/kamaji --create-namespace --namespace kamaji-system --set "image.tag=$(VERSION)" --set "image.pullPolicy=Never" --set "telemetry.disabled=true" --set "gatewayAPI.enabled=true"
 
-.PHONY: e2e-test
-e2e-test: build load
-	$(GINKGO) -v ./e2e
-
 # Newest kine release; upstream publishes its images to GHCR (see k3s-io/kine .github/workflows/release.yml).
 KINE_IMAGE_UPGRADE ?= ghcr.io/k3s-io/kine:v0.17.3
+
+.PHONY: e2e-test
+e2e-test: build load
+	E2E_KINE_IMAGE_UPGRADE=$(KINE_IMAGE_UPGRADE) $(GINKGO) -v ./e2e
 
 .PHONY: e2e-kine-rollout
 e2e-kine-rollout: ## Roll KINE_IMAGE_UPGRADE out to a live kine TenantControlPlane. Requires e2e-setup.
