@@ -24,8 +24,8 @@ Kubernetes: `>=1.21.0-0`
 |------------|------|---------|
 | https://clastix.github.io/charts | kamaji-etcd | >=0.15.0 |
 
-[Kamaji](https://github.com/clastix/kamaji) requires a [multi-tenant `etcd`](https://github.com/clastix/kamaji-internal/blob/master/deploy/getting-started-with-kamaji.md#setup-internal-multi-tenant-etcd) cluster.
-This Helm Chart starting from v0.1.1 provides the installation of an internal `etcd` in order to streamline the local test. If you'd like to use an externally managed etcd instance, you can specify the overrides and by setting the value `etcd.deploy=false`.
+[Kamaji](https://github.com/clastix/kamaji) requires a [multi-tenant `etcd`](https://github.com/clastix/kamaji-etcd) cluster.
+This Helm Chart starting from v0.1.1 provides the installation of an internal `etcd` in order to streamline the local test. If you'd like to use an externally managed etcd instance, you can specify the overrides and by setting the value `kamaji-etcd.deploy=false`.
 
 > For production use an externally managed `etcd` is highly recommended, the `etcd` addon offered by this Chart is not considered production-grade.
 
@@ -65,7 +65,7 @@ The values in your overrides file `myvalues.yaml` will override their counterpar
 
 If you only need to make minor customizations, you can specify them on the command line by using the `--set` option. For example:
 
-        helm upgrade kamaji --install --namespace kamaji-system --create-namespace clastix/kamaji --set etcd.deploy=false
+        helm upgrade kamaji --install --namespace kamaji-system --create-namespace clastix/kamaji --set kamaji-etcd.deploy=false
 
 Here the values you can override:
 

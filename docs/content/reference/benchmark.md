@@ -10,7 +10,7 @@ With that said, a main manager is responsible to reconcile the admin resources (
 These Tenant Control Plane managers, named in the code base as soot managers, in turn, start and run controllers to ensure the desired state of the underlying add-ons, and required resources such as kubeadm ones.
 
 With that said, monitoring the Kamaji stack is essential to understand any anomaly in memory consumption, or CPU usage.
-The provided Helm Chart is offering a [`ServiceMonitor`](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md) that can be used to extract all the required metrics of the Kamaji operator.
+The provided Helm Chart is offering a [`ServiceMonitor`](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/developer/getting-started.md#using-servicemonitors) that can be used to extract all the required metrics of the Kamaji operator.
 
 # Running 100 Tenant Control Planes using a single DataStore
 
