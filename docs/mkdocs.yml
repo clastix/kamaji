@@ -75,6 +75,7 @@ nav:
   - guides/alternative-datastore.md
   - guides/backup-and-restore.md
   - guides/certs-lifecycle.md
+  - guides/pregenerated-certificates.md
   - guides/pausing.md
   - guides/write-permissions.md
   - guides/datastore-migration.md
