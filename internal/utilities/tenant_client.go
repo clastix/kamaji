@@ -63,8 +63,15 @@ func GetRESTClientConfig(ctx context.Context, client client.Client, tenantContro
 		return nil, fmt.Errorf("kubeconfig is missing cluster or user entries")
 	}
 
+	host := fmt.Sprintf("https://%s.%s.svc:%d", tenantControlPlane.GetName(), tenantControlPlane.GetNamespace(), tenantControlPlane.Spec.NetworkProfile.Port)
+	if v, ok := tenantControlPlane.GetAnnotations()[kamajiv1alpha1.KubeconfigSecretKeyAnnotation]; ok && v != "" {
+		if server := kubeconfig.Clusters[0].Cluster.Server; server != "" {
+			host = server
+		}
+	}
+
 	config := &restclient.Config{
-		Host: fmt.Sprintf("https://%s.%s.svc:%d", tenantControlPlane.GetName(), tenantControlPlane.GetNamespace(), tenantControlPlane.Spec.NetworkProfile.Port),
+		Host: host,
 		TLSClientConfig: restclient.TLSClientConfig{
 			CAData:   kubeconfig.Clusters[0].Cluster.CertificateAuthorityData,
 			CertData: kubeconfig.AuthInfos[0].AuthInfo.ClientCertificateData,
