@@ -28,14 +28,15 @@ var _ = Describe("TenantControlPlane PublicAPIServerAddress", func() {
 			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
 				ControlPlane: kamajiv1alpha1.ControlPlane{
 					Service: kamajiv1alpha1.ServiceSpec{
-						ServiceType: kamajiv1alpha1.ServiceTypeLoadBalancer,
+						ServiceType: kamajiv1alpha1.ServiceTypeClusterIP,
 					},
 				},
 				Kubernetes: kamajiv1alpha1.KubernetesSpec{
 					Version: "v1.30.0",
 				},
 				NetworkProfile: kamajiv1alpha1.NetworkProfileSpec{
-					Port: 6443,
+					Address: "172.18.0.2",
+					Port:    6443,
 				},
 				DataStore: "default",
 			},
