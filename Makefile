@@ -360,6 +360,13 @@ e2e-redeploy: build load
 e2e-test: build load
 	$(GINKGO) -v ./e2e
 
+# Newest kine release; upstream publishes its images to GHCR (see k3s-io/kine .github/workflows/release.yml).
+KINE_IMAGE_UPGRADE ?= ghcr.io/k3s-io/kine:v0.17.3
+
+.PHONY: e2e-kine-rollout
+e2e-kine-rollout: ## Roll KINE_IMAGE_UPGRADE out to a live kine TenantControlPlane. Requires e2e-setup.
+	E2E_KINE_IMAGE_UPGRADE=$(KINE_IMAGE_UPGRADE) $(GINKGO) -v --focus "Rolling a new default --kine-image" ./e2e
+
 CAPI_URL = https://github.com/clastix/cluster-api-control-plane-provider-kamaji.git
 CAPI_DIR := $(shell mktemp -d)
 CRDS_DIR := $(shell mktemp -d)
