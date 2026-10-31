@@ -522,6 +522,52 @@ var _ = Describe("Controlplane Deployment", func() {
 			Expect(found).To(BeTrue())
 			Expect(podSpec.Containers[index].Image).To(Equal("custom-kine:latest"))
 		})
+
+		It("should replace the kine image of an existing deployment when the default changes", func() {
+			d.DataStore.Spec.TLSConfig = &kamajiv1alpha1.TLSConfig{}
+			podSpec := &corev1.PodSpec{
+				InitContainers: []corev1.Container{{Name: "chmod", Image: "rancher/kine:v0.10.0"}},
+				Containers: []corev1.Container{
+					{Name: "kube-apiserver"},
+					{Name: "kine", Image: "rancher/kine:v0.10.0"},
+				},
+			}
+
+			d.setInitContainers(podSpec, tcp)
+			d.setAdditionalContainers(podSpec, tcp)
+			d.buildKine(podSpec, tcp)
+
+			found, index := utilities.HasNamedContainer(podSpec.Containers, "kine")
+			Expect(found).To(BeTrue())
+			Expect(podSpec.Containers[index].Image).To(Equal("rancher/kine:v0.11.0"))
+			found, index = utilities.HasNamedContainer(podSpec.InitContainers, "chmod")
+			Expect(found).To(BeTrue())
+			Expect(podSpec.InitContainers[index].Image).To(Equal("rancher/kine:v0.11.0"))
+		})
+
+		It("should keep the custom kine image of an existing deployment when the default changes", func() {
+			d.DataStore.Spec.TLSConfig = &kamajiv1alpha1.TLSConfig{}
+			tcp.Spec.ControlPlane.Deployment.AdditionalContainers = []corev1.Container{
+				{Name: "kine", Image: "custom-kine:latest"},
+			}
+			podSpec := &corev1.PodSpec{}
+
+			d.setInitContainers(podSpec, tcp)
+			d.setAdditionalContainers(podSpec, tcp)
+			d.buildKine(podSpec, tcp)
+
+			d.KineContainerImage = "rancher/kine:v0.12.0"
+			d.setInitContainers(podSpec, tcp)
+			d.setAdditionalContainers(podSpec, tcp)
+			d.buildKine(podSpec, tcp)
+
+			found, index := utilities.HasNamedContainer(podSpec.Containers, "kine")
+			Expect(found).To(BeTrue())
+			Expect(podSpec.Containers[index].Image).To(Equal("custom-kine:latest"))
+			found, index = utilities.HasNamedContainer(podSpec.InitContainers, "chmod")
+			Expect(found).To(BeTrue())
+			Expect(podSpec.InitContainers[index].Image).To(Equal("rancher/kine:v0.12.0"))
+		})
 	})
 
 	Describe("component network flags", func() {
