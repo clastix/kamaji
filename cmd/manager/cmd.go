@@ -4,6 +4,7 @@
 package manager
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -37,6 +38,28 @@ import (
 	"github.com/clastix/kamaji/internal/webhook/handlers"
 	"github.com/clastix/kamaji/internal/webhook/routes"
 )
+
+// shutdownDrainPeriod is how long the manager keeps serving after SIGTERM before it stops. Kubernetes
+// removes a terminating Pod from the Service endpoints asynchronously, and kube-proxy takes a moment
+// more to stop routing to it, so webhook calls can still reach this Pod right after the signal.
+const shutdownDrainPeriod = 5 * time.Second
+
+// withShutdownDrain returns a context that is cancelled drain after parent is done.
+func withShutdownDrain(parent context.Context, drain time.Duration) context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		<-parent.Done()
+
+		timer := time.NewTimer(drain)
+		defer timer.Stop()
+
+		<-timer.C
+		cancel()
+	}()
+
+	return ctx
+}
 
 //nolint:maintidx
 func NewCmd(scheme *runtime.Scheme) *cobra.Command {
@@ -94,7 +117,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 			return nil
 		},
 		RunE: func(*cobra.Command, []string) error {
-			ctx := ctrl.SetupSignalHandler()
+			ctx := withShutdownDrain(ctrl.SetupSignalHandler(), shutdownDrainPeriod)
 
 			setupLog := ctrl.Log.WithName("setup")
 
