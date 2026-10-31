@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"sort"
+	"sync"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -17,7 +19,9 @@ import (
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
 	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -88,43 +92,221 @@ func PrintTenantControlPlaneInfo() {
 	}
 }
 
+// kamajiTimeline records, for the whole suite, the changes to the controller-manager Pods and to the
+// EndpointSlices of kamaji-webhook-service, so a failing spec can be matched against them.
+var (
+	kamajiTimelineMu sync.Mutex
+	kamajiTimeline   []string
+)
+
+func recordKamajiTimeline(format string, args ...any) {
+	kamajiTimelineMu.Lock()
+	defer kamajiTimelineMu.Unlock()
+
+	kamajiTimeline = append(kamajiTimeline, time.Now().Format(time.RFC3339Nano)+" "+fmt.Sprintf(format, args...))
+}
+
+func boolPtrString(b *bool) string {
+	if b == nil {
+		return "nil"
+	}
+
+	return fmt.Sprintf("%t", *b)
+}
+
+// startKamajiTimelineRecorder starts informers that record the controller-manager Pods and the
+// webhook EndpointSlices. It runs until the test process exits.
+func startKamajiTimelineRecorder() {
+	GinkgoHelper()
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	Expect(err).ToNot(HaveOccurred())
+
+	podFactory := informers.NewSharedInformerFactoryWithOptions(clientset, 0,
+		informers.WithNamespace(kamajiNamespace),
+		informers.WithTweakListOptions(func(o *metav1.ListOptions) {
+			o.LabelSelector = "app.kubernetes.io/component=controller-manager"
+		}))
+	_, err = podFactory.Core().V1().Pods().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { recordPodChange("added", obj) },
+		UpdateFunc: func(_, obj interface{}) { recordPodChange("updated", obj) },
+		DeleteFunc: func(obj interface{}) { recordPodChange("deleted", obj) },
+	})
+	Expect(err).ToNot(HaveOccurred())
+
+	sliceFactory := informers.NewSharedInformerFactoryWithOptions(clientset, 0,
+		informers.WithNamespace(kamajiNamespace),
+		informers.WithTweakListOptions(func(o *metav1.ListOptions) {
+			o.LabelSelector = discoveryv1.LabelServiceName + "=kamaji-webhook-service"
+		}))
+	_, err = sliceFactory.Discovery().V1().EndpointSlices().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { recordSliceChange("added", obj) },
+		UpdateFunc: func(_, obj interface{}) { recordSliceChange("updated", obj) },
+		DeleteFunc: func(obj interface{}) { recordSliceChange("deleted", obj) },
+	})
+	Expect(err).ToNot(HaveOccurred())
+
+	stop := make(chan struct{})
+	podFactory.Start(stop)
+	sliceFactory.Start(stop)
+}
+
+func recordPodChange(action string, obj interface{}) {
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		recordKamajiTimeline("pod %s: unexpected object %T", action, obj)
+
+		return
+	}
+
+	recordKamajiTimeline("pod %s %s phase=%s ready=%t deleting=%t startTime=%v",
+		action, pod.GetName(), pod.Status.Phase, isPodReady(pod), pod.GetDeletionTimestamp() != nil, pod.Status.StartTime)
+}
+
+func recordSliceChange(action string, obj interface{}) {
+	slice, ok := obj.(*discoveryv1.EndpointSlice)
+	if !ok {
+		recordKamajiTimeline("endpointslice %s: unexpected object %T", action, obj)
+
+		return
+	}
+
+	if len(slice.Endpoints) == 0 {
+		recordKamajiTimeline("endpointslice %s %s: no endpoints", action, slice.GetName())
+
+		return
+	}
+
+	for _, ep := range slice.Endpoints {
+		recordKamajiTimeline("endpointslice %s %s addresses=%v ready=%s serving=%s terminating=%s target=%s",
+			action, slice.GetName(), ep.Addresses,
+			boolPtrString(ep.Conditions.Ready), boolPtrString(ep.Conditions.Serving), boolPtrString(ep.Conditions.Terminating),
+			targetName(ep.TargetRef))
+	}
+}
+
+// PrintKamajiLogs dumps the state of the Kamaji controller-manager (which also serves the webhooks)
+// when a spec fails: the recorded timeline, every controller-manager Pod, its current and previous
+// logs, the webhook Service endpoints and the events in the Kamaji namespace.
 func PrintKamajiLogs() {
-	if CurrentSpecReport().Failed() {
-		clientset, err := kubernetes.NewForConfig(cfg)
-		Expect(err).ToNot(HaveOccurred())
+	if !CurrentSpecReport().Failed() {
+		return
+	}
 
-		list, err := clientset.CoreV1().Pods("kamaji-system").List(context.Background(), metav1.ListOptions{
-			LabelSelector: "app.kubernetes.io/component=controller-manager",
-		})
-		Expect(err).ToNot(HaveOccurred())
-		Expect(list.Items).To(HaveLen(1))
+	clientset, err := kubernetes.NewForConfig(cfg)
+	Expect(err).ToNot(HaveOccurred())
 
-		request := clientset.CoreV1().Pods("kamaji-system").GetLogs(list.Items[0].GetName(), &corev1.PodLogOptions{
-			Container: "manager",
-			SinceSeconds: func() *int64 {
-				seconds := int64(CurrentSpecReport().RunTime)
+	ctx := context.Background()
 
-				return &seconds
-			}(),
-			Timestamps: true,
-		})
+	_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: Kamaji timeline, controller-manager Pods and webhook EndpointSlices")
+	kamajiTimelineMu.Lock()
+	for _, line := range kamajiTimeline {
+		_, _ = fmt.Fprintln(GinkgoWriter, ">>> ", line)
+	}
+	kamajiTimelineMu.Unlock()
+	_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: end of Kamaji timeline")
 
-		podLogs, err := request.Stream(context.Background())
-		Expect(err).ToNot(HaveOccurred())
+	// The window covers the spec that ran before this one, which may restart the controller-manager.
+	sinceSeconds := int64((5 * time.Minute).Seconds())
 
-		defer podLogs.Close()
+	_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: Kamaji controller-manager Pods")
+	pods, err := clientset.CoreV1().Pods(kamajiNamespace).List(ctx, metav1.ListOptions{
+		LabelSelector: "app.kubernetes.io/component=controller-manager",
+	})
+	Expect(err).ToNot(HaveOccurred())
 
-		podBytes, err := io.ReadAll(podLogs)
-		Expect(err).ToNot(HaveOccurred())
+	for _, pod := range pods.Items {
+		_, _ = fmt.Fprintf(GinkgoWriter, ">>> pod=%s phase=%s created=%s deleting=%t\n",
+			pod.GetName(), pod.Status.Phase, pod.GetCreationTimestamp().Format(time.RFC3339), pod.GetDeletionTimestamp() != nil)
 
-		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: retrieving Kamaji Pod logs")
-
-		for _, line := range bytes.Split(podBytes, []byte("\n")) {
-			_, _ = fmt.Fprintln(GinkgoWriter, ">>> ", string(line))
+		for _, cs := range pod.Status.ContainerStatuses {
+			_, _ = fmt.Fprintf(GinkgoWriter, ">>> container=%s ready=%t restarts=%d\n", cs.Name, cs.Ready, cs.RestartCount)
 		}
 
-		_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: end of Kamaji Pod logs")
+		for _, cond := range pod.Status.Conditions {
+			_, _ = fmt.Fprintf(GinkgoWriter, ">>> condition=%s status=%s reason=%s\n", cond.Type, cond.Status, cond.Reason)
+		}
+
+		printPodLogs(clientset, pod.GetName(), false, sinceSeconds)
+		printPodLogs(clientset, pod.GetName(), true, sinceSeconds)
 	}
+
+	_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: kamaji-webhook-service Endpoints")
+	endpoints, err := clientset.CoreV1().Endpoints(kamajiNamespace).Get(ctx, "kamaji-webhook-service", metav1.GetOptions{})
+	if err != nil {
+		_, _ = fmt.Fprintf(GinkgoWriter, ">>> error: %v\n", err)
+	} else {
+		for _, subset := range endpoints.Subsets {
+			for _, addr := range subset.Addresses {
+				_, _ = fmt.Fprintf(GinkgoWriter, ">>> ready address=%s target=%s\n", addr.IP, targetName(addr.TargetRef))
+			}
+
+			for _, addr := range subset.NotReadyAddresses {
+				_, _ = fmt.Fprintf(GinkgoWriter, ">>> notReady address=%s target=%s\n", addr.IP, targetName(addr.TargetRef))
+			}
+		}
+	}
+
+	_, _ = fmt.Fprintln(GinkgoWriter, "DEBUG: Kamaji events, oldest first")
+	events, err := clientset.CoreV1().Events(kamajiNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		_, _ = fmt.Fprintf(GinkgoWriter, ">>> error: %v\n", err)
+	} else {
+		sort.Slice(events.Items, func(i, j int) bool {
+			return events.Items[i].LastTimestamp.Time.Before(events.Items[j].LastTimestamp.Time)
+		})
+
+		for _, ev := range events.Items {
+			_, _ = fmt.Fprintf(GinkgoWriter, ">>> %s %s %s/%s reason=%s: %s\n",
+				ev.LastTimestamp.Format(time.RFC3339), ev.Type, ev.InvolvedObject.Kind, ev.InvolvedObject.Name, ev.Reason, ev.Message)
+		}
+	}
+}
+
+// printPodLogs prints the logs of the manager container of a controller-manager Pod. Errors are
+// printed rather than failing, because the previous container may not exist.
+func printPodLogs(clientset kubernetes.Interface, podName string, previous bool, sinceSeconds int64) {
+	kind := "current"
+	if previous {
+		kind = "previous"
+	}
+
+	_, _ = fmt.Fprintf(GinkgoWriter, "DEBUG: %s logs of Pod %s\n", kind, podName)
+
+	stream, err := clientset.CoreV1().Pods(kamajiNamespace).GetLogs(podName, &corev1.PodLogOptions{
+		Container:    managerContainer,
+		Previous:     previous,
+		SinceSeconds: &sinceSeconds,
+		Timestamps:   true,
+	}).Stream(context.Background())
+	if err != nil {
+		_, _ = fmt.Fprintf(GinkgoWriter, ">>> error: %v\n", err)
+
+		return
+	}
+
+	defer stream.Close()
+
+	body, err := io.ReadAll(stream)
+	if err != nil {
+		_, _ = fmt.Fprintf(GinkgoWriter, ">>> error: %v\n", err)
+
+		return
+	}
+
+	for _, line := range bytes.Split(body, []byte("\n")) {
+		_, _ = fmt.Fprintln(GinkgoWriter, ">>> ", string(line))
+	}
+
+	_, _ = fmt.Fprintf(GinkgoWriter, "DEBUG: end of %s logs of Pod %s\n", kind, podName)
+}
+
+func targetName(ref *corev1.ObjectReference) string {
+	if ref == nil {
+		return ""
+	}
+
+	return ref.Name
 }
 
 func StatusMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, status kamajiv1alpha1.KubernetesVersionStatus) {
