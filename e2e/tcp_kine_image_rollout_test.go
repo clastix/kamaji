@@ -14,6 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -87,6 +88,32 @@ func setManagerArgs(args []string) {
 		g.Expect(deployment.Status.AvailableReplicas).To(Equal(desired))
 		// Old pods are gone once the total matches the desired count.
 		g.Expect(deployment.Status.Replicas).To(Equal(desired))
+	}, 5*time.Minute, time.Second).Should(Succeed())
+
+	// The Deployment status does not count pods that are already terminating, but their endpoints stay
+	// in the webhook Service until the endpoints controller removes them. Wait until none are left.
+	Eventually(func(g Gomega) {
+		pods := &corev1.PodList{}
+		g.Expect(k8sClient.List(context.Background(), pods,
+			ctrlclient.InNamespace(kamajiNamespace),
+			ctrlclient.MatchingLabels{"app.kubernetes.io/component": "controller-manager"},
+		)).To(Succeed())
+
+		for _, pod := range pods.Items {
+			g.Expect(pod.GetDeletionTimestamp()).To(BeNil(), "pod %s is still terminating", pod.GetName())
+		}
+
+		slices := &discoveryv1.EndpointSliceList{}
+		g.Expect(k8sClient.List(context.Background(), slices,
+			ctrlclient.InNamespace(kamajiNamespace),
+			ctrlclient.MatchingLabels{discoveryv1.LabelServiceName: "kamaji-webhook-service"},
+		)).To(Succeed())
+
+		for _, slice := range slices.Items {
+			for _, ep := range slice.Endpoints {
+				g.Expect(pointer.Deref(ep.Conditions.Terminating, false)).To(BeFalse(), "endpoint %v is still terminating", ep.Addresses)
+			}
+		}
 	}, 5*time.Minute, time.Second).Should(Succeed())
 }
 
