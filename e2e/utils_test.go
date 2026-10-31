@@ -99,7 +99,7 @@ var (
 	kamajiTimeline   []string
 )
 
-func recordKamajiTimeline(format string, args ...any) {
+func recordKamajiTimelinef(format string, args ...any) {
 	kamajiTimelineMu.Lock()
 	defer kamajiTimelineMu.Unlock()
 
@@ -154,31 +154,31 @@ func startKamajiTimelineRecorder() {
 func recordPodChange(action string, obj interface{}) {
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
-		recordKamajiTimeline("pod %s: unexpected object %T", action, obj)
+		recordKamajiTimelinef("pod %s: unexpected object %T", action, obj)
 
 		return
 	}
 
-	recordKamajiTimeline("pod %s %s phase=%s ready=%t deleting=%t startTime=%v",
+	recordKamajiTimelinef("pod %s %s phase=%s ready=%t deleting=%t startTime=%v",
 		action, pod.GetName(), pod.Status.Phase, isPodReady(pod), pod.GetDeletionTimestamp() != nil, pod.Status.StartTime)
 }
 
 func recordSliceChange(action string, obj interface{}) {
 	slice, ok := obj.(*discoveryv1.EndpointSlice)
 	if !ok {
-		recordKamajiTimeline("endpointslice %s: unexpected object %T", action, obj)
+		recordKamajiTimelinef("endpointslice %s: unexpected object %T", action, obj)
 
 		return
 	}
 
 	if len(slice.Endpoints) == 0 {
-		recordKamajiTimeline("endpointslice %s %s: no endpoints", action, slice.GetName())
+		recordKamajiTimelinef("endpointslice %s %s: no endpoints", action, slice.GetName())
 
 		return
 	}
 
 	for _, ep := range slice.Endpoints {
-		recordKamajiTimeline("endpointslice %s %s addresses=%v ready=%s serving=%s terminating=%s target=%s",
+		recordKamajiTimelinef("endpointslice %s %s addresses=%v ready=%s serving=%s terminating=%s target=%s",
 			action, slice.GetName(), ep.Addresses,
 			boolPtrString(ep.Conditions.Ready), boolPtrString(ep.Conditions.Serving), boolPtrString(ep.Conditions.Terminating),
 			targetName(ep.TargetRef))
