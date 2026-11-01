@@ -5,6 +5,7 @@ package e2e
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -13,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	pointer "k8s.io/utils/ptr"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 )
@@ -142,10 +144,14 @@ var _ = Describe("Deploy a TenantControlPlane resource with additional resources
 	})
 	// Delete the TenantControlPlane resource after test is finished
 	JustAfterEach(func() {
-		Expect(k8sClient.Delete(context.Background(), tcp)).Should(Succeed())
-		Expect(k8sClient.Delete(context.Background(), apiServerConfigMap)).NotTo(HaveOccurred())
-		Expect(k8sClient.Delete(context.Background(), controllerManagerConfigMap)).NotTo(HaveOccurred())
-		Expect(k8sClient.Delete(context.Background(), schedulerConfigMap)).NotTo(HaveOccurred())
+		// Every delete runs even when one fails, so a failed spec does not leave the ConfigMaps behind
+		// for the next spec in the same namespace.
+		Expect(errors.Join(
+			ctrlclient.IgnoreNotFound(k8sClient.Delete(context.Background(), tcp)),
+			ctrlclient.IgnoreNotFound(k8sClient.Delete(context.Background(), apiServerConfigMap)),
+			ctrlclient.IgnoreNotFound(k8sClient.Delete(context.Background(), controllerManagerConfigMap)),
+			ctrlclient.IgnoreNotFound(k8sClient.Delete(context.Background(), schedulerConfigMap)),
+		)).To(Succeed())
 	})
 	It("should block wrong Deployment configuration", func() {
 		// Should be ready

@@ -968,6 +968,17 @@ func (d Deployment) removeKineInitContainers(podSpec *corev1.PodSpec) {
 	}
 }
 
+// kineImage returns the image of the user-space container with the given name, if any, and the
+// manager's default kine image otherwise: the image of an existing Deployment must not be kept,
+// or a new default would never reach the TenantControlPlanes created before it.
+func (d Deployment) kineImage(additional []corev1.Container, name string) string {
+	if found, index := utilities.HasNamedContainer(additional, name); found && additional[index].Image != "" {
+		return additional[index].Image
+	}
+
+	return d.KineContainerImage
+}
+
 func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
 	if d.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
 		d.removeKineContainers(podSpec)
@@ -991,9 +1002,7 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 		}
 
 		podSpec.InitContainers[index].Name = kineInitContainerName
-		if podSpec.InitContainers[index].Image == "" {
-			podSpec.InitContainers[index].Image = d.KineContainerImage
-		}
+		podSpec.InitContainers[index].Image = d.kineImage(tcp.Spec.ControlPlane.Deployment.AdditionalInitContainers, kineInitContainerName)
 		podSpec.InitContainers[index].Command = []string{"sh"}
 
 		podSpec.InitContainers[index].Args = []string{
@@ -1052,9 +1061,7 @@ func (d Deployment) buildKine(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Tenant
 	}
 
 	podSpec.Containers[index].Name = kineContainerName
-	if podSpec.Containers[index].Image == "" {
-		podSpec.Containers[index].Image = d.KineContainerImage
-	}
+	podSpec.Containers[index].Image = d.kineImage(tcp.Spec.ControlPlane.Deployment.AdditionalContainers, kineContainerName)
 	podSpec.Containers[index].Command = []string{"/bin/kine"}
 	podSpec.Containers[index].Args = utilities.ArgsFromMapToSlice(args)
 	podSpec.Containers[index].VolumeMounts = []corev1.VolumeMount{
