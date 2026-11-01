@@ -179,6 +179,42 @@ However, that timeout can be customized at the `TenantControlPlane` level with t
     leading to unexpected results such as old data still available.
     The annotation `kamaji.clastix.io/cleanup-prior-migration=true` allows to enforce the clean-up of the target `DataStore` schema in case of collision.
 
+## Scheduling the migration Job
+The migration Job doesn't inherit the scheduling settings of the Tenant Control Plane, so it can stay `Pending` on a Management Cluster with tainted nodes.
+Set them on the target `DataStore`, the one the Tenant Control Plane is moving to, using `spec.migration`:
+
+```yaml
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: DataStore
+metadata:
+  name: dedicated
+spec:
+  driver: etcd
+  # ...
+  migration:
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+    tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+              - amd64
+```
+
+The fields `nodeSelector`, `tolerations` and `affinity` are all optional, and have the same meaning as in a Pod.
+Changing them during a migration deletes the Job and creates it back with the new values, which also solves a Job stuck in `Pending`.
+
+!!! info "Leftover"
+    The Pod of the deleted Job is not removed with it, so you have to remove it manually.
+
 ## Post migration
 After migrating data to the new datastore, complete the migration procedure by restarting the `kubelet.service` on all the tenant worker nodes.
 
