@@ -48,6 +48,23 @@ type DataStoreSpec struct {
 	// Defines the TLS/SSL configuration required to connect to the data store in a secure way.
 	// This value is optional.
 	TLSConfig *TLSConfig `json:"tlsConfig,omitempty"`
+	// Defines how the Job migrating a Tenant Control Plane to this data store is scheduled.
+	// This value is optional.
+	Migration *DataStoreMigration `json:"migration,omitempty"`
+}
+
+// DataStoreMigration contains the settings of the Job migrating a Tenant Control Plane to this data store.
+type DataStoreMigration struct {
+	// NodeSelector is a selector which must be true for the migration Job pod to fit on a node.
+	// Selector which must match a node's labels for the pod to be scheduled on that node.
+	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// If specified, the migration Job pod's tolerations.
+	// More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// If specified, the migration Job pod's scheduling constraints.
+	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 }
 
 // TLSConfig contains the information used to connect to the data store using a secured connection.

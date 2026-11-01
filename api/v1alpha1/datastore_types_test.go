@@ -8,8 +8,10 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("DataStore endpoints validation", func() {
@@ -62,5 +64,37 @@ var _ = Describe("DataStore endpoints validation", func() {
 		err := k8sClient.Create(ctx, ds)
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("an IPv6 endpoint address must be bracketed"))
+	})
+
+	It("keeps the migration Job scheduling constraints", func() {
+		migration := &DataStoreMigration{
+			NodeSelector: map[string]string{"node-role.kubernetes.io/control-plane": ""},
+			Tolerations: []corev1.Toleration{{
+				Key:      "node-role.kubernetes.io/control-plane",
+				Operator: corev1.TolerationOpExists,
+				Effect:   corev1.TaintEffectNoSchedule,
+			}},
+			Affinity: &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{{
+							MatchExpressions: []corev1.NodeSelectorRequirement{{
+								Key:      "kubernetes.io/arch",
+								Operator: corev1.NodeSelectorOpIn,
+								Values:   []string{"amd64"},
+							}},
+						}},
+					},
+				},
+			},
+		}
+
+		ds.Spec.Endpoints = Endpoints{"10.0.0.1:2379"}
+		ds.Spec.Migration = migration
+		Expect(k8sClient.Create(ctx, ds)).To(Succeed())
+
+		var got DataStore
+		Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(ds), &got)).To(Succeed())
+		Expect(got.Spec.Migration).To(Equal(migration))
 	})
 })
