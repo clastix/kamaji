@@ -146,9 +146,19 @@ func startKamajiTimelineRecorder() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
+	// Tenant control planes live in default, and their NodePort services are what the specs connect to.
+	tenantSliceFactory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace("default"))
+	_, err = tenantSliceFactory.Discovery().V1().EndpointSlices().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { recordSliceChange("added", obj) },
+		UpdateFunc: func(_, obj interface{}) { recordSliceChange("updated", obj) },
+		DeleteFunc: func(obj interface{}) { recordSliceChange("deleted", obj) },
+	})
+	Expect(err).ToNot(HaveOccurred())
+
 	stop := make(chan struct{})
 	podFactory.Start(stop)
 	sliceFactory.Start(stop)
+	tenantSliceFactory.Start(stop)
 }
 
 func recordPodChange(action string, obj interface{}) {
