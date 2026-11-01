@@ -129,6 +129,7 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 		if len(d.job.Spec.Template.Spec.Containers) == 0 {
 			d.job.Spec.Template.Spec.Containers = append(d.job.Spec.Template.Spec.Containers, corev1.Container{})
 		}
+		d.setSecurityContext()
 		d.job.Spec.Template.Spec.Containers[0].Name = "migrate"
 		d.job.Spec.Template.Spec.Containers[0].Image = d.MigrateImage
 		d.job.Spec.Template.Spec.Containers[0].Args = []string{
@@ -206,6 +207,19 @@ func (d *Migrate) setScheduling() {
 	d.job.Spec.Template.Spec.NodeSelector = migration.NodeSelector
 	d.job.Spec.Template.Spec.Tolerations = migration.Tolerations
 	d.job.Spec.Template.Spec.Affinity = migration.Affinity
+}
+
+// setSecurityContext keeps the migration Job admissible under the "restricted" Pod Security Standard:
+// it only copies datastore data, so it needs no privileges and the values are not configurable.
+func (d *Migrate) setSecurityContext() {
+	d.job.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+		RunAsNonRoot:   ptr.To(true),
+		SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+	}
+	d.job.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
+		AllowPrivilegeEscalation: ptr.To(false),
+		Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
+	}
 }
 
 // ensureFreezeWebhook installs the tenant-side "kamaji-freeze" ValidatingWebhookConfiguration

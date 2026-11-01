@@ -238,3 +238,8 @@ kubectl -n kamaji-system patch serviceaccount kamaji-controller-manager \
 
 This command patches the kamaji-controller-manager service account to include your registry secret, allowing the migration job to pull images from the private registry successfully.
 
+### Migration Job Security Context
+The migration Job always runs with a fixed `securityContext` compliant with the `restricted` [Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/), so it's not configurable: `runAsNonRoot: true` and the `RuntimeDefault` seccomp profile for the Pod, `allowPrivilegeEscalation: false` and all the capabilities dropped for the container.
+
+No `runAsUser` is enforced, so the user of the image applies: the default image runs as UID `65532`. An image set with `--migrate-image` must declare a numeric non-root user as well, otherwise the kubelet refuses to start the container.
+
