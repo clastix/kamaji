@@ -264,6 +264,17 @@ var _ = Describe("Rolling a new default --kine-image out to a live kine TenantCo
 			g.Expect(deployment.Status.ReadyReplicas).To(Equal(desired))
 			g.Expect(deployment.Status.Replicas).To(Equal(desired))
 		}, 5*time.Minute, time.Second).Should(Succeed())
+
+		// The Deployment status does not count pods that are already terminating, and the old tenant
+		// API server keeps its NodePort endpoint until it has gone. Wait until no tenant pod is left.
+		Eventually(func(g Gomega) {
+			pods, err := getControlPlanePods(tcp)
+			g.Expect(err).ToNot(HaveOccurred())
+
+			for _, pod := range pods.Items {
+				g.Expect(pod.GetDeletionTimestamp()).To(BeNil(), "pod %s is still terminating", pod.GetName())
+			}
+		}, 5*time.Minute, time.Second).Should(Succeed())
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
 
 		By("checking the data written before the rollout is still readable")
