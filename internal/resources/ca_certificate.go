@@ -109,21 +109,21 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			if err != nil {
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.CACertAndKeyBaseName, err.Error()))
 			}
-			// Appending the Cluster API required keys if they're missing:
-			// with this we're sure to avoid introducing breaking changes.
-			// During a CA rotation ca.crt is a bundle, tls.crt is the signing CA only,
-			// as required by the CSR signer and the Cluster API CA hash pinning.
-			signer, signerErr := crypto.FirstCertificatePEM(r.resource.Data[kubeadmconstants.CACertName])
-			if signerErr != nil {
-				return signerErr
-			}
-
-			if isValid && (!bytes.Equal(r.resource.Data[corev1.TLSCertKey], signer) || !bytes.Equal(r.resource.Data[kubeadmconstants.CAKeyName], r.resource.Data[corev1.TLSPrivateKeyKey])) {
-				r.resource.Data[corev1.TLSCertKey] = signer
-				r.resource.Data[corev1.TLSPrivateKeyKey] = r.resource.Data[kubeadmconstants.CAKeyName]
-			}
-
 			if isValid {
+				// Appending the Cluster API required keys if they're missing:
+				// with this we're sure to avoid introducing breaking changes.
+				// During a CA rotation ca.crt is a bundle, tls.crt is the signing CA only,
+				// as required by the CSR signer and the Cluster API CA hash pinning.
+				signer, signerErr := crypto.FirstCertificatePEM(r.resource.Data[kubeadmconstants.CACertName])
+				if signerErr != nil {
+					return signerErr
+				}
+
+				if !bytes.Equal(r.resource.Data[corev1.TLSCertKey], signer) || !bytes.Equal(r.resource.Data[kubeadmconstants.CAKeyName], r.resource.Data[corev1.TLSPrivateKeyKey]) {
+					r.resource.Data[corev1.TLSCertKey] = signer
+					r.resource.Data[corev1.TLSPrivateKeyKey] = r.resource.Data[kubeadmconstants.CAKeyName]
+				}
+
 				return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 			}
 		}
