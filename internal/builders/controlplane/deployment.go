@@ -54,6 +54,8 @@ const (
 	schedulerContainerName    = "kube-scheduler"
 	kineContainerName         = "kine"
 	kineInitContainerName     = "chmod"
+	// Single certificate used by the CSR signer, ca.crt can be a bundle during a CA rotation.
+	certificateAuthoritySignerCertName = "ca-signer.crt"
 )
 
 func applyProbeOverrides(probe *corev1.Probe, spec *kamajiv1alpha1.ProbeSpec) {
@@ -255,7 +257,7 @@ func (d Deployment) buildPKIVolume(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.T
 			Secret: d.secretProjection(tcp.Status.Certificates.APIServer.SecretName, constants.APIServerCertName, constants.APIServerKeyName),
 		},
 		{
-			Secret: d.secretProjection(tcp.Status.Certificates.CA.SecretName, constants.CACertName, constants.CAKeyName),
+			Secret: d.certificateAuthorityProjection(tcp.Status.Certificates.CA.SecretName),
 		},
 		{
 			Secret: d.secretProjection(tcp.Status.Certificates.APIServerKubeletClient.SecretName, constants.APIServerKubeletClientCertName, constants.APIServerKubeletClientKeyName),
@@ -487,7 +489,7 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		"--bind-address":                     "::",
 		"--client-ca-file":                   path.Join(kubernetesPKIPath, constants.CACertName),
 		"--cluster-name":                     tenantControlPlane.GetName(),
-		"--cluster-signing-cert-file":        path.Join(kubernetesPKIPath, constants.CACertName),
+		"--cluster-signing-cert-file":        path.Join(kubernetesPKIPath, certificateAuthoritySignerCertName),
 		"--cluster-signing-key-file":         path.Join(kubernetesPKIPath, constants.CAKeyName),
 		"--controllers":                      "*,bootstrapsigner,tokencleaner",
 		"--kubeconfig":                       kubeconfig,
@@ -866,6 +868,18 @@ func (d Deployment) etcdServersOverrides() string {
 	}
 
 	return strings.Join(dataStoreOverridesEndpoints, ",")
+}
+
+// certificateAuthorityProjection adds the signing certificate to the CA files:
+// during a rotation ca.crt is a bundle, while the CSR signer requires a single certificate.
+func (d Deployment) certificateAuthorityProjection(secretName string) *corev1.SecretProjection {
+	projection := d.secretProjection(secretName, constants.CACertName, constants.CAKeyName)
+	projection.Items = append(projection.Items, corev1.KeyToPath{
+		Key:  corev1.TLSCertKey,
+		Path: certificateAuthoritySignerCertName,
+	})
+
+	return projection
 }
 
 func (d Deployment) secretProjection(secretName, certKeyName, keyName string) *corev1.SecretProjection {

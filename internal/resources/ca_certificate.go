@@ -111,8 +111,15 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			}
 			// Appending the Cluster API required keys if they're missing:
 			// with this we're sure to avoid introducing breaking changes.
-			if isValid && (!bytes.Equal(r.resource.Data[corev1.TLSCertKey], r.resource.Data[kubeadmconstants.CACertName]) || !bytes.Equal(r.resource.Data[kubeadmconstants.CAKeyName], r.resource.Data[corev1.TLSPrivateKeyKey])) {
-				r.resource.Data[corev1.TLSCertKey] = r.resource.Data[kubeadmconstants.CACertName]
+			// During a CA rotation ca.crt is a bundle, tls.crt is the signing CA only,
+			// as required by the CSR signer and the Cluster API CA hash pinning.
+			signer, signerErr := crypto.FirstCertificatePEM(r.resource.Data[kubeadmconstants.CACertName])
+			if signerErr != nil {
+				return signerErr
+			}
+
+			if isValid && (!bytes.Equal(r.resource.Data[corev1.TLSCertKey], signer) || !bytes.Equal(r.resource.Data[kubeadmconstants.CAKeyName], r.resource.Data[corev1.TLSPrivateKeyKey])) {
+				r.resource.Data[corev1.TLSCertKey] = signer
 				r.resource.Data[corev1.TLSPrivateKeyKey] = r.resource.Data[kubeadmconstants.CAKeyName]
 			}
 

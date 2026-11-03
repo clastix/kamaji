@@ -97,6 +97,21 @@ func GenerateCertificatePrivateKeyPair(template *x509.Certificate, caCertificate
 	return generateCertificateKeyPairBytes(template, caCertBytes, caPrivKeyBytes)
 }
 
+// FirstCertificatePEM returns the first certificate of a PEM bundle,
+// or the content as it is when it holds a single certificate.
+func FirstCertificatePEM(content []byte) ([]byte, error) {
+	block, rest := pem.Decode(content)
+	if block == nil {
+		return nil, fmt.Errorf("no right PEM block")
+	}
+
+	if len(bytes.TrimSpace(rest)) == 0 {
+		return content, nil
+	}
+
+	return pem.EncodeToMemory(block), nil
+}
+
 // ParseCertificateBytes takes the certificate bytes returning a x509 certificate by parsing it.
 func ParseCertificateBytes(content []byte) (*x509.Certificate, error) {
 	pemContent, _ := pem.Decode(content)
@@ -202,13 +217,12 @@ func VerifyCertificate(cert, ca []byte, usages ...x509.ExtKeyUsage) (bool, error
 		return false, err
 	}
 
-	caCrt, err := ParseCertificateBytes(ca)
-	if err != nil {
-		return false, err
-	}
-
+	// The CA content can be a bundle during a Certificate Authority rotation:
+	// the leaf is considered valid if signed by any of the trusted CAs.
 	roots := x509.NewCertPool()
-	roots.AddCert(caCrt)
+	if !roots.AppendCertsFromPEM(ca) {
+		return false, fmt.Errorf("no valid CA certificate found")
+	}
 
 	chains, err := crt.Verify(x509.VerifyOptions{
 		Roots:     roots,
