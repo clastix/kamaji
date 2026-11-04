@@ -209,16 +209,25 @@ func (d *Migrate) setScheduling() {
 	d.job.Spec.Template.Spec.Affinity = migration.Affinity
 }
 
-// setSecurityContext keeps the migration Job admissible under the "restricted" Pod Security Standard:
-// it only copies datastore data, so it needs no privileges and the values are not configurable.
+// setSecurityContext copies the security contexts of the target DataStore to the migration Job.
+// When unset, the defaults keep the Job admissible under the "restricted" Pod Security Standard.
 func (d *Migrate) setSecurityContext() {
-	d.job.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-		RunAsNonRoot:   ptr.To(true),
-		SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+	migration := ptr.Deref(d.desiredDatastore.Spec.Migration, kamajiv1alpha1.DataStoreMigration{})
+
+	d.job.Spec.Template.Spec.SecurityContext = migration.PodSecurityContext
+	if d.job.Spec.Template.Spec.SecurityContext == nil {
+		d.job.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+			RunAsNonRoot:   ptr.To(true),
+			SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+		}
 	}
-	d.job.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
-		AllowPrivilegeEscalation: ptr.To(false),
-		Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
+
+	d.job.Spec.Template.Spec.Containers[0].SecurityContext = migration.SecurityContext
+	if d.job.Spec.Template.Spec.Containers[0].SecurityContext == nil {
+		d.job.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
+			AllowPrivilegeEscalation: ptr.To(false),
+			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
+		}
 	}
 }
 

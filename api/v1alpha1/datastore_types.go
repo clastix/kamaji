@@ -65,6 +65,12 @@ type DataStoreMigration struct {
 	// If specified, the migration Job pod's scheduling constraints.
 	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// PodSecurityContext allows to specify the security context for the migration Job pod.
+	// If unset, the pod runs as non-root with the RuntimeDefault seccomp profile.
+	PodSecurityContext *corev1.PodSecurityContext `json:"podSecurityContext,omitempty"`
+	// SecurityContext allows to specify the security context for the migrate container.
+	// If unset, privilege escalation is disallowed and all the capabilities are dropped.
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // TLSConfig contains the information used to connect to the data store using a secured connection.

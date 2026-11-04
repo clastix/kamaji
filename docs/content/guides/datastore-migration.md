@@ -210,6 +210,7 @@ spec:
 ```
 
 The fields `nodeSelector`, `tolerations` and `affinity` are all optional, and have the same meaning as in a Pod.
+The security context of the Job can be set in the same struct, see [Migration Job Security Context](#migration-job-security-context).
 Changing them during a migration deletes the Job and creates it back with the new values, which also solves a Job stuck in `Pending`.
 
 !!! info "Leftover"
@@ -239,7 +240,27 @@ kubectl -n kamaji-system patch serviceaccount kamaji-controller-manager \
 This command patches the kamaji-controller-manager service account to include your registry secret, allowing the migration job to pull images from the private registry successfully.
 
 ### Migration Job Security Context
-The migration Job always runs with a fixed `securityContext` compliant with the `restricted` [Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/), so it's not configurable: `runAsNonRoot: true` and the `RuntimeDefault` seccomp profile for the Pod, `allowPrivilegeEscalation: false` and all the capabilities dropped for the container.
+By default, the migration Job runs with a `securityContext` compliant with the `restricted` [Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/): `runAsNonRoot: true` and the `RuntimeDefault` seccomp profile for the Pod, `allowPrivilegeEscalation: false` and all the capabilities dropped for the container.
 
-No `runAsUser` is enforced, so the user of the image applies: the default image runs as UID `65532`. An image set with `--migrate-image` must declare a numeric non-root user as well, otherwise the kubelet refuses to start the container.
+These defaults can be replaced on the target `DataStore` with `spec.migration.podSecurityContext` for the Pod, and `spec.migration.securityContext` for the container:
+
+```yaml
+spec:
+  migration:
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      seccompProfile:
+        type: RuntimeDefault
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL
+```
+
+A field that is set replaces its default as a whole, so repeat the default values you want to keep.
+
+No `runAsUser` is enforced by default, so the user of the image applies: the default image runs as UID `65532`. An image set with `--migrate-image` must declare a numeric non-root user as well, or `runAsUser` must be set in `podSecurityContext`, otherwise the kubelet refuses to start the container.
 

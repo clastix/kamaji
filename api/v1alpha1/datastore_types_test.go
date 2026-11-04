@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -66,7 +67,7 @@ var _ = Describe("DataStore endpoints validation", func() {
 		Expect(err.Error()).To(ContainSubstring("an IPv6 endpoint address must be bracketed"))
 	})
 
-	It("keeps the migration Job scheduling constraints", func() {
+	It("keeps the migration Job scheduling constraints and security contexts", func() {
 		migration := &DataStoreMigration{
 			NodeSelector: map[string]string{"node-role.kubernetes.io/control-plane": ""},
 			Tolerations: []corev1.Toleration{{
@@ -86,6 +87,16 @@ var _ = Describe("DataStore endpoints validation", func() {
 						}},
 					},
 				},
+			},
+			PodSecurityContext: &corev1.PodSecurityContext{
+				RunAsNonRoot:   ptr.To(true),
+				RunAsUser:      ptr.To[int64](1000),
+				SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+			},
+			SecurityContext: &corev1.SecurityContext{
+				AllowPrivilegeEscalation: ptr.To(false),
+				ReadOnlyRootFilesystem:   ptr.To(true),
+				Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
 			},
 		}
 
