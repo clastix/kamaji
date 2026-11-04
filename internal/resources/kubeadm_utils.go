@@ -124,9 +124,7 @@ func KubeadmBootstrap(ctx context.Context, r KubeadmPhaseResource, logger logr.L
 
 	if status != nil {
 		checksum = utilities.CalculateMapChecksum(clusterInfo.Data)
-		// A CA rotation doesn't change the cluster-info ConfigMap content:
-		// it must be updated anyway, nodes joining afterwards trust its CA.
-		if checksum == status.GetChecksum() && isClusterInfoCAUpToDate(clusterInfo, kubeconfig) {
+		if isClusterInfoUpToDate(clusterInfo, checksum, status.GetChecksum(), kubeconfig) {
 			r.SetKubeadmConfigChecksum(checksum)
 
 			return controllerutil.OperationResultNone, nil
@@ -173,6 +171,13 @@ func KubeadmBootstrap(ctx context.Context, r KubeadmPhaseResource, logger logr.L
 	}
 
 	return controllerutil.OperationResultUpdated, nil
+}
+
+// isClusterInfoUpToDate reports whether the cluster-info ConfigMap can be left untouched.
+// A CA rotation doesn't change the cluster-info ConfigMap checksum:
+// it must be updated anyway, nodes joining afterwards trust its CA.
+func isClusterInfoUpToDate(clusterInfo corev1.ConfigMap, checksum, storedChecksum string, kubeconfig *clientcmdapiv1.Config) bool {
+	return checksum == storedChecksum && isClusterInfoCAUpToDate(clusterInfo, kubeconfig)
 }
 
 func isClusterInfoCAUpToDate(clusterInfo corev1.ConfigMap, kubeconfig *clientcmdapiv1.Config) bool {
