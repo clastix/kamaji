@@ -588,4 +588,49 @@ var _ = Describe("Controlplane Deployment", func() {
 			Expect(args).ToNot(ContainElement("--node-cidr-mask-size-ipv6=64"))
 		})
 	})
+
+	// During a CA rotation ca.crt is a bundle, the CSR signer requires a single certificate.
+	Describe("Certificate Authority rotation wiring", func() {
+		var tcp kamajiv1alpha1.TenantControlPlane
+
+		BeforeEach(func() {
+			tcp = kamajiv1alpha1.TenantControlPlane{}
+			tcp.Status.Certificates.CA.SecretName = "tenant-ca"
+		})
+
+		It("projects the signing certificate next to the CA bundle", func() {
+			podSpec := &corev1.PodSpec{}
+			d.buildPKIVolume(podSpec, tcp)
+
+			var items []corev1.KeyToPath
+			for _, source := range podSpec.Volumes[0].Projected.Sources {
+				if source.Secret != nil && source.Secret.Name == "tenant-ca" {
+					items = source.Secret.Items
+				}
+			}
+			Expect(items).To(ConsistOf(
+				corev1.KeyToPath{Key: "ca.crt", Path: "ca.crt"},
+				corev1.KeyToPath{Key: "ca.key", Path: "ca.key"},
+				corev1.KeyToPath{Key: "tls.crt", Path: "ca-signer.crt"},
+			))
+		})
+
+		It("signs with the signing certificate and trusts the CA bundle", func() {
+			podSpec := &corev1.PodSpec{}
+			d.buildControllerManager(podSpec, tcp)
+
+			Expect(podSpec.Containers).To(HaveLen(1))
+			Expect(podSpec.Containers[0].Args).To(ContainElements(
+				"--cluster-signing-cert-file=/etc/kubernetes/pki/ca-signer.crt",
+				"--cluster-signing-key-file=/etc/kubernetes/pki/ca.key",
+				"--client-ca-file=/etc/kubernetes/pki/ca.crt",
+				"--root-ca-file=/etc/kubernetes/pki/ca.crt",
+			))
+		})
+
+		It("trusts the CA bundle for API Server client authentication", func() {
+			args := d.buildKubeAPIServerCommand(tcp, "10.0.0.1", nil)
+			Expect(args).To(ContainElement("--client-ca-file=/etc/kubernetes/pki/ca.crt"))
+		})
+	})
 })
