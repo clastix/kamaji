@@ -110,6 +110,11 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 				logger.Info(fmt.Sprintf("%s certificate-private_key pair is not valid: %s", kubeadmconstants.CACertAndKeyBaseName, err.Error()))
 			}
 			if isValid {
+				// A bundle is set by hand to rotate the CA: a malformed certificate would be skipped silently,
+				// making kubeconfigs and the trusted CAs differ from the Secret content.
+				if bundleErr := crypto.ValidateCertificateBundle(r.resource.Data[kubeadmconstants.CACertName]); bundleErr != nil {
+					return fmt.Errorf("cannot parse %s: %w", kubeadmconstants.CACertName, bundleErr)
+				}
 				// Appending the Cluster API required keys if they're missing:
 				// with this we're sure to avoid introducing breaking changes.
 				// During a CA rotation ca.crt is a bundle, tls.crt is the signing CA only,
@@ -125,6 +130,12 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 				}
 
 				return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
+			}
+			// A bundle is set by hand to rotate the CA: generating a new one would drop both CAs,
+			// breaking every node and client of the Tenant Control Plane.
+			if count := crypto.CertificateCount(r.resource.Data[kubeadmconstants.CACertName]); count > 1 {
+				return fmt.Errorf("%s holds %d certificates: the first one must be valid and match %s, put the new CA first",
+					kubeadmconstants.CACertName, count, kubeadmconstants.CAKeyName)
 			}
 		}
 

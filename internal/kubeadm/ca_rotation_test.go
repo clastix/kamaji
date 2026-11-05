@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"k8s.io/client-go/tools/clientcmd"
-	certutil "k8s.io/client-go/util/cert"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 
 	"github.com/clastix/kamaji/internal/crypto"
@@ -63,15 +62,6 @@ func newTestServingCertificate(t *testing.T, ca CertificatePrivateKeyPair) []byt
 func TestCertificateAuthorityRotationPhases(t *testing.T) {
 	oldCA, newCA := newTestCA(t), newTestCA(t)
 	bundle := append(append([]byte{}, newCA.Certificate...), oldCA.Certificate...)
-
-	// The CSR signer requires a single certificate.
-	if signer, err := crypto.FirstCertificatePEM(bundle); err != nil || !bytes.Equal(signer, newCA.Certificate) {
-		t.Fatalf("signer must be the first certificate of the bundle: %v", err)
-	}
-
-	if signer, err := crypto.FirstCertificatePEM(oldCA.Certificate); err != nil || !bytes.Equal(signer, oldCA.Certificate) {
-		t.Fatalf("single CA must be returned untouched: %v", err)
-	}
 
 	oldLeaf := newTestServingCertificate(t, *oldCA)
 	// Phase 1: new CA is the signer, old leaves must not be reissued.
@@ -132,8 +122,18 @@ func TestWithCertificateAuthorityBundleKeepsSingleCAUntouched(t *testing.T) {
 	if !bytes.Equal(content, unchanged) {
 		t.Fatal("single CA kubeconfig must be byte-identical to the upstream one")
 	}
+}
 
-	if certificates, _ := certutil.ParseCertsPEM(ca.Certificate); len(certificates) != 1 {
-		t.Fatalf("expected a single CA certificate, got %d", len(certificates))
+func TestWithCertificateAuthorityBundleRejectsMalformedBundle(t *testing.T) {
+	ca := newTestCA(t)
+
+	content, err := CreateKubeconfig(kubeadmconstants.AdminKubeConfigFileName, *ca, newTestConfiguration(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	malformed := append(append([]byte{}, ca.Certificate...), "-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n"...)
+	if _, err = withCertificateAuthorityBundle(content, malformed); err == nil {
+		t.Fatal("a malformed CA bundle must be reported, not replaced by the first certificate")
 	}
 }

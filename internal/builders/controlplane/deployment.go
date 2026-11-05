@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/crypto"
 	"github.com/clastix/kamaji/internal/utilities"
 )
 
@@ -118,10 +119,13 @@ type Deployment struct {
 	DataStore          kamajiv1alpha1.DataStore
 	DataStoreOverrides []DataStoreOverrides
 	Client             client.Client
+	// certificateAuthorityBundle is true when ca.crt holds more than one certificate, as during a CA rotation.
+	certificateAuthorityBundle bool
 }
 
 func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, tenantControlPlane kamajiv1alpha1.TenantControlPlane) {
 	address, _, _ := tenantControlPlane.AssignedControlPlaneAddress()
+	d.certificateAuthorityBundle = d.hasCertificateAuthorityBundle(ctx, tenantControlPlane)
 
 	d.setLabels(deployment, utilities.MergeMaps(
 		deployment.GetLabels(),
@@ -482,6 +486,11 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 
 	kubeconfig := "/etc/kubernetes/controller-manager.conf"
 
+	signingCertificate := constants.CACertName
+	if d.certificateAuthorityBundle {
+		signingCertificate = certificateAuthoritySignerCertName
+	}
+
 	args := map[string]string{
 		"--allocate-node-cidrs":              "true",
 		"--authentication-kubeconfig":        kubeconfig,
@@ -489,7 +498,7 @@ func (d Deployment) buildControllerManager(podSpec *corev1.PodSpec, tenantContro
 		"--bind-address":                     "::",
 		"--client-ca-file":                   path.Join(kubernetesPKIPath, constants.CACertName),
 		"--cluster-name":                     tenantControlPlane.GetName(),
-		"--cluster-signing-cert-file":        path.Join(kubernetesPKIPath, certificateAuthoritySignerCertName),
+		"--cluster-signing-cert-file":        path.Join(kubernetesPKIPath, signingCertificate),
 		"--cluster-signing-key-file":         path.Join(kubernetesPKIPath, constants.CAKeyName),
 		"--controllers":                      "*,bootstrapsigner,tokencleaner",
 		"--kubeconfig":                       kubeconfig,
@@ -874,12 +883,25 @@ func (d Deployment) etcdServersOverrides() string {
 // during a rotation ca.crt is a bundle, while the CSR signer requires a single certificate.
 func (d Deployment) certificateAuthorityProjection(secretName string) *corev1.SecretProjection {
 	projection := d.secretProjection(secretName, constants.CACertName, constants.CAKeyName)
-	projection.Items = append(projection.Items, corev1.KeyToPath{
-		Key:  corev1.TLSCertKey,
-		Path: certificateAuthoritySignerCertName,
-	})
+	if d.certificateAuthorityBundle {
+		projection.Items = append(projection.Items, corev1.KeyToPath{
+			Key:  corev1.TLSCertKey,
+			Path: certificateAuthoritySignerCertName,
+		})
+	}
 
 	return projection
+}
+
+// hasCertificateAuthorityBundle reports whether the CA Secret holds more than one certificate:
+// the signing certificate is mounted separately only then, leaving the Deployment untouched otherwise.
+func (d Deployment) hasCertificateAuthorityBundle(ctx context.Context, tenantControlPlane kamajiv1alpha1.TenantControlPlane) bool {
+	secret := &corev1.Secret{}
+	if err := d.Client.Get(ctx, types.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}, secret); err != nil {
+		return false
+	}
+
+	return crypto.CertificateCount(secret.Data[constants.CACertName]) > 1
 }
 
 func (d Deployment) secretProjection(secretName, certKeyName, keyName string) *corev1.SecretProjection {

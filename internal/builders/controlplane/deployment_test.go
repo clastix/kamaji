@@ -4,6 +4,7 @@
 package controlplane
 
 import (
+	"context"
 	"slices"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	pointer "k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -593,44 +595,78 @@ var _ = Describe("Controlplane Deployment", func() {
 	Describe("Certificate Authority rotation wiring", func() {
 		var tcp kamajiv1alpha1.TenantControlPlane
 
+		caProjectionItems := func(podSpec *corev1.PodSpec) []corev1.KeyToPath {
+			for _, source := range podSpec.Volumes[0].Projected.Sources {
+				if source.Secret != nil && source.Secret.Name == "tenant-ca" {
+					return source.Secret.Items
+				}
+			}
+			Fail("CA projection not found")
+
+			return nil
+		}
+
 		BeforeEach(func() {
 			tcp = kamajiv1alpha1.TenantControlPlane{}
+			tcp.SetName("tenant")
+			tcp.SetNamespace("default")
 			tcp.Status.Certificates.CA.SecretName = "tenant-ca"
 		})
 
-		It("projects the signing certificate next to the CA bundle", func() {
+		It("detects a CA bundle from the CA Secret", func() {
+			certificate := "-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n"
+			for content, expected := range map[string]bool{
+				certificate:               false,
+				certificate + certificate: true,
+			} {
+				secret := &corev1.Secret{Data: map[string][]byte{"ca.crt": []byte(content)}}
+				secret.SetName("tenant-ca")
+				secret.SetNamespace("default")
+				d.Client = fake.NewClientBuilder().WithObjects(secret).Build()
+				Expect(d.hasCertificateAuthorityBundle(context.Background(), tcp)).To(Equal(expected))
+			}
+
+			d.Client = fake.NewClientBuilder().Build()
+			Expect(d.hasCertificateAuthorityBundle(context.Background(), tcp)).To(BeFalse())
+		})
+
+		It("keeps the single CA wiring unchanged", func() {
 			podSpec := &corev1.PodSpec{}
 			d.buildPKIVolume(podSpec, tcp)
-
-			var items []corev1.KeyToPath
-			for _, source := range podSpec.Volumes[0].Projected.Sources {
-				if source.Secret != nil && source.Secret.Name == "tenant-ca" {
-					items = source.Secret.Items
-				}
-			}
-			Expect(items).To(ConsistOf(
+			Expect(caProjectionItems(podSpec)).To(ConsistOf(
 				corev1.KeyToPath{Key: "ca.crt", Path: "ca.crt"},
 				corev1.KeyToPath{Key: "ca.key", Path: "ca.key"},
-				corev1.KeyToPath{Key: "tls.crt", Path: "ca-signer.crt"},
+			))
+
+			podSpec = &corev1.PodSpec{}
+			d.buildControllerManager(podSpec, tcp)
+			Expect(podSpec.Containers[0].Args).To(ContainElements(
+				"--cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt",
+				"--cluster-signing-key-file=/etc/kubernetes/pki/ca.key",
 			))
 		})
 
 		It("signs with the signing certificate and trusts the CA bundle", func() {
-			podSpec := &corev1.PodSpec{}
-			d.buildControllerManager(podSpec, tcp)
+			d.certificateAuthorityBundle = true
 
-			Expect(podSpec.Containers).To(HaveLen(1))
+			podSpec := &corev1.PodSpec{}
+			d.buildPKIVolume(podSpec, tcp)
+			Expect(caProjectionItems(podSpec)).To(ConsistOf(
+				corev1.KeyToPath{Key: "ca.crt", Path: "ca.crt"},
+				corev1.KeyToPath{Key: "ca.key", Path: "ca.key"},
+				corev1.KeyToPath{Key: "tls.crt", Path: "ca-signer.crt"},
+			))
+
+			podSpec = &corev1.PodSpec{}
+			d.buildControllerManager(podSpec, tcp)
 			Expect(podSpec.Containers[0].Args).To(ContainElements(
 				"--cluster-signing-cert-file=/etc/kubernetes/pki/ca-signer.crt",
 				"--cluster-signing-key-file=/etc/kubernetes/pki/ca.key",
 				"--client-ca-file=/etc/kubernetes/pki/ca.crt",
 				"--root-ca-file=/etc/kubernetes/pki/ca.crt",
 			))
-		})
 
-		It("trusts the CA bundle for API Server client authentication", func() {
-			args := d.buildKubeAPIServerCommand(tcp, "10.0.0.1", nil)
-			Expect(args).To(ContainElement("--client-ca-file=/etc/kubernetes/pki/ca.crt"))
+			Expect(d.buildKubeAPIServerCommand(tcp, "10.0.0.1", nil)).To(ContainElement("--client-ca-file=/etc/kubernetes/pki/ca.crt"))
 		})
 	})
 })

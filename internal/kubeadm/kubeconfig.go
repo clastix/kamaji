@@ -59,8 +59,12 @@ func CreateKubeconfig(kubeconfigName string, ca CertificatePrivateKeyPair, confi
 // certificate, with the whole CA bundle, required to trust both the old and new CA during a rotation.
 func withCertificateAuthorityBundle(content, caBundle []byte) ([]byte, error) {
 	certificates, err := certutil.ParseCertsPEM(caBundle)
-	if err != nil || len(certificates) < 2 {
-		return content, nil //nolint:nilerr
+	if err != nil {
+		return nil, err
+	}
+
+	if len(certificates) < 2 {
+		return content, nil
 	}
 
 	kubeconfig, err := clientcmd.Load(content)
