@@ -155,7 +155,12 @@ $: kubectl patch secret k8s-133-ca --type merge -p "{\"data\":{\"ca.crt\":\"$(ba
 
 Kamaji refuses the `Secret` and stops reconciling the `TenantControlPlane` when the first certificate doesn't match `ca.key`,
 or when any certificate of the bundle is malformed. The annotation `certs.kamaji.clastix.io/rotate` is refused on a bundle as well,
-since it would regenerate a single CA dropping both.
+since it would regenerate a single CA dropping both: if set by mistake, remove it **before** removing the old CA from the bundle,
+otherwise the pending request is honoured as soon as the bundle holds a single CA, generating a third CA trusted by nobody.
+
+```
+$: kubectl annotate secret k8s-133-ca certs.kamaji.clastix.io/rotate-
+```
 
 Once the bundle is set:
 
@@ -165,8 +170,13 @@ Once the bundle is set:
 - the control plane _Deployment_ is rolled out to mount the signing CA for the `kube-controller-manager` CSR signer:
   until the rollout completes, the running `kube-controller-manager` cannot sign CSRs, nodes will retry.
 
-The certificates signed by the old CA, such as the API Server one, can then be rotated with the annotation `certs.kamaji.clastix.io/rotate`,
-and the new CA bundle distributed to the nodes and the clients of the Tenant Cluster.
+Then, **before** replacing any certificate signed by the old CA, distribute the CA bundle to every existing consumer of the Tenant Cluster:
+Kamaji updates the kubeconfigs it generates and the `cluster-info` _ConfigMap_, but the nodes and clients already running keep trusting
+the CA they were given, such as `/etc/kubernetes/pki/ca.crt` and the kubelet kubeconfig on the nodes, or the kubeconfigs handed out to users
+and tools. Reload them and verify every node and client trusts both CAs.
+
+Only then, rotate the certificates signed by the old CA, such as the API Server one, with the annotation `certs.kamaji.clastix.io/rotate`:
+a consumer still trusting the old CA alone would reject the certificate signed by the new one.
 
 When the old CA is no longer required, remove it from `ca.crt`: the certificates and kubeconfigs still signed by it are reissued,
-and the single CA behaviour is restored. 
+the single CA behaviour is restored, and the old CA can be removed from the nodes and clients. 
