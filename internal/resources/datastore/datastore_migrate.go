@@ -109,6 +109,14 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 		return controllerutil.OperationResultNone, nil
 	}
 
+	// A replaced Job is deleted in the foreground: wait for its Pods to be gone,
+	// so the old and the new migration never run at the same time.
+	if d.job.GetDeletionTimestamp() != nil {
+		d.inProgress = true
+
+		return controllerutil.OperationResultNone, kamajierrors.MigrationInProcessError{}
+	}
+
 	// The freeze webhook must be active in the tenant cluster before the migration Job is allowed
 	// to start copying data: see ensureFreezeWebhook for why this has to be synchronous.
 	if err := d.ensureFreezeWebhook(ctx, tenantControlPlane); err != nil {
@@ -154,7 +162,9 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 		// these are useless for Kamaji, and we don't have proper RBAC.
 		// If the Job has a UUID, it means it's an update, and we're expecting that error.
 		if errors.IsForbidden(err) && d.job.UID != "" {
-			_ = d.Client.Delete(ctx, d.job)
+			if dErr := d.deleteJob(ctx); dErr != nil {
+				return controllerutil.OperationResultNone, dErr
+			}
 
 			return controllerutil.OperationResultNone, fmt.Errorf("migration job must be cretaed back due to immutable fields")
 		}
@@ -195,6 +205,14 @@ func (d *Migrate) ShouldStatusBeUpdated(context.Context, *kamajiv1alpha1.TenantC
 func (d *Migrate) UpdateTenantControlPlaneStatus(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
 	if d.inProgress {
 		tenantControlPlane.Status.Kubernetes.Version.Status = &kamajiv1alpha1.VersionMigrating
+	}
+
+	return nil
+}
+
+func (d *Migrate) deleteJob(ctx context.Context) error {
+	if err := d.Client.Delete(ctx, d.job, client.PropagationPolicy(metav1.DeletePropagationForeground)); err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("unable to delete the migration job: %w", err)
 	}
 
 	return nil

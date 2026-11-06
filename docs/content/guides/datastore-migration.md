@@ -211,10 +211,7 @@ spec:
 
 The fields `nodeSelector`, `tolerations` and `affinity` are all optional, and have the same meaning as in a Pod.
 The security context of the Job can be set in the same struct, see [Migration Job Security Context](#migration-job-security-context).
-Changing them during a migration deletes the Job and creates it back with the new values, which also solves a Job stuck in `Pending`.
-
-!!! info "Leftover"
-    The Pod of the deleted Job is not removed with it, so you have to remove it manually.
+Changing them during a migration deletes the Job, waits for its Pod to be removed, and creates it back with the new values, which also solves a Job stuck in `Pending`.
 
 ## Post migration
 After migrating data to the new datastore, complete the migration procedure by restarting the `kubelet.service` on all the tenant worker nodes.
