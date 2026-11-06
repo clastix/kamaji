@@ -6,6 +6,7 @@ package konnectivity
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -19,6 +20,8 @@ import (
 	"github.com/clastix/kamaji/internal/resources"
 	"github.com/clastix/kamaji/internal/utilities"
 )
+
+const servicePortName = "konnectivity-server"
 
 type ServiceResource struct {
 	resource *corev1.Service
@@ -41,10 +44,14 @@ func (r *ServiceResource) ShouldStatusBeUpdated(_ context.Context, tenantControl
 		return false
 	}
 
+	var port int32
+	if servicePort := r.servicePort(); servicePort != nil {
+		port = servicePort.Port
+	}
+
 	if tenantControlPlane.Status.Addons.Konnectivity.Service.Name != r.resource.GetName() ||
 		tenantControlPlane.Status.Addons.Konnectivity.Service.Namespace != r.resource.GetNamespace() ||
-		len(r.resource.Spec.Ports) > 0 && tenantControlPlane.Status.Addons.Konnectivity.Service.Port != r.resource.Spec.Ports[1].Port ||
-		len(r.resource.Spec.Ports) == 0 && tenantControlPlane.Status.Addons.Konnectivity.Service.Port > 0 ||
+		tenantControlPlane.Status.Addons.Konnectivity.Service.Port != port ||
 		len(r.resource.Status.Conditions) != len(tenantControlPlane.Status.Addons.Konnectivity.Service.Conditions) {
 		return true
 	}
@@ -83,7 +90,7 @@ func (r *ServiceResource) CleanUp(ctx context.Context, _ *kamajiv1alpha1.TenantC
 
 	res, err := utilities.CreateOrUpdateWithConflict(ctx, r.Client, r.resource, func() error {
 		for index, port := range r.resource.Spec.Ports {
-			if port.Name == "konnectivity-server" {
+			if port.Name == servicePortName {
 				ports := make([]corev1.ServicePort, 0, len(r.resource.Spec.Ports)-1)
 
 				ports = append(ports, r.resource.Spec.Ports[:index]...)
@@ -112,7 +119,9 @@ func (r *ServiceResource) UpdateTenantControlPlaneStatus(_ context.Context, tena
 	if tenantControlPlane.Spec.Addons.Konnectivity != nil {
 		tenantControlPlane.Status.Addons.Konnectivity.Service.Name = r.resource.GetName()
 		tenantControlPlane.Status.Addons.Konnectivity.Service.Namespace = r.resource.GetNamespace()
-		tenantControlPlane.Status.Addons.Konnectivity.Service.Port = r.resource.Spec.Ports[1].Port
+		if servicePort := r.servicePort(); servicePort != nil {
+			tenantControlPlane.Status.Addons.Konnectivity.Service.Port = servicePort.Port
+		}
 		tenantControlPlane.Status.Addons.Konnectivity.Service.ServiceStatus = resources.StripLoadBalancerPortsFromServiceStatus(r.resource.Status)
 	}
 
@@ -140,23 +149,38 @@ func (r *ServiceResource) CreateOrUpdate(ctx context.Context, tenantControlPlane
 
 func (r *ServiceResource) mutate(_ context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) func() error {
 	return func() error {
-		switch len(r.resource.Spec.Ports) {
-		case 0:
+		if len(r.resource.Spec.Ports) == 0 {
 			return fmt.Errorf("current state of the Service is not ready to be mangled for Konnectivity")
-		case 1:
-			r.resource.Spec.Ports = append(r.resource.Spec.Ports, corev1.ServicePort{})
 		}
 
-		r.resource.Spec.Ports[1].Name = "konnectivity-server"
-		r.resource.Spec.Ports[1].Protocol = corev1.ProtocolTCP
-		r.resource.Spec.Ports[1].Port = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port
-		r.resource.Spec.Ports[1].TargetPort = intstr.FromInt32(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port)
+		port := r.servicePort()
+		if port == nil {
+			// A new entry right after the kube-apiserver port: overwriting index 1 would drop
+			// the additional port sitting there, and the konnectivity port would inherit its fields.
+			r.resource.Spec.Ports = slices.Insert(r.resource.Spec.Ports, 1, corev1.ServicePort{Name: servicePortName})
+			port = &r.resource.Spec.Ports[1]
+		}
+
+		port.Protocol = corev1.ProtocolTCP
+		port.Port = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port
+		port.TargetPort = intstr.FromInt32(tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port)
 		if tenantControlPlane.Spec.ControlPlane.Service.ServiceType == kamajiv1alpha1.ServiceTypeNodePort {
-			r.resource.Spec.Ports[1].NodePort = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port
+			port.NodePort = tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port
 		}
 
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
+}
+
+// servicePort returns the konnectivity port of the Service, or nil when it has none.
+func (r *ServiceResource) servicePort() *corev1.ServicePort {
+	for i := range r.resource.Spec.Ports {
+		if r.resource.Spec.Ports[i].Name == servicePortName {
+			return &r.resource.Spec.Ports[i]
+		}
+	}
+
+	return nil
 }
 
 func (r *ServiceResource) GetName() string {
