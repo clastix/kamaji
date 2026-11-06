@@ -84,14 +84,19 @@ func (t TenantControlPlaneDeployment) OnUpdate(newObject runtime.Object, oldObje
 		deployment.Name = tcp.Name
 		deployment.Namespace = tcp.Namespace
 
-		err := t.Client.Get(ctx, types.NamespacedName{Name: tcp.Name, Namespace: tcp.Namespace}, &deployment)
-		if err != nil && !k8serrors.IsNotFound(err) {
+		getErr := t.Client.Get(ctx, types.NamespacedName{Name: tcp.Name, Namespace: tcp.Namespace}, &deployment)
+		if getErr != nil && !k8serrors.IsNotFound(getErr) {
 			return nil, nil
 		}
 
-		t.DeploymentBuilder.Build(ctx, &deployment, *tcp)
+		// A CA Secret read failure rejects the request as the DataStore lookups do:
+		// the dry run would otherwise validate a Deployment without the CA rotation wiring.
+		if err := t.DeploymentBuilder.Build(ctx, &deployment, *tcp); err != nil {
+			return nil, fmt.Errorf("cannot build the resulting Deployment: %w", err)
+		}
 
-		if k8serrors.IsNotFound(err) {
+		var err error
+		if k8serrors.IsNotFound(getErr) {
 			err = t.Client.Create(ctx, &deployment, client.DryRunAll)
 		} else {
 			err = t.Client.Update(ctx, &deployment, client.DryRunAll)

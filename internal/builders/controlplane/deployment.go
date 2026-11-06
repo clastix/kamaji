@@ -14,6 +14,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -123,9 +124,17 @@ type Deployment struct {
 	certificateAuthorityBundle bool
 }
 
-func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, tenantControlPlane kamajiv1alpha1.TenantControlPlane) {
+// Build mutates the Deployment of the Tenant Control Plane, leaving it untouched when it returns an error.
+func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, tenantControlPlane kamajiv1alpha1.TenantControlPlane) error {
 	address, _, _ := tenantControlPlane.AssignedControlPlaneAddress()
-	d.certificateAuthorityBundle = d.hasCertificateAuthorityBundle(ctx, tenantControlPlane)
+
+	// An unknown CA content must not drop the rotation wiring: the controller-manager would lose its CSR signer.
+	isBundle, err := d.hasCertificateAuthorityBundle(ctx, tenantControlPlane)
+	if err != nil {
+		return err
+	}
+
+	d.certificateAuthorityBundle = isBundle
 
 	d.setLabels(deployment, utilities.MergeMaps(
 		deployment.GetLabels(),
@@ -159,6 +168,8 @@ func (d Deployment) Build(ctx context.Context, deployment *appsv1.Deployment, te
 	d.setServiceAccount(&deployment.Spec.Template.Spec, tenantControlPlane)
 	Konnectivity{}.Build(deployment, tenantControlPlane)
 	d.Client.Scheme().Default(deployment)
+
+	return nil
 }
 
 func (d Deployment) setContainers(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane, address string) {
@@ -881,6 +892,8 @@ func (d Deployment) etcdServersOverrides() string {
 
 // certificateAuthorityProjection adds the signing certificate to the CA files:
 // during a rotation ca.crt is a bundle, while the CSR signer requires a single certificate.
+// The signer is projected only for a bundle to leave existing Deployments untouched: when the bundle
+// is set, the running controller-manager reloads ca.crt and cannot sign CSRs until the rollout completes.
 func (d Deployment) certificateAuthorityProjection(secretName string) *corev1.SecretProjection {
 	projection := d.secretProjection(secretName, constants.CACertName, constants.CAKeyName)
 	if d.certificateAuthorityBundle {
@@ -895,13 +908,23 @@ func (d Deployment) certificateAuthorityProjection(secretName string) *corev1.Se
 
 // hasCertificateAuthorityBundle reports whether the CA Secret holds more than one certificate:
 // the signing certificate is mounted separately only then, leaving the Deployment untouched otherwise.
-func (d Deployment) hasCertificateAuthorityBundle(ctx context.Context, tenantControlPlane kamajiv1alpha1.TenantControlPlane) bool {
-	secret := &corev1.Secret{}
-	if err := d.Client.Get(ctx, types.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: tenantControlPlane.Status.Certificates.CA.SecretName}, secret); err != nil {
-		return false
+// A missing CA Secret holds no bundle, any other read error is returned.
+func (d Deployment) hasCertificateAuthorityBundle(ctx context.Context, tenantControlPlane kamajiv1alpha1.TenantControlPlane) (bool, error) {
+	secretName := tenantControlPlane.Status.Certificates.CA.SecretName
+	if secretName == "" {
+		return false, nil
 	}
 
-	return crypto.CertificateCount(secret.Data[constants.CACertName]) > 1
+	secret := &corev1.Secret{}
+	if err := d.Client.Get(ctx, types.NamespacedName{Namespace: tenantControlPlane.GetNamespace(), Name: secretName}, secret); err != nil {
+		if k8serrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		return false, fmt.Errorf("cannot read the CA Secret %s: %w", secretName, err)
+	}
+
+	return crypto.CertificateCount(secret.Data[constants.CACertName]) > 1, nil
 }
 
 func (d Deployment) secretProjection(secretName, certKeyName, keyName string) *corev1.SecretProjection {

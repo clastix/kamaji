@@ -5,6 +5,7 @@ package controlplane
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"testing"
 
@@ -13,7 +14,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	pointer "k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -626,8 +629,32 @@ var _ = Describe("Controlplane Deployment", func() {
 				Expect(d.hasCertificateAuthorityBundle(context.Background(), tcp)).To(Equal(expected))
 			}
 
+			By("a missing CA Secret")
 			d.Client = fake.NewClientBuilder().Build()
 			Expect(d.hasCertificateAuthorityBundle(context.Background(), tcp)).To(BeFalse())
+
+			By("a CA Secret not created yet")
+			tcp.Status.Certificates.CA.SecretName = ""
+			Expect(d.hasCertificateAuthorityBundle(context.Background(), tcp)).To(BeFalse())
+		})
+
+		It("aborts the Deployment update when the CA Secret cannot be read", func() {
+			d.Client = fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
+				Get: func(context.Context, client.WithWatch, client.ObjectKey, client.Object, ...client.GetOption) error {
+					return errors.New("connection refused")
+				},
+			}).Build()
+
+			deployment := &appsv1.Deployment{}
+			deployment.SetName("tenant")
+			deployment.Spec.Template.Spec.Containers = []corev1.Container{{
+				Name: "kube-controller-manager",
+				Args: []string{"--cluster-signing-cert-file=/etc/kubernetes/pki/ca-signer.crt"},
+			}}
+			original := deployment.DeepCopy()
+
+			Expect(d.Build(context.Background(), deployment, tcp)).To(MatchError(ContainSubstring("connection refused")))
+			Expect(deployment).To(Equal(original))
 		})
 
 		It("keeps the single CA wiring unchanged", func() {
