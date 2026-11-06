@@ -124,6 +124,23 @@ func TestWithCertificateAuthorityBundleKeepsSingleCAUntouched(t *testing.T) {
 	}
 }
 
+// TestCreateKubeconfigEmbedsNonCanonicalSingleCA prevents the endless regeneration of kubeconfigs once
+// the old CA is removed from the bundle by hand: kubeadm embeds the canonical encoding of the certificate,
+// while Kamaji compares the kubeconfig CA data byte for byte with the CA Secret content.
+func TestCreateKubeconfigEmbedsNonCanonicalSingleCA(t *testing.T) {
+	ca := newTestCA(t)
+	ca.Certificate = append(append([]byte("# new CA\r\n"), ca.Certificate...), "\n\n"...)
+
+	content, err := CreateKubeconfig(kubeadmconstants.AdminKubeConfigFileName, *ca, newTestConfiguration(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !IsKubeconfigCAValid(content, ca.Certificate) {
+		t.Fatal("kubeconfig CA data must match the CA secret content as it is")
+	}
+}
+
 func TestWithCertificateAuthorityBundleRejectsMalformedBundle(t *testing.T) {
 	ca := newTestCA(t)
 
