@@ -4,6 +4,7 @@
 package resources
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -13,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
+	clientcmdapiv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 	bootstrapapi "k8s.io/cluster-bootstrap/token/api"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -113,21 +115,20 @@ func KubeadmBootstrap(ctx context.Context, r KubeadmPhaseResource, logger logr.L
 		return controllerutil.OperationResultNone, err
 	}
 
-	if status != nil {
-		checksum = utilities.CalculateMapChecksum(clusterInfo.Data)
-
-		if checksum == status.GetChecksum() {
-			r.SetKubeadmConfigChecksum(checksum)
-
-			return controllerutil.OperationResultNone, nil
-		}
-	}
-
 	kubeconfig, err := utilities.GetTenantKubeconfig(ctx, r.GetClient(), tenantControlPlane)
 	if err != nil {
 		logger.Error(err, "cannot retrieve kubeconfig configuration")
 
 		return controllerutil.OperationResultNone, err
+	}
+
+	if status != nil {
+		checksum = utilities.CalculateMapChecksum(clusterInfo.Data)
+		if isClusterInfoUpToDate(clusterInfo, checksum, status.GetChecksum(), kubeconfig) {
+			r.SetKubeadmConfigChecksum(checksum)
+
+			return controllerutil.OperationResultNone, nil
+		}
 	}
 
 	config, err := getStoredKubeadmConfiguration(ctx, r.GetClient(), r.GetTmpDirectory(), tenantControlPlane)
@@ -170,6 +171,22 @@ func KubeadmBootstrap(ctx context.Context, r KubeadmPhaseResource, logger logr.L
 	}
 
 	return controllerutil.OperationResultUpdated, nil
+}
+
+// isClusterInfoUpToDate reports whether the cluster-info ConfigMap can be left untouched.
+// A CA rotation doesn't change the cluster-info ConfigMap checksum:
+// it must be updated anyway, nodes joining afterwards trust its CA.
+func isClusterInfoUpToDate(clusterInfo corev1.ConfigMap, checksum, storedChecksum string, kubeconfig *clientcmdapiv1.Config) bool {
+	return checksum == storedChecksum && isClusterInfoCAUpToDate(clusterInfo, kubeconfig)
+}
+
+func isClusterInfoCAUpToDate(clusterInfo corev1.ConfigMap, kubeconfig *clientcmdapiv1.Config) bool {
+	clusterInfoKubeconfig, err := utilities.DecodeKubeconfigYAML([]byte(clusterInfo.Data[bootstrapapi.KubeConfigKey]))
+	if err != nil || len(clusterInfoKubeconfig.Clusters) == 0 || len(kubeconfig.Clusters) == 0 {
+		return false
+	}
+
+	return bytes.Equal(clusterInfoKubeconfig.Clusters[0].Cluster.CertificateAuthorityData, kubeconfig.Clusters[0].Cluster.CertificateAuthorityData)
 }
 
 func KubeadmPhaseCreate(ctx context.Context, r KubeadmPhaseResource, logger logr.Logger, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {

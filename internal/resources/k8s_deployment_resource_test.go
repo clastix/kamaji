@@ -5,6 +5,7 @@ package resources_test
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -15,6 +16,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
@@ -155,5 +157,73 @@ var _ = Describe("KubernetesDeploymentResource Konnectivity", func() {
 
 		reconcile()
 		Expect(apiServerArgs(podSpec())).To(ContainSubstring("--egress-selector-config-file=/custom/egress.yaml"))
+	})
+})
+
+var _ = Describe("KubernetesDeploymentResource CA rotation", func() {
+	var (
+		ctx         context.Context
+		fakeClient  client.Client
+		failCARead  bool
+		tcp         *kamajiv1alpha1.TenantControlPlane
+		certificate = "-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n"
+	)
+
+	createOrUpdate := func() error {
+		resource := &resources.KubernetesDeploymentResource{Client: fakeClient}
+		Expect(resource.Define(ctx, tcp)).To(Succeed())
+
+		_, err := resource.CreateOrUpdate(ctx, tcp)
+
+		return err
+	}
+
+	deployment := func() *appsv1.Deployment {
+		var deployment appsv1.Deployment
+		Expect(fakeClient.Get(ctx, client.ObjectKeyFromObject(tcp), &deployment)).To(Succeed())
+
+		return &deployment
+	}
+
+	BeforeEach(func() {
+		ctx = context.Background()
+		failCARead = false
+
+		caSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-tcp-ca", Namespace: "default"},
+			Data:       map[string][]byte{"ca.crt": []byte(certificate + certificate)},
+		}
+
+		fakeClient = fake.NewClientBuilder().WithScheme(runtimeScheme).WithObjects(caSecret).WithInterceptorFuncs(interceptor.Funcs{
+			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				if _, isSecret := obj.(*corev1.Secret); isSecret && failCARead {
+					return errors.New("connection refused")
+				}
+
+				return c.Get(ctx, key, obj, opts...)
+			},
+		}).Build()
+
+		tcp = &kamajiv1alpha1.TenantControlPlane{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-tcp", Namespace: "default"},
+			Spec: kamajiv1alpha1.TenantControlPlaneSpec{
+				Kubernetes: kamajiv1alpha1.KubernetesSpec{Version: "v1.35.0"},
+			},
+		}
+		tcp.Status.Certificates.CA.SecretName = caSecret.GetName()
+	})
+
+	It("keeps the CA rotation wiring when the CA Secret cannot be read", func() {
+		Expect(createOrUpdate()).To(Succeed())
+		rotationWiring := deployment()
+		Expect(rotationWiring.Spec.Template.Spec.Containers).To(ContainElement(SatisfyAll(
+			HaveField("Name", "kube-controller-manager"),
+			HaveField("Args", ContainElement("--cluster-signing-cert-file=/etc/kubernetes/pki/ca-signer.crt")),
+		)))
+
+		failCARead = true
+
+		Expect(createOrUpdate()).To(MatchError(ContainSubstring("connection refused")))
+		Expect(deployment()).To(Equal(rotationWiring))
 	})
 })

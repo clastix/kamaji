@@ -4,6 +4,8 @@
 package controlplane
 
 import (
+	"context"
+	"errors"
 	"slices"
 	"testing"
 
@@ -12,6 +14,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	pointer "k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/utilities"
@@ -586,6 +591,109 @@ var _ = Describe("Controlplane Deployment", func() {
 			args := containerByName(podSpec, "kube-controller-manager").Args
 			Expect(args).ToNot(ContainElement("--node-cidr-mask-size-ipv4=24"))
 			Expect(args).ToNot(ContainElement("--node-cidr-mask-size-ipv6=64"))
+		})
+	})
+
+	// During a CA rotation ca.crt is a bundle, the CSR signer requires a single certificate.
+	Describe("Certificate Authority rotation wiring", func() {
+		var tcp kamajiv1alpha1.TenantControlPlane
+
+		caProjectionItems := func(podSpec *corev1.PodSpec) []corev1.KeyToPath {
+			for _, source := range podSpec.Volumes[0].Projected.Sources {
+				if source.Secret != nil && source.Secret.Name == "tenant-ca" {
+					return source.Secret.Items
+				}
+			}
+			Fail("CA projection not found")
+
+			return nil
+		}
+
+		BeforeEach(func() {
+			tcp = kamajiv1alpha1.TenantControlPlane{}
+			tcp.SetName("tenant")
+			tcp.SetNamespace("default")
+			tcp.Status.Certificates.CA.SecretName = "tenant-ca"
+		})
+
+		It("detects a CA bundle from the CA Secret", func() {
+			certificate := "-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n"
+			for content, expected := range map[string]bool{
+				certificate:               false,
+				certificate + certificate: true,
+			} {
+				secret := &corev1.Secret{Data: map[string][]byte{"ca.crt": []byte(content)}}
+				secret.SetName("tenant-ca")
+				secret.SetNamespace("default")
+				d.Client = fake.NewClientBuilder().WithObjects(secret).Build()
+				Expect(d.hasCertificateAuthorityBundle(context.Background(), tcp)).To(Equal(expected))
+			}
+
+			By("a missing CA Secret")
+			d.Client = fake.NewClientBuilder().Build()
+			Expect(d.hasCertificateAuthorityBundle(context.Background(), tcp)).To(BeFalse())
+
+			By("a CA Secret not created yet")
+			tcp.Status.Certificates.CA.SecretName = ""
+			Expect(d.hasCertificateAuthorityBundle(context.Background(), tcp)).To(BeFalse())
+		})
+
+		It("aborts the Deployment update when the CA Secret cannot be read", func() {
+			d.Client = fake.NewClientBuilder().WithInterceptorFuncs(interceptor.Funcs{
+				Get: func(context.Context, client.WithWatch, client.ObjectKey, client.Object, ...client.GetOption) error {
+					return errors.New("connection refused")
+				},
+			}).Build()
+
+			deployment := &appsv1.Deployment{}
+			deployment.SetName("tenant")
+			deployment.Spec.Template.Spec.Containers = []corev1.Container{{
+				Name: "kube-controller-manager",
+				Args: []string{"--cluster-signing-cert-file=/etc/kubernetes/pki/ca-signer.crt"},
+			}}
+			original := deployment.DeepCopy()
+
+			Expect(d.Build(context.Background(), deployment, tcp)).To(MatchError(ContainSubstring("connection refused")))
+			Expect(deployment).To(Equal(original))
+		})
+
+		It("keeps the single CA wiring unchanged", func() {
+			podSpec := &corev1.PodSpec{}
+			d.buildPKIVolume(podSpec, tcp)
+			Expect(caProjectionItems(podSpec)).To(ConsistOf(
+				corev1.KeyToPath{Key: "ca.crt", Path: "ca.crt"},
+				corev1.KeyToPath{Key: "ca.key", Path: "ca.key"},
+			))
+
+			podSpec = &corev1.PodSpec{}
+			d.buildControllerManager(podSpec, tcp)
+			Expect(podSpec.Containers[0].Args).To(ContainElements(
+				"--cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt",
+				"--cluster-signing-key-file=/etc/kubernetes/pki/ca.key",
+			))
+		})
+
+		It("signs with the signing certificate and trusts the CA bundle", func() {
+			d.certificateAuthorityBundle = true
+
+			podSpec := &corev1.PodSpec{}
+			d.buildPKIVolume(podSpec, tcp)
+			Expect(caProjectionItems(podSpec)).To(ConsistOf(
+				corev1.KeyToPath{Key: "ca.crt", Path: "ca.crt"},
+				corev1.KeyToPath{Key: "ca.key", Path: "ca.key"},
+				corev1.KeyToPath{Key: "tls.crt", Path: "ca-signer.crt"},
+			))
+
+			podSpec = &corev1.PodSpec{}
+			d.buildControllerManager(podSpec, tcp)
+			Expect(podSpec.Containers[0].Args).To(ContainElements(
+				"--cluster-signing-cert-file=/etc/kubernetes/pki/ca-signer.crt",
+				"--cluster-signing-key-file=/etc/kubernetes/pki/ca.key",
+				"--client-ca-file=/etc/kubernetes/pki/ca.crt",
+				"--root-ca-file=/etc/kubernetes/pki/ca.crt",
+			))
+
+			Expect(d.buildKubeAPIServerCommand(tcp, "10.0.0.1", nil)).To(ContainElement("--client-ca-file=/etc/kubernetes/pki/ca.crt"))
 		})
 	})
 })

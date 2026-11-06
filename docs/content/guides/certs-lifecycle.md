@@ -137,4 +137,46 @@ k8s-133   v1.33.0   Ready                          172.18.255.200:6443      k8s-
 This operation is intended to be performed manually since a new Certificate Authority requires the restart of all the components,
 as well as of the nodes: in such a case, you will need to distribute the new Certificate Authority and the new nodes certificates.
 
-Given the sensibility of such operation, the `Secret` controller will not check the _CA_, which is offering validity of 10 years as `kubeadm` default values. 
+Given the sensibility of such operation, the `Secret` controller will not check the _CA_, which is offering validity of 10 years as `kubeadm` default values.
+
+### Overlapping Certificate Authority rotation
+
+A Certificate Authority can also be rotated without a disruption, by trusting both the old and the new one
+while the certificates signed by the old one are replaced.
+
+The CA `Secret` must be edited by hand, putting in `ca.crt` the new CA **first**, followed by the old one,
+and in `ca.key` the private key of the new CA:
+
+```
+$: kubectl get secret k8s-133-ca -o jsonpath='{.data.ca\.crt}' | base64 -d > old-ca.crt
+$: cat new-ca.crt old-ca.crt > ca.crt
+$: kubectl patch secret k8s-133-ca --type merge -p "{\"data\":{\"ca.crt\":\"$(base64 -w0 ca.crt)\",\"ca.key\":\"$(base64 -w0 new-ca.key)\"}}"
+```
+
+Kamaji refuses the `Secret` and stops reconciling the `TenantControlPlane` when the first certificate doesn't match `ca.key`,
+or when any certificate of the bundle is malformed. The annotation `certs.kamaji.clastix.io/rotate` is refused on a bundle as well,
+since it would regenerate a single CA dropping both: if set by mistake, remove it **before** removing the old CA from the bundle,
+otherwise the pending request is honoured as soon as the bundle holds a single CA, generating a third CA trusted by nobody.
+
+```
+$: kubectl annotate secret k8s-133-ca certs.kamaji.clastix.io/rotate-
+```
+
+Once the bundle is set:
+
+- new certificates and kubeconfigs are signed by the new CA, while the ones signed by the old CA are kept as long as it's trusted;
+- the generated kubeconfigs and the `cluster-info` _ConfigMap_ embed the whole bundle, so that clients and joining nodes trust both CAs;
+- `tls.crt` holds the signing CA only, as required by the Cluster API CA hash pinning: it must not be used as a trust bundle, use `ca.crt` instead;
+- the control plane _Deployment_ is rolled out to mount the signing CA for the `kube-controller-manager` CSR signer:
+  until the rollout completes, the running `kube-controller-manager` cannot sign CSRs, nodes will retry.
+
+Then, **before** replacing any certificate signed by the old CA, distribute the CA bundle to every existing consumer of the Tenant Cluster:
+Kamaji updates the kubeconfigs it generates and the `cluster-info` _ConfigMap_, but the nodes and clients already running keep trusting
+the CA they were given, such as `/etc/kubernetes/pki/ca.crt` and the kubelet kubeconfig on the nodes, or the kubeconfigs handed out to users
+and tools. Reload them and verify every node and client trusts both CAs.
+
+Only then, rotate the certificates signed by the old CA, such as the API Server one, with the annotation `certs.kamaji.clastix.io/rotate`:
+a consumer still trusting the old CA alone would reject the certificate signed by the new one.
+
+When the old CA is no longer required, remove it from `ca.crt`: the certificates and kubeconfigs still signed by it are reissued,
+the single CA behaviour is restored, and the old CA can be removed from the nodes and clients. 

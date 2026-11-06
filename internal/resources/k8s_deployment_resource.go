@@ -68,12 +68,14 @@ func (r *KubernetesDeploymentResource) Define(_ context.Context, tenantControlPl
 
 func (r *KubernetesDeploymentResource) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) controllerutil.MutateFn {
 	return func() error {
-		(builder.Deployment{
+		if err := (builder.Deployment{
 			Client:             r.Client,
 			DataStore:          r.DataStore,
 			KineContainerImage: r.KineContainerImage,
 			DataStoreOverrides: r.DataStoreOverrides,
-		}).Build(ctx, r.resource, *tenantControlPlane)
+		}).Build(ctx, r.resource, *tenantControlPlane); err != nil {
+			return err
+		}
 
 		return controllerutil.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
