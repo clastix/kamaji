@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/clastix/kamaji/api/v1alpha1"
+	"github.com/clastix/kamaji/internal/utilities"
 )
 
 func newCACertificateTestPair(t *testing.T, commonName string) (certificate, privateKey []byte) {
@@ -64,9 +65,10 @@ func TestCACertificateMutate(t *testing.T) {
 	for name, tc := range map[string]struct {
 		data map[string][]byte
 		// expected Secret content after the mutation, nil when it must be left untouched
-		expected      map[string][]byte
-		expectErr     bool
-		regenerateErr bool
+		expected          map[string][]byte
+		expectErr         bool
+		regenerateErr     bool
+		rotationRequested bool
 	}{
 		"single CA is left untouched": {
 			data: map[string][]byte{
@@ -113,6 +115,26 @@ func TestCACertificateMutate(t *testing.T) {
 			},
 			regenerateErr: true,
 		},
+		"missing CA certificate is regenerated": {
+			data:          map[string][]byte{kubeadmconstants.CAKeyName: oldKey},
+			regenerateErr: true,
+		},
+		"rotation request of a single CA is honoured": {
+			data: map[string][]byte{
+				kubeadmconstants.CACertName: oldCA, kubeadmconstants.CAKeyName: oldKey,
+				corev1.TLSCertKey: oldCA, corev1.TLSPrivateKeyKey: oldKey,
+			},
+			rotationRequested: true,
+			regenerateErr:     true,
+		},
+		"rotation request of a bundle is refused": {
+			data: map[string][]byte{
+				kubeadmconstants.CACertName: concatenate(newCA, oldCA), kubeadmconstants.CAKeyName: newKey,
+				corev1.TLSCertKey: newCA, corev1.TLSPrivateKeyKey: newKey,
+			},
+			rotationRequested: true,
+			expectErr:         true,
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			tcp := &v1alpha1.TenantControlPlane{}
@@ -129,6 +151,10 @@ func TestCACertificateMutate(t *testing.T) {
 			secret.SetName("tenant-ca")
 			secret.SetNamespace("default")
 			secret.SetUID(types.UID("secret-uid"))
+
+			if tc.rotationRequested {
+				secret.SetAnnotations(map[string]string{utilities.RotateCertificateRequestAnnotation: ""})
+			}
 
 			r := &CACertificate{
 				resource: secret,

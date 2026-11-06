@@ -99,6 +99,12 @@ func (r *CACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 		logger := log.FromContext(ctx, "resource", r.GetName())
 
 		isRotationRequested := utilities.IsRotationRequested(r.resource)
+		// A rotation request regenerates a single CA, dropping both CAs of a bundle set by hand:
+		// the overlapping rotation ends by removing the old CA from the bundle instead.
+		if count := crypto.CertificateCount(r.resource.Data[kubeadmconstants.CACertName]); isRotationRequested && count > 1 {
+			return fmt.Errorf("%s holds %d certificates: the CA cannot be regenerated during a rotation, remove the old CA from the bundle instead",
+				kubeadmconstants.CACertName, count)
+		}
 
 		if checksum := tenantControlPlane.Status.Certificates.CA.Checksum; !isRotationRequested && (len(checksum) > 0 && checksum == utilities.GetObjectChecksum(r.resource) || len(r.resource.UID) > 0) {
 			isValid, err := crypto.CheckCertificateAndPrivateKeyPairValidity(
