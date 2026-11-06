@@ -12,6 +12,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
+	"strings"
 	"testing"
 	"time"
 
@@ -67,6 +68,7 @@ func TestCACertificateMutate(t *testing.T) {
 		// expected Secret content after the mutation, nil when it must be left untouched
 		expected          map[string][]byte
 		expectErr         bool
+		errContains       string
 		regenerateErr     bool
 		rotationRequested bool
 	}{
@@ -134,6 +136,8 @@ func TestCACertificateMutate(t *testing.T) {
 			},
 			rotationRequested: true,
 			expectErr:         true,
+			// the pending request would be honoured once the old CA is removed, generating a third CA
+			errContains: utilities.RotateCertificateRequestAnnotation,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -172,6 +176,10 @@ func TestCACertificateMutate(t *testing.T) {
 			case tc.expectErr:
 				if err == nil || k8serrors.IsNotFound(err) {
 					t.Fatalf("expected the CA Secret to be rejected without regeneration, got %v", err)
+				}
+
+				if !strings.Contains(err.Error(), tc.errContains) {
+					t.Fatalf("expected the error to mention %q, got %v", tc.errContains, err)
 				}
 			case err != nil:
 				t.Fatal(err)
