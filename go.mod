@@ -1,6 +1,6 @@
 module github.com/clastix/kamaji
 
-go 1.26.5
+go 1.27.0
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
@@ -28,10 +28,10 @@ require (
 	go.etcd.io/etcd/client/v3 v3.7.3
 	go.uber.org/automaxprocs v1.6.0
 	gomodules.xyz/jsonpatch/v2 v2.5.0
-	k8s.io/api v0.37.0
+	k8s.io/api v0.37.1
 	k8s.io/apiextensions-apiserver v0.37.0
 	k8s.io/apimachinery v0.37.1
-	k8s.io/client-go v0.37.0
+	k8s.io/client-go v0.37.1
 	k8s.io/cluster-bootstrap v0.0.0
 	k8s.io/klog/v2 v2.140.0
 	k8s.io/kube-proxy v0.0.0
@@ -39,7 +39,7 @@ require (
 	k8s.io/kubernetes v1.37.2
 	k8s.io/utils v0.0.0-20260626114624-be93311217bd
 	sigs.k8s.io/controller-runtime v0.25.2
-	sigs.k8s.io/gateway-api v1.6.3
+	sigs.k8s.io/gateway-api v1.7.0
 	sigs.k8s.io/yaml v1.6.0
 )
 
@@ -179,7 +179,7 @@ require (
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/term v0.47.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
-	golang.org/x/time v0.15.0 // indirect
+	golang.org/x/time v0.16.0 // indirect
 	golang.org/x/tools v0.51.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260803160001-6ac0973c030d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260803160001-6ac0973c030d // indirect
