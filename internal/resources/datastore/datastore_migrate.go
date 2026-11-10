@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -108,6 +109,14 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 		return controllerutil.OperationResultNone, nil
 	}
 
+	// A replaced Job is deleted in the foreground: wait for its Pods to be gone,
+	// so the old and the new migration never run at the same time.
+	if d.job.GetDeletionTimestamp() != nil {
+		d.inProgress = true
+
+		return controllerutil.OperationResultNone, kamajierrors.MigrationInProcessError{}
+	}
+
 	// The freeze webhook must be active in the tenant cluster before the migration Job is allowed
 	// to start copying data: see ensureFreezeWebhook for why this has to be synchronous.
 	if err := d.ensureFreezeWebhook(ctx, tenantControlPlane); err != nil {
@@ -124,9 +133,11 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 		d.job.Spec.Template.ObjectMeta.Labels = utilities.MergeMaps(d.job.Spec.Template.ObjectMeta.Labels, d.job.Spec.Template.ObjectMeta.Labels)
 		d.job.Spec.Template.Spec.ServiceAccountName = d.KamajiServiceAccount
 		d.job.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
+		d.setScheduling()
 		if len(d.job.Spec.Template.Spec.Containers) == 0 {
 			d.job.Spec.Template.Spec.Containers = append(d.job.Spec.Template.Spec.Containers, corev1.Container{})
 		}
+		d.setSecurityContext()
 		d.job.Spec.Template.Spec.Containers[0].Name = "migrate"
 		d.job.Spec.Template.Spec.Containers[0].Image = d.MigrateImage
 		d.job.Spec.Template.Spec.Containers[0].Args = []string{
@@ -151,7 +162,9 @@ func (d *Migrate) CreateOrUpdate(ctx context.Context, tenantControlPlane *kamaji
 		// these are useless for Kamaji, and we don't have proper RBAC.
 		// If the Job has a UUID, it means it's an update, and we're expecting that error.
 		if errors.IsForbidden(err) && d.job.UID != "" {
-			_ = d.Client.Delete(ctx, d.job)
+			if dErr := d.deleteJob(ctx); dErr != nil {
+				return controllerutil.OperationResultNone, dErr
+			}
 
 			return controllerutil.OperationResultNone, fmt.Errorf("migration job must be cretaed back due to immutable fields")
 		}
@@ -195,6 +208,45 @@ func (d *Migrate) UpdateTenantControlPlaneStatus(_ context.Context, tenantContro
 	}
 
 	return nil
+}
+
+func (d *Migrate) deleteJob(ctx context.Context) error {
+	if err := d.Client.Delete(ctx, d.job, client.PropagationPolicy(metav1.DeletePropagationForeground)); err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("unable to delete the migration job: %w", err)
+	}
+
+	return nil
+}
+
+// setScheduling copies the scheduling constraints of the target DataStore to the migration Job.
+func (d *Migrate) setScheduling() {
+	migration := ptr.Deref(d.desiredDatastore.Spec.Migration, kamajiv1alpha1.DataStoreMigration{})
+
+	d.job.Spec.Template.Spec.NodeSelector = migration.NodeSelector
+	d.job.Spec.Template.Spec.Tolerations = migration.Tolerations
+	d.job.Spec.Template.Spec.Affinity = migration.Affinity
+}
+
+// setSecurityContext copies the security contexts of the target DataStore to the migration Job.
+// When unset, the defaults keep the Job admissible under the "restricted" Pod Security Standard.
+func (d *Migrate) setSecurityContext() {
+	migration := ptr.Deref(d.desiredDatastore.Spec.Migration, kamajiv1alpha1.DataStoreMigration{})
+
+	d.job.Spec.Template.Spec.SecurityContext = migration.PodSecurityContext
+	if d.job.Spec.Template.Spec.SecurityContext == nil {
+		d.job.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+			RunAsNonRoot:   ptr.To(true),
+			SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+		}
+	}
+
+	d.job.Spec.Template.Spec.Containers[0].SecurityContext = migration.SecurityContext
+	if d.job.Spec.Template.Spec.Containers[0].SecurityContext == nil {
+		d.job.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
+			AllowPrivilegeEscalation: ptr.To(false),
+			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
+		}
+	}
 }
 
 // ensureFreezeWebhook installs the tenant-side "kamaji-freeze" ValidatingWebhookConfiguration
