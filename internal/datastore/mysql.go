@@ -139,6 +139,14 @@ func migrateTable(ctx context.Context, tx *sql.Tx, targetDB *sql.DB, schema, tab
 
 	createTableStatement = strings.Replace(createTableStatement, "CREATE TABLE "+quoteMySQLIdentifier(table), "CREATE TABLE "+qualifiedTable, 1)
 
+	// The migration can run more than once against the same target: the container is
+	// restarted on failure, and the Job is replaced when its template changes. Dropping
+	// the table first discards what a previous run copied, as go-mysqldump's DROP TABLE
+	// IF EXISTS did before, instead of failing on the CREATE TABLE below.
+	if _, err := targetDB.ExecContext(ctx, "DROP TABLE IF EXISTS "+qualifiedTable); err != nil {
+		return fmt.Errorf("unable to drop table on target: %w", err)
+	}
+
 	if _, err := targetDB.ExecContext(ctx, createTableStatement); err != nil {
 		return fmt.Errorf("unable to create table on target: %w", err)
 	}
