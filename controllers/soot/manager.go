@@ -10,11 +10,13 @@ import (
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -261,6 +263,15 @@ func (m *Manager) Reconcile(ctx context.Context, request reconcile.Request) (res
 			opts.Scheme = m.AdminClient.Scheme()
 
 			return client.New(config, opts)
+		},
+		// The soot controllers only manage namespaced objects in kube-system and kube-public:
+		// caching every namespace would make memory grow with the tenant workloads.
+		// A soot controller watching a namespaced object elsewhere must add its namespace here.
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				metav1.NamespaceSystem: {},
+				metav1.NamespacePublic: {},
+			},
 		},
 	})
 	if err != nil {
