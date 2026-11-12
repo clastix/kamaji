@@ -247,8 +247,9 @@ func (s *CertificateLifecycle) refreshCertificatesMetrics(ctx context.Context) e
 		countsByTenantControlPlane[namespacedName] = metrics.NewCertificateStatusCounts()
 	}
 
+	// Filter in the cache to avoid deep-copying every Secret of the cluster.
 	var secretList corev1.SecretList
-	if err := s.client.List(ctx, &secretList); err != nil {
+	if err := s.client.List(ctx, &secretList, client.HasLabels{constants.ControlPlaneLabelKey, constants.ControllerLabelResource}); err != nil {
 		return err
 	}
 
