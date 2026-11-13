@@ -38,10 +38,10 @@ func (m *MultiTenancy) CleanUp(context.Context, *kamajiv1alpha1.TenantControlPla
 }
 
 func (m *MultiTenancy) CreateOrUpdate(_ context.Context, tcp *kamajiv1alpha1.TenantControlPlane) (controllerutil.OperationResult, error) {
-	// If the NATS Datastore is already used by a Tenant Control Plane
+	// If a NATS or exclusive Datastore is already used by a Tenant Control Plane
 	// and a new one is reclaiming it, we need to stop it, since it's not allowed.
-	// TODO(prometherion): remove this after multi-tenancy is implemented for NATS.
-	if m.DataStore.Spec.Driver != kamajiv1alpha1.KineNatsDriver {
+	// TODO(prometherion): remove the NATS case after multi-tenancy is implemented for NATS.
+	if m.DataStore.Spec.Driver != kamajiv1alpha1.KineNatsDriver && !m.DataStore.Spec.Exclusive {
 		return controllerutil.OperationResultNone, nil
 	}
 
@@ -53,6 +53,10 @@ func (m *MultiTenancy) CreateOrUpdate(_ context.Context, tcp *kamajiv1alpha1.Ten
 	case usedBy.Len() == 0:
 		return controllerutil.OperationResultNone, nil
 	default:
+		if m.DataStore.Spec.Exclusive {
+			return controllerutil.OperationResultNone, errors.New("the current datastore is exclusive and already in use")
+		}
+
 		return controllerutil.OperationResultNone, errors.New("NATS doesn't support multi-tenancy, the current datastore is already in use")
 	}
 }
