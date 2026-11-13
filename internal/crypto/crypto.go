@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	certutil "k8s.io/client-go/util/cert"
 )
 
 // CheckPublicAndPrivateKeyValidity checks if the given bytes for the private and public keys are valid.
@@ -95,6 +96,42 @@ func GenerateCertificatePrivateKeyPair(template *x509.Certificate, caCertificate
 	}
 
 	return generateCertificateKeyPairBytes(template, caCertBytes, caPrivKeyBytes)
+}
+
+// FirstCertificatePEM returns the first certificate of a PEM bundle,
+// or the content as it is when it holds a single certificate.
+func FirstCertificatePEM(content []byte) ([]byte, error) {
+	block, rest := pem.Decode(content)
+	if block == nil || block.Type != "CERTIFICATE" {
+		return nil, fmt.Errorf("no right PEM block")
+	}
+
+	if len(bytes.TrimSpace(rest)) == 0 {
+		return content, nil
+	}
+
+	return pem.EncodeToMemory(block), nil
+}
+
+// CertificateCount returns the number of PEM certificate blocks, including malformed ones:
+// more than one means a CA bundle, as during a Certificate Authority rotation.
+func CertificateCount(content []byte) int {
+	return bytes.Count(content, []byte("-----BEGIN CERTIFICATE-----"))
+}
+
+// ValidateCertificateBundle checks every certificate of a PEM bundle can be parsed:
+// the PEM decoder silently skips malformed blocks, the trust bundle would differ from the content.
+func ValidateCertificateBundle(content []byte) error {
+	certificates, err := certutil.ParseCertsPEM(content)
+	if err != nil {
+		return err
+	}
+
+	if count := CertificateCount(content); len(certificates) != count {
+		return fmt.Errorf("%d out of %d certificates can be parsed", len(certificates), count)
+	}
+
+	return nil
 }
 
 // ParseCertificateBytes takes the certificate bytes returning a x509 certificate by parsing it.
@@ -202,13 +239,12 @@ func VerifyCertificate(cert, ca []byte, usages ...x509.ExtKeyUsage) (bool, error
 		return false, err
 	}
 
-	caCrt, err := ParseCertificateBytes(ca)
-	if err != nil {
-		return false, err
-	}
-
+	// The CA content can be a bundle during a Certificate Authority rotation:
+	// the leaf is considered valid if signed by any of the trusted CAs.
 	roots := x509.NewCertPool()
-	roots.AddCert(caCrt)
+	if !roots.AppendCertsFromPEM(ca) {
+		return false, fmt.Errorf("no valid CA certificate found")
+	}
 
 	chains, err := crt.Verify(x509.VerifyOptions{
 		Roots:     roots,
