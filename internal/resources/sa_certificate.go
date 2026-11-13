@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -103,26 +104,38 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			}
 		}
 
-		config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
-		if err != nil {
-			logger.Error(err, "cannot retrieve kubadm configuration")
+		// Check if pregenerated Service Account key is specified
+		if tenantControlPlane.Spec.PreGeneratedCertificates != nil && tenantControlPlane.Spec.PreGeneratedCertificates.ServiceAccount != nil {
+			logger.Info("Using pregenerated Service Account key")
+			if err := r.usePreGeneratedSACertificate(ctx, tenantControlPlane); err != nil {
+				logger.Error(err, "cannot use pregenerated Service Account key")
 
-			return err
+				return err
+			}
+		} else {
+			logger.Info("Generating new Service Account key")
+
+			config, err := getStoredKubeadmConfiguration(ctx, r.Client, r.TmpDirectory, tenantControlPlane)
+			if err != nil {
+				logger.Error(err, "cannot retrieve kubadm configuration")
+
+				return err
+			}
+
+			sa, err := kubeadm.GeneratePublicKeyPrivateKeyPair(kubeadmconstants.ServiceAccountKeyBaseName, config)
+			if err != nil {
+				logger.Error(err, "cannot generate certificate and private key")
+
+				return err
+			}
+
+			r.resource.Data = map[string][]byte{
+				kubeadmconstants.ServiceAccountPublicKeyName:  sa.PublicKey,
+				kubeadmconstants.ServiceAccountPrivateKeyName: sa.PrivateKey,
+			}
 		}
 
-		sa, err := kubeadm.GeneratePublicKeyPrivateKeyPair(kubeadmconstants.ServiceAccountKeyBaseName, config)
-		if err != nil {
-			logger.Error(err, "cannot generate certificate and private key")
-
-			return err
-		}
-
-		r.resource.Data = map[string][]byte{
-			kubeadmconstants.ServiceAccountPublicKeyName:  sa.PublicKey,
-			kubeadmconstants.ServiceAccountPrivateKeyName: sa.PrivateKey,
-		}
-
-		r.resource.SetLabels(utilities.MergeMaps(r.resource.GetLabels(), utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName())))
+		r.resource.SetLabels(utilities.KamajiLabels(tenantControlPlane.GetName(), r.GetName()))
 
 		if isRotationRequested {
 			utilities.SetLastRotationTimestamp(r.resource)
@@ -132,4 +145,46 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
+}
+
+func (r *SACertificate) usePreGeneratedSACertificate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) error {
+	keyRef := tenantControlPlane.Spec.PreGeneratedCertificates.ServiceAccount
+
+	// Secrets must be in the same namespace as the TenantControlPlane
+	secretKey := types.NamespacedName{
+		Name:      keyRef.SecretName,
+		Namespace: tenantControlPlane.GetNamespace(),
+	}
+
+	secret := &corev1.Secret{}
+	if err := r.Client.Get(ctx, secretKey, secret); err != nil {
+		return fmt.Errorf("failed to get secret %s: %w", secretKey, err)
+	}
+
+	pubKeyKey := keyRef.PublicKeyKey
+	if pubKeyKey == "" {
+		pubKeyKey = kubeadmconstants.ServiceAccountPublicKeyName
+	}
+
+	privKeyKey := keyRef.PrivateKeyKey
+	if privKeyKey == "" {
+		privKeyKey = kubeadmconstants.ServiceAccountPrivateKeyName
+	}
+
+	pubKeyData, exists := secret.Data[pubKeyKey]
+	if !exists {
+		return fmt.Errorf("public key %s not found in secret %s", pubKeyKey, secretKey)
+	}
+
+	privKeyData, exists := secret.Data[privKeyKey]
+	if !exists {
+		return fmt.Errorf("private key %s not found in secret %s", privKeyKey, secretKey)
+	}
+
+	r.resource.Data = map[string][]byte{
+		kubeadmconstants.ServiceAccountPublicKeyName:  pubKeyData,
+		kubeadmconstants.ServiceAccountPrivateKeyName: privKeyData,
+	}
+
+	return nil
 }
