@@ -19,6 +19,7 @@ import (
 	builder "github.com/clastix/kamaji/internal/builders/controlplane"
 	"github.com/clastix/kamaji/internal/datastore"
 	"github.com/clastix/kamaji/internal/resources"
+	"github.com/clastix/kamaji/internal/resources/bootstrap"
 	ds "github.com/clastix/kamaji/internal/resources/datastore"
 	"github.com/clastix/kamaji/internal/resources/konnectivity"
 )
@@ -69,6 +70,7 @@ func GetResources(ctx context.Context, config GroupResourceBuilderConfiguration)
 	resources = append(resources, getKonnectivityServerPatchResources(config.client)...)
 	resources = append(resources, getDataStoreMigratingCleanup(config.client, config.KamajiNamespace)...)
 	resources = append(resources, getKubernetesIngressResources(config.client)...)
+	resources = append(resources, getBootstrapResources(config.client)...)
 
 	if config.GatewayAPIEnabled {
 		resources = append(resources, getKubernetesGatewayResources(config.client)...)
@@ -338,4 +340,10 @@ func getNamespacedName(namespace string, name string) k8stypes.NamespacedName {
 
 func getTmpDirectory(base string, tenantControlPlane kamajiv1alpha1.TenantControlPlane) string {
 	return fmt.Sprintf("%s/%s/%s", base, tenantControlPlane.GetName(), uuid.New())
+}
+
+func getBootstrapResources(c client.Client) []resources.Resource {
+	return []resources.Resource{
+		&bootstrap.RBACBootstrap{Client: c},
+	}
 }
