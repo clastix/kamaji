@@ -27,6 +27,33 @@ By default, Kamaji can persist all Tenant Clusters’ data in a single datastore
 
 Kamaji’s roadmap includes a datastore scheduler, which will automatically assign new Tenant Clusters to the most appropriate datastore in the pool, further reducing operational overhead.
 
+## Exclusive etcd Datastores
+
+On a shared etcd datastore, compaction applies to every Tenant Cluster at once, so Kamaji runs the Tenant Control Plane API servers with `--etcd-compaction-interval=0` and leaves compaction to etcd itself.
+Since Kubernetes v1.34, the API server serves paginated lists from its cache (the `ListFromCacheSnapshot` feature gate), and it only learns about compaction when it compacts etcd itself: with compaction disabled, continue tokens never expire.
+
+An etcd `DataStore` can be dedicated to a single Tenant Control Plane by setting `exclusive: true`:
+
+```yaml
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: DataStore
+metadata:
+  name: etcd-dedicated
+spec:
+  driver: etcd
+  exclusive: true
+  # endpoints and tlsConfig as for any etcd DataStore
+```
+
+For an exclusive `DataStore`, Kamaji grants the Tenant Control Plane's etcd user the `root` role, required by etcd to compact, and doesn't force the compaction interval anymore:
+the API server compacts every 5 minutes, unless `--etcd-compaction-interval` is set in the API server extra arguments.
+
+When a `TenantControlPlane` refers to an exclusive `DataStore` already used by another instance, its reconciliation fails and is blocked.
+The `exclusive` field is immutable: to move a Tenant Control Plane to an exclusive datastore, use the live migration.
+
+!!! info "etcd auto-compaction"
+    etcd's own auto-compaction (`--auto-compaction-retention`) can stay enabled, but the API server doesn't learn about the revisions it compacts.
+
 ## Live Migration
 
 Operational needs change over time, and Kamaji makes it easy to adapt. You can live-migrate a Tenant Cluster’s data from one datastore to another, as long as they use the same backend driver, without manual backup and restore steps. This feature simplifies Day 2 operations and helps you optimize your infrastructure as your requirements evolve.
