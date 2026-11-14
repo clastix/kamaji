@@ -39,7 +39,7 @@ func NewStorageConnection(ctx context.Context, client client.Client, ds kamajiv1
 
 		return NewPostgreSQLConnection(*cc)
 	case kamajiv1alpha1.EtcdDriver:
-		return NewETCDConnection(*cc)
+		return NewETCDConnection(*cc, ds.Spec.Exclusive)
 	case kamajiv1alpha1.KineNatsDriver:
 		return NewNATSConnection(*cc)
 	default:

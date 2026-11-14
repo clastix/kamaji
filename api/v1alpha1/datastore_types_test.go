@@ -109,3 +109,79 @@ var _ = Describe("DataStore endpoints validation", func() {
 		Expect(got.Spec.Migration).To(Equal(migration))
 	})
 })
+
+var _ = Describe("DataStore exclusive validation", func() {
+	var (
+		ctx context.Context
+		ds  *DataStore
+	)
+
+	BeforeEach(func() {
+		ctx = context.Background()
+		ds = &DataStore{
+			ObjectMeta: metav1.ObjectMeta{GenerateName: "ds-exclusive-"},
+			Spec: DataStoreSpec{
+				Driver:    EtcdDriver,
+				Endpoints: Endpoints{"etcd-0:2379"},
+				TLSConfig: &TLSConfig{
+					CertificateAuthority: CertKeyPair{
+						Certificate: ContentRef{Content: []byte("ca")},
+						PrivateKey:  &ContentRef{Content: []byte("ca-key")},
+					},
+					ClientCertificate: &ClientCertificate{
+						Certificate: ContentRef{Content: []byte("cert")},
+						PrivateKey:  ContentRef{Content: []byte("key")},
+					},
+				},
+			},
+		}
+	})
+
+	AfterEach(func() {
+		if ds.GetName() != "" {
+			if err := k8sClient.Delete(ctx, ds); err != nil && !apierrors.IsNotFound(err) {
+				Expect(err).NotTo(HaveOccurred())
+			}
+		}
+	})
+
+	It("accepts an exclusive etcd DataStore", func() {
+		ds.Spec.Exclusive = true
+		Expect(k8sClient.Create(ctx, ds)).To(Succeed())
+	})
+
+	It("denies an exclusive DataStore with a driver other than etcd", func() {
+		ds.Spec = DataStoreSpec{
+			Driver:    KinePostgreSQLDriver,
+			Endpoints: Endpoints{"postgresql:5432"},
+			BasicAuth: &BasicAuth{
+				Username: ContentRef{Content: []byte("user")},
+				Password: ContentRef{Content: []byte("pass")},
+			},
+			Exclusive: true,
+		}
+
+		err := k8sClient.Create(ctx, ds)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("exclusive is supported only with the etcd driver"))
+	})
+
+	It("denies making a shared DataStore exclusive", func() {
+		Expect(k8sClient.Create(ctx, ds)).To(Succeed())
+
+		ds.Spec.Exclusive = true
+		err := k8sClient.Update(ctx, ds)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("exclusive is immutable"))
+	})
+
+	It("denies making an exclusive DataStore shared", func() {
+		ds.Spec.Exclusive = true
+		Expect(k8sClient.Create(ctx, ds)).To(Succeed())
+
+		ds.Spec.Exclusive = false
+		err := k8sClient.Update(ctx, ds)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("exclusive is immutable"))
+	})
+})

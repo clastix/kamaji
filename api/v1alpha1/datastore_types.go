@@ -36,6 +36,8 @@ type Endpoints []string
 // +kubebuilder:validation:XValidation:rule="(self.driver != \"etcd\" && has(self.basicAuth)) ? ((has(self.basicAuth.password.secretReference) || has(self.basicAuth.password.content))) : true", message="When driver is not etcd and basicAuth exists, password must have secretReference or content"
 // +kubebuilder:validation:XValidation:rule="(self.driver != \"etcd\") ? (has(self.tlsConfig) || has(self.basicAuth)) : true", message="When driver is not etcd, either tlsConfig or basicAuth must be provided"
 // +kubebuilder:validation:XValidation:rule="oldSelf == null || self.driver == oldSelf.driver", message="driver is immutable and cannot be changed after creation"
+// +kubebuilder:validation:XValidation:rule="!has(self.exclusive) || !self.exclusive || self.driver == \"etcd\"", message="exclusive is supported only with the etcd driver"
+// +kubebuilder:validation:XValidation:rule="oldSelf == null || (has(self.exclusive) && self.exclusive) == (has(oldSelf.exclusive) && oldSelf.exclusive)", message="exclusive is immutable and cannot be changed after creation"
 type DataStoreSpec struct {
 	// The driver to use to connect to the shared datastore.
 	Driver Driver `json:"driver"`
@@ -51,6 +53,13 @@ type DataStoreSpec struct {
 	// Defines how the Job migrating a Tenant Control Plane to this data store is scheduled.
 	// This value is optional.
 	Migration *DataStoreMigration `json:"migration,omitempty"`
+	// Exclusive dedicates the data store to a single Tenant Control Plane, supported only with the etcd driver.
+	// The tenant's etcd user is granted the root role, and Kamaji no longer forces
+	// --etcd-compaction-interval=0, so the kube-apiserver compacts etcd itself
+	// (5m by default, overridable with the API server extra args).
+	// A second Tenant Control Plane referencing an exclusive data store fails to reconcile.
+	// This value is immutable.
+	Exclusive bool `json:"exclusive,omitempty"`
 }
 
 // DataStoreMigration contains the settings of the Job migrating a Tenant Control Plane to this data store.

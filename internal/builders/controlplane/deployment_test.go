@@ -272,6 +272,57 @@ var _ = Describe("Controlplane Deployment", func() {
 		})
 	})
 
+	Describe("etcd compaction interval flag", func() {
+		var tcp kamajiv1alpha1.TenantControlPlane
+
+		BeforeEach(func() {
+			tcp = kamajiv1alpha1.TenantControlPlane{}
+			d.DataStore.Spec.Driver = kamajiv1alpha1.EtcdDriver
+		})
+
+		It("forces 0 on a shared DataStore, ignoring user extraArgs", func() {
+			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{
+				APIServer: []string{"--etcd-compaction-interval=1m"},
+			}
+
+			got := d.buildKubeAPIServerCommand(tcp, "192.0.2.1", nil)
+
+			Expect(got).To(ContainElement("--etcd-compaction-interval=0"))
+			Expect(got).NotTo(ContainElement("--etcd-compaction-interval=1m"))
+		})
+
+		It("defaults to 5m on an exclusive DataStore", func() {
+			d.DataStore.Spec.Exclusive = true
+
+			got := d.buildKubeAPIServerCommand(tcp, "192.0.2.1", nil)
+
+			Expect(got).To(ContainElement("--etcd-compaction-interval=5m"))
+		})
+
+		It("lets the user set the interval on an exclusive DataStore", func() {
+			d.DataStore.Spec.Exclusive = true
+			tcp.Spec.ControlPlane.Deployment.ExtraArgs = &kamajiv1alpha1.ControlPlaneExtraArgs{
+				APIServer: []string{"--etcd-compaction-interval=1m"},
+			}
+
+			got := d.buildKubeAPIServerCommand(tcp, "192.0.2.1", nil)
+
+			Expect(got).To(ContainElement("--etcd-compaction-interval=1m"))
+			Expect(got).NotTo(ContainElement(HavePrefix("--etcd-compaction-interval=0")))
+			Expect(got).NotTo(ContainElement("--etcd-compaction-interval=5m"))
+		})
+
+		It("replaces the stale 0 after migrating to an exclusive DataStore", func() {
+			shared := d.buildKubeAPIServerCommand(tcp, "192.0.2.1", nil)
+
+			d.DataStore.Spec.Exclusive = true
+			got := d.buildKubeAPIServerCommand(tcp, "192.0.2.1", shared)
+
+			Expect(got).To(ContainElement("--etcd-compaction-interval=5m"))
+			Expect(got).NotTo(ContainElement("--etcd-compaction-interval=0"))
+		})
+	})
+
 	Describe("Konnectivity egress selector flag", func() {
 		var tcp kamajiv1alpha1.TenantControlPlane
 

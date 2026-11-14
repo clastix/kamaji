@@ -29800,6 +29800,18 @@ This value is optional.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>exclusive</b></td>
+        <td>boolean</td>
+        <td>
+          Exclusive dedicates the data store to a single Tenant Control Plane, supported only with the etcd driver.
+The tenant's etcd user is granted the root role, and Kamaji no longer forces
+--etcd-compaction-interval=0, so the kube-apiserver compacts etcd itself
+(5m by default, overridable with the API server extra args).
+A second Tenant Control Plane referencing an exclusive data store fails to reconcile.
+This value is immutable.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#datastorespecmigration">migration</a></b></td>
         <td>object</td>
         <td>

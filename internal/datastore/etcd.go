@@ -15,7 +15,7 @@ import (
 	dserrors "github.com/clastix/kamaji/internal/datastore/errors"
 )
 
-func NewETCDConnection(config ConnectionConfig) (Connection, error) {
+func NewETCDConnection(config ConnectionConfig, exclusive bool) (Connection, error) {
 	endpoints := make([]string, 0, len(config.Endpoints))
 
 	for _, ep := range config.Endpoints {
@@ -33,12 +33,19 @@ func NewETCDConnection(config ConnectionConfig) (Connection, error) {
 	}
 
 	return &EtcdClient{
-		Client: client,
+		Client:    client,
+		Exclusive: exclusive,
 	}, nil
 }
 
+// etcdRootRole is the built-in etcd role allowed to run any operation, compaction included.
+const etcdRootRole = "root"
+
 type EtcdClient struct {
 	Client *etcdclient.Client
+	// Exclusive is true when the data store is dedicated to a single Tenant Control Plane:
+	// its user is granted the root role, so the kube-apiserver compactor can compact etcd.
+	Exclusive bool
 }
 
 func (e *EtcdClient) CreateUser(ctx context.Context, user, password string) error {
@@ -67,6 +74,14 @@ func (e *EtcdClient) GrantPrivileges(ctx context.Context, user, dbName string) e
 
 	if _, err := e.Client.RoleGrantPermission(ctx, dbName, key, etcdclient.GetPrefixRangeEnd(key), permission); err != nil {
 		return dserrors.NewGrantPrivilegesError(err)
+	}
+	// etcd rejects Compact unless the user has the root role,
+	// and granting only the compact_rev_key key is not enough.
+	// Granted before the tenant role, since GrantPrivilegesExists only checks the latter.
+	if e.Exclusive {
+		if _, err := e.Client.UserGrantRole(ctx, user, etcdRootRole); err != nil {
+			return dserrors.NewGrantPrivilegesError(err)
+		}
 	}
 
 	if _, err := e.Client.UserGrantRole(ctx, user, dbName); err != nil {

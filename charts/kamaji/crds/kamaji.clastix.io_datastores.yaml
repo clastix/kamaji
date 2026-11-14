@@ -140,6 +140,15 @@ spec:
                   x-kubernetes-validations:
                     - message: an IPv6 endpoint address must be bracketed, e.g. [2001:db8::1]:2379
                       rule: self.all(e, e.startsWith('[') || e.split(':').size() <= 2)
+                exclusive:
+                  description: |-
+                    Exclusive dedicates the data store to a single Tenant Control Plane, supported only with the etcd driver.
+                    The tenant's etcd user is granted the root role, and Kamaji no longer forces
+                    --etcd-compaction-interval=0, so the kube-apiserver compacts etcd itself
+                    (5m by default, overridable with the API server extra args).
+                    A second Tenant Control Plane referencing an exclusive data store fails to reconcile.
+                    This value is immutable.
+                  type: boolean
                 migration:
                   description: |-
                     Defines how the Job migrating a Tenant Control Plane to this data store is scheduled.
@@ -1635,6 +1644,10 @@ spec:
                   rule: '(self.driver != "etcd") ? (has(self.tlsConfig) || has(self.basicAuth)) : true'
                 - message: driver is immutable and cannot be changed after creation
                   rule: oldSelf == null || self.driver == oldSelf.driver
+                - message: exclusive is supported only with the etcd driver
+                  rule: '!has(self.exclusive) || !self.exclusive || self.driver == "etcd"'
+                - message: exclusive is immutable and cannot be changed after creation
+                  rule: oldSelf == null || (has(self.exclusive) && self.exclusive) == (has(oldSelf.exclusive) && oldSelf.exclusive)
             status:
               description: DataStoreStatus defines the observed state of DataStore.
               properties:
