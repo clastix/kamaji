@@ -12,10 +12,15 @@ import (
 
 // SetReadyCondition derives the standard Ready condition from the Kubernetes version status,
 // which remains the source of truth: the condition is only its translation for generic tooling.
+//
+// The condition reports the last fully reconciled generation (Status.ObservedGeneration), not the
+// current one: status writes performed mid-reconciliation of a new generation must not stamp the
+// previous readiness as current. Consumers (kubectl wait, kstatus) then see the condition lagging
+// behind metadata.generation until the reconciliation is complete.
 func (in *TenantControlPlane) SetReadyCondition() {
 	condition := metav1.Condition{
 		Type:               TenantControlPlaneConditionReadyType,
-		ObservedGeneration: in.Generation,
+		ObservedGeneration: in.Status.ObservedGeneration,
 	}
 
 	switch status := in.Status.Kubernetes.Version.Status; {

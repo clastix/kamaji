@@ -34,6 +34,7 @@ func TestSetReadyCondition(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tcp := &TenantControlPlane{ObjectMeta: metav1.ObjectMeta{Generation: 3}}
+			tcp.Status.ObservedGeneration = 3
 			tcp.Status.Kubernetes.Version.Status = tt.status
 
 			tcp.SetReadyCondition()
@@ -87,5 +88,32 @@ func TestSetReadyConditionTransitions(t *testing.T) {
 
 	if got := tcp.Status.Conditions[0]; got.Status != metav1.ConditionTrue || got.LastTransitionTime.Equal(&past) {
 		t.Errorf("expected a True condition with a new lastTransitionTime, got %+v", got)
+	}
+}
+
+func TestSetReadyConditionDuringSpecChange(t *testing.T) {
+	// Generation 3 has been fully reconciled and is Ready.
+	tcp := &TenantControlPlane{ObjectMeta: metav1.ObjectMeta{Generation: 3}}
+	tcp.Status.ObservedGeneration = 3
+	tcp.Status.Kubernetes.Version.Status = ptr.To(VersionReady)
+	tcp.SetReadyCondition()
+
+	// A spec change (e.g. networkProfile.port) bumps the generation, then an unrelated resource
+	// writes its status while the version status still reflects the previous generation.
+	tcp.Generation = 4
+	tcp.SetReadyCondition()
+
+	condition := meta.FindStatusCondition(tcp.Status.Conditions, TenantControlPlaneConditionReadyType)
+	if condition.ObservedGeneration != 3 {
+		t.Fatalf("a mid-reconciliation status write must not claim generation 4, got observedGeneration %d", condition.ObservedGeneration)
+	}
+
+	// The completion path advances the observed generation, then the condition follows.
+	tcp.Status.ObservedGeneration = 4
+	tcp.SetReadyCondition()
+
+	condition = meta.FindStatusCondition(tcp.Status.Conditions, TenantControlPlaneConditionReadyType)
+	if condition.ObservedGeneration != 4 {
+		t.Errorf("expected observedGeneration 4 after a completed reconciliation, got %d", condition.ObservedGeneration)
 	}
 }
