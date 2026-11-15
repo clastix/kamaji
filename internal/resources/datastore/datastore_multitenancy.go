@@ -52,11 +52,9 @@ func (m *MultiTenancy) CreateOrUpdate(_ context.Context, tcp *kamajiv1alpha1.Ten
 		return controllerutil.OperationResultNone, nil
 	case usedBy.Len() == 0:
 		return controllerutil.OperationResultNone, nil
+	case m.DataStore.Spec.Exclusive:
+		return controllerutil.OperationResultNone, errors.New("the current datastore is exclusive and already in use")
 	default:
-		if m.DataStore.Spec.Exclusive {
-			return controllerutil.OperationResultNone, errors.New("the current datastore is exclusive and already in use")
-		}
-
 		return controllerutil.OperationResultNone, errors.New("NATS doesn't support multi-tenancy, the current datastore is already in use")
 	}
 }
