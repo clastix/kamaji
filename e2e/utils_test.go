@@ -15,6 +15,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -141,6 +142,22 @@ func StatusMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, status kamajiv1al
 
 		return *tcp.Status.Kubernetes.Version.Status
 	}, 5*time.Minute, time.Second).Should(Equal(status))
+}
+
+func ReadyConditionMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, status metav1.ConditionStatus, reason string) {
+	GinkgoHelper()
+	Eventually(func() string {
+		if err := k8sClient.Get(context.Background(), client.ObjectKeyFromObject(tcp), tcp); err != nil {
+			return ""
+		}
+
+		condition := meta.FindStatusCondition(tcp.Status.Conditions, kamajiv1alpha1.TenantControlPlaneConditionReadyType)
+		if condition == nil {
+			return ""
+		}
+
+		return fmt.Sprintf("%s/%s", condition.Status, condition.Reason)
+	}, 5*time.Minute, time.Second).Should(Equal(fmt.Sprintf("%s/%s", status, reason)))
 }
 
 func AllPodsLabelMustEqualTo(tcp *kamajiv1alpha1.TenantControlPlane, label string, value string) {

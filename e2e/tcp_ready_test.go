@@ -70,6 +70,7 @@ var _ = Describe("Deploy a TenantControlPlane resource", func() {
 	// Check if TenantControlPlane resource has been created
 	It("Should be Ready", func() {
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
+		ReadyConditionMustEqualTo(tcp, metav1.ConditionTrue, string(kamajiv1alpha1.VersionReady))
 		// ObservedGeneration is set at the end of successful reconciliation,
 		// after status becomes Ready, so we need to wait for it.
 		Eventually(func() int64 {
