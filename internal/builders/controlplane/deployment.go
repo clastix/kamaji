@@ -754,7 +754,15 @@ func (d Deployment) buildKubeAPIServerCommand(tenantControlPlane kamajiv1alpha1.
 			httpsEndpoints = append(httpsEndpoints, fmt.Sprintf("https://%s", ep))
 		}
 
-		managed["--etcd-compaction-interval"] = "0"
+		// On a shared etcd, compaction is cluster-wide and a tenant must not run it.
+		// An exclusive DataStore lets the kube-apiserver compact, which ListFromCacheSnapshot
+		// needs to expire continue tokens: the upstream default applies unless set in ExtraArgs.
+		// As a safe default, a stale "0" from a previous shared DataStore is replaced.
+		if d.DataStore.Spec.Exclusive {
+			safeDefaults["--etcd-compaction-interval"] = "5m"
+		} else {
+			managed["--etcd-compaction-interval"] = "0"
+		}
 		managed["--etcd-prefix"] = fmt.Sprintf("/%s", tenantControlPlane.Status.Storage.Setup.Schema)
 		managed["--etcd-servers"] = strings.Join(httpsEndpoints, ",")
 		managed["--etcd-cafile"] = "/etc/kubernetes/pki/etcd/ca.crt"
