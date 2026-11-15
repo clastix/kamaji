@@ -10,4 +10,8 @@ const (
 
 	// DefaultKubernetesVersion is the default Kubernetes version used in e2e tests.
 	DefaultKubernetesVersion = "v1.37.0"
+
+	// TenantControlPlaneConditionReadyType is the standard Ready condition type: it is intentionally
+	// not prefixed, since generic tooling (kubectl wait, kstatus) looks for a condition named Ready.
+	TenantControlPlaneConditionReadyType = "Ready"
 )
