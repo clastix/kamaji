@@ -49,6 +49,7 @@ jobs:
           sudo apt-get install -y golang-cfssl
           sudo swapoff -a
           sudo modprobe br_netfilter
+          sudo sysctl -w fs.inotify.max_user_instances=512 fs.inotify.max_user_watches=524288
       - name: install required Go tools
         run: make kind ko helm ginkgo
       - name: cleaning up go mod
