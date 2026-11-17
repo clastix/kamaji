@@ -26,6 +26,8 @@ func UpdateStatus(ctx context.Context, client client.Client, tcp *kamajiv1alpha1
 		if err = resource.UpdateTenantControlPlaneStatus(ctx, tcp); err != nil {
 			return fmt.Errorf("error applying TenantcontrolPlane status: %w", err)
 		}
+		// Keeping the Ready condition aligned with the version status on every status write.
+		tcp.SetReadyCondition()
 
 		if err = client.Status().Update(ctx, tcp); err != nil {
 			return fmt.Errorf("error updating tenantControlPlane status: %w", err)

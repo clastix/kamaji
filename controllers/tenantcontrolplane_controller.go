@@ -290,6 +290,7 @@ func (r *TenantControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 
 		tenantControlPlane.Status.ObservedGeneration = tenantControlPlane.Generation
+		tenantControlPlane.SetReadyCondition()
 
 		return r.Client.Status().Update(ctx, tenantControlPlane)
 	}); err != nil {

@@ -71,7 +71,9 @@ var _ = Describe("Scale a TenantControlPlane resource", func() {
 	It("Should scale correctly", func() {
 		ScaleTenantControlPlane(tcp, 0)
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionSleeping)
+		ReadyConditionMustEqualTo(tcp, metav1.ConditionFalse, string(kamajiv1alpha1.VersionSleeping))
 		ScaleTenantControlPlane(tcp, 1)
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
+		ReadyConditionMustEqualTo(tcp, metav1.ConditionTrue, string(kamajiv1alpha1.VersionReady))
 	})
 })

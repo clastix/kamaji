@@ -182,6 +182,12 @@ type TenantControlPlaneStatus struct {
 	ControlPlaneEndpoint string `json:"controlPlaneEndpoint,omitempty"`
 	// Addons contains the status of the different Addons
 	Addons AddonsStatus `json:"addons,omitempty"`
+	// Conditions contains the standard conditions of the Tenant Control Plane, such as Ready,
+	// allowing generic tooling (kubectl wait, kstatus, GitOps and composition engines) to assess its readiness.
+	// +optional
+	// +listType=map
+	// +listMapKey=type
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // KubernetesStatus defines the status of the resources deployed in the management cluster,
