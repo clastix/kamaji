@@ -67,6 +67,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	By("recording the controller-manager Pods and the webhook EndpointSlices")
+	startKamajiTimelineRecorder()
+
 	By("creating GatewayClass for Gateway API tests")
 	gatewayClass := &gatewayv1.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
