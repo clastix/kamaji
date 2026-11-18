@@ -98,6 +98,7 @@ var _ = Describe("Deploy a TenantControlPlane with Gateway API", func() {
 
 	It("Should be Ready", func() {
 		StatusMustEqualTo(tcp, kamajiv1alpha1.VersionReady)
+		Expect(tcp.Status.ControlPlaneEndpoint).To(Equal("tcp-gateway.example.com:6443"))
 	})
 
 	It("Should create control plane TLSRoute preserving user-provided parentRef fields", func() {
