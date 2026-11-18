@@ -1,0 +1,53 @@
+---
+import ArrowRight from '../../assets/icons/arrow-right.svg';
+
+const groups = [
+  {
+    title: 'Day-2 guides',
+    all: '/guides/',
+    links: [
+      { label: 'Backup and restore', href: '/guides/backup-and-restore/' },
+      { label: 'Upgrade Kamaji', href: '/guides/upgrade/' },
+      { label: 'Certificates lifecycle', href: '/guides/certs-lifecycle/' },
+      { label: 'Migrate a datastore', href: '/guides/datastore-migration/' },
+      { label: 'Monitoring', href: '/guides/monitoring/' },
+    ],
+  },
+  {
+    title: 'Reference',
+    all: '/reference/',
+    links: [
+      { label: 'API reference', href: '/reference/api/' },
+      { label: 'Configuration flags', href: '/reference/configuration/' },
+      { label: 'Releases and versions', href: '/reference/versioning/' },
+      { label: 'Benchmark', href: '/reference/benchmark/' },
+      { label: 'Telemetry', href: '/telemetry/' },
+    ],
+  },
+];
+---
+
+<section class="mx-auto max-w-page px-4 lg:px-12 py-16 lg:py-24">
+  <p class="text-sm font-semibold uppercase text-eyebrow lg:text-md">Look something up</p>
+  <h2 class="mt-3 text-display-sm font-semibold text-brand-dark-blue-800 lg:text-display-md">Guides and reference</h2>
+  <div class="mt-10 grid gap-6 lg:grid-cols-2">
+    {groups.map((g) => (
+      <div class="rounded-xl border border-neutral-200 bg-white p-6">
+        <div class="flex items-center justify-between">
+          <p class="text-lg font-semibold text-brand-dark-blue-800">{g.title}</p>
+          <a href={g.all} class="text-sm font-semibold text-brand-dark-blue-700 hover:underline">View all</a>
+        </div>
+        <ul class="mt-4 divide-y divide-neutral-200">
+          {g.links.map((l) => (
+            <li>
+              <a href={l.href} class="group flex items-center justify-between py-3 text-md text-neutral-700 hover:text-brand-dark-blue-700">
+                {l.label}
+                <ArrowRight class="size-5 text-neutral-400 transition group-hover:translate-x-1 group-hover:text-brand-dark-blue-700" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+</section>

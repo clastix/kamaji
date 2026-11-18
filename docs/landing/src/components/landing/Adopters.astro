@@ -1,0 +1,36 @@
+---
+import ArrowUpRight from '../../assets/icons/arrow-up-right.svg';
+import { adopters } from '../../lib/adopters';
+
+const list = 'https://github.com/clastix/kamaji/blob/master/ADOPTERS.md';
+const add = 'https://github.com/clastix/kamaji/edit/master/ADOPTERS.md';
+const featuredNames = ['NVIDIA', 'Rackspace', 'OVHCloud', 'Mistral AI', 'United Nations International Computing Center', 'Aruba', 'Platform9', 'Namecheap'];
+const featured = featuredNames.map((n) => adopters.find((a) => a.name === n)).filter((a) => a !== undefined);
+---
+
+<section class="bg-white border-b border-neutral-200">
+  <div class="mx-auto max-w-page px-4 lg:px-12 py-16 lg:py-20">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="text-sm font-semibold uppercase text-eyebrow lg:text-md">Adopters</p>
+        <h2 class="mt-3 text-display-sm font-semibold text-brand-dark-blue-800 lg:text-display-md">Adopted by {adopters.length} organizations</h2>
+      </div>
+      <a href={add} class="inline-flex items-center gap-1 text-sm font-semibold text-brand-dark-blue-700 hover:underline">
+        Add your organization <ArrowUpRight class="size-4" />
+      </a>
+    </div>
+
+    <ul class="mt-8 border-t border-neutral-200">
+      {featured.map((a) => (
+        <li class="grid gap-1 border-b border-neutral-200 py-4 lg:grid-cols-[16rem_1fr_auto] lg:items-center lg:gap-6">
+          <span class="font-semibold text-brand-dark-blue-800">{a.name}</span>
+          <span class="text-sm text-neutral-600 line-clamp-2 lg:line-clamp-none lg:truncate">{a.useCase}</span>
+          <span class="text-xs font-semibold uppercase text-neutral-500">{a.type} · since {a.since}</span>
+        </li>
+      ))}
+    </ul>
+    <a href={list} class="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-brand-dark-blue-700 hover:underline">
+      View all {adopters.length} in ADOPTERS.md <ArrowUpRight class="size-4" />
+    </a>
+  </div>
+</section>

@@ -1,0 +1,81 @@
+---
+import ArrowRight from '../../assets/icons/arrow-right.svg';
+import Server from '../../assets/icons/server-04.svg';
+import Cloud from '../../assets/icons/cloud-blank-01.svg';
+import Cpu from '../../assets/icons/cpu-chip-02.svg';
+import Globe from '../../assets/icons/globe-05.svg';
+import Settings from '../../assets/icons/settings-02.svg';
+import Rocket from '../../assets/icons/rocket-01.svg';
+
+const items = [
+  {
+    icon: Server, title: 'Private Cloud',
+    text: 'Run many isolated control planes on your own data center infrastructure, one per business unit or team.',
+    links: [
+      { label: 'vSphere', href: '/cluster-api/vsphere-infra-provider/' },
+      { label: 'Proxmox', href: '/cluster-api/proxmox-infra-provider/' },
+      { label: 'OpenStack', href: '/cluster-api/openstack-infra-provider/' },
+    ],
+  },
+  {
+    icon: Cloud, title: 'Public Cloud',
+    text: 'Offer Kubernetes as a service with the experience of major cloud providers, on infrastructure you control.',
+    links: [
+      { label: 'AWS', href: '/getting-started/kamaji-aws/' },
+      { label: 'Azure', href: '/getting-started/kamaji-azure/' },
+    ],
+  },
+  {
+    icon: Cpu, title: 'Bare Metal',
+    text: 'Run control planes on physical servers where direct hardware access, network performance, and data locality matter.',
+    links: [{ label: 'Generic infrastructure', href: '/getting-started/kamaji-generic/' }],
+  },
+  {
+    icon: Globe, title: 'Edge Computing',
+    text: 'Keep control planes in a central management cluster and run only lightweight worker nodes at edge locations.',
+    links: [
+      { label: 'Worker nodes', href: '/concepts/tenant-worker-nodes/' },
+      { label: 'Konnectivity', href: '/concepts/konnectivity/' },
+    ],
+  },
+  {
+    icon: Settings, title: 'Platform Engineering',
+    text: 'Standardized, self-service cluster provisioning with centralized control and governance over every cluster.',
+    links: [
+      { label: 'ClusterClass', href: '/cluster-api/cluster-class/' },
+      { label: 'GitOps', href: '/guides/gitops/' },
+    ],
+  },
+  {
+    icon: Rocket, title: 'BYO Cloud',
+    text: 'Build your own managed Kubernetes service from standard upstream components, with dedicated clusters per user.',
+    links: [
+      { label: 'Control plane provider', href: '/cluster-api/control-plane-provider/' },
+      { label: 'Kubeconfig generator', href: '/guides/kubeconfig-generator/' },
+    ],
+  },
+];
+---
+
+<section class="bg-white border-y border-neutral-200">
+  <div class="mx-auto max-w-page px-4 lg:px-12 py-16 lg:py-24">
+    <p class="text-sm font-semibold uppercase text-eyebrow lg:text-md">Start from a use case</p>
+    <h2 class="mt-3 text-display-sm font-semibold text-brand-dark-blue-800 lg:text-display-md">Use Cases</h2>
+    <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map(({ icon: Icon, title, text, links }) => (
+        <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 bg-[#f9fafb] p-6">
+          <Icon class="size-6 text-brand-dark-blue-300" />
+          <p class="text-lg font-semibold text-brand-dark-blue-800">{title}</p>
+          <p class="text-md text-neutral-600">{text}</p>
+          <div class="mt-auto flex flex-wrap gap-x-4 gap-y-2 border-t border-neutral-200 pt-4">
+            {links.map((l) => (
+              <a href={l.href} class="group inline-flex items-center gap-1 text-sm font-semibold text-brand-dark-blue-700 hover:underline">
+                {l.label} <ArrowRight class="size-4 transition group-hover:translate-x-0.5" />
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

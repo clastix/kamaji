@@ -1,0 +1,19 @@
+{
+  "name": "kamaji-docs-landing",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@11.1.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.2.1",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2"
+  }
+}

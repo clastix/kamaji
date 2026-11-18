@@ -1,0 +1,10 @@
+# Netlify builds from docs/ (the site's base directory). MkDocs renders the docs into
+# site/, then the Astro landing in landing/ replaces site/index.html; content/index.md
+# is only what `mkdocs serve` shows locally.
+[build]
+  command = "mkdocs build && cd landing && corepack pnpm install --frozen-lockfile && corepack pnpm build && cp -R dist/. ../site/"
+  publish = "site"
+
+[build.environment]
+  NODE_VERSION = "24"
+  COREPACK_ENABLE_DOWNLOAD_PROMPT = "0"

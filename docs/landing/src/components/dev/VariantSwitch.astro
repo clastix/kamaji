@@ -1,0 +1,43 @@
+---
+import { variants } from '../../variants';
+---
+
+<div
+  id="variant-switch"
+  class="fixed bottom-4 left-4 z-[100] p-3 flex flex-col gap-2 rounded-lg border border-neutral-700 bg-neutral-900 font-mono text-xs text-white shadow-xl"
+>
+  <span class="text-yellow-400">DEV · variants</span>
+  {Object.entries(variants).map(([group, options]) => (
+    <label class="flex items-center justify-between gap-4">
+      <span class="text-neutral-400">{group}</span>
+      <select
+        data-group={group}
+        class="px-1 py-0.5 rounded border border-neutral-600 bg-neutral-800"
+      >
+        {options.map((o) => <option value={o}>{o}</option>)}
+      </select>
+    </label>
+  ))}
+</div>
+
+<script>
+  const show = (group: string, value: string) => {
+    document.querySelectorAll<HTMLElement>(`[data-variant^="${group}:"]`).forEach((el) => {
+      el.hidden = el.dataset.variant !== `${group}:${value}`;
+    });
+    try {
+      localStorage.setItem(`variant:${group}`, value);
+    } catch {}
+  };
+
+  document.querySelectorAll<HTMLSelectElement>('#variant-switch select').forEach((select) => {
+    const group = select.dataset.group!;
+    let saved: string | null = null;
+    try {
+      saved = localStorage.getItem(`variant:${group}`);
+    } catch {}
+    if (saved && [...select.options].some((o) => o.value === saved)) select.value = saved;
+    show(group, select.value);
+    select.addEventListener('change', () => show(group, select.value));
+  });
+</script>
