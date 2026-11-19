@@ -262,6 +262,7 @@ func (r *Agent) mutate(ctx context.Context, tenantControlPlane *kamajiv1alpha1.T
 		args["--proxy-server-port"] = fmt.Sprintf("%d", tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityServerSpec.Port)
 		args["--admin-server-port"] = "8133"
 		args["--health-server-port"] = strconv.Itoa(agentHealthServerPort)
+		args["--keepalive-time"] = agentKeepaliveTime
 		if tenantControlPlane.Spec.Addons.Konnectivity.KonnectivityAgentSpec.HostNetwork {
 			// Without a host the health server, which also serves /metrics without
 			// authentication, listens on every interface of the node.
