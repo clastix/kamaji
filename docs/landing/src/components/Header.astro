@@ -1,0 +1,53 @@
+---
+import ArrowRight from '../assets/icons/arrow-right.svg';
+import GitHub from '../assets/icons/github.svg';
+
+const links = [
+  { label: 'Getting started', href: '/getting-started/' },
+  { label: 'Concepts', href: '/concepts/' },
+  { label: 'Cluster API', href: '/cluster-api/' },
+  { label: 'Guides', href: '/guides/' },
+  { label: 'Reference', href: '/reference/' },
+];
+const support = 'https://clastix.io/pricing?utm_source=kamaji&utm_medium=docs-landing&utm_content=header';
+---
+
+<header class="sticky top-0 z-50 border-b border-neutral-200 bg-white">
+  <div class="mx-auto max-w-page px-4 lg:px-12 h-16 lg:h-18 flex items-center justify-between gap-6">
+    <div class="flex items-center gap-2">
+      <a href="/" class="flex items-center gap-2 text-xl font-bold tracking-tight text-brand-dark-blue-500">
+        <span class="kamaji-mark size-8"></span>Kamaji
+      </a>
+      <a
+        href="https://clastix.io/?utm_source=kamaji&utm_medium=docs-landing&utm_content=header_brand"
+        class="text-xs font-semibold uppercase tracking-wider text-neutral-500 hover:text-brand-dark-blue-500"
+      >
+        by Clastix
+      </a>
+    </div>
+
+    <nav class="hidden lg:flex items-center gap-6 text-sm font-semibold text-brand-dark-blue-700">
+      {links.map((l) => <a href={l.href} class="hover:text-brand-dark-blue-400">{l.label}</a>)}
+    </nav>
+
+    <div class="hidden lg:flex items-center gap-3">
+      <a href="https://github.com/clastix/kamaji" aria-label="Kamaji on GitHub" class="btn btn-sm btn-secondary px-2">
+        <GitHub />
+      </a>
+      <a href={support} class="btn btn-sm btn-primary"><span>Get support</span><ArrowRight /></a>
+    </div>
+
+    <details class="lg:hidden relative">
+      <summary class="list-none inline-flex items-center justify-center size-10 rounded-md border border-neutral-300 text-brand-dark-blue-700 cursor-pointer" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </summary>
+      <nav class="absolute right-0 mt-2 w-64 rounded-xl border border-neutral-200 bg-white p-5 shadow-xl flex flex-col gap-4 font-semibold text-brand-dark-blue-700">
+        {links.map((l) => <a href={l.href}>{l.label}</a>)}
+        <a href="https://github.com/clastix/kamaji">GitHub</a>
+        <a href={support} class="btn btn-primary self-start"><span>Get support</span><ArrowRight /></a>
+      </nav>
+    </details>
+  </div>
+</header>

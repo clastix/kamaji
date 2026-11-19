@@ -1,0 +1,17 @@
+---
+import { variants, type Group } from '../../variants';
+
+interface Props {
+  group: Group;
+  name: string;
+}
+
+const { group, name } = Astro.props;
+const isDefault = variants[group][0] === name;
+---
+
+{(import.meta.env.DEV || isDefault) && (
+  <div data-variant={`${group}:${name}`} hidden={!isDefault}>
+    <slot />
+  </div>
+)}

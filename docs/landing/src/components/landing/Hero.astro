@@ -1,0 +1,42 @@
+---
+import ArrowRight from '../../assets/icons/arrow-right.svg';
+import ArrowUpRight from '../../assets/icons/arrow-up-right.svg';
+import BookOpen from '../../assets/icons/book-open-01.svg';
+import GitHub from '../../assets/icons/github.svg';
+
+const utm = 'utm_source=kamaji&utm_medium=docs-landing&utm_content=hero';
+---
+
+<section class="bg-brand-dark-blue-800 text-gray-50">
+  <div class="mx-auto max-w-page px-4 lg:px-12 py-20 lg:py-28 grid lg:grid-cols-[1.3fr_1fr] gap-12 items-center">
+    <div class="flex flex-col gap-6">
+      <p class="text-sm font-semibold text-eyebrow lg:text-md">KAMAJI DOCUMENTATION</p>
+      <h1 class="text-display-md font-semibold lg:text-display-lg">Kamaji Documentation</h1>
+      <p class="max-w-[480px] text-lg text-neutral-400 lg:text-xl">
+        Kamaji is an open-source Kubernetes operator that runs tenant control planes as pods in a
+        management cluster, using upstream Kubernetes components and kubeadm.
+      </p>
+      <div class="flex flex-wrap items-center gap-4">
+        <a href="/getting-started/" class="btn btn-xl btn-secondary">
+          <BookOpen /><span>Get started</span><ArrowRight />
+        </a>
+        <a href="https://github.com/clastix/kamaji" class="inline-flex items-center gap-2 font-semibold text-white hover:underline">
+          <GitHub width={20} height={20} /> View on GitHub
+        </a>
+      </div>
+    </div>
+
+    <div class="rounded-2xl bg-white p-8 text-neutral-900 shadow-xl">
+      <p class="text-sm font-semibold uppercase text-eyebrow">On clastix.io</p>
+      <p class="mt-3 text-display-xs font-semibold text-brand-dark-blue-800">Running Kamaji in production?</p>
+      <p class="mt-3 text-md text-neutral-600">
+        Support plans, rollout services, and kMetal, the platform built on Kamaji, come from the team
+        that builds Kamaji.
+      </p>
+      <div class="mt-6 flex flex-wrap items-center gap-4">
+        <a href={`https://clastix.io/kamaji?${utm}`} class="btn btn-primary"><span>Kamaji on clastix.io</span><ArrowUpRight /></a>
+        <a href={`https://clastix.io/pricing?${utm}`} class="text-sm font-semibold text-brand-dark-blue-700 hover:underline">Support plans</a>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,37 @@
+---
+import ArrowRight from '../../assets/icons/arrow-right.svg';
+import ArrowUpRight from '../../assets/icons/arrow-up-right.svg';
+import CheckCircle from '../../assets/icons/check-circle.svg';
+
+const utm = 'utm_source=kamaji&utm_medium=docs-landing&utm_content=beyond';
+const facts = [
+  { text: 'Subscription support plans from the team that builds Kamaji', href: `https://clastix.io/pricing?${utm}` },
+  { text: 'Enterprise addons, such as Ingress for exposing tenant API servers', href: '/enterprise-addons/' },
+  { text: 'kMetal, which adds bare metal, virtualization, and networking on top of Kamaji', href: `https://clastix.io/kmetal?${utm}` },
+];
+---
+
+<section class="mx-auto max-w-page px-4 lg:px-12 py-16 lg:py-24">
+  <div class="grid gap-10 rounded-2xl bg-brand-dark-blue-800 p-8 text-white lg:grid-cols-[1.4fr_1fr] lg:items-center lg:p-12">
+    <div>
+      <p class="text-sm font-semibold text-eyebrow lg:text-md">KAMAJI BY CLASTIX</p>
+      <h2 class="mt-3 text-display-sm font-semibold lg:text-display-md">Taking Kamaji to production?</h2>
+      <ul class="mt-6 flex flex-col gap-3">
+        {facts.map((f) => (
+          <li class="flex items-start gap-3 text-md text-neutral-300">
+            <CheckCircle class="mt-0.5 size-5 shrink-0 text-eyebrow" />
+            <a href={f.href} class="hover:text-white hover:underline">{f.text}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <div class="flex flex-col gap-3 lg:items-end">
+      <a href={`https://clastix.io/pricing?${utm}`} class="btn btn-xl btn-primary w-full lg:w-auto">
+        <span>Get support</span><ArrowRight />
+      </a>
+      <a href={`https://clastix.io/kamaji?${utm}`} class="btn btn-xl btn-secondary w-full lg:w-auto">
+        <span>Kamaji on clastix.io</span><ArrowUpRight />
+      </a>
+    </div>
+  </div>
+</section>

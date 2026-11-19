@@ -1,0 +1,38 @@
+---
+import '../styles/global.css';
+import VariantSwitch from '../components/dev/VariantSwitch.astro';
+import { variants } from '../variants';
+
+const title = 'Kamaji Documentation — Install, operate, and extend Kamaji';
+const description =
+  'Documentation for Kamaji, the open-source hosted control plane manager for Kubernetes: getting started, concepts, Cluster API, guides, and reference.';
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <slot />
+    {import.meta.env.DEV && Object.keys(variants).length > 0 && <VariantSwitch />}
+  </body>
+</html>

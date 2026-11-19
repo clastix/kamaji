@@ -1,0 +1,62 @@
+---
+const year = new Date().getFullYear();
+const utm = 'utm_source=kamaji&utm_medium=docs-landing&utm_content=footer';
+const columns = [
+  {
+    title: 'Docs',
+    links: [
+      { label: 'Getting started', href: '/getting-started/' },
+      { label: 'Concepts', href: '/concepts/' },
+      { label: 'Cluster API', href: '/cluster-api/' },
+      { label: 'Guides', href: '/guides/' },
+      { label: 'Reference', href: '/reference/' },
+    ],
+  },
+  {
+    title: 'Community',
+    links: [
+      { label: 'GitHub', href: 'https://github.com/clastix/kamaji' },
+      { label: '#kamaji on Slack', href: 'https://kubernetes.slack.com/archives/C03GLTTMWNN' },
+      { label: 'Discussions', href: 'https://github.com/clastix/kamaji/discussions' },
+      { label: 'Contributing', href: '/guides/contribute/' },
+    ],
+  },
+  {
+    title: 'Clastix',
+    links: [
+      { label: 'Kamaji on clastix.io', href: `https://clastix.io/kamaji?${utm}` },
+      { label: 'kMetal Platform', href: `https://clastix.io/kmetal?${utm}` },
+      { label: 'Support plans', href: `https://clastix.io/pricing?${utm}` },
+      { label: 'Contact us', href: `https://clastix.io/contact?${utm}` },
+    ],
+  },
+];
+---
+
+<footer class="bg-brand-dark-blue-800 text-white">
+  <div class="mx-auto max-w-page px-4 lg:px-12 py-16 grid lg:grid-cols-[1fr_2fr] gap-12">
+    <div>
+      <a href="/" class="flex items-center gap-2 text-display-xs font-bold">
+        <span class="kamaji-mark size-9"></span>Kamaji
+      </a>
+      <p class="mt-4 max-w-xs text-md">The open-source hosted control plane manager for Kubernetes.</p>
+      <a href={`https://clastix.io/?${utm}`} class="mt-6 inline-flex items-center gap-2 text-sm font-semibold">
+        <span class="clastix-mark--mono" style="width: 22px; height: 15px;"></span>
+        A Clastix project
+      </a>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-8">
+      {columns.map((c) => (
+        <div>
+          <p class="mb-4 text-sm font-semibold uppercase">{c.title}</p>
+          <ul class="space-y-3 text-sm font-semibold">
+            {c.links.map((l) => <li><a href={l.href} class="hover:underline">{l.label}</a></li>)}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <div class="mx-auto max-w-page px-4 lg:px-12 pb-10 text-sm">© {year} Clastix | Apache 2.0 licensed</div>
+</footer>

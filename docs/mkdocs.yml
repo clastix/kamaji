@@ -37,7 +37,6 @@ theme:
         name: Switch to light mode
   favicon: images/favicon.png
   logo: images/logo.png
-  custom_dir: overrides
 
 markdown_extensions:
   - admonition

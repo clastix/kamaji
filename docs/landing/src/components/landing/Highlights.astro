@@ -1,0 +1,36 @@
+---
+import ArrowRight from '../../assets/icons/arrow-right.svg';
+import Layers from '../../assets/icons/layers-three-02.svg';
+import Cube from '../../assets/icons/cube-01.svg';
+import Server from '../../assets/icons/server-01.svg';
+import Dataflow from '../../assets/icons/dataflow-03.svg';
+import Cube2 from '../../assets/icons/cube-02.svg';
+import Shield from '../../assets/icons/shield-01.svg';
+
+const items = [
+  { icon: Layers, title: 'Multi-Tenancy', text: 'Many Kubernetes control planes run as pods in one management cluster, each operating independently of the others.', href: '/concepts/' },
+  { icon: Cube, title: 'Upstream Kubernetes', text: 'Unmodified upstream components, bootstrapped with kubeadm, the default tool for creating and managing clusters.', href: '/reference/conformance/' },
+  { icon: Server, title: 'Infrastructure Agnostic', text: 'Worker nodes join from any provider: bare metal, virtual machines, or cloud instances, including hybrid setups.', href: '/concepts/tenant-worker-nodes/' },
+  { icon: Dataflow, title: 'Resource Optimization', text: "Control planes share the management cluster's resources and scale independently, based on actual usage.", href: '/reference/benchmark/' },
+  { icon: Cube2, title: 'Cluster API Integration', text: 'Kamaji is a Cluster API control plane provider and works with infrastructure providers for provisioning and lifecycle.', href: '/cluster-api/' },
+  { icon: Shield, title: 'High Availability', text: 'Multi-replica control planes backed by distributed etcd clusters, with automated failover and recovery.', href: '/concepts/tenant-control-plane/' },
+];
+---
+
+<section class="mx-auto max-w-page px-4 lg:px-12 py-16 lg:py-24">
+  <p class="text-sm font-semibold uppercase text-eyebrow lg:text-md">How it works</p>
+  <h2 class="mt-3 text-display-sm font-semibold text-brand-dark-blue-800 lg:text-display-md">Highlights</h2>
+
+  <div class="mt-10 grid border-t border-neutral-200 lg:grid-cols-2 lg:gap-x-12">
+    {items.map(({ icon: Icon, title, text, href }) => (
+      <a href={href} class="group flex items-start gap-4 border-b border-neutral-200 py-5">
+        <Icon class="mt-0.5 size-6 shrink-0 text-brand-dark-blue-300" />
+        <span class="flex-1">
+          <span class="block font-semibold text-brand-dark-blue-800 group-hover:underline">{title}</span>
+          <span class="mt-1 block text-sm text-neutral-600">{text}</span>
+        </span>
+        <ArrowRight class="mt-0.5 size-5 shrink-0 text-neutral-400 transition group-hover:translate-x-1 group-hover:text-brand-dark-blue-700" />
+      </a>
+    ))}
+  </div>
+</section>

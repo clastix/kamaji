@@ -1,0 +1,54 @@
+---
+const utm = 'utm_source=kamaji&utm_medium=docs-landing&utm_content=faq';
+const link = 'class="font-semibold text-brand-dark-blue-700 underline"';
+const faqs = [
+  {
+    q: 'What does Kamaji mean?',
+    a: `Kamaji is named after <em>Kamajī</em> (かまじ) from the Japanese movie <a ${link} href="https://en.wikipedia.org/wiki/Spirited_Away">Spirited Away</a>. Kamajī is the boiler room operator who efficiently manages the bathhouse's water system, just like Kamaji manages Kubernetes clusters.`,
+  },
+  {
+    q: 'Is Kamaji another Kubernetes distribution?',
+    a: `No. Kamaji is a Kubernetes operator that provides managed Kubernetes clusters as a service, using kubeadm for <a ${link} href="/reference/conformance/">conformant CNCF Kubernetes</a> clusters.`,
+  },
+  {
+    q: 'How is it different from typical solutions?',
+    a: `Kamaji runs the control plane as regular pods in the management cluster, offering it as a service instead of on dedicated machines. See <a ${link} href="/concepts/tenant-control-plane/">Tenant Control Plane</a>.`,
+  },
+  {
+    q: 'How does it compare to public cloud services?',
+    a: 'Kamaji gives you hosted control planes on infrastructure you operate, with the same model across cloud, data center, and edge.',
+  },
+  {
+    q: 'How does it differ from Cluster API?',
+    a: `They complement each other: Kamaji manages control planes, while Cluster API handles infrastructure and lifecycle. Kamaji ships a <a ${link} href="/cluster-api/control-plane-provider/">Cluster API control plane provider</a>.`,
+  },
+  {
+    q: 'Why Kamaji when Capsule exists?',
+    a: `<a ${link} href="https://projectcapsule.dev">Capsule</a> provides a single control plane with isolated namespaces. Kamaji provides dedicated control planes for tenants that need full cluster-admin permissions.`,
+  },
+  {
+    q: 'Do you provide support?',
+    a: `Yes. <a ${link} href="https://clastix.io/pricing?${utm}">Clastix</a> offers subscription-based support plans for Kamaji, and the community is on <a ${link} href="https://kubernetes.slack.com/archives/C03GLTTMWNN">#kamaji on Kubernetes Slack</a>.`,
+  },
+];
+---
+
+<section class="bg-white border-y border-neutral-200">
+  <div class="mx-auto max-w-page px-4 lg:px-12 py-16 lg:py-24 grid gap-10 lg:grid-cols-[1fr_2fr]">
+    <div>
+      <p class="text-sm font-semibold uppercase text-eyebrow lg:text-md">FAQ</p>
+      <h2 class="mt-3 text-display-sm font-semibold text-brand-dark-blue-800 lg:text-display-md">Frequently Asked Questions</h2>
+    </div>
+    <div class="divide-y divide-neutral-200 border-y border-neutral-200">
+      {faqs.map((f) => (
+        <details class="group py-5">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 text-lg font-semibold text-brand-dark-blue-800">
+            {f.q}
+            <span class="text-2xl leading-none text-neutral-400 transition group-open:rotate-45">+</span>
+          </summary>
+          <p class="mt-3 text-md text-neutral-600" set:html={f.a} />
+        </details>
+      ))}
+    </div>
+  </div>
+</section>

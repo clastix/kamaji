@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+/* Tokens mirror clastix.io (clastix/website src/styles/global.css) so the landing reads as part of it. */
+@theme {
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, monospace;
+
+  --text-md: 1rem;
+  --text-md--line-height: 1.5rem;
+  --text-display-xs: 1.5rem;
+  --text-display-xs--line-height: 2rem;
+  --text-display-sm: 1.875rem;
+  --text-display-sm--line-height: 2.375rem;
+  --text-display-md: 2.25rem;
+  --text-display-md--line-height: 2.75rem;
+  --text-display-md--letter-spacing: -0.02em;
+  --text-display-lg: 3rem;
+  --text-display-lg--line-height: 3.75rem;
+  --text-display-lg--letter-spacing: -0.02em;
+
+  --color-brand-dark-blue-50: #e6e6f2;
+  --color-brand-dark-blue-100: #cccce6;
+  --color-brand-dark-blue-300: #6666b3;
+  --color-brand-dark-blue-400: #333399;
+  --color-brand-dark-blue-500: #000080;
+  --color-brand-dark-blue-700: #00004d;
+  --color-brand-dark-blue-800: #000033;
+  --color-brand-magenta-500: #d81d56;
+  --color-brand-magenta-700: #821134;
+  --color-eyebrow: #c4174d;
+
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+
+  --container-page: 80rem;
+  --shadow-xs-skeuomorphic: 0 1px 2px 0 #0000000d, inset 0 -2px 0 0 #0000000d;
+}
+
+html {
+  scroll-padding-top: 4.5rem;
+}
+
+body {
+  background-color: #f9fafb;
+  color: var(--color-neutral-900);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    height: 2.5rem;
+    padding: 0 0.875rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    box-shadow: var(--shadow-xs-skeuomorphic);
+    transition: background-color 0.15s ease;
+  }
+  .btn > span {
+    padding: 0 0.125rem;
+  }
+  .btn svg {
+    width: 20px;
+    height: 20px;
+  }
+  .btn:focus-visible {
+    outline: 2px solid var(--color-brand-dark-blue-500);
+    outline-offset: 2px;
+  }
+  .btn-sm {
+    height: 2.25rem;
+    padding: 0 0.75rem;
+  }
+  .btn-xl {
+    height: 3rem;
+    padding: 0 1.25rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+  .btn-xl svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .btn-primary {
+    border: 2px solid rgb(255 255 255 / 0.12);
+    background-color: var(--color-brand-magenta-500);
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background-color: var(--color-brand-magenta-700);
+  }
+
+  .btn-secondary {
+    border: 1px solid var(--color-neutral-700);
+    background-color: #f9fafb;
+    color: var(--color-neutral-700);
+  }
+  .btn-secondary:hover {
+    background-color: var(--color-brand-dark-blue-50);
+  }
+
+  .clastix-mark--mono,
+  .kamaji-mark {
+    display: inline-block;
+    background: currentColor;
+    mask: center / contain no-repeat;
+  }
+  .clastix-mark--mono {
+    mask-image: url("/clastix-symbol.svg");
+  }
+  .kamaji-mark {
+    mask-image: url("/kamaji-mark.svg");
+  }
+}
