@@ -24,3 +24,9 @@ const (
 	kubeconfigAPIVersion            = "v1"
 	roleAuthDelegator               = "system:auth-delegator"
 )
+
+// agentKeepaliveTime is how long the agent leaves a tunnel idle before it
+// pings the server. With the upstream default of 1h, a tunnel whose
+// network path changed stays in use, dead, for up to an hour. It must
+// stay at least the server's keepalive enforcement minimum (30s).
+const agentKeepaliveTime = "60s"

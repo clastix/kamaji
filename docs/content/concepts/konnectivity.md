@@ -83,6 +83,40 @@ Available strategies are the following:
   it allows customising also the amount of deployed replicas via the field
   `tenantcontrolplane.spec.addons.konnectivity.agent.replicas`. 
 
+## Agent keepalive
+
+Kamaji starts the Konnectivity Agent with `--keepalive-time=60s`:
+after 60 seconds without activity on its tunnel, the agent pings the Konnectivity server.
+The upstream default is one hour, and with it a tunnel whose network path changed,
+for example after a worker node was live-migrated or a NAT or load balancer in the path dropped its connection state,
+can stay in use while it is dead: `kubectl logs`, `exec` and `port-forward` then fail with `No agent available`
+until the agent reconnects.
+The ping lets the agent detect the dead tunnel and reconnect, instead of waiting for up to an hour.
+
+You can tune the value through `tenantcontrolplane.spec.addons.konnectivity.agent.extraArgs`,
+which takes precedence over the arguments set by Kamaji:
+
+```yaml
+apiVersion: kamaji.clastix.io/v1alpha1
+kind: TenantControlPlane
+metadata:
+  name: konnectivity-example
+spec:
+  addons:
+    konnectivity:
+      agent:
+        extraArgs:
+          - --keepalive-time=30s
+```
+
+- Raise it, for example `--keepalive-time=5m`, to reduce keepalive traffic on clusters with many nodes;
+  `--keepalive-time=1h` restores the upstream default.
+- Lower it to detect a broken tunnel faster.
+  Do not go below `30s`: the Konnectivity server enforces that minimum interval between pings,
+  and closes the connection of an agent that pings more often.
+
+Changing the value changes the agent's Pod template, so the agent Pods are rolled out again.
+
 ---
 
 By integrating Konnectivity as a core feature, Kamaji ensures that your Tenant Clusters can operate reliably and securely across any network topology,
