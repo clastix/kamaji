@@ -17,9 +17,14 @@ import (
 	kamajierrors "github.com/clastix/kamaji/internal/errors"
 )
 
-// AssignedControlPlaneAddress returns the announced address and port of a Tenant Control Plane.
+// AssignedControlPlaneAddress returns the management address and port of a Tenant Control Plane.
 // In case of non-well formed values, or missing announcement, an error is returned.
 func (in *TenantControlPlane) AssignedControlPlaneAddress() (string, int32, error) {
+	if svc := in.Status.Kubernetes.Service; svc.Address != "" {
+		return svc.Address, svc.Port, nil
+	}
+
+	// Older status objects store the management endpoint only at the top level.
 	if len(in.Status.ControlPlaneEndpoint) == 0 {
 		return "", 0, fmt.Errorf("the Tenant Control Plane is not yet exposed")
 	}
@@ -27,6 +32,11 @@ func (in *TenantControlPlane) AssignedControlPlaneAddress() (string, int32, erro
 	address, portString, err := net.SplitHostPort(in.Status.ControlPlaneEndpoint)
 	if err != nil {
 		return "", 0, fmt.Errorf("cannot split host port from Tenant Control Plane endpoint: %w", err)
+	}
+
+	// A hostname here is the Gateway endpoint: the management address was dropped by an outdated CRD.
+	if net.ParseIP(address) == nil {
+		return "", 0, fmt.Errorf("the Tenant Control Plane management address is missing from the status: the TenantControlPlane CRD must be upgraded")
 	}
 
 	port, err := strconv.Atoi(portString)

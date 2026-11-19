@@ -239,3 +239,44 @@ func TestDeclaredControlPlaneAddress(t *testing.T) {
 		})
 	}
 }
+
+func TestAssignedControlPlaneAddress(t *testing.T) {
+	tests := []struct {
+		name     string
+		address  string
+		endpoint string
+		want     string
+		wantPort int32
+		wantErr  bool
+	}{
+		{name: "the Service address wins over the reported endpoint", address: clusterIPv4, endpoint: "c11.cluster.dev:443", want: clusterIPv4, wantPort: 6443},
+		{name: "an older status falls back to the reported endpoint", endpoint: "192.0.2.7:8443", want: "192.0.2.7", wantPort: 8443},
+		{name: "a Gateway endpoint is not a management address", endpoint: "c11.cluster.dev:443", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tcp := &TenantControlPlane{}
+			tcp.Status.Kubernetes.Service.Address = tt.address
+			tcp.Status.Kubernetes.Service.Port = 6443
+			tcp.Status.ControlPlaneEndpoint = tt.endpoint
+
+			got, port, err := tcp.AssignedControlPlaneAddress()
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected an error, got address %q", got)
+				}
+
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if got != tt.want || port != tt.wantPort {
+				t.Fatalf("got %q:%d, want %q:%d", got, port, tt.want, tt.wantPort)
+			}
+		})
+	}
+}

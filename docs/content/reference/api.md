@@ -51080,7 +51080,8 @@ allowing generic tooling (kubectl wait, kstatus, GitOps and composition engines)
         <td><b>controlPlaneEndpoint</b></td>
         <td>string</td>
         <td>
-          ControlPlaneEndpoint contains the status of the kubernetes control plane<br/>
+          ControlPlaneEndpoint is the reported API server host and port. For Gateway exposure,
+it uses the configured hostname and port. Split-address tenants report the management endpoint.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -52065,6 +52066,13 @@ KubernetesServiceStatus defines the status for the Tenant Control Plane Service 
             <i>Format</i>: int32<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>address</b></td>
+        <td>string</td>
+        <td>
+          Address is the resolved management address of the control plane Service.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b><a href="#tenantcontrolplanestatusaddonskonnectivityserviceconditionsindex">conditions</a></b></td>
         <td>[]object</td>
@@ -54024,6 +54032,13 @@ KubernetesServiceStatus defines the status for the Tenant Control Plane Service 
             <i>Format</i>: int32<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>address</b></td>
+        <td>string</td>
+        <td>
+          Address is the resolved management address of the control plane Service.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b><a href="#tenantcontrolplanestatuskubernetesresourcesserviceconditionsindex">conditions</a></b></td>
         <td>[]object</td>

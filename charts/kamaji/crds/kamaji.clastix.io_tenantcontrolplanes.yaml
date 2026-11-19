@@ -9568,6 +9568,9 @@ spec:
                         service:
                           description: KubernetesServiceStatus defines the status for the Tenant Control Plane Service in the management cluster.
                           properties:
+                            address:
+                              description: Address is the resolved management address of the control plane Service.
+                              type: string
                             conditions:
                               description: Current service state
                               items:
@@ -9888,7 +9891,9 @@ spec:
                     - type
                   x-kubernetes-list-type: map
                 controlPlaneEndpoint:
-                  description: ControlPlaneEndpoint contains the status of the kubernetes control plane
+                  description: |-
+                    ControlPlaneEndpoint is the reported API server host and port. For Gateway exposure,
+                    it uses the configured hostname and port. Split-address tenants report the management endpoint.
                   type: string
                 kubeadmPhase:
                   description: KubeadmPhase contains the status of the kubeadm phases action
@@ -10495,6 +10500,9 @@ spec:
                     service:
                       description: KubernetesServiceStatus defines the status for the Tenant Control Plane Service in the management cluster.
                       properties:
+                        address:
+                          description: Address is the resolved management address of the control plane Service.
+                          type: string
                         conditions:
                           description: Current service state
                           items:
