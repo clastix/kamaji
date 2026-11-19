@@ -234,7 +234,7 @@ func (r *DataStore) Reconcile(ctx context.Context, request reconcile.Request) (r
 	meta.SetStatusCondition(&ds.Status.Conditions, metav1.Condition{
 		Type:               kamajiv1alpha1.DataStoreConditionValidType,
 		Status:             metav1.ConditionTrue,
-		ObservedGeneration: ds.Status.ObservedGeneration,
+		ObservedGeneration: ds.Generation,
 		Reason:             "DataStoreIsValid",
 		Message:            "",
 	})
