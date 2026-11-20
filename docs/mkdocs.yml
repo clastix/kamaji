@@ -84,6 +84,7 @@ nav:
   - guides/kubeconfig-generator.md
   - guides/gateway-api.md
   - guides/headless-control-plane-service.md
+  - guides/public-api-server-address.md
   - guides/upgrade.md
   - guides/monitoring.md
   - guides/terraform.md
