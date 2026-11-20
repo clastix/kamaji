@@ -94,5 +94,27 @@ func BuildFreezeValidatingWebhookConfiguration(namespace, serviceName string, ca
 			TimeoutSeconds:          nil,
 			AdmissionReviewVersions: []string{"v1"},
 		},
+		{
+			Name: "namespaces.migrate.kamaji.clastix.io",
+			ClientConfig: admissionregistrationv1.WebhookClientConfig{
+				URL:      url,
+				CABundle: caBundle,
+			},
+			Rules: []admissionregistrationv1.RuleWithOperations{
+				{
+					Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.OperationAll},
+					Rule: admissionregistrationv1.Rule{
+						APIGroups:   []string{""},
+						APIVersions: []string{"*"},
+						Resources:   []string{"namespaces"},
+						Scope:       pointer.To(admissionregistrationv1.ClusterScope),
+					},
+				},
+			},
+			FailurePolicy:           pointer.To(admissionregistrationv1.Fail),
+			MatchPolicy:             pointer.To(admissionregistrationv1.Equivalent),
+			SideEffects:             pointer.To(admissionregistrationv1.SideEffectClassNoneOnDryRun),
+			AdmissionReviewVersions: []string{"v1"},
+		},
 	}
 }
