@@ -5,9 +5,9 @@ package kubeadm
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 	"time"
 
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
@@ -32,20 +32,59 @@ func buildCertificateDirectoryWithCA(ca CertificatePrivateKeyPair, directory str
 	return os.WriteFile(keyPath, ca.PrivateKey, os.FileMode(0o600))
 }
 
+// CreateKubeconfig returns the kubeconfig kubeadm generates for the given file name,
+// with a client certificate valid from now rather than from the start time of the process,
+// as kubeconfig.CreateKubeConfigFile would do.
 func CreateKubeconfig(kubeconfigName string, ca CertificatePrivateKeyPair, config *Configuration) ([]byte, error) {
-	if err := buildCertificateDirectoryWithCA(ca, config.InitConfiguration.CertificatesDir); err != nil {
+	return createKubeconfig(kubeconfigName, ca, config, time.Now())
+}
+
+func createKubeconfig(kubeconfigName string, ca CertificatePrivateKeyPair, config *Configuration, issuedAt time.Time) ([]byte, error) {
+	clientName, organizations, localEndpoint, err := kubeconfigIdentity(kubeconfigName)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = buildCertificateDirectoryWithCA(ca, config.InitConfiguration.CertificatesDir); err != nil {
 		return nil, err
 	}
 
 	defer deleteCertificateDirectory(config.InitConfiguration.CertificatesDir)
 
-	if err := kubeconfig.CreateKubeConfigFile(kubeconfigName, config.InitConfiguration.CertificatesDir, &config.InitConfiguration); err != nil {
+	initConfiguration := config.InitConfiguration
+	if localEndpoint {
+		// Without a control plane endpoint, kubeadm uses the local API endpoint.
+		initConfiguration.ControlPlaneEndpoint = ""
+	}
+
+	validity := kubeadmconstants.CertificateValidityPeriod
+	if initConfiguration.CertificateValidityPeriod != nil {
+		validity = initConfiguration.CertificateValidityPeriod.Duration
+	}
+
+	var out bytes.Buffer
+	if err = kubeconfig.WriteKubeConfigWithClientCert(&out, &initConfiguration, clientName, organizations, issuedAt.UTC().Add(validity)); err != nil {
 		return nil, err
 	}
 
-	path := filepath.Join(config.InitConfiguration.CertificatesDir, kubeconfigName)
+	return out.Bytes(), nil
+}
 
-	return os.ReadFile(path)
+// kubeconfigIdentity returns the client identity kubeadm uses for the given kubeconfig file,
+// and whether it connects to the local API endpoint rather than the control plane endpoint.
+func kubeconfigIdentity(kubeconfigName string) (clientName string, organizations []string, localEndpoint bool, err error) {
+	switch kubeconfigName {
+	case kubeadmconstants.AdminKubeConfigFileName:
+		return "kubernetes-admin", []string{kubeadmconstants.ClusterAdminsGroupAndClusterRoleBinding}, false, nil
+	case kubeadmconstants.SuperAdminKubeConfigFileName:
+		return "kubernetes-super-admin", []string{kubeadmconstants.SystemPrivilegedGroup}, false, nil
+	case kubeadmconstants.ControllerManagerKubeConfigFileName:
+		return kubeadmconstants.ControllerManagerUser, nil, true, nil
+	case kubeadmconstants.SchedulerKubeConfigFileName:
+		return kubeadmconstants.SchedulerUser, nil, true, nil
+	default:
+		return "", nil, false, fmt.Errorf("unsupported kubeconfig file %q", kubeconfigName)
+	}
 }
 
 func IsKubeconfigCAValid(in, caCrt []byte) bool {

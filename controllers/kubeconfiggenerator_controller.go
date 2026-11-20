@@ -24,7 +24,6 @@ import (
 	"k8s.io/client-go/util/keyutil"
 	"k8s.io/client-go/util/workqueue"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
-	"k8s.io/kubernetes/cmd/kubeadm/app/util"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/pkiutil"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -289,7 +288,7 @@ func (r *KubeconfigGeneratorReconciler) generate(ctx context.Context, generator 
 			Organization: groups.UnsortedList(),
 			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		},
-		NotAfter:            util.StartTimeUTC().Add(kubeadmconstants.CertificateValidityPeriod),
+		NotAfter:            time.Now().UTC().Add(kubeadmconstants.CertificateValidityPeriod),
 		EncryptionAlgorithm: config.InitConfiguration.ClusterConfiguration.EncryptionAlgorithm,
 	}
 
