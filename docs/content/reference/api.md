@@ -33549,6 +33549,8 @@ DataStoreUsername by concatenating the namespace and name of the TenantControlPl
         <td>object</td>
         <td>
           NetworkProfile specifies how the network is<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
         </td>
         <td>false</td>
       </tr><tr>
