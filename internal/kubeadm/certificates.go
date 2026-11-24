@@ -9,9 +9,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/certs"
+	"k8s.io/kubernetes/cmd/kubeadm/app/util/pkiutil"
 
 	cryptoKamaji "github.com/clastix/kamaji/internal/crypto"
 )
@@ -122,11 +124,55 @@ func initPhaseCertsSA(config *Configuration) error {
 }
 
 func initPhaseFromCA(kubeadmCert *certs.KubeadmCert, config *Configuration, certificate *x509.Certificate, signer crypto.Signer) error {
-	return kubeadmCert.CreateFromCA(&config.InitConfiguration, certificate, signer)
+	certConfig, err := certificateConfig(kubeadmCert, config, time.Now())
+	if err != nil {
+		return err
+	}
+
+	cert, key, err := pkiutil.NewCertAndKey(certificate, signer, certConfig)
+	if err != nil {
+		return fmt.Errorf("failed to generate %q certificate: %w", kubeadmCert.Name, err)
+	}
+
+	return pkiutil.WriteCertAndKey(config.InitConfiguration.CertificatesDir, kubeadmCert.BaseName, cert, key)
 }
 
 func initPhaseAsCA(kubeadmCert *certs.KubeadmCert, config *Configuration) (*x509.Certificate, crypto.Signer, error) {
-	return kubeadmCert.CreateAsCA(&config.InitConfiguration)
+	certConfig, err := certificateConfig(kubeadmCert, config, time.Now())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	cert, key, err := pkiutil.NewCertificateAuthority(certConfig)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to generate %q CA certificate: %w", kubeadmCert.Name, err)
+	}
+
+	if err = pkiutil.WriteCertAndKey(config.InitConfiguration.CertificatesDir, kubeadmCert.BaseName, cert, key); err != nil {
+		return nil, nil, err
+	}
+
+	return cert, key, nil
+}
+
+// certificateConfig returns the kubeadm configuration of the certificate, valid from issuedAt.
+// kubeadm dates certificates from the start time of its process, which is fine for the CLI,
+// but a long-running controller would issue certificates dated from when it started:
+// the validity window is shifted to issuedAt, keeping its length.
+func certificateConfig(kubeadmCert *certs.KubeadmCert, config *Configuration, issuedAt time.Time) (*pkiutil.CertConfig, error) {
+	certConfig, err := kubeadmCert.GetConfig(&config.InitConfiguration)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get %q certificate configuration: %w", kubeadmCert.Name, err)
+	}
+
+	shift := issuedAt.UTC().Add(-kubeadmconstants.CertificateBackdate).Sub(certConfig.NotBefore)
+
+	certConfig.NotBefore = certConfig.NotBefore.Add(shift)
+	if !certConfig.NotAfter.IsZero() {
+		certConfig.NotAfter = certConfig.NotAfter.Add(shift)
+	}
+
+	return certConfig, nil
 }
 
 func readCertificateFiles(name string, directory string, extensions ...string) ([][]byte, error) {
