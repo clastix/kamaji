@@ -200,7 +200,7 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 					return nil, err
 				}
 
-				_ = os.WriteFile(fmt.Sprintf("%s/%s", tmp, i), kubeconfigValue, os.ModePerm)
+				_ = os.WriteFile(fmt.Sprintf("%s/%s", tmp, i), kubeconfigValue, os.FileMode(0o600))
 			}
 
 			localAPIEndpoint := kubeadmapi.APIEndpoint{
