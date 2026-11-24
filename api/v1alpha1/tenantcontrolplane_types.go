@@ -584,6 +584,7 @@ type TenantControlPlaneSpec struct {
 	// Kubernetes specification for tenant control plane
 	Kubernetes KubernetesSpec `json:"kubernetes"`
 	// NetworkProfile specifies how the network is
+	//+kubebuilder:default={}
 	NetworkProfile NetworkProfileSpec `json:"networkProfile,omitempty"`
 	// Addons contain which addons are enabled
 	Addons AddonsSpec `json:"addons,omitempty"`

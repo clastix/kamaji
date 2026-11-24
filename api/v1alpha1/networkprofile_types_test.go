@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 var _ = Describe("NetworkProfile validation", func() {
@@ -48,6 +49,47 @@ var _ = Describe("NetworkProfile validation", func() {
 		if err := k8sClient.Delete(ctx, tcp); err != nil && !apierrors.IsNotFound(err) {
 			Expect(err).NotTo(HaveOccurred())
 		}
+	})
+
+	Context("defaults", func() {
+		// A typed client always sends networkProfile (a struct is never omitted),
+		// so the object is built as YAML users write it: without networkProfile.
+		// Before networkProfile defaulted to {}, ClusterIP and NodePort were rejected
+		// by the CEL rules ("no such key: networkProfile") and LoadBalancer was
+		// accepted with no port, leaving a Service with port 0.
+		DescribeTable("defaults networkProfile when it is omitted",
+			func(serviceType ServiceType) {
+				obj := &unstructured.Unstructured{Object: map[string]any{
+					"apiVersion": GroupVersion.String(),
+					"kind":       "TenantControlPlane",
+					"metadata": map[string]any{
+						"generateName": "tcp-network-",
+						"namespace":    "default",
+					},
+					"spec": map[string]any{
+						"controlPlane": map[string]any{
+							"service": map[string]any{"serviceType": string(serviceType)},
+						},
+						"kubernetes": map[string]any{
+							"version": "v1.36.3",
+							"kubelet": map[string]any{"cgroupfs": "systemd"},
+						},
+					},
+				}}
+				Expect(k8sClient.Create(ctx, obj)).To(Succeed())
+				DeferCleanup(func() {
+					Expect(k8sClient.Delete(ctx, obj)).To(Succeed())
+				})
+
+				port, found, err := unstructured.NestedInt64(obj.Object, "spec", "networkProfile", "port")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(found).To(BeTrue(), "networkProfile.port was not defaulted")
+				Expect(port).To(Equal(int64(6443)))
+			},
+			Entry("ClusterIP", ServiceTypeClusterIP),
+			Entry("NodePort", ServiceTypeNodePort),
+			Entry("LoadBalancer", ServiceTypeLoadBalancer),
+		)
 	})
 
 	Context("serviceCidr", func() {

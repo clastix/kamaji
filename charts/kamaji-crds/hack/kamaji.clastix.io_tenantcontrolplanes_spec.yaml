@@ -8915,6 +8915,7 @@ versions:
                   - version
                 type: object
               networkProfile:
+                default: {}
                 description: NetworkProfile specifies how the network is
                 properties:
                   address:
