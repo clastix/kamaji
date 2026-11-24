@@ -180,7 +180,7 @@ func (r *KubeadmPhase) GetKubeadmFunction(ctx context.Context, tcp *kamajiv1alph
 				return nil, err
 			}
 
-			defer func() { _ = os.Remove(tmp) }()
+			defer func() { _ = os.RemoveAll(tmp) }()
 
 			var caSecret corev1.Secret
 			if err = r.Client.Get(ctx, types.NamespacedName{Name: tcp.Status.Certificates.CA.SecretName, Namespace: tcp.Namespace}, &caSecret); err != nil {
