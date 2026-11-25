@@ -171,7 +171,14 @@ func (d Deployment) setInitContainers(podSpec *corev1.PodSpec, tcp kamajiv1alpha
 
 	found, index := utilities.HasNamedContainer(podSpec.InitContainers, kineInitContainerName)
 	if found {
-		initContainers = append(initContainers, podSpec.InitContainers[index:]...)
+		for _, c := range podSpec.InitContainers[index:] {
+			// Same replacement rule as setAdditionalContainers: an additional init
+			// container named chmod replaces the managed one, which must be dropped.
+			if userFound, _ := utilities.HasNamedContainer(initContainers, c.Name); userFound {
+				continue
+			}
+			initContainers = append(initContainers, c)
+		}
 	}
 
 	podSpec.InitContainers = initContainers
@@ -184,7 +191,15 @@ func (d Deployment) setAdditionalContainers(podSpec *corev1.PodSpec, tcp kamajiv
 
 	found, index := utilities.HasNamedContainer(podSpec.Containers, apiServerContainerName)
 	if found {
-		containers = append(containers, podSpec.Containers[index:]...)
+		for _, c := range podSpec.Containers[index:] {
+			// An additional container named after a managed one replaces it: the
+			// builder below rewrites the user's entry in place, so the carried-over
+			// managed container must be dropped, or the pod would carry a duplicate name.
+			if userFound, _ := utilities.HasNamedContainer(containers, c.Name); userFound {
+				continue
+			}
+			containers = append(containers, c)
+		}
 	}
 
 	podSpec.Containers = containers
