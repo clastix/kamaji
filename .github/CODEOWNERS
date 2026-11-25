@@ -1,0 +1,22 @@
+# CODEOWNERS for voltagepark/kamaji — the Voltage Park fork of clastix/kamaji.
+#
+# Modeled on managed-kubernetes' ownership model, adapted to this repo:
+#   1. @robTheBuildr: mission-critical paths (release pipeline, trust, this file).
+#   2. @voltagepark/managed-kubernetes-admins: catch-all fallback.
+#
+# The release workflow pushes the controller image straight into every MKS
+# realm's private ECR (design: managed-kubernetes docs/kamaji-fork/design.md),
+# so changes to it are treated as production deploy machinery.
+
+# Default — the MKS platform team and admins
+*                              @voltagepark/managed-kubernetes @voltagepark/managed-kubernetes-admins
+
+# Tier 1: release pipeline and trust — Rob owns
+/.github/workflows/            @robTheBuildr @voltagepark/managed-kubernetes-admins
+/.github/CODEOWNERS            @robTheBuildr @voltagepark/managed-kubernetes-admins
+/.goreleaser.yml               @robTheBuildr @voltagepark/managed-kubernetes-admins
+/.ko.yaml                      @robTheBuildr @voltagepark/managed-kubernetes-admins
+/Makefile                      @robTheBuildr @voltagepark/managed-kubernetes-admins
+
+# Charts ship to every realm's Argo CD — admins co-own with the team
+/charts/                       @voltagepark/managed-kubernetes @voltagepark/managed-kubernetes-admins
