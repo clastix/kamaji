@@ -178,7 +178,8 @@ type TenantControlPlaneStatus struct {
 	KubeadmConfig KubeadmConfigStatus `json:"kubeadmconfig,omitempty"`
 	// KubeadmPhase contains the status of the kubeadm phases action
 	KubeadmPhase KubeadmPhasesStatus `json:"kubeadmPhase,omitempty"`
-	// ControlPlaneEndpoint contains the status of the kubernetes control plane
+	// ControlPlaneEndpoint is the reported API server host and port. For Gateway exposure,
+	// it uses the configured hostname and port. Split-address tenants report the management endpoint.
 	ControlPlaneEndpoint string `json:"controlPlaneEndpoint,omitempty"`
 	// Addons contains the status of the different Addons
 	Addons AddonsStatus `json:"addons,omitempty"`
@@ -244,6 +245,8 @@ type KubernetesServiceStatus struct {
 	Name string `json:"name"`
 	// The namespace which the Service for the given cluster is deployed.
 	Namespace string `json:"namespace"`
+	// Address is the resolved management address of the control plane Service.
+	Address string `json:"address,omitempty"`
 	// The port where the service is running
 	Port int32 `json:"port"`
 }

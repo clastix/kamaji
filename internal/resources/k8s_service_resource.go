@@ -33,13 +33,25 @@ func (r *KubernetesServiceResource) GetHistogram() prometheus.Histogram {
 	return serviceCollector
 }
 
+// reportedEndpoint returns the endpoint published in the status: the Gateway one when
+// configured, matching the external kubeconfig, otherwise the management one.
+func reportedEndpoint(tenantControlPlane *kamajiv1alpha1.TenantControlPlane, address string) string {
+	port := tenantControlPlane.Spec.NetworkProfile.Port
+	if gateway := tenantControlPlane.Spec.ControlPlane.Gateway; gateway != nil && len(gateway.Hostname) > 0 && tenantControlPlane.Spec.NetworkProfile.AdvertiseAddress == "" {
+		address, port = utilities.GetControlPlaneAddressAndPortFromGateway(gateway.Hostname, gateway.GatewayParentRefs, port)
+	}
+
+	return net.JoinHostPort(address, strconv.FormatInt(int64(port), 10))
+}
+
 func (r *KubernetesServiceResource) ShouldStatusBeUpdated(ctx context.Context, tenantControlPlane *kamajiv1alpha1.TenantControlPlane) bool {
 	address, err := tenantControlPlane.DeclaredControlPlaneAddress(ctx, r.Client)
 
 	return tenantControlPlane.Status.Kubernetes.Service.Name != r.resource.GetName() ||
 		tenantControlPlane.Status.Kubernetes.Service.Namespace != r.resource.GetNamespace() ||
 		tenantControlPlane.Status.Kubernetes.Service.Port != r.resource.Spec.Ports[0].Port ||
-		err == nil && tenantControlPlane.Status.ControlPlaneEndpoint != net.JoinHostPort(address, strconv.FormatInt(int64(tenantControlPlane.Spec.NetworkProfile.Port), 10))
+		err == nil && (tenantControlPlane.Status.Kubernetes.Service.Address != address ||
+			tenantControlPlane.Status.ControlPlaneEndpoint != reportedEndpoint(tenantControlPlane, address))
 }
 
 func (r *KubernetesServiceResource) ShouldCleanup(*kamajiv1alpha1.TenantControlPlane) bool {
@@ -60,7 +72,8 @@ func (r *KubernetesServiceResource) UpdateTenantControlPlaneStatus(ctx context.C
 	if err != nil {
 		return err
 	}
-	tenantControlPlane.Status.ControlPlaneEndpoint = net.JoinHostPort(address, strconv.FormatInt(int64(tenantControlPlane.Spec.NetworkProfile.Port), 10))
+	tenantControlPlane.Status.Kubernetes.Service.Address = address
+	tenantControlPlane.Status.ControlPlaneEndpoint = reportedEndpoint(tenantControlPlane, address)
 
 	return nil
 }

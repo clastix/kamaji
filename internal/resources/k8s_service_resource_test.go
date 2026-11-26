@@ -14,6 +14,8 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	kamajiv1alpha1 "github.com/clastix/kamaji/api/v1alpha1"
 	"github.com/clastix/kamaji/internal/resources"
@@ -435,6 +437,92 @@ var _ = Describe("KubernetesServiceResource ExternalIPs", func() {
 })
 
 var _ = Describe("KubernetesServiceResource control plane endpoint", func() {
+	Context("with a reconciled Service", func() {
+		var (
+			tcp      *kamajiv1alpha1.TenantControlPlane
+			service  *corev1.Service
+			resource *resources.KubernetesServiceResource
+		)
+
+		BeforeEach(func(ctx SpecContext) {
+			tcp = &kamajiv1alpha1.TenantControlPlane{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-tcp", Namespace: "default", UID: "tcp-uid"},
+			}
+			tcp.Spec.NetworkProfile.Port = 6443
+			tcp.Spec.ControlPlane.Service.ServiceType = kamajiv1alpha1.ServiceTypeClusterIP
+			service = &corev1.Service{
+				ObjectMeta: tcp.ObjectMeta,
+				Spec:       corev1.ServiceSpec{Type: corev1.ServiceTypeClusterIP, ClusterIP: "10.96.58.78"},
+			}
+			resource = &resources.KubernetesServiceResource{
+				Client: fake.NewClientBuilder().WithScheme(runtimeScheme).WithObjects(service).Build(),
+			}
+			Expect(resource.Define(ctx, tcp)).To(Succeed())
+			_, err := resource.CreateOrUpdate(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		checkStatus := func(ctx context.Context, endpoint, managementAddress string) {
+			GinkgoHelper()
+			Expect(resource.ShouldStatusBeUpdated(ctx, tcp)).To(BeTrue())
+			Expect(resource.UpdateTenantControlPlaneStatus(ctx, tcp)).To(Succeed())
+			Expect(tcp.Status.ControlPlaneEndpoint).To(Equal(endpoint))
+			address, port, err := tcp.AssignedControlPlaneAddress()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(address).To(Equal(managementAddress))
+			Expect(port).To(Equal(int32(6443)))
+			Expect(resource.ShouldStatusBeUpdated(ctx, tcp)).To(BeFalse())
+		}
+
+		It("reports the configured Gateway endpoint", func(ctx SpecContext) {
+			gateway := &kamajiv1alpha1.GatewaySpec{
+				Hostname:          "c11.cluster.dev",
+				GatewayParentRefs: []gatewayv1.ParentReference{{Name: "gateway"}},
+			}
+			tcp.Spec.ControlPlane.Gateway = gateway
+			checkStatus(ctx, "c11.cluster.dev:6443", service.Spec.ClusterIP)
+
+			gateway.GatewayParentRefs = append(gateway.GatewayParentRefs, gatewayv1.ParentReference{Name: "other", Port: ptr.To(gatewayv1.PortNumber(8443))})
+			Expect(resource.ShouldStatusBeUpdated(ctx, tcp)).To(BeFalse())
+			gateway.GatewayParentRefs[0].Port = ptr.To(gatewayv1.PortNumber(443))
+			checkStatus(ctx, "c11.cluster.dev:443", service.Spec.ClusterIP)
+			tcp.Spec.NetworkProfile.Address = "192.0.2.10"
+			checkStatus(ctx, "c11.cluster.dev:443", "192.0.2.10")
+			tcp.Spec.ControlPlane.Gateway = nil
+			checkStatus(ctx, "192.0.2.10:6443", "192.0.2.10")
+		})
+
+		parentRefs := []gatewayv1.ParentReference{{Name: "gateway"}}
+		DescribeTable("reports the management endpoint", func(ctx SpecContext, hostname, advertiseAddress string) {
+			tcp.Spec.ControlPlane.Gateway = &kamajiv1alpha1.GatewaySpec{Hostname: gatewayv1.Hostname(hostname), GatewayParentRefs: parentRefs}
+			tcp.Spec.NetworkProfile.AdvertiseAddress = advertiseAddress
+			checkStatus(ctx, "10.96.58.78:6443", service.Spec.ClusterIP)
+		},
+			Entry("missing hostname", "", ""),
+			Entry("split addressing", "api.example.com", "192.0.2.20"),
+		)
+
+		It("keeps a running LoadBalancer endpoint when ingress disappears", func(ctx SpecContext) {
+			tcp.Spec.ControlPlane.Service.ServiceType = kamajiv1alpha1.ServiceTypeLoadBalancer
+			_, err := resource.CreateOrUpdate(ctx, tcp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resource.Client.Get(ctx, client.ObjectKeyFromObject(service), service)).To(Succeed())
+			service.Status.LoadBalancer.Ingress = []corev1.LoadBalancerIngress{{IP: "192.0.2.7"}}
+			Expect(resource.Client.Status().Update(ctx, service)).To(Succeed())
+			checkStatus(ctx, "192.0.2.7:6443", "192.0.2.7")
+
+			service.Status.LoadBalancer.Ingress = nil
+			Expect(resource.Client.Status().Update(ctx, service)).To(Succeed())
+			result, err := resources.Handle(ctx, resource, tcp)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(controllerutil.OperationResultNone))
+			address, port, err := tcp.AssignedControlPlaneAddress()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(address).To(Equal("192.0.2.7"))
+			Expect(port).To(Equal(int32(6443)))
+		})
+	})
+
 	DescribeTable("refreshes status after an address change", func(serviceType kamajiv1alpha1.ServiceType, address, endpoint string, expected bool) {
 		ctx := context.Background()
 		tcp := &kamajiv1alpha1.TenantControlPlane{
@@ -455,6 +543,7 @@ var _ = Describe("KubernetesServiceResource control plane endpoint", func() {
 		tcp.Status.Kubernetes.Service.Name = tcp.Name
 		tcp.Status.Kubernetes.Service.Namespace = tcp.Namespace
 		tcp.Status.Kubernetes.Service.Port = tcp.Spec.NetworkProfile.Port
+		tcp.Status.Kubernetes.Service.Address = address
 		tcp.Status.ControlPlaneEndpoint = endpoint
 
 		Expect(resource.ShouldStatusBeUpdated(ctx, tcp)).To(Equal(expected))
