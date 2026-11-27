@@ -14,6 +14,7 @@ Feel free to open a Pull-Request to get yours listed.
 | Vendor | DCloud | 2024 | [link](https://dcloud.co.id) | DCloud is an Indonesian Cloud Provider using Kamaji to build and offer [Managed Kubernetes Service](https://dcloud.co.id/dkubes.html). |
 | Vendor | Dinova | 2025 | [link](https://dinova.one/) | Dinova is an Italian cloud services provider that integrates Kamaji in its datacenters to offer fully managed Kubernetes clusters. |
 | Vendor | Hikube | 2024 | [link](https://hikube.cloud/) | Hikube.cloud is a Swiss sovereign cloud platform with triple replication across three Swiss datacenters, offering enterprise-grade infrastructure with full data sovereignty. |
+| Vendor | Infomaniak | 2025 | [link](https://www.infomaniak.com) | Infomaniak is a Swiss cloud provider using Kamaji to build and offer [Managed Kubernetes Service](https://www.infomaniak.com/en/hosting/public-cloud/kubernetes) in its sovereign Public Cloud. |
 | End-user | KINX | 2024 | [link](https://kinx.net/?lang=en) | KINX is an Internet infrastructure service provider and will use kamaji for its new [Managed Kubernetes Service](https://kinx.net/service/cloud/kubernetes/intro/?lang=en). |
 | End-user | Namecheap | 2025 | [link](https://www.namecheap.com/) | Namecheap is an ICANN-accredited domain registrar and web hosting company that provides a wide range of internet-related services and uses Kamaji for both internal and external services. |
 | Vendor | Netalia | 2025 | [link](https://www.netalia.it) | Netalia uses Kamaji for the Italian cloud
