@@ -8,6 +8,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"path"
+	"slices"
 	"sort"
 	"strings"
 
@@ -54,6 +55,12 @@ const (
 	kineContainerName         = "kine"
 	kineInitContainerName     = "chmod"
 )
+
+// managedContainerNames are the containers built by Kamaji, including the Konnectivity server
+// which is enriched by a separate resource.
+var managedContainerNames = []string{
+	apiServerContainerName, controlPlaneContainerName, schedulerContainerName, kineContainerName, konnectivityServerName,
+}
 
 func applyProbeOverrides(probe *corev1.Probe, spec *kamajiv1alpha1.ProbeSpec) {
 	if probe == nil || spec == nil {
@@ -172,11 +179,12 @@ func (d Deployment) setInitContainers(podSpec *corev1.PodSpec, tcp kamajiv1alpha
 	found, index := utilities.HasNamedContainer(podSpec.InitContainers, kineInitContainerName)
 	if found {
 		for _, c := range podSpec.InitContainers[index:] {
-			// Same replacement rule as setAdditionalContainers: an additional init
-			// container named chmod replaces the managed one, which must be dropped.
-			if userFound, _ := utilities.HasNamedContainer(initContainers, c.Name); userFound {
+			// Same rule as setAdditionalContainers: an additional init container named chmod
+			// replaces the managed one, the others are rebuilt from the spec.
+			if userFound, _ := utilities.HasNamedContainer(initContainers, c.Name); c.Name != kineInitContainerName || userFound {
 				continue
 			}
+
 			initContainers = append(initContainers, c)
 		}
 	}
@@ -192,12 +200,21 @@ func (d Deployment) setAdditionalContainers(podSpec *corev1.PodSpec, tcp kamajiv
 	found, index := utilities.HasNamedContainer(podSpec.Containers, apiServerContainerName)
 	if found {
 		for _, c := range podSpec.Containers[index:] {
-			// An additional container named after a managed one replaces it: the
-			// builder below rewrites the user's entry in place, so the carried-over
-			// managed container must be dropped, or the pod would carry a duplicate name.
-			if userFound, _ := utilities.HasNamedContainer(containers, c.Name); userFound {
+			// Only the Kamaji-built containers are carried over: the user-space ones are rebuilt
+			// from the spec, whatever their position, so they vanish once removed from it.
+			if !slices.Contains(managedContainerNames, c.Name) {
 				continue
 			}
+			// An additional container can only replace the kine container: buildKine rebuilds it
+			// within the same Build and preserves the user-provided image (see #1254). Any other
+			// managed container is kept, and a same-named additional container results in a duplicate
+			// the validating webhook refuses: this protects containers enriched by separate
+			// resources, such as the Konnectivity server, from being persisted before their own
+			// reconciliation runs.
+			if userFound, _ := utilities.HasNamedContainer(containers, c.Name); c.Name == kineContainerName && userFound {
+				continue
+			}
+
 			containers = append(containers, c)
 		}
 	}
