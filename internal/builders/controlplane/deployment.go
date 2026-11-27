@@ -171,7 +171,7 @@ func (d Deployment) setContainers(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.Te
 // setInitContainers allows adding extra init containers from the user-space:
 // this function must be called priorit the setContainers to ensure the idempotency of podSpec building.
 func (d Deployment) setInitContainers(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
-	initContainers := tcp.Spec.ControlPlane.Deployment.AdditionalInitContainers
+	initContainers := slices.Clone(tcp.Spec.ControlPlane.Deployment.AdditionalInitContainers)
 
 	if d.DataStore.Spec.Driver == kamajiv1alpha1.EtcdDriver {
 		podSpec.InitContainers = initContainers
@@ -196,7 +196,7 @@ func (d Deployment) setInitContainers(podSpec *corev1.PodSpec, tcp kamajiv1alpha
 // setAdditionalContainers must be called before setContainers: the user-space ones are going to be prepended
 // to simplify the management of the Kamaji ones during the create or update action.
 func (d Deployment) setAdditionalContainers(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
-	containers := tcp.Spec.ControlPlane.Deployment.AdditionalContainers
+	containers := slices.Clone(tcp.Spec.ControlPlane.Deployment.AdditionalContainers)
 
 	found, index := utilities.HasNamedContainer(podSpec.Containers, apiServerContainerName)
 	if found {
@@ -418,7 +418,7 @@ func (d Deployment) buildControllerManagerVolume(podSpec *corev1.PodSpec, tcp ka
 // setAdditionalVolumes must be called before setVolumes: the user-space ones are going to be prepended
 // to simplify the management of the Kamaji ones during the create or update action.
 func (d Deployment) setAdditionalVolumes(podSpec *corev1.PodSpec, tcp kamajiv1alpha1.TenantControlPlane) {
-	volumes := tcp.Spec.ControlPlane.Deployment.AdditionalVolumes
+	volumes := slices.Clone(tcp.Spec.ControlPlane.Deployment.AdditionalVolumes)
 
 	found, index := utilities.HasNamedVolume(podSpec.Volumes, kubernetesPKIVolumeName)
 	if found {
