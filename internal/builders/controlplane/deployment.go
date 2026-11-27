@@ -62,6 +62,25 @@ var managedContainerNames = []string{
 	apiServerContainerName, controlPlaneContainerName, schedulerContainerName, kineContainerName, konnectivityServerName,
 }
 
+// ReservedContainerNames returns the names an additional container cannot use: a Pod requires
+// container names to be unique across its containers and init containers, so they would collide
+// with the ones built by Kamaji. kine is left out, since an additional container named kine
+// overrides the built one (see kineImage).
+func ReservedContainerNames() []string {
+	names := slices.DeleteFunc(slices.Clone(managedContainerNames), func(name string) bool {
+		return name == kineContainerName
+	})
+
+	return append(names, kineInitContainerName)
+}
+
+// ReservedInitContainerNames returns the names an additional init container cannot use, for the
+// same reason as ReservedContainerNames. chmod is left out, since an additional init container
+// named chmod overrides the built one (see kineImage).
+func ReservedInitContainerNames() []string {
+	return slices.Clone(managedContainerNames)
+}
+
 func applyProbeOverrides(probe *corev1.Probe, spec *kamajiv1alpha1.ProbeSpec) {
 	if probe == nil || spec == nil {
 		return
