@@ -290,6 +290,7 @@ func NewCmd(scheme *runtime.Scheme) *cobra.Command {
 					handlers.TenantControlPlaneName{},
 					handlers.TenantControlPlaneVersion{},
 					handlers.TenantControlPlaneDataStore{Client: mgr.GetClient()},
+					handlers.TenantControlPlaneReservedContainerNames{},
 					handlers.TenantControlPlaneDeployment{
 						Client: mgr.GetClient(),
 						DeploymentBuilder: controlplane.Deployment{
