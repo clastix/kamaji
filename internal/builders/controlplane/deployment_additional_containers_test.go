@@ -170,6 +170,64 @@ var _ = Describe("Controlplane Deployment additional containers", func() {
 		})
 	})
 
+	// The builders rewrite the containers they own in place, user-space overrides included:
+	// the PodSpec must not share its backing arrays with the TenantControlPlane spec, or
+	// those writes would land in the spec itself.
+	Describe("user-space slices", func() {
+		var tcp kamajiv1alpha1.TenantControlPlane
+
+		BeforeEach(func() {
+			d.KineContainerImage = "rancher/kine:v0.11.0"
+			d.DataStore = kamajiv1alpha1.DataStore{
+				Spec: kamajiv1alpha1.DataStoreSpec{
+					Driver:    kamajiv1alpha1.KinePostgreSQLDriver,
+					TLSConfig: &kamajiv1alpha1.TLSConfig{},
+				},
+			}
+			tcp = kamajiv1alpha1.TenantControlPlane{}
+		})
+
+		It("does not write the built kine container into the TenantControlPlane spec", func() {
+			tcp.Spec.ControlPlane.Deployment.AdditionalContainers = []corev1.Container{
+				{Name: "kine", Image: "ghcr.io/k3s-io/kine:v0.17.6"},
+			}
+			expected := tcp.DeepCopy().Spec.ControlPlane.Deployment.AdditionalContainers
+
+			podSpec := &corev1.PodSpec{}
+			d.setAdditionalContainers(podSpec, tcp)
+			d.buildKine(podSpec, tcp)
+
+			Expect(containerByName(podSpec, "kine").Args).ToNot(BeEmpty())
+			Expect(tcp.Spec.ControlPlane.Deployment.AdditionalContainers).To(Equal(expected))
+		})
+
+		It("does not write the built chmod init container into the TenantControlPlane spec", func() {
+			tcp.Spec.ControlPlane.Deployment.AdditionalInitContainers = []corev1.Container{
+				{Name: "chmod", Image: "ghcr.io/k3s-io/kine:v0.17.6"},
+			}
+			expected := tcp.DeepCopy().Spec.ControlPlane.Deployment.AdditionalInitContainers
+
+			podSpec := &corev1.PodSpec{
+				InitContainers: []corev1.Container{{Name: "chmod", Image: "rancher/kine:v0.11.0"}},
+			}
+			d.setInitContainers(podSpec, tcp)
+			d.buildKine(podSpec, tcp)
+
+			Expect(podSpec.InitContainers[0].Command).ToNot(BeEmpty())
+			Expect(tcp.Spec.ControlPlane.Deployment.AdditionalInitContainers).To(Equal(expected))
+		})
+
+		It("does not share the additional volumes with the TenantControlPlane spec", func() {
+			tcp.Spec.ControlPlane.Deployment.AdditionalVolumes = []corev1.Volume{{Name: "extra"}}
+
+			podSpec := &corev1.PodSpec{}
+			d.setAdditionalVolumes(podSpec, tcp)
+			podSpec.Volumes[0].Name = "rewritten"
+
+			Expect(tcp.Spec.ControlPlane.Deployment.AdditionalVolumes[0].Name).To(Equal("extra"))
+		})
+	})
+
 	Describe("setInitContainers", func() {
 		It("drops the Kamaji-built init container already provided as additional init container", func() {
 			podSpec := &corev1.PodSpec{
