@@ -4,7 +4,9 @@
 package resources
 
 import (
+	"bytes"
 	"context"
+	"encoding/pem"
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -99,6 +101,12 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 				logger.Info(fmt.Sprintf("%s public_key-private_key pair is not valid: %s", kubeadmconstants.ServiceAccountKeyBaseName, err.Error()))
 			}
 			if isValid {
+				if utilities.IsPreviousKeyPruneRequested(r.resource) {
+					r.resource.Data[kubeadmconstants.ServiceAccountPublicKeyName] = firstPEMBlock(r.resource.Data[kubeadmconstants.ServiceAccountPublicKeyName])
+					utilities.RemovePreviousKeyPruneRequest(r.resource)
+					utilities.SetObjectChecksum(r.resource, r.resource.Data)
+				}
+
 				return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 			}
 		}
@@ -117,8 +125,18 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 			return err
 		}
 
+		publicKey := sa.PublicKey
+		// A requested rotation keeps the previous signing key as a verification-only key,
+		// so tokens issued before the rotation are still accepted until they're refreshed.
+		// Deleting the Secret is still the way to perform a hard rotation.
+		if isRotationRequested && !utilities.IsPreviousKeyPruneRequested(r.resource) {
+			publicKey = serviceAccountPublicKeyBundle(sa.PublicKey, r.resource.Data[kubeadmconstants.ServiceAccountPublicKeyName])
+		}
+
+		utilities.RemovePreviousKeyPruneRequest(r.resource)
+
 		r.resource.Data = map[string][]byte{
-			kubeadmconstants.ServiceAccountPublicKeyName:  sa.PublicKey,
+			kubeadmconstants.ServiceAccountPublicKeyName:  publicKey,
 			kubeadmconstants.ServiceAccountPrivateKeyName: sa.PrivateKey,
 		}
 
@@ -132,4 +150,31 @@ func (r *SACertificate) mutate(ctx context.Context, tenantControlPlane *kamajiv1
 
 		return ctrl.SetControllerReference(tenantControlPlane, r.resource, r.Client.Scheme())
 	}
+}
+
+// firstPEMBlock returns the first PEM block of the given content, which is the public key
+// of the current signing key: any further block is a verification-only key.
+func firstPEMBlock(content []byte) []byte {
+	block, _ := pem.Decode(content)
+	if block == nil {
+		return content
+	}
+
+	return pem.EncodeToMemory(block)
+}
+
+// serviceAccountPublicKeyBundle returns the content of the sa.pub file upon a rotation:
+// the new public key, followed by the public key of the previous signing key.
+// Only the previous signing key is retained, older verification-only keys are dropped.
+func serviceAccountPublicKeyBundle(newPublicKey, currentPublicKeys []byte) []byte {
+	if block, _ := pem.Decode(currentPublicKeys); block == nil {
+		return newPublicKey
+	}
+
+	signing, previous := firstPEMBlock(newPublicKey), firstPEMBlock(currentPublicKeys)
+	if bytes.Equal(signing, previous) {
+		return signing
+	}
+
+	return append(signing, previous...)
 }

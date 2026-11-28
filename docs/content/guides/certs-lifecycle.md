@@ -99,6 +99,34 @@ e.g.: set the value `7d` to trigger the renewal a week before the effective expi
     
     For other Datastore drivers, such as MySQL, PostgreSQL, or NATS, the referenced Secret will always be deleted by the Controller to trigger the rotation: the PKI management, since it's offloaded externally, must provide the renewed certificates.
 
+## ServiceAccount signing key rotation
+
+The ServiceAccount key pair, stored in the `<tcp>-sa-certificate` Secret, can be rotated with the same annotation.
+Since every projected ServiceAccount token is signed with this key, the rotation is graceful:
+the new key is used for signing, while the previous public key is kept for verification,
+so tokens issued before the rotation keep working until kubelet refreshes them.
+
+```
+$: kubectl annotate secret k8s-133-sa-certificate certs.kamaji.clastix.io/rotate=""
+secret/k8s-133-sa-certificate annotated
+```
+
+The `sa.pub` key of the Secret then contains the new public key, followed by the previous one:
+both are trusted by the Kubernetes API Server, and published by its JWKS endpoint (`/openid/v1/jwks`).
+Only the previous key is retained: a further rotation drops the oldest one.
+
+Once the tokens signed by the previous key have expired, the previous public key can be dropped.
+Keep in mind that third parties validating tokens through the published JWKS could need it for longer than the API Server.
+
+```
+$: kubectl annotate secret k8s-133-sa-certificate certs.kamaji.clastix.io/prune-previous-key=""
+secret/k8s-133-sa-certificate annotated
+```
+
+!!! warning "Hard rotation"
+    If the ServiceAccount private key has been compromised, delete the `<tcp>-sa-certificate` Secret instead:
+    Kamaji will generate a new key pair without retaining the previous key, invalidating every token issued so far.
+
 ## Certificate Authority rotation
 
 Kamaji is also taking care of your Tenant Clusters Certificate Authority.
